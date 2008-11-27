@@ -1,0 +1,4 @@
+g++ -Wall -g -I.   -c -o MasterEq.o MasterEq.cpp
+MasterEquations.h: In member function ‘virtual void ChemicalNetwork::stepPerformed(double, double, const Vector<double>&, const Vector<double>&)’:
+MasterEquations.h:369: warning: unused variable ‘inter’
+g++ -lm  -g  MasterEq.o -o bin/master
