@@ -73,103 +73,7 @@ private:
 	size_t maxPos;
 	vector<size_t> diffs;
 
-	ofstream file;
-	
-	// Currently, computes only avarages
-	vec prepareResultsVec(const vec& state) { 
-		vec results(chemicalTypes.size());
-		results = 0;	
-
-		// Generic code for enumeration
-		vector<size_t> indices(chemicalTypes.size());
-		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
-			indices[i] = 0;
-		}
-		size_t pos = 0;
-
-		while (pos < maxPos) {
-			// Operate on current state	
-			for (size_t i = 0; i < chemicalTypes.size(); ++i) { 
-				results[i] += indices[i] * state[pos];
-			}
-
-			// Advance...
-			for (size_t i = 0; i < chemicalTypes.size(); ++i) { 
-				indices[i] += 1;
-				if (indices[i] == chemicalTypes[i].cutoff + 1) {
-					indices[i] = 0;					
-				} else {
-					break;
-				}					
-			}
-			pos++;
-		}
-		return results;
-	}
-
-	// Currently, computes only avarages
-	vec prepareSecondMomentVec(const vec& state) { 
-		vec results(chemicalTypes.size());
-		results = 0;	
-
-		// Generic code for enumeration
-		vector<size_t> indices(chemicalTypes.size());
-		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
-			indices[i] = 0;
-		}
-		size_t pos = 0;
-
-		while (pos < maxPos) {
-			// Operate on current state	
-			for (size_t i = 0; i < chemicalTypes.size(); ++i) { 
-				results[i] += indices[i] * indices[i] * state[pos];
-			}
-
-			// Advance...
-			for (size_t i = 0; i < chemicalTypes.size(); ++i) { 
-				indices[i] += 1;
-				if (indices[i] == chemicalTypes[i].cutoff + 1) {
-					indices[i] = 0;					
-				} else {
-					break;
-				}					
-			}
-			pos++;
-		}
-		return results;
-	}
-
-	// Prepare Correlation Vector
-	vec prepareCorrVec(const vec& state) { 
-		vec results(interactions.size());
-		results = 0;
-		
-		// Generic code for enumeration
-		vector<size_t> indices(chemicalTypes.size());
-		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
-			indices[i] = 0;
-		}
-		size_t pos = 0;
-		
-		while (pos < maxPos) {
-			// Operate on current state	
-			for (size_t i = 0; i < interactions.size(); ++i) { 
-				results[i] += indices[interactions[i].input1] * indices[interactions[i].input2] * state[pos];
-			}
-
-			// Advance...
-			for (size_t i = 0; i < chemicalTypes.size(); ++i) { 
-				indices[i] += 1;
-				if (indices[i] == chemicalTypes[i].cutoff + 1) {
-					indices[i] = 0;					
-				} else {
-					break;
-				}					
-			}
-			pos++;
-		}
-		return results;
-	}
+	ofstream file;	
 
 	string getOutputName(int index) { 
 		return ((size_t)index >= chemicalTypes.size()) ? outputTypes[index - chemicalTypes.size()] : chemicalTypes[index].name;
@@ -291,9 +195,7 @@ public:
  	 * Compute the error, given the previous state, the current state, and the used delta
   	 */
 	virtual double computeError(const vec& state, const vec& prevState, double usedDelta) { 
-		vec prev = prepareResultsVec(prevState);
-		vec current = prepareResultsVec(state);	
-		return scalarMax(abs(current - prev) / prev) / usedDelta;
+		return scalarMax(abs(state - prevState) / state) / usedDelta;
 	}
 
 
@@ -306,146 +208,106 @@ public:
 	 * @return The time derivative of the equations
 	 */ 
 	virtual vec compute_derivative(const double t, const vec& state) {
-		vec res(maxPos);
+		vec res(state.size());
 		res = 0;
 
-		// Generic code for enumeration
-		vector<size_t> indices(chemicalTypes.size());
-		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
-			indices[i] = 0;
-		}		
-		size_t pos = 0;
-
-		while (pos < maxPos) {
-			// Operate on current state
-
-			// First - go over types
-			for (size_t i = 0; i < chemicalTypes.size(); i++) { 				
-				res[pos] += 	
-					// Flux Term	
-					chemicalTypes[i].Flux * (((indices[i] == 0) ? 0 : state[pos - diffs[i]]) - state[pos]) +
-					// Diffusion Term
-					chemicalTypes[i].Diffusion * 
-					(((indices[i] == chemicalTypes[i].cutoff) ? 0 : (indices[i] + 1) * state[pos + diffs[i]]) - 
-					(indices[i] * state[pos]));
-			}			
-
-
-			for (size_t i = 0; i < selfInteractions.size(); i++) {
-				const self_interaction &si = selfInteractions[i];
-				size_t ii = indices[si.input];
-				size_t oi = indices[si.output];
-				if (si.output >= chemicalTypes.size()) { 
-					// The output of this interaction is a non-interacting species
-					res[pos] += chemicalTypes[si.input].A *
-					    (((ii >= chemicalTypes[si.input].cutoff - 1) ? 0 : 
-						((ii + 2) * (ii + 1) * state[pos + (2 * diffs[si.input])])) -
-					    (ii * (ii - 1) * state[pos]));				
-				} else {	
-					res[pos] += chemicalTypes[si.input].A *
-					    ((((ii >= chemicalTypes[si.input].cutoff - 1) || 
-					      (oi == 0)) ? 0 : ((ii + 2) * (ii + 1) * state[pos + (2 * diffs[si.input]) - diffs[si.output]])) - 
-					    (ii * (ii - 1) * state[pos]));				
-				}				
+		// First, go over the means of the populations
+		for (int i = 0; i < chemicalTypes.size(); i++) { 
+			const species& s = chemicalTypes[i];
+			res[i] += (s.F - s.W * state[i]);
+		
+			// Check if there is a self interaction for this:
+			if (interactionMat(i,i) != -1) { 
+				res[i] -= 2 * s.A * 
+				(state[chemicalTypes.size() + interactions.size() + interactionMat(i,i)] - state[i]);
 			}
-
-			// Next - Go over two-component interactions
-			for (size_t i = 0; i < interactions.size(); i++) { 
-				const interaction &ii = interactions[i];
-				size_t i1 = indices[ii.input1];
-				size_t i2 = indices[ii.input2];
-				size_t oi = indices[ii.output];
-				if (ii.output >= chemicalTypes.size())  { 
-					// The output of this interaction is a non-interacting species
-					res[pos] += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
-						((((i1 == chemicalTypes[ii.input1].cutoff) || (i2 == chemicalTypes[ii.input2].cutoff)) ? 
-						 	0 : ((i1 + 1) * (i2 + 1) * state[pos + diffs[ii.input1] + diffs[ii.input2] ])) - 
-						(i1 * i2 * state[pos]));
-				} else { 
-					res[pos] += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
-						((((i1 == chemicalTypes[ii.input1].cutoff) || (i2 == chemicalTypes[ii.input2].cutoff) || (oi == 0)) ? 
-						 	0 : ((i1 + 1) * (i2 + 1) * state[pos + diffs[ii.input1] + diffs[ii.input2] - diffs[ii.output]])) - 
-						(i1 * i2 * state[pos]));
+			
+			// Check all interactions in which this is the input
+			for (int j = 0; j < chemicalTypes.size()) { 
+				if (i != j && interactionMat(i,j) != -1) { 
+					int pos = interactionMat(i,j);
+					const interaction &ii = interactions[pos];
+					res[i] -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
+							state(chemicalTypes.size() + pos);
 				}
 			}
 
+			// Check all self interactions in which this is output (currently - only one...)
+			if (indexedSelfOutputs[i] != -1) { 
+				int pos = indexedSelfOutputs[i];
+				const self_interaction &si = selfInteractions[pos];
+				res[i] += chemicalTypes[si.input].A * 
+					(state[chemicalTypes.size() + interactions.size() + pos] - state[i]);
+			}	
 
-			// Advance...
-			for (size_t i = 0; i < chemicalTypes.size(); ++i) { 
-				indices[i] += 1;
-				if (indices[i] == chemicalTypes[i].cutoff + 1) {
-					indices[i] = 0;					
-				} else {
-					break;
-				}					
-			}			
-			pos++;
-		}	
-		return res;
+			// Check all  interactions in which this is output (currently - only one...)
+			if (indexedOutputs[i] != -1) { 
+				int pos = indexedOutputs[i];
+				interaction &ii = interactions[pos];
+				res[i] += ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
+					(state[chemicalTypes.size() + pos]));
+			}				
+		}
 
-	}
-
-	// Compute the partial derivative of each derivative equation according to the probability variable
-	// used for 1D newton method
-	vec compute_derivative_derivative(const vec& state)  {
-		vec res(maxPos);
-		res = 0;
-
-		// Generic code for enumeration
-		vector<size_t> indices(chemicalTypes.size());
-		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
-			indices[i] = 0;
-		}		
-		size_t pos = 0;
-
-		while (pos < maxPos) {
-			// Operate on current state
-
-			// First - go over types
-			for (size_t i = 0; i < chemicalTypes.size(); i++) { 				
-				res[pos] -= 	
-					// Flux Term	
-					chemicalTypes[i].Flux +
-					// Diffusion Term
-					chemicalTypes[i].Diffusion * indices[i];
-			}			
-
-
-			for (size_t i = 0; i < selfInteractions.size(); i++) {
-				const self_interaction &si = selfInteractions[i];
-				size_t ii = indices[si.input];
-				res -= chemicalTypes[si.input].A * ii * (ii - 1);
+		// Go over all interactions
+		for (int i = 0; i < interactions.size(); i++) { 
+			const interaction& ii = interactions[i];
+			const species &s1 = chemicalTypes[ii.input1];
+			const species &s2 = chemicalTypes[ii.input2];
+			res[chemicalTypes.size() + i] = 
+				(s1.F * state[ii.input2] + s2.F * state[ii.input1] - 
+				 (s1.W + s2.W + s1.A + s1.A) * state[chemicalTypes.size() + i]);
+		}
+		
+		for (int i = 0; i < selfInteractions.size(); i++) { 
+			const self_interaction &si = selfInteractions[i];	
+			const species &s = chemicalTypes[ii.input];
+			res[chemicalTypes.size() + interactions.size() + i] = 
+				s.F + 2 * s.F * state[si.input] + s.W * state[si.input] - 
+				2 * s.W	* state[chemicalTypes.size() + interactions.size() + i] -
+				4 * s.A * (state[chemicalTypes.size() + interactions.size() + i] - state[si.input]);
+				
+			
+			// Check all interactions in which this is the input
+			for (int j = 0; j < chemicalTypes.size()) { 
+				if (si.input != j && interactionMat(si.input,j) != -1) { 
+					int pos = interactionMat(si.input, j);
+					const interaction &ii = interactions[pos];
+					res[chemicalTypes.size() + interactions.size() + i] -= 
+						(chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
+							state(chemicalTypes.size() + pos);
+				}
 			}
 
-			// Next - Go over two-component interactions
-			for (size_t i = 0; i < interactions.size(); i++) { 
-				const interaction &ii = interactions[i];
-				size_t i1 = indices[ii.input1];
-				size_t i2 = indices[ii.input2];
-				res -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * (i1 * i2);				
-			}
+			// Check all self interactions in which this is output (currently - only one...)
+			if (indexedSelfOutputs[si.input] != -1) { 
+				int pos = indexedSelfOutputs[si.input];
+				const self_interaction &si2 = selfInteractions[pos];
+				res[chemicalTypes.size() + interactions.size() + i] += 
+					chemicalTypes[si2.input].A * 
+					(state[chemicalTypes.size() + interactions.size() + pos] - state[si2.input]);
+			}	
 
+			// Check all  interactions in which this is output (currently - only one...)
+			if (indexedOutputs[i] != -1) { 
+				int pos = indexedOutputs[i];
+				interaction &ii = interactions[pos];
+				res[chemicalTypes.size() + interactions.size() + i] += 
+					((chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
+						(state[chemicalTypes.size() + pos]));
+			}		
+			
+			
+		}
 
-			// Advance...
-			for (size_t i = 0; i < chemicalTypes.size(); ++i) { 
-				indices[i] += 1;
-				if (indices[i] == chemicalTypes[i].cutoff + 1) {
-					indices[i] = 0;					
-				} else {
-					break;
-				}					
-			}			
-			pos++;
-		}	
 		return res;
+
 	}
 
 	vec createInitialConditions() {
 	
-		vec result(maxPos);
+		vec result(chemicalTypes.size() + interactions.size() + selfInteractions.size());
 		result = 0;
-		result[0] = 1.0;
-
 		return result;
 	}
 
@@ -511,43 +373,6 @@ public:
 	}
 
 	/**
- 	 * Perform newton's method to find Steady State Solutions 
-	 */
-	void performNewtonMethod(double max_err) { 
-		vec state = createInitialConditions();
-		double err = max_err + 1;
-		while (err > max_err) { 
-			vec newState = state - (compute_derivative(0.0,state) / compute_derivative_derivative(state));
-			err = abs((newState - state) / state).max();
-			state = newState;
-			cout << "Error: " << err << endl;
-		}
-
-		file.open("master_newton.out");
-		vec avgVec = prepareResultsVec(state);
-		vec momentVec = prepareSecondMomentVec(state);
-		vec corrVec = prepareCorrVec(state);
-
-		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
-			file << "Mean of " << chemicalTypes[i].name << " is " << avgVec[i] << endl;
-		}
-		for (size_t i = 0; i < selfInteractions.size(); i++) { 
-			self_interaction &si = selfInteractions[i];
-			file << "Production Rate of " << getOutputName(si.output) << " is " 
-				<< (chemicalTypes[si.input].A * (momentVec[si.input] - avgVec[si.input])) << endl;
-		}
-
-		for (size_t i = 0; i < interactions.size(); i++) { 
-			interaction &ii = interactions[i];	
-			file << "Production Rate of " << getOutputName(ii.output) << " is " 
-				<< ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input1].A) * corrVec[i])
-				<< endl;
-		}
-		file.close();		
-		
-	}
-
-	/**
          * Announce that the solving has started
 	 */
 	virtual void solvingStarted(const rk_params &params, const vec& initialState) { 
@@ -562,26 +387,27 @@ public:
 	 * @param state The state after the step
 	 */
 	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) { 			
-		vec avgVec = prepareResultsVec(state);
-		vec momentVec = prepareSecondMomentVec(state);
-		vec corrVec = prepareCorrVec(state);
 
 		file << "Time: " << time << endl;	
 		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
-			file << "Mean of " << chemicalTypes[i].name << " is " << avgVec[i] << endl;
+			file << "Mean of " << chemicalTypes[i].name << " is " << state[i] << endl;
+		}
+		for (size_t i = 0; i < interactions.size(); i++) { 
+			interaction &ii = interactions[i];	
+			file << "Production Rate of " << getOutputName(ii.output) << " is " 
+				<< ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input1].A) * 
+					state[i + chemicalTypes.size()])
+				<< endl;
 		}
 		for (size_t i = 0; i < selfInteractions.size(); i++) { 
 			self_interaction &si = selfInteractions[i];
 			file << "Production Rate of " << getOutputName(si.output) << " is " 
-				<< (chemicalTypes[si.input].A * (momentVec[si.input] - avgVec[si.input])) << endl;
-		}
-
-		for (size_t i = 0; i < interactions.size(); i++) { 
-			interaction &ii = interactions[i];	
-			file << "Production Rate of " << getOutputName(ii.output) << " is " 
-				<< ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input1].A) * corrVec[i])
+				<< (chemicalTypes[si.input].A * 
+					(state[i + chemicalTypes.size() + interactions.size()] - state[si.input]) 
 				<< endl;
 		}
+
+
 	}
 
 	/** 
