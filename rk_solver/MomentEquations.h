@@ -212,9 +212,9 @@ public:
 		res = 0;
 
 		// First, go over the means of the populations
-		for (int i = 0; i < chemicalTypes.size(); i++) { 
+		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
 			const species& s = chemicalTypes[i];
-			res[i] += (s.F - s.W * state[i]);
+			res[i] += (s.Flux - s.Diffusion * state[i]);
 		
 			// Check if there is a self interaction for this:
 			if (interactionMat(i,i) != -1) { 
@@ -223,12 +223,12 @@ public:
 			}
 			
 			// Check all interactions in which this is the input
-			for (int j = 0; j < chemicalTypes.size()) { 
+			for (size_t j = 0; j < chemicalTypes.size(); ++j) { 
 				if (i != j && interactionMat(i,j) != -1) { 
 					int pos = interactionMat(i,j);
 					const interaction &ii = interactions[pos];
 					res[i] -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
-							state(chemicalTypes.size() + pos);
+							state[chemicalTypes.size() + pos];
 				}
 			}
 
@@ -250,32 +250,32 @@ public:
 		}
 
 		// Go over all interactions
-		for (int i = 0; i < interactions.size(); i++) { 
+		for (size_t i = 0; i < interactions.size(); i++) { 
 			const interaction& ii = interactions[i];
 			const species &s1 = chemicalTypes[ii.input1];
 			const species &s2 = chemicalTypes[ii.input2];
 			res[chemicalTypes.size() + i] = 
-				(s1.F * state[ii.input2] + s2.F * state[ii.input1] - 
-				 (s1.W + s2.W + s1.A + s1.A) * state[chemicalTypes.size() + i]);
+				(s1.Flux * state[ii.input2] + s2.Flux * state[ii.input1] - 
+				 (s1.Diffusion + s2.Diffusion + s1.A + s2.A) * state[chemicalTypes.size() + i]);
 		}
 		
-		for (int i = 0; i < selfInteractions.size(); i++) { 
+		for (size_t i = 0; i < selfInteractions.size(); i++) { 
 			const self_interaction &si = selfInteractions[i];	
-			const species &s = chemicalTypes[ii.input];
+			const species &s = chemicalTypes[si.input];
 			res[chemicalTypes.size() + interactions.size() + i] = 
-				s.F + 2 * s.F * state[si.input] + s.W * state[si.input] - 
-				2 * s.W	* state[chemicalTypes.size() + interactions.size() + i] -
+				s.Flux + 2 * s.Flux * state[si.input] + s.Diffusion * state[si.input] - 
+				2 * s.Diffusion	* state[chemicalTypes.size() + interactions.size() + i] -
 				4 * s.A * (state[chemicalTypes.size() + interactions.size() + i] - state[si.input]);
 				
 			
 			// Check all interactions in which this is the input
-			for (int j = 0; j < chemicalTypes.size()) { 
+			for (size_t j = 0; j < chemicalTypes.size(); ++j) { 
 				if (si.input != j && interactionMat(si.input,j) != -1) { 
 					int pos = interactionMat(si.input, j);
 					const interaction &ii = interactions[pos];
 					res[chemicalTypes.size() + interactions.size() + i] -= 
 						(chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
-							state(chemicalTypes.size() + pos);
+							state[chemicalTypes.size() + pos];
 				}
 			}
 
@@ -376,7 +376,7 @@ public:
          * Announce that the solving has started
 	 */
 	virtual void solvingStarted(const rk_params &params, const vec& initialState) { 
-		file.open("master.out");
+		file.open("moment.out");
 		file << "Solving Started" << endl;
 	}
 
@@ -403,7 +403,7 @@ public:
 			self_interaction &si = selfInteractions[i];
 			file << "Production Rate of " << getOutputName(si.output) << " is " 
 				<< (chemicalTypes[si.input].A * 
-					(state[i + chemicalTypes.size() + interactions.size()] - state[si.input]) 
+					(state[i + chemicalTypes.size() + interactions.size()] - state[si.input])) 
 				<< endl;
 		}
 

@@ -18,7 +18,7 @@ using namespace std;
 		params.final_time = 3e10;
 	params.initial_time = 0;
 	params.max_error = 1e-8;
-	params.limit = 1e-6;
+	params.limit = 1e-8;
 	params.initialDelta = 1e-10;
 
 	ifstream is;
