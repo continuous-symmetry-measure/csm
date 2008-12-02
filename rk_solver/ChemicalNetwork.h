@@ -14,7 +14,7 @@
 #define END_FILE_LABEL		"End"
 #define SPECIES_LABEL		"Species"
 #define FLUX_LABEL			"Flux"
-#define DIFFUSION_LABEL		"Diffusion"
+#define DESORPTION_LABEL	"Desorption"
 #define SWEEP_RATE_LABEL	"SweepRate"
 #define CUTOFF_LABEL		"Cutoff"
 #define INTERACTION_LABEL	"Interaction"
@@ -29,8 +29,8 @@ using namespace std;
 struct species {
 	string name;			// The species name
 	double Flux;			// Incoming Flux
-	double Diffusion;		// Diffusion Rate
-	double A;			// Sweeping Rate
+	double W;		// W Rate
+	double A;				// Sweeping Rate
 	int    cutoff;			// Cutoff (max number of particles)
 };
 
@@ -200,7 +200,7 @@ public:
 	 * The file structure is as follows:
 	 *
 	 * Begin
-	 * Species		Flux		Diffusion		SweepRate	Cutoff
+	 * Species		Flux		W		SweepRate	Cutoff
 	 * <name>		0.4		8			4		6
 	 * ...
 	 *
@@ -223,15 +223,15 @@ public:
 			return NULL;
 		}
 		input >> str1 >> str2 >> str3 >> str4 >> str5;
-		if (str1 != SPECIES_LABEL || str2 != FLUX_LABEL || str3 != DIFFUSION_LABEL || str4 != SWEEP_RATE_LABEL || str5 != CUTOFF_LABEL) {
-			cerr << "File does not contain 'Species Flux Diffusion SweepRate Cutoff' header" << endl;
+		if (str1 != SPECIES_LABEL || str2 != FLUX_LABEL || str3 != DESORPTION_LABEL || str4 != SWEEP_RATE_LABEL || str5 != CUTOFF_LABEL) {
+			cerr << "File does not contain 'Species Flux Desorption SweepRate Cutoff' header" << endl;
 			return NULL;
 		}
 		input >> str1;
 		while (str1 != INTERACTION_LABEL) {
 			species sp;
 			sp.name = str1;
-			input >> sp.Flux >> sp.Diffusion >> sp.A >> sp.cutoff;
+			input >> sp.Flux >> sp.W >> sp.A >> sp.cutoff;
 			types.push_back(sp);
 			input >> str1;
 			cerr << str1 << endl;
