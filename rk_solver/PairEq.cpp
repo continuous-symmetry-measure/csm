@@ -1,6 +1,6 @@
 #include "rk_solver.h"
 #include "equation_set.h"
-#include "ChemicalNetwork.h"
+#include "PairEquations.h"
 #include "math.h"
 #include <iostream>
 
