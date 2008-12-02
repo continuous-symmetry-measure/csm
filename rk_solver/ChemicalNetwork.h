@@ -537,8 +537,7 @@ public:
 	 */
 	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) { 			
 		updateParameters(state);
-		for (size_t i = 0; i < interactions.size(); i++) {
-			interaction& inter = interactions[i];			
+		for (size_t i = 0; i < interactions.size(); i++) {			
 			const Matrix<double> &probs = state[i];		
 
 			// Sum over all just to test...

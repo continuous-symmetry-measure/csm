@@ -218,8 +218,7 @@ public:
 		
 			// Check if there is a self interaction for this:
 			if (interactionMat(i,i) != -1) { 
-				res[i] -= 2 * s.A * 
-				(state[chemicalTypes.size() + interactions.size() + interactionMat(i,i)] - state[i]);
+				res[i] -= 2 * s.A * (state[i] * state[i]);
 			}
 			
 			// Check all interactions in which this is the input
@@ -227,8 +226,8 @@ public:
 				if (i != j && interactionMat(i,j) != -1) { 
 					int pos = interactionMat(i,j);
 					const interaction &ii = interactions[pos];
-					res[i] -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
-							state[chemicalTypes.size() + pos];
+					res[i] -= ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
+							state[ii.input1] * state[ii.input2]);
 				}
 			}
 
@@ -236,77 +235,23 @@ public:
 			if (indexedSelfOutputs[i] != -1) { 
 				int pos = indexedSelfOutputs[i];
 				const self_interaction &si = selfInteractions[pos];
-				res[i] += chemicalTypes[si.input].A * 
-					(state[chemicalTypes.size() + interactions.size() + pos] - state[i]);
+				res[i] += chemicalTypes[si.input].A * state[si.input] * state[si.input];
 			}	
 
 			// Check all  interactions in which this is output (currently - only one...)
 			if (indexedOutputs[i] != -1) { 
 				int pos = indexedOutputs[i];
 				interaction &ii = interactions[pos];
-				res[i] += ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
-					(state[chemicalTypes.size() + pos]));
+				res[i] += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
+					(state[ii.input1] * state[ii.input2]);
 			}				
 		}
-
-		// Go over all interactions
-		for (size_t i = 0; i < interactions.size(); i++) { 
-			const interaction& ii = interactions[i];
-			const species &s1 = chemicalTypes[ii.input1];
-			const species &s2 = chemicalTypes[ii.input2];
-			res[chemicalTypes.size() + i] = 
-				(s1.Flux * state[ii.input2] + s2.Flux * state[ii.input1] - 
-				 (s1.Diffusion + s2.Diffusion + s1.A + s2.A) * state[chemicalTypes.size() + i]);
-		}
-		
-		for (size_t i = 0; i < selfInteractions.size(); i++) { 
-			const self_interaction &si = selfInteractions[i];	
-			const species &s = chemicalTypes[si.input];
-			res[chemicalTypes.size() + interactions.size() + i] = 
-				s.Flux + 2 * s.Flux * state[si.input] + s.Diffusion * state[si.input] - 
-				2 * s.Diffusion	* state[chemicalTypes.size() + interactions.size() + i] -
-				4 * s.A * (state[chemicalTypes.size() + interactions.size() + i] - state[si.input]);
-				
-			
-			// Check all interactions in which this is the input
-			for (size_t j = 0; j < chemicalTypes.size(); ++j) { 
-				if (si.input != j && interactionMat(si.input,j) != -1) { 
-					int pos = interactionMat(si.input, j);
-					const interaction &ii = interactions[pos];
-					res[chemicalTypes.size() + interactions.size() + i] -= 
-						(chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
-							state[chemicalTypes.size() + pos];
-				}
-			}
-
-			// Check all self interactions in which this is output (currently - only one...)
-			if (indexedSelfOutputs[si.input] != -1) { 
-				int pos = indexedSelfOutputs[si.input];
-				const self_interaction &si2 = selfInteractions[pos];
-				res[chemicalTypes.size() + interactions.size() + i] += 
-					chemicalTypes[si2.input].A * 
-					(state[chemicalTypes.size() + interactions.size() + pos] - state[si2.input]);
-			}	
-
-			// Check all  interactions in which this is output (currently - only one...)
-			if (indexedOutputs[i] != -1) { 
-				int pos = indexedOutputs[i];
-				interaction &ii = interactions[pos];
-				res[chemicalTypes.size() + interactions.size() + i] += 
-					((chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
-						(state[chemicalTypes.size() + pos]));
-			}		
-			
-			
-		}
-
 		return res;
 
 	}
 
-	vec createInitialConditions() {
-	
-		vec result(chemicalTypes.size() + interactions.size() + selfInteractions.size());
+	vec createInitialConditions() {	
+		vec result(chemicalTypes.size());
 		result = 0;
 		return result;
 	}
@@ -376,7 +321,7 @@ public:
      * Announce that the solving has started
 	 */
 	virtual void solvingStarted(const rk_params &params, const vec& initialState) { 
-		file.open("moment.out");
+		file.open("rate.out");
 		file.width(10);
 		file.precision(4);
 		file << "Time\tdt\t";
@@ -412,13 +357,12 @@ public:
 		for (size_t i = 0; i < interactions.size(); i++) { 
 			interaction &ii = interactions[i];	
 			file << ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
-					state[i + chemicalTypes.size()]) << "\t";
+					state[ii.input1] * state[ii.input2]) << "\t";
 		}
 
 		for (size_t i = 0; i < selfInteractions.size(); i++) { 
 			self_interaction &si = selfInteractions[i];
-			file << (chemicalTypes[si.input].A * 
-					(state[i + chemicalTypes.size() + interactions.size()] - state[si.input])) << "\t";
+			file << chemicalTypes[si.input].A * state[si.input] * state[si.input] << "\t";
 		}
 
 		file << endl;
