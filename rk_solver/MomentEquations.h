@@ -373,11 +373,27 @@ public:
 	}
 
 	/**
-         * Announce that the solving has started
+     * Announce that the solving has started
 	 */
 	virtual void solvingStarted(const rk_params &params, const vec& initialState) { 
 		file.open("moment.out");
-		file << "Solving Started" << endl;
+		file.width(10);
+		file.precision(4);
+		file << "Time\tdt\t";
+		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
+			file << "<" << chemicalTypes[i].name << ">" << "\t\t";
+		}
+
+		for (size_t i = 0; i < interactions.size(); i++) { 
+			interaction &ii = interactions[i];	
+			file << "R_" << getOutputName(ii.output) << "\t";
+		}
+
+		for (size_t i = 0; i < selfInteractions.size(); i++) { 
+			self_interaction &si = selfInteractions[i];
+			file << "R_" << getOutputName(si.output) << "\t";
+		}
+		file << endl;
 	}
 
 	/** 
@@ -388,26 +404,24 @@ public:
 	 */
 	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) { 			
 
-		file << "Time: " << time << endl;	
+		file << time << "\t" << dt << "\t";
+		
 		for (size_t i = 0; i < chemicalTypes.size(); i++) { 
-			file << "Mean of " << chemicalTypes[i].name << " is " << state[i] << endl;
+			file << state[i] << "\t";
 		}
 		for (size_t i = 0; i < interactions.size(); i++) { 
 			interaction &ii = interactions[i];	
-			file << "Production Rate of " << getOutputName(ii.output) << " is " 
-				<< ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input1].A) * 
-					state[i + chemicalTypes.size()])
-				<< endl;
+			file << ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input1].A) * 
+					state[i + chemicalTypes.size()]) << "\t";
 		}
+
 		for (size_t i = 0; i < selfInteractions.size(); i++) { 
 			self_interaction &si = selfInteractions[i];
-			file << "Production Rate of " << getOutputName(si.output) << " is " 
-				<< (chemicalTypes[si.input].A * 
-					(state[i + chemicalTypes.size() + interactions.size()] - state[si.input])) 
-				<< endl;
+			file << (chemicalTypes[si.input].A * 
+					(state[i + chemicalTypes.size() + interactions.size()] - state[si.input])) << "\t";
 		}
 
-
+		file << endl;
 	}
 
 	/** 

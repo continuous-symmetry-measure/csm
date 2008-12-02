@@ -127,13 +127,11 @@ public:
 		delta = params.initialDelta;
 		double error = params.limit + 1;
 
-		processor.solvingStarted(params, initialState);		
-		eqSet.updateParameters(initialState);
+		processor.solvingStarted(params, initialState);				
 
 		while (time < params.final_time && error > params.limit) {
 			vec result = performStep();
 			error = eqSet.computeError(result, state, usedDelta);
-			eqSet.updateParameters(result);
 			processor.stepPerformed(time, delta, result, state);
 			state = result;
 			std::cout << "Error: " << error << std::endl;

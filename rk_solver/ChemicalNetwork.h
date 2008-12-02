@@ -243,13 +243,6 @@ public:
 					inter.corr += k * j * probs(j,k);
 				}				
 			}	
-
-			// Sum over all just to test...
-			double sum = 0;
-			for (size_t j = 0; j < probs.nrows(); j++) {
-				sum += probs.row(j).sum();
-			}
-			cout << endl << "Interaction #" << (i + 1) << " sum: " << sum <<  endl;
 		}
 	}
 
@@ -257,6 +250,7 @@ public:
  	 * Compute the error, given the previous state, the current state, and the used delta
   	 */
 	virtual double computeError(const vec& state, const vec& prevState, double usedDelta) { 
+		updateParameters(prevState);
 		Vector<double> prev = prepareResultsVec();
 		updateParameters(state);
 		Vector<double> current = prepareResultsVec();	
@@ -273,6 +267,7 @@ public:
 	 * @return The time derivative of the equations
 	 */ 
 	virtual vec compute_derivative(const double t, const vec& state) {
+		updateParameters(state);
 		vec res = state.copy();		
 			
 		// First - go over the two-component interactions
@@ -509,11 +504,29 @@ public:
 	}
 
 	/**
-         * Announce that the solving has started
-	 */
+	* Announce that the solving has started
+	*/
 	virtual void solvingStarted(const rk_params &params, const vec& initialState) { 
 		file.open("pairs.out");
-		file << "Solving Started" << endl;
+		file.width(10);
+		file.precision(4);
+
+		file << "Time\tdt\t";
+		for (size_t i = 0; i < interactions.size(); ++i) { 
+			interaction &ii = interactions[i];
+			file << "<" << chemicalTypes[ii.input1].name << ">" << "\t";
+			file << "<" << chemicalTypes[ii.input2].name << ">" << "\t";
+			file << "R_" << getOutputName(ii.output) << "\t";
+			if (interactionMat(ii.input1,ii.input1) != -1) {
+				self_interaction &si = selfInteractions[interactionMat(ii.input1,ii.input1)];
+				file << "R_" << getOutputName(si.output) << "\t";
+			}
+			if (interactionMat(ii.input2,ii.input2) != -1) {
+				self_interaction &si = selfInteractions[interactionMat(ii.input2,ii.input2)];
+				file << "R_" << getOutputName(si.output) << "\t";
+			}
+		}
+		file << endl;
 	}
 
 	/** 
@@ -523,24 +536,33 @@ public:
 	 * @param state The state after the step
 	 */
 	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) { 			
-		file << "Time: " << time << endl ;	
+		updateParameters(state);
+		for (size_t i = 0; i < interactions.size(); i++) {
+			interaction& inter = interactions[i];			
+			const Matrix<double> &probs = state[i];		
+
+			// Sum over all just to test...
+			double sum = 0;
+			for (size_t j = 0; j < probs.nrows(); j++) {
+				sum += probs.row(j).sum();
+			}
+			cout << endl << "Interaction #" << (i + 1) << " sum: " << sum <<  endl;
+		}
+
+		file << time << "\t" << dt << "\t";
 		for (size_t i = 0; i < interactions.size(); ++i) {	
 			interaction& inter = interactions[i];
-			file << "Mean of " << chemicalTypes[inter.input1].name << " is " << inter.totalMean1 << endl;
-			file << "Mean of " << chemicalTypes[inter.input2].name << " is " << inter.totalMean2 << endl;
-			file << "ProductionRate of " << getOutputName(inter.output) << " is " 
-				<< (chemicalTypes[inter.input1].A + chemicalTypes[inter.input2].A)*(inter.corr) << endl;
-			if (interactionMat(inter.input1,inter.input1) != -1) {
-				self_interaction &si = selfInteractions[interactionMat(inter.input1,inter.input1)];
-				file << "ProductionRate of " << getOutputName(si.output) << " is " 
-					<< chemicalTypes[inter.input1].A * (inter.secondMoment1 - inter.totalMean1) << endl;
+			file << inter.totalMean1 << "\t";
+			file << inter.totalMean2 << "\t";		
+			file << (chemicalTypes[inter.input1].A + chemicalTypes[inter.input2].A)*(inter.corr) << "\t";
+			if (interactionMat(inter.input1,inter.input1) != -1) {				
+				file << chemicalTypes[inter.input1].A * (inter.secondMoment1 - inter.totalMean1) << "\t";
 			}
-			if (interactionMat(inter.input2,inter.input2) != -1) {
-				self_interaction &si = selfInteractions[interactionMat(inter.input2,inter.input2)];
-				file << "ProductionRate of " << getOutputName(si.output) << " is " 
-					<< chemicalTypes[inter.input2].A * (inter.secondMoment2 - inter.totalMean2) << endl;
+			if (interactionMat(inter.input2,inter.input2) != -1) {				
+				file << chemicalTypes[inter.input2].A * (inter.secondMoment2 - inter.totalMean2) << "\t";
 			}
 		}		
+		file << endl;
 	}
 
 	/** 
