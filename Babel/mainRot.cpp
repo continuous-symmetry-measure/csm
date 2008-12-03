@@ -29,7 +29,6 @@ extern "C" {
 #define APPROX_RUN_PER_SEC 2e5
 #define TRUE 1
 #define FALSE 0
-#define SN_MAX 4
 
 typedef enum {
 	CN,
@@ -74,6 +73,7 @@ int limitRun = TRUE;
 char *format = NULL;
 int babelBond = FALSE;
 int timeOnly = FALSE;
+int sn_max = 4;
 
 // file pointers
 FILE* inFile = NULL;
@@ -100,6 +100,7 @@ void usage(char *op) {
 	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
 	printf("-babelbond	   - Let openbabel compute bonding\n");
 	printf("-timeOnly	   - Only print the time and exit\n");
+	printf("-sn_max	<max n> - The maximal sn to try, relevant only for chirality\n");
 	printf("-help - print this help file\n");
 }
 
@@ -138,7 +139,7 @@ double totalNumPermutations(Molecule *m) {
 		// CS
 		int i;
 		double numPerms = numPermutations(m, 2);
-		for (i = 2; i <= SN_MAX; i+=2) {
+		for (i = 2; i <= sn_max; i+=2) {
 			numPerms += numPermutations(m, i);
 		}	
 		return numPerms;		
@@ -211,6 +212,7 @@ void parseInput(int argc, char *argv[]){
 	// get commandline flags
 	int i;
 	int nextIsPermFile = FALSE;
+	int nextIsMaxSn = FALSE;
 
 	for ( i=4;  i< argc ;  i++ ){
 		if (nextIsPermFile) {
@@ -224,9 +226,17 @@ void parseInput(int argc, char *argv[]){
 				exit(1);
 			}
 			nextIsPermFile = FALSE;
+		} else if (nextIsMaxSn) { 
+			sn_max = atoi(argv[i]);
+			nextIsMaxSn = FALSE;
+		} else if (strcmp(argv[i],"-sn_max" ) == 0) {
+			if (type != CH) { 
+				printf("This option only applies to chirality\n");
+				exit(1);
+			}
+			nextIsMaxSn = TRUE;	
 		} else if (strcmp(argv[i],"-ignoreHy" ) == 0 )
 			ignoreHy = TRUE;
-
 		else if (strcmp(argv[i],"-removeHy" ) == 0 )
 			removeHy = TRUE;
 
@@ -374,7 +384,7 @@ int main(int argc, char *argv[]){
 			csmOperation(m, outAtoms, perm, &csm, dir, &dMin, CS);			
 
 			if (csm > MINDOUBLE) {							
-				for (i = 2; i <= SN_MAX; i+=2) {
+				for (i = 2; i <= sn_max; i+=2) {
 					opOrder = i;
 					csmOperation(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
 					if (chCsm < csm) {
