@@ -54,27 +54,25 @@ clean:
 PairEq.o: rk_solver.h equation_set.h vm/vec_mat.h
 PairEq.o: vm/vm_traits.h vm/vector.h vm/matrix.h vm/vm_types.h vm/vm_math.h
 PairEq.o: vm/vm_math.cpp vm/vm_tools.h vm/vm_tools.cpp vm/vm_io.h
-PairEq.o: vm/vm_io.cpp PairEquations.h
+PairEq.o: vm/vm_io.cpp PairEquations.h ChemicalNetwork.h
 
 MomentEq.o: rk_solver.h equation_set.h vm/vec_mat.h
 MomentEq.o: vm/vm_traits.h vm/vector.h vm/matrix.h vm/vm_types.h vm/vm_math.h
 MomentEq.o: vm/vm_math.cpp vm/vm_tools.h vm/vm_tools.cpp vm/vm_io.h
-MomentEq.o: vm/vm_io.cpp MomentEquations.h
+MomentEq.o: vm/vm_io.cpp MomentEquations.h ChemicalNetwork.h
 
 RateEq.o: rk_solver.h equation_set.h vm/vec_mat.h 
 RateEq.o: vm/vm_traits.h vm/vector.h vm/matrix.h vm/vm_types.h vm/vm_math.h
 RateEq.o: vm/vm_math.cpp vm/vm_tools.h vm/vm_tools.cpp vm/vm_io.h
-RateEq.o: vm/vm_io.cpp RateEquations.h
+RateEq.o: vm/vm_io.cpp RateEquations.h ChemicalNetwork.h
 
 MasterEq.o: rk_solver.h equation_set.h vm/vec_mat.h 
 MasterEq.o: vm/vm_traits.h vm/vector.h vm/matrix.h vm/vm_types.h vm/vm_math.h
 MasterEq.o: vm/vm_math.cpp vm/vm_tools.h vm/vm_tools.cpp vm/vm_io.h
-MasterEq.o: vm/vm_io.cpp MasterEquations.h
-
+MasterEq.o: vm/vm_io.cpp MasterEquations.h ChemicalNetwork.h
 
 NewtonMaster.o: rk_solver.h equation_set.h vm/vec_mat.h 
 NewtonMaster.o: vm/vm_traits.h vm/vector.h vm/matrix.h vm/vm_types.h vm/vm_math.h
 NewtonMaster.o: vm/vm_math.cpp vm/vm_tools.h vm/vm_tools.cpp vm/vm_io.h
-NewtomMaster.o: vm/vm_io.cpp MasterEquations.h
+NewtomMaster.o: vm/vm_io.cpp MasterEquations.h ChemicalNetwork.h
 
-# DO NOT DELETE

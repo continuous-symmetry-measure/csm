@@ -26,7 +26,7 @@ A3 = NU * (exp(-47e-3 / k / T) / S)
 
 f = file("params.net","w+")
 f.write("Begin" + "\n")
-f.write("Species\tFlux\tDiffusion\tSweepRate\tCutoff" + "\n")
+f.write("Species\tFlux\tDesorption\tSweepRate\tCutoff" + "\n")
 f.write("H\t" + str(F1) + "\t" + str(W1) + "\t" + str(A1) + "\t" + str(10) + "\n")
 f.write("O\t" + str(F2) + "\t" + str(W2) + "\t" + str(A2) + "\t" + str(10) + "\n")
 f.write("OH\t" + str(0.0) + "\t" + str(W3) + "\t" + str(A3) + "\t" + str(10) + "\n")

@@ -31,7 +31,7 @@ struct species {
 	double Flux;			// Incoming Flux
 	double W;		// W Rate
 	double A;				// Sweeping Rate
-	int    cutoff;			// Cutoff (max number of particles)
+	size_t    cutoff;			// Cutoff (max number of particles)
 };
 
 struct interaction_desc {
@@ -85,22 +85,17 @@ protected:
 
 public:
 	virtual ~ChemicalNetwork() {}
-	ChemicalNetwork(string filename) {
-		parsed_network pn = parseChemicalNetwork(filename);
+	ChemicalNetwork(parsed_network &pn) {
 
 		vector<species> &types = pn.types;
 		vector<interaction_desc> &unprocessedInteractions = pn.interactions;
 
-		indexedOutputs.resize(types.size());
-		indexedOutputs = -1;
-		indexedSelfOutputs.resize(types.size());
-		indexedSelfOutputs = -1;
 		interactionMat.resize(types.size(), types.size());
 		interactionMat = -1;
 
 		// First check up on all the types of species
 		chemicalTypes = types;
-		meanValueHelpers.resize(types.size());
+
 		int pos = 0;
 		for (size_t i = 0; i < types.size(); i++) {
 			if (indexer.find(types[i].name) != indexer.end()) {
@@ -141,17 +136,17 @@ public:
 			}
 
 			for (i = 0; i < input.outputs.size(); i++) {
-				name_index_map::iterator outputType = indexer.find(input.output);
+				name_index_map::iterator outputType = indexer.find(input.outputs[i]);
 
 				bool isInteracting = false;
 				int outputIndex = 0;
 				// The output type can be a non-interacting type
 				if (outputType == indexer.end()) {
-				name_index_map::iterator output = no_inter_map.find(input.output);
+				name_index_map::iterator output = no_inter_map.find(input.outputs[i]);
 					if (output == no_inter_map.end()) {
 						outputIndex = chemicalTypes.size() + no_inter_map.size();
-						no_inter_map[input.output] = outputIndex;
-						outputTypes.push_back(input.output);
+						no_inter_map[input.outputs[i]] = outputIndex;
+						outputTypes.push_back(input.outputs[i]);
 					} else {
 						outputIndex = output->second;
 					}
@@ -161,24 +156,24 @@ public:
 				}
 				if (first->second == second->second) {
 					si.outputs.push_back(outputIndex);
+					if (isInteracting) {
+						indexedSelfOutputs[si.outputs[i]].push_back(selfInteractions.size());
+					}
 				} else {
 					ii.outputs.push_back(outputIndex);
+					if (isInteracting) {
+						indexedOutputs[ii.outputs[i]].push_back(interactions.size());
+					}
 				}
 
 			}
 			if (first->second == second->second) {
 				selfInteractions.push_back(si);
 				interactionMat(first->second, first->second) = selfInteractions.size() - 1;
-				if (isInteracting) {
-					indexedSelfOutputs[si.output].push_back(selfInteractions.size() - 1);
-				}
 			} else {
-				interactions.push_back(output);
-				interactionMat(output.input1, output.input2) = interactions.size() - 1;
-				interactionMat(output.input2, output.input1) = interactions.size() - 1;
-				if (isInteracting) {
-					indexedOutputs[output.output].push_back(interactions.size() - 1);
-				}
+				interactions.push_back(ii);
+				interactionMat(ii.input1, ii.input2) = interactions.size() - 1;
+				interactionMat(ii.input2, ii.input1) = interactions.size() - 1;
 			}
 		}
 
@@ -220,12 +215,12 @@ public:
 		input >> str1;
 		if (str1 != BEGIN_FILE_LABEL) {
 			cerr << "File should begin with 'Begin'" << endl;
-			return NULL;
+			exit(1);
 		}
 		input >> str1 >> str2 >> str3 >> str4 >> str5;
 		if (str1 != SPECIES_LABEL || str2 != FLUX_LABEL || str3 != DESORPTION_LABEL || str4 != SWEEP_RATE_LABEL || str5 != CUTOFF_LABEL) {
 			cerr << "File does not contain 'Species Flux Desorption SweepRate Cutoff' header" << endl;
-			return NULL;
+			exit(1);
 		}
 		input >> str1;
 		while (str1 != INTERACTION_LABEL) {
@@ -240,14 +235,14 @@ public:
 		string line;
 		while (getline(input, line, '\n')) {
 			istringstream si(line);
-			si.skipws();
+			si >> skipws;
 			si >> str1;
 			if (str1 != END_FILE_LABEL) {
 				interaction_desc inter;
 				si >> str2 >> str3;
 				if (str3 != ARROW_LABEL) {
 					cerr << "Interaction format: <input1> <input2> => <output1>" << endl;
-					return NULL;
+					exit(1);
 				}
 				inter.input1 = str1;
 				inter.input2 = str2;
