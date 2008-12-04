@@ -1,6 +1,6 @@
 
-#ifndef MASTER_EQ_H
-#define MASTER_EQ_H
+#ifndef RATE_EQ_H
+#define RATE_EQ_H
 
 #include <string>
 #include <iostream>
@@ -39,7 +39,7 @@ struct interaction_desc {
 	string output;			// The output material	
 };
 
-class ChemicalNetwork : public EquationSet<double>, public RKResultProcessor<double>{
+class RateEquations : public EquationSet<double>, public RKResultProcessor<double>{
 private:
 	
 	struct interaction {
@@ -80,8 +80,8 @@ private:
 	}
 
 public:
-	virtual ~ChemicalNetwork() {}
-	ChemicalNetwork(const vector<species>& types, const vector<interaction_desc>& unprocessedInteractions) {
+	virtual ~RateEquations() {}
+	RateEquations(const vector<species>& types, const vector<interaction_desc>& unprocessedInteractions) {
 
 		indexedOutputs.resize(types.size());
 		indexedOutputs = -1;
@@ -273,7 +273,7 @@ public:
 	 * @param input The input stream
 	 * @return a newly-created chemical network
 	 */
-	static ChemicalNetwork* parseChemicalNetwork(istream& input) {
+	static RateEquations* parseRateEquations(istream& input) {
 		vector<species> types;
 		vector<interaction_desc> inters;
 		string str1, str2, str3, str4, str5;		
@@ -313,7 +313,7 @@ public:
 					cerr << "analyzing interaction" << endl;
 		}
 
-		return new ChemicalNetwork(types, inters);
+		return new RateEquations(types, inters);
 
 	}
 

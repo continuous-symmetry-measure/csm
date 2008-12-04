@@ -1,6 +1,7 @@
 #include "rk_solver.h"
 #include "equation_set.h"
 #include "PairEquations.h"
+#include "RateEquations.h"
 #include "math.h"
 #include <iostream>
 
@@ -8,13 +9,12 @@ using namespace std;
 int main(int argc, char *argv[]) { 
 	ifstream input;
 	input.open(argv[1]);
-	ChemicalNetwork *cn = ChemicalNetwork::parseChemicalNetwork(input);
+	PairEquations *eq = PairEquations::parseChemicalNetwork(input);
 	input.close();
 	if (cn == NULL) return 1;
-	RKSolver<Matrix<double> > solver(*cn, *cn);
+	RKSolver<Matrix<double> > solver(*eq, *eq);
 	rk_params params;
 
-	ChemicalNetwork::vec initialState = cn->createInitialConditions();
 		params.final_time = 3e10;
 	params.initial_time = 0;
 	params.max_error = 1e-8;
@@ -28,5 +28,6 @@ using namespace std;
 	}
 	is.close();
 
+	PairEquations::vec initialState = eq->createInitialConditions();
 	solver.solve(params, initialState);
 }

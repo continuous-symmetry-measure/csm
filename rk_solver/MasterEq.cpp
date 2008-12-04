@@ -8,12 +8,12 @@ using namespace std;
 int main(int argc, char *argv[]) { 
 	ifstream input;
 	input.open(argv[1]);
-	ChemicalNetwork *cn = ChemicalNetwork::parseChemicalNetwork(input);
+	MasterEquations eq(MasterEquations::parseChemicalNetwork(input));
 	input.close();
-	if (cn == NULL) return 1;	RKSolver<double> solver(*cn, *cn);
+	RKSolver<double> solver(eq, eq);
 	rk_params params;
 
-	ChemicalNetwork::vec initialState = cn->createInitialConditions();	params.final_time = 3e10;
+	MasterEquations::vec initialState = eq.createInitialConditions();	params.final_time = 3e10;
 	params.initial_time = 0;
 	params.max_error = 1e-8;
 	params.limit = 1e-6;

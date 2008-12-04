@@ -1,6 +1,6 @@
 
-#ifndef CHEM_NET
-#define CHEM_NET
+#ifndef PAIR_EQ
+#define PAIR_EQ
 
 #include <string>
 #include <iostream>
@@ -41,7 +41,7 @@ struct interaction_desc {
 
 // Here the state is a vector of matrices, each (cutoff1 + 1) x (cutoff2 + 1)
 // sized according to the interaction types
-class ChemicalNetwork : public EquationSet<Matrix<double> >, public RKResultProcessor<Matrix<double> >{
+class PairEquations : public EquationSet<Matrix<double> >, public RKResultProcessor<Matrix<double> >{
 private:
 	struct interaction {
 		size_t input1;			// The first input type
@@ -107,8 +107,8 @@ private:
 		return ((size_t)index >= chemicalTypes.size()) ? outputTypes[index - chemicalTypes.size()] : chemicalTypes[index].name;
 	}
 public:
-	virtual ~ChemicalNetwork() {}
-	ChemicalNetwork(const vector<species>& types, const vector<interaction_desc>& unprocessedInteractions) {
+	virtual ~PairEquations() {}
+	PairEquations(const vector<species>& types, const vector<interaction_desc>& unprocessedInteractions) {
 
 		indexedOutputs.resize(types.size());
 		indexedOutputs = -1;
@@ -453,7 +453,7 @@ public:
 	 * @param input The input stream
 	 * @return a newly-created chemical network
 	 */
-	static ChemicalNetwork* parseChemicalNetwork(istream& input) {
+	static PairEquations* parsePairEquations(istream& input) {
 		vector<species> types;
 		vector<interaction_desc> inters;
 		string str1, str2, str3, str4, str5;
@@ -493,7 +493,7 @@ public:
 					cerr << "analyzing interaction" << endl;
 		}
 
-		return new ChemicalNetwork(types, inters);
+		return new PairEquations(types, inters);
 
 	}
 
