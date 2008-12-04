@@ -118,9 +118,7 @@ private:
 public:
 
 	virtual ~MasterEquations() {}
-	MasterEquations(parsed_network pn) : ChemicalNetwork(pn) {}
-
-	virtual void extendInteractionInfo() {
+	MasterEquations(parsed_network pn) : ChemicalNetwork(pn) {
 		maxPos = 1;
 		for (size_t i = 0; i < chemicalTypes.size(); i++) {
 			maxPos *= (chemicalTypes[i].cutoff + 1);
@@ -183,7 +181,7 @@ public:
 				size_t inputState = pos + 2 * diffs[si.input];
 				bool use = true;
 				for (size_t k = 0; k < si.outputs.size(); ++k) {
-					if (si.outputs[k] >= chemicalTypes.size()) {
+					if (si.outputs[k] < chemicalTypes.size()) {
 						if (indices[si.outputs[k]] == 0) {
 							use = false;
 							break;
@@ -209,7 +207,7 @@ public:
 				size_t inputState = pos + diffs[ii.input1] + diffs[ii.input2];
 				bool use = true;
 				for (size_t k = 0; k < ii.outputs.size(); ++k) {
-					if (ii.outputs[k] >= chemicalTypes.size()) {
+					if (ii.outputs[k] < chemicalTypes.size()) {
 						if (indices[ii.outputs[k]] == 0) {
 							use = false;
 							break;

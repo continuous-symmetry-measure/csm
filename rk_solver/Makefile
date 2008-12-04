@@ -3,8 +3,8 @@ CC = gcc
 CXX = g++
 
 # the compiler flags
-CFLAGS = -Wall -g -I. -O3
-CXXFLAGS = -Wall -g -I. -O3
+CFLAGS = -Wall -g -I. 
+CXXFLAGS = -Wall -g -I.
 
 LFLAGS = -lm  -g
 
