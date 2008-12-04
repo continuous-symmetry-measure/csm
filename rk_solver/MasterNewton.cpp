@@ -5,12 +5,11 @@
 #include <iostream>
 
 using namespace std;
-int main(int argc, char *argv[]) { 
+int main(int argc, char *argv[]) {
 	ifstream input;
 	input.open(argv[1]);
-	ChemicalNetwork *cn = ChemicalNetwork::parseChemicalNetwork(input);
+	MasterEquations eq(ChemicalNetwork::parseChemicalNetwork(input));
 	input.close();
-	if (cn == NULL) return 1;
-	
-	cn->performNewtonMethod(5e-7);
+
+	eq.performNewtonMethod(5e-7);
 }
