@@ -46,8 +46,8 @@ protected:
 		for (size_t i = 0; i < interactions.size(); i++) {
 			const interaction &ii = interactions[i];
 			interaction_data id;
-			id.mean1.resize(chemicalTypes[ii.input1].cutoff + 1);
-			id.mean2.resize(chemicalTypes[ii.input2].cutoff + 1);
+			id.mean1.resize(chemicalTypes[ii.input2].cutoff + 1);
+			id.mean2.resize(chemicalTypes[ii.input1].cutoff + 1);
 			interactionData.push_back(id);
 		}
 	}
@@ -252,7 +252,8 @@ public:
 								for (size_t l = 0; l < ii.outputs.size(); l++) {
 									if (ii.outputs[l] == inter.input1) isOutput = true;
 								}
-								if (isOutput) {									interRes(j, k) += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
+								if (isOutput) {
+									interRes(j, k) += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
 										((((k == input2.cutoff) || j == 0) ? 0 : (k + 1) * means[k+1] * stateMat(j - 1, k + 1)) -
 										(k * means[k] * stateMat(j,k)));
 								} else {
