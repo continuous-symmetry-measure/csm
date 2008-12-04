@@ -12,7 +12,8 @@
 // Here the state is a vector of matrices, each (cutoff1 + 1) x (cutoff2 + 1)
 // sized according to the interaction types
 class PairEquations : public ChemicalNetwork, public EquationSet<Matrix<double> >, public RKResultProcessor<Matrix<double> >{
-private:
+
+protected:
 	struct interaction_data {
 		Vector<double> mean1;		// The mean values for the first input given the second value
 		Vector<double> mean2;		// The mean values for the second input given the first value
@@ -23,7 +24,7 @@ private:
 		double corr;			// <input1 * input2>
 	};
 
-	vector<interaction_data> data;			// The interactions data
+	vector<interaction_data> interactionData;			// The interactions interactionData
 
 	ofstream file;
 
@@ -31,7 +32,7 @@ private:
 		Vector<double> results(5 * interactions.size());
 		int pos = 0;
 		for (size_t i = 0; i < interactions.size(); i++) {
-			interaction_data &inter = data[i];
+			interaction_data &inter = interactionData[i];
 			results[pos++] = inter.totalMean1;
 			results[pos++] = inter.totalMean2;
 			results[pos++] = inter.secondMoment1;
@@ -41,19 +42,21 @@ private:
 		return results;
 	}
 
-public:
-
-	virtual ~PairEquations() {}
-	PairEquations(parsed_network pn) : ChemicalNetwork(pn) {}
-
-	virtual void extendInteractionInfo() {
+	void extendInteractionInfo() {
 		for (size_t i = 0; i < interactions.size(); i++) {
 			const interaction &ii = interactions[i];
 			interaction_data id;
 			id.mean1.resize(chemicalTypes[ii.input1].cutoff + 1);
 			id.mean2.resize(chemicalTypes[ii.input2].cutoff + 1);
-			data.push_back(id);
+			interactionData.push_back(id);
 		}
+	}
+
+public:
+
+	virtual ~PairEquations() {}
+	PairEquations(parsed_network pn) : ChemicalNetwork(pn) {
+		extendInteractionInfo();
 	}
 
 	/**
@@ -67,7 +70,7 @@ public:
 		// Compute the mean values for each column and row of the interaction equations
 		for (size_t i = 0; i < interactions.size(); i++) {
 			interaction& inter = interactions[i];
-			interaction_data& id = data[i];
+			interaction_data& id = interactionData[i];
 			const Matrix<double> &probs = state[i];
 
 			// Compute means
@@ -123,7 +126,7 @@ public:
 		// First - go over the two-component interactions
 		for (size_t i = 0; i < interactions.size(); i++) {
 			interaction& inter = interactions[i];
-			interaction_data &id = data[i];
+			interaction_data &id = interactionData[i];
 			species& input1 = chemicalTypes[inter.input1];
 			species& input2 = chemicalTypes[inter.input2];
 			Matrix<double>& interRes = res[i];
@@ -220,7 +223,7 @@ public:
 						if (l != inter.input1 && l != inter.input2) {
 							if (interactionMat(inter.input1,l) != -1) {
 								interaction &ii = interactions[interactionMat(inter.input1,l)];
-								interaction_data &iid = data[interactionMat(inter.input1,l)];
+								interaction_data &iid = interactionData[interactionMat(inter.input1,l)];
 								// Check if it is the first or second input
 								Vector<double> &means = (ii.input1 == inter.input1) ? iid.mean2 : iid.mean1;
 								// Handle the case in which the one of the outputs is the other species
@@ -242,7 +245,7 @@ public:
 							}
 							if (interactionMat(inter.input2,l) != -1) {
 								interaction &ii = interactions[interactionMat(inter.input2,l)];
-								interaction_data &iid = data[interactionMat(inter.input2,l)];
+								interaction_data &iid = interactionData[interactionMat(inter.input2,l)];
 								// Check if it is the first or second input
 								Vector<double> &means = (ii.input1 == inter.input2) ? iid.mean2 : iid.mean1;
 								bool isOutput = false;
@@ -266,7 +269,7 @@ public:
 					for (size_t l = 0; l < indexedOutputs[inter.input1].size(); l++) {
 						size_t pos = indexedOutputs[inter.input1][l];
 						const interaction& ii = interactions[pos];
-						const interaction_data &iid = data[pos];
+						const interaction_data &iid = interactionData[pos];
 						const species &s1 = chemicalTypes[ii.input1];
 						const species &s2 = chemicalTypes[ii.input2];
 						// if the other input of this interaction is also
@@ -282,7 +285,7 @@ public:
 					for (size_t l = 0; l < indexedOutputs[inter.input2].size(); l++) {
 						size_t pos = indexedOutputs[inter.input2][l];
 						const interaction& ii = interactions[pos];
-						const interaction_data &iid = data[pos];
+						const interaction_data &iid = interactionData[pos];
 						const species &s1 = chemicalTypes[ii.input1];
 						const species &s2 = chemicalTypes[ii.input2];
 						// if the other input of this interaction is also
@@ -387,7 +390,7 @@ public:
 		file << time << "\t" << dt << "\t";
 		for (size_t i = 0; i < interactions.size(); ++i) {
 			const interaction& inter = interactions[i];
-			const interaction_data &id = data[i];
+			const interaction_data &id = interactionData[i];
 			file << id.totalMean1 << "\t";
 			file << id.totalMean2 << "\t";
 			file << (chemicalTypes[inter.input1].A + chemicalTypes[inter.input2].A)*(id.corr) << "\t";

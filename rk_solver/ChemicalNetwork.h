@@ -81,8 +81,6 @@ protected:
 		return ((size_t)index >= chemicalTypes.size()) ? outputTypes[index - chemicalTypes.size()] : chemicalTypes[index].name;
 	}
 
-	virtual void extendInteractionInfo() {}
-
 public:
 	virtual ~ChemicalNetwork() {}
 	ChemicalNetwork(parsed_network &pn) {
@@ -106,6 +104,9 @@ public:
 				pos++;
 			}
 		}
+
+		indexedSelfOutputs.resize(chemicalTypes.size());
+		indexedOutputs.resize(chemicalTypes.size());
 
 		// Index the interactions as well
 		for (size_t i = 0; i < unprocessedInteractions.size(); i++) {
@@ -135,18 +136,18 @@ public:
 				ii.input2 = second->second;
 			}
 
-			for (i = 0; i < input.outputs.size(); i++) {
-				name_index_map::iterator outputType = indexer.find(input.outputs[i]);
+			for (size_t j = 0; j < input.outputs.size(); j++) {
+				name_index_map::iterator outputType = indexer.find(input.outputs[j]);
 
 				bool isInteracting = false;
 				int outputIndex = 0;
 				// The output type can be a non-interacting type
 				if (outputType == indexer.end()) {
-				name_index_map::iterator output = no_inter_map.find(input.outputs[i]);
+					name_index_map::iterator output = no_inter_map.find(input.outputs[j]);
 					if (output == no_inter_map.end()) {
 						outputIndex = chemicalTypes.size() + no_inter_map.size();
-						no_inter_map[input.outputs[i]] = outputIndex;
-						outputTypes.push_back(input.outputs[i]);
+						no_inter_map[input.outputs[j]] = outputIndex;
+						outputTypes.push_back(input.outputs[j]);
 					} else {
 						outputIndex = output->second;
 					}
@@ -157,12 +158,12 @@ public:
 				if (first->second == second->second) {
 					si.outputs.push_back(outputIndex);
 					if (isInteracting) {
-						indexedSelfOutputs[si.outputs[i]].push_back(selfInteractions.size());
+						indexedSelfOutputs[si.outputs[j]].push_back(selfInteractions.size());
 					}
 				} else {
 					ii.outputs.push_back(outputIndex);
 					if (isInteracting) {
-						indexedOutputs[ii.outputs[i]].push_back(interactions.size());
+						indexedOutputs[ii.outputs[j]].push_back(interactions.size());
 					}
 				}
 
@@ -186,8 +187,6 @@ public:
 				}
 			}
 		}
-
-		extendInteractionInfo();
 	}
 
 	/**
@@ -233,6 +232,8 @@ public:
 		}
 
 		string line;
+		// read the newline
+		getline(input, line, '\n');
 		while (getline(input, line, '\n')) {
 			istringstream si(line);
 			si >> skipws;

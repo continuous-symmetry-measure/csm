@@ -153,7 +153,7 @@ public:
 	* Announce that the solving has started
 	*/
 	virtual void solvingStarted(const rk_params &params, const vec& initialState) {
-		file.open("rate.out");
+		file.open("moment.out");
 		file.width(10);
 		file.precision(4);
 
