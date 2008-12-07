@@ -150,7 +150,6 @@ public:
 					// 2. Go over self interactions:
 					// A. Self interactions where these are the inputs
 					if (interactionMat(inter.input1, inter.input1) != -1) {
-						self_interaction& si = selfInteractions[interactionMat(inter.input1, inter.input1)];
 						// Check if the other is one of the outputs
 						if (selfInteractionMat(inter.input1, inter.input2) != -1) {
 							interRes(j,k) += input1.A *
@@ -163,7 +162,6 @@ public:
 						}
 					}
 					if (interactionMat(inter.input2, inter.input2) != -1) {
-						self_interaction& si = selfInteractions[interactionMat(inter.input2, inter.input2)];
 						// Check if the other is one of the outputs					
 						if (selfInteractionMat(inter.input2, inter.input1) != -1) {
 							interRes(j,k) += input2.A *

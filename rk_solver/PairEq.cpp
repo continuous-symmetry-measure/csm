@@ -14,7 +14,11 @@ public:
 	virtual void solutionComplete(const res_vec& finalState) { 
 		cout << endl;
 		for (size_t i = 0; i < finalState.size(); i++) {
-			pn.types[i].cutoff = 3;
+			if (floor(5 * finalState[i] + 5 + log(finalState.max()) / log(10)) > 0) {
+				pn.types[i].cutoff = (size_t)floor(5 * finalState[i] + 5 + log(finalState.max()) / log(10));
+			} else {
+				pn.types[i].cutoff = 1;
+			}
 			cout << "Updated Cutoff for " << pn.types[i].name << " is " << pn.types[i].cutoff << endl;
 		}
 	}
@@ -38,19 +42,19 @@ public:
 	}
 	is.close();
 	
-//	cout << "Running Rate Equations and updating cutoffs" << endl;
-//
-//	// First - run rate equations to compute avarages
-// 	RateEquations req(pn);
-//	CutoffProcessor cp;
-//	cp.pn = pn;
-//	RKSolver<double> rateSolver(cp, req);
-//	RateEquations::vec initial = req.createInitialConditions();		
-//	rateSolver.solve(params, initial);
-//
-//	cout << "Running Pairwise multiplane equations with updated cutoffs " << endl;	//
-//	PairEquations eq(cp.pn);
-	PairEquations eq(pn);	RKSolver<Matrix<double> > solver(eq, eq);
+	cout << "Running Rate Equations and updating cutoffs" << endl;
+
+	// First - run rate equations to compute avarages
+ 	RateEquations req(pn);
+	CutoffProcessor cp;
+	cp.pn = pn;
+	RKSolver<double> rateSolver(cp, req);
+	RateEquations::vec initial = req.createInitialConditions();		
+	rateSolver.solve(params, initial);
+
+	cout << "Running Pairwise multiplane equations with updated cutoffs " << endl;	
+	PairEquations eq(cp.pn);
+//	PairEquations eq(pn);	RKSolver<Matrix<double> > solver(eq, eq);
 	PairEquations::vec initialState = eq.createInitialConditions();
 	solver.solve(params, initialState);
 }
