@@ -228,7 +228,6 @@ public:
 			input >> sp.Flux >> sp.W >> sp.A >> sp.cutoff;
 			types.push_back(sp);
 			input >> str1;
-			cerr << str1 << endl;
 		}
 
 		string line;
@@ -252,7 +251,6 @@ public:
 					inter.outputs.push_back(str4);
 				}
 				inters.push_back(inter);
-				cerr << "analyzing interaction" << endl;
 			} else {
 				break;
 			}
