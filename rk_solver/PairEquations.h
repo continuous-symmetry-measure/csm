@@ -126,7 +126,6 @@ public:
 		// First - go over the two-component interactions
 		for (size_t i = 0; i < interactions.size(); i++) {
 			interaction& inter = interactions[i];
-			interaction_data &id = interactionData[i];
 			species& input1 = chemicalTypes[inter.input1];
 			species& input2 = chemicalTypes[inter.input2];
 			Matrix<double>& interRes = res[i];
@@ -153,66 +152,56 @@ public:
 					if (interactionMat(inter.input1, inter.input1) != -1) {
 						self_interaction& si = selfInteractions[interactionMat(inter.input1, inter.input1)];
 						// Check if the other is one of the outputs
-						bool isOutput = false;
-						for (size_t l = 0; l < si.outputs.size(); l++) {
-							if (si.outputs[l] == inter.input2) isOutput = true;
-						}
-						if (isOutput) {
+						if (selfInteractionMat(inter.input1, inter.input2) != -1) {
 							interRes(j,k) += input1.A *
-								(((((j + 2) <= input1.cutoff) && k > 0) ? ((j+1)*(j+2)*stateMat(j+2, k - 1)) : 0) - (j * (j-1)*stateMat(j,k)));
+								(((((j + 2) <= input1.cutoff) && k > 0) ? 
+									((j+1)*(j+2)*stateMat(j+2, k - 1)) : 0) - (j * (j-1)*stateMat(j,k)));
 						} else {
 							interRes(j,k) += input1.A *
-								((((j + 2) <= input1.cutoff) ? ((j+1)*(j+2)*stateMat(j+2, k)) : 0) - (j * (j-1)*stateMat(j,k)));
+								((((j + 2) <= input1.cutoff) ? 
+									((j+1)*(j+2)*stateMat(j+2, k)) : 0) - (j * (j-1)*stateMat(j,k)));
 						}
 					}
 					if (interactionMat(inter.input2, inter.input2) != -1) {
 						self_interaction& si = selfInteractions[interactionMat(inter.input2, inter.input2)];
-						// Check if the other is one of the outputs
-						bool isOutput = false;
-						for (size_t l = 0; l < si.outputs.size(); l++) {
-							if (si.outputs[l] == inter.input1) isOutput = true;
-						}
-						if (isOutput) {
+						// Check if the other is one of the outputs					
+						if (selfInteractionMat(inter.input2, inter.input1) != -1) {
 							interRes(j,k) += input2.A *
-								(((((k + 2) <= input2.cutoff) && j > 0)? ((k+1)*(k+2)*stateMat(j - 1, k+2)) : 0) - (k * (k-1)*stateMat(j,k)));
+								(((((k + 2) <= input2.cutoff) && j > 0)? 
+									((k+1)*(k+2)*stateMat(j - 1, k+2)) : 0) - (k * (k-1)*stateMat(j,k)));
 						} else {
 							interRes(j,k) += input2.A *
-								((((k + 2) <= input2.cutoff) ? ((k+1)*(k+2)*stateMat(j, k+2)) : 0) - (k * (k-1)*stateMat(j,k)));
+								((((k + 2) <= input2.cutoff) ? 
+									((k+1)*(k+2)*stateMat(j, k+2)) : 0) - (k * (k-1)*stateMat(j,k)));
 						}
 					}
 
 					// B. Self interactions with either of these is the output
-					for (size_t l = 0; l < indexedSelfOutputs[inter.input1].size(); ++l) {
-						size_t pos = indexedSelfOutputs[inter.input1][l];
-						self_interaction& si = selfInteractions[pos];
-
-						// If the input of this interaction is the other species in the interaction -
-						// We have already taken care of this
-						if (si.input != inter.input2) {
-							// Take the first interaction containing this as output
-							interaction& ii = interactions[si.locations[0]];
-							double param = (ii.input1 == si.input) ?
-								id.secondMoment1 - id.totalMean1 :
-								id.secondMoment2 - id.totalMean2;
-							interRes(j,k) += param * chemicalTypes[si.input].A *
-								((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
+					// There are several cases - both are the output of the self interaction, one is, or none are
+					for (size_t l = 0; l < chemicalTypes.size(); l++) {
+						if (l == inter.input1 || l == inter.input2) { 
+							// One of the interacting types is the input, continue since we've taken care of this
+							continue;
+						} 
+						int first = selfInteractionMat(l, inter.input1);
+						int second = selfInteractionMat(l, inter.input2);
+						double param = 0;
+						if (first != -1 || second != -1) {
+							interaction &ii = interactions[selfInteractions[first].locations[0]];
+							interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
+							// Check if it is the first or second input
+							param = (l == ii.input1) ?
+								iid.secondMoment1 - iid.totalMean1 : 
+								iid.secondMoment2 - iid.totalMean2; 							
 						}
-					}
-
-
-					for (size_t l = 0; l < indexedSelfOutputs[inter.input2].size(); ++l) {
-						size_t pos = indexedSelfOutputs[inter.input2][l];
-						self_interaction& si = selfInteractions[pos];
-
-						// If the input of this interaction is the other species in the interaction -
-						// We have already taken care of this
-						if (si.input != inter.input1) {
-							// Take the first interaction containing this as input
-							interaction& ii = interactions[si.locations[0]];
-							double param = (ii.input1 == si.input) ?
-								id.secondMoment1 - id.totalMean1 :
-								id.secondMoment2 - id.totalMean2;
-							interRes(j,k) += param * chemicalTypes[si.input].A *
+						if (first != -1 && second != -1) { 
+							interRes(j,k) += param * chemicalTypes[l].A *
+								((j == 0 || k == 0 ? 0 : stateMat(j - 1, k - 1)) - stateMat(j, k));
+						} else if (first != -1) {
+							interRes(j,k) += param * chemicalTypes[l].A *
+								((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
+						} else if (second != -1) { 
+							interRes(j,k) += param * chemicalTypes[l].A *
 								((k == 0 ? 0 : stateMat(j, k - 1)) - stateMat(j, k));
 						}
 					}
@@ -234,11 +223,13 @@ public:
 								}
 								if (isOutput) {
 									interRes(j, k) += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
-										((((j == input1.cutoff) || k == 0)? 0 : (j + 1) * means[j+1] * stateMat(j+1, k - 1)) -
+										((((j == input1.cutoff) || k == 0)? 0 : 
+											(j + 1) * means[j+1] * stateMat(j+1, k - 1)) -
 										(j * means[j] * stateMat(j,k)));
 								} else {
 									interRes(j, k) += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
-										(((j == input1.cutoff) ? 0 : (j + 1) * means[j+1] * stateMat(j+1, k)) -
+										(((j == input1.cutoff) ? 0 : 
+											(j + 1) * means[j+1] * stateMat(j+1, k)) -
 										(j * means[j] * stateMat(j,k)));
 
 								}
@@ -254,11 +245,13 @@ public:
 								}
 								if (isOutput) {
 									interRes(j, k) += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
-										((((k == input2.cutoff) || j == 0) ? 0 : (k + 1) * means[k+1] * stateMat(j - 1, k + 1)) -
+										((((k == input2.cutoff) || j == 0) ? 0 : 
+											(k + 1) * means[k+1] * stateMat(j - 1,k + 1)) -
 										(k * means[k] * stateMat(j,k)));
 								} else {
 									interRes(j, k) += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
-										(((k == input2.cutoff) ? 0 : (k + 1) * means[k+1] * stateMat(j, k + 1)) -
+										(((k == input2.cutoff) ? 0 : 
+											(k + 1) * means[k+1] * stateMat(j, k + 1)) -
 										(k * means[k] * stateMat(j,k)));
 
 								}
@@ -266,6 +259,7 @@ public:
 						}
 					}
 
+					// THERE IS A BUG HERE - it may be that an interaction produces both...
 					// B. Interactions in which one of these types takes part, as an output
 					for (size_t l = 0; l < indexedOutputs[inter.input1].size(); l++) {
 						size_t pos = indexedOutputs[inter.input1][l];
@@ -294,6 +288,7 @@ public:
 						if (ii.input1 != inter.input1 && ii.input2 != inter.input1) {
 							// both species should be traced over, as they are not part of this
 							// interaction
+							// CHECK IF IT WAS NOT ALREADY COUNTED
 							interRes(j,k) += (s1.A + s2.A) * iid.corr *
 								((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
 						}

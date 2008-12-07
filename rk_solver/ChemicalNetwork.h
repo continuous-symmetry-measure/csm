@@ -55,7 +55,7 @@ protected:
 	};
 
 	struct self_interaction {
-		size_t input;					// The input of this interaction
+		size_t input;				// The input of this interaction
 		vector<size_t> outputs;			// The output of this interaction
 		vector<size_t> locations;		// The interactions containing this self interaction
 	};
@@ -72,6 +72,7 @@ protected:
 	vector<interaction> interactions;			// The interactions
 	vector<self_interaction> selfInteractions;	// The self interactions
 	Matrix<int> interactionMat;			// A matrix of interactions
+	Matrix<int> selfInteractionMat;		// A matrix of self interactions - row is the input, col is the output
 
 	// Assume output can only come from one source !!!
 	vector<vector<size_t> > indexedOutputs;
@@ -90,6 +91,9 @@ public:
 
 		interactionMat.resize(types.size(), types.size());
 		interactionMat = -1;
+
+		selfInteractionMat.resize(types.size(), types.size());
+		selfInteractionMat = -1;
 
 		// First check up on all the types of species
 		chemicalTypes = types;
@@ -136,6 +140,12 @@ public:
 				ii.input2 = second->second;
 			}
 
+			// Currently - no support for same interaction written twice
+			if (interactionMat(first->second, second->second) != -1) { 
+				cerr << "Unsupported: " << input.input1 << " + " << input.input2 << " has appeared already" << endl;
+				exit(1);				
+			}
+
 			for (size_t j = 0; j < input.outputs.size(); j++) {
 				name_index_map::iterator outputType = indexer.find(input.outputs[j]);
 
@@ -159,6 +169,7 @@ public:
 					si.outputs.push_back(outputIndex);
 					if (isInteracting) {
 						indexedSelfOutputs[si.outputs[j]].push_back(selfInteractions.size());
+						selfInteractionMat(first->second, si.outputs[j]) = selfInteractions.size();
 					}
 				} else {
 					ii.outputs.push_back(outputIndex);
