@@ -377,6 +377,7 @@ public:
 	 */
 	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) {
 		updateParameters(state);
+		const double MAX_DEV = 0.0001;
 		for (size_t i = 0; i < interactions.size(); i++) {
 			const Matrix<double> &probs = state[i];
 
@@ -385,7 +386,10 @@ public:
 			for (size_t j = 0; j < probs.nrows(); j++) {
 				sum += probs.row(j).sum();
 			}
-			cout << endl << "Interaction #" << (i + 1) << " sum: " << sum <<  endl;
+			if (fabs(sum - 1.0) > MAX_DEV) {
+				cout << "Probability does not sum up to 1: " << sum << " - exiting..." << endl;	
+				exit(1);
+			}
 		}
 
 		file << time << "\t" << dt << "\t";
