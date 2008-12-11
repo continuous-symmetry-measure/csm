@@ -28,6 +28,8 @@ protected:
 
 	ofstream file;
 
+	unsigned long stepNum;
+
 	Vector<double> prepareResultsVec() {
 		Vector<double> results(5 * interactions.size());
 		int pos = 0;
@@ -384,6 +386,9 @@ public:
 				exit(1);
 			}
 		}
+		
+		stepNum++;
+		if (stepNum % 50 != 1) return;
 
 		file << time << "\t" << dt << "\t";
 		for (size_t i = 0; i < interactions.size(); ++i) {
@@ -400,6 +405,7 @@ public:
 			}
 		}
 		file << endl;
+
 	}
 
 	/**

@@ -15,7 +15,9 @@ class MasterEquations : public EquationSet<double>, public RKResultProcessor<dou
 private:
 	size_t maxPos;
 	vector<size_t> diffs;
-
+	
+	
+	unsigned long stepNum;
 	ofstream file;
 
 	// Currently, computes only avarages
@@ -400,6 +402,11 @@ public:
 	* @param state The state after the step
 	*/
 	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) {
+
+		stepNum++;
+		if (stepNum % 40 != 1) return;
+
+
 		vec avgVec = prepareResultsVec(state);
 		vec momentVec = prepareSecondMomentVec(state);
 		vec corrVec = prepareCorrVec(state);

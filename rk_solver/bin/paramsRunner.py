@@ -16,15 +16,21 @@ for gs in grain_sizes:
 
 f.close()
 
+# run rate
+i = 1
+for ff in filenames:
+	system("ulimit -t 200; ./rate " + ff + " > rate" + str(i) + ".res; mv rate.out rate" + str(i) + ".out")
+	i = i+1
+
 # run pairs
 i = 1
 for ff in filenames:
-	system("./pairs " + ff + " > pair" + str(i) + ".res; mv pairs.out pairs" + str(i) + ".out")
+	system("ulimit -t 2000; ./pairs " + ff + " > pair" + str(i) + ".res; mv pairs.out pairs" + str(i) + ".out")
 	i = i+1
 
 # run master
 i = 1
 for ff in filenames:
-	system("./master " + ff + " > master" + str(i) + ".res; mv master.out master" + str(i) + ".out")
+	system("ulimit -t 100000; ./master " + ff + " > master" + str(i) + ".res; mv master.out master" + str(i) + ".out")
 	i = i+1
 
