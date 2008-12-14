@@ -56,5 +56,5 @@ depend:
 
 # remove object files and backups
 clean:
-	rm -f *.o *~ libcsm.a $(BIN)/*
+	rm -f *.o *~ libcsm.a 
 
