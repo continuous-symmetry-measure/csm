@@ -3,7 +3,7 @@
 from os import system
 
 st = 10 ** 0.5
-grain_sizes = [100, 100 * st, 1000, 1000 * st, 10000, 10000 * st, 100000, 100000 * st]
+grain_sizes = [10, 10 * st, 100, 100 * st, 1000, 1000 * st, 10000, 10000 * st, 100000]
 filenames = []
 f = open("sizes", "w")
 
