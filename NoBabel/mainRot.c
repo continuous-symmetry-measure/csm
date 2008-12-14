@@ -20,7 +20,7 @@
 #define MINDOUBLE  1e-8
 #define GROUPSIZE_LIMIT 15
 #define GROUPSIZE_FACTOR 1.32e11
-#define APPROX_RUN_PER_SEC 1e5
+#define APPROX_RUN_PER_SEC 8e4
 #define TRUE 1
 #define FALSE 0
 
