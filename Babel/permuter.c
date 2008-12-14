@@ -160,15 +160,22 @@ int advanceCycle(permuter *p, int cycleIndex) {
 /* Interface Functions                                                                     */
 /************************************************************************/
 
-permuter* createPermuter(int size,int groupSize) {	
+permuter* createPermuter(int size,int groupSize, int addGroupsOfTwo) {	
 	permuter* p = (permuter*)malloc(sizeof(permuter));
 	p->_size = size;
 	p->_operationOrder = groupSize;
 	// The cycles can only be of length 1 or operation order. 
 	//findDivisors(p);
-	p->_divisors = (int *)malloc(sizeof(int) * 1);
-	p->_divisors[0] = p->_operationOrder;
-	p->_numDivisors = 1;
+	if (addGroupsOfTwo && groupSize > 2) {
+		p->_divisors = (int *)malloc(sizeof(int) * 2);
+		p->_divisors[0] = 2;
+		p->_divisors[1] = p->_operationOrder;
+		p->_numDivisors = 2;
+	} else {
+		p->_divisors = (int *)malloc(sizeof(int) * 1);
+		p->_divisors[0] = p->_operationOrder;
+		p->_numDivisors = 1;
+	}
 
 	p->_maxCycles = p->_size / p->_divisors[0];
 	p->_cycles = (cycle**)malloc(sizeof(cycle*) * p->_maxCycles);	

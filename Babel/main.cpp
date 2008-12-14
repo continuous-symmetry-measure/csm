@@ -460,7 +460,7 @@ void chiralityOperation(Molecule* m, double** outAtoms, double* csm, double* dir
 
 	// create a groupPermuter
 	extern int operationOrder;
-	groupPermuter* gp = createGroupPermuter(m->_groupNum,groupSizes,m->_size,operationOrder);
+	groupPermuter* gp = createGroupPermuter(m->_groupNum,groupSizes,m->_size,operationOrder, 0);
     if (!gp){
 		if (writeOpenu) {
 	        printf("ERR* Failed to create groupPermuter *ERR\n");

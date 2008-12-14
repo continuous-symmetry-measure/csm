@@ -63,7 +63,7 @@ typedef struct permuter {
 	int _operationOrder;
 } permuter;
 
-permuter* createPermuter(int size,int groupSize);
+permuter* createPermuter(int size,int groupSize, int addGroupsOfTwo);
 
 int nextPermutation(permuter *p);
 
