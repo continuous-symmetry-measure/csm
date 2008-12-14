@@ -20,7 +20,7 @@
 #define MINDOUBLE  1e-8
 #define GROUPSIZE_LIMIT 15
 #define GROUPSIZE_FACTOR 1.32e11
-#define APPROX_RUN_PER_SEC 2e5
+#define APPROX_RUN_PER_SEC 1e5
 #define TRUE 1
 #define FALSE 0
 
@@ -102,30 +102,50 @@ double factorial(int n){
 /*
  * checks if the molecule's group permutations exceed GROUPSIZE_FACTOR_PER_MINUTE * MINUTES
  */
-double numPermutations(Molecule *m, int operationOrder) {
-	int i,j; 
+double numPermutations(Molecule *m, int operationOrder, OperationType t) {
+	int i,j, k; 	
 	double total = 1.0;
-	for (i = 1; i <= m->_groupNum; i++) {
-		int groupSize = getGroupSize(m, i);
-		double temp = 0;
-		double fact = factorial(groupSize);
-		for (j = 0; j <= (groupSize / operationOrder); j++) {
-			temp += fact/(factorial(groupSize - j * operationOrder )*pow(operationOrder, j)*factorial(j));
+	if (operationOrder > 2 && t == SN) {	
+		// In this case - we enumerate over groups of 1, 2, N
+		for (i = 1; i <= m->_groupNum; i++) {			
+			int groupSize = getGroupSize(m, i);
+			double temp = 0;
+			double fact = factorial(groupSize);
+			// Enumerate over the number of groups of size two
+			for (k = 0; k <= (groupSize / 2); k++) {							
+				// Enumerate over the number of groups of size operationOrder
+				for (j = 0; j <= ((groupSize - 2 * k) / operationOrder); j++) {				
+					temp += fact/(factorial(groupSize - j * operationOrder - k * 2) *
+							pow((double)operationOrder, j) *factorial(j) * 
+							pow((double)2, k) * factorial(k));
+				}
+			}
+			total *= (temp);
+		}		
+	} else { 
+		for (i = 1; i <= m->_groupNum; i++) {
+			int groupSize = getGroupSize(m, i);
+			double temp = 0;
+			double fact = factorial(groupSize);
+			for (j = 0; j <= (groupSize / operationOrder); j++) {
+				temp += fact/(factorial(groupSize - j * operationOrder )*pow((double)operationOrder, 	
+					j)*factorial(j));
+			}
+			total *= (temp);
 		}
-		total *= (temp);
 	}
 	return total;
 }
 
 double totalNumPermutations(Molecule *m) {
 	if (type != CH) { 
-		return numPermutations(m, opOrder);	
+		return numPermutations(m, opOrder, type);	
 	} else {
 		// CS
 		int i;
-		double numPerms = numPermutations(m, 2);
+		double numPerms = numPermutations(m, 2, SN);
 		for (i = 2; i <= sn_max; i+=2) {
-			numPerms += numPermutations(m, i);
+			numPerms += numPermutations(m, i, SN);
 		}	
 		return numPerms;		
 	}
@@ -732,6 +752,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	int *idxToPos, *posToIdx;
 	int * groupSizes;
 	groupPermuter* gp;
+	int addGroupsOfTwo;
 
 	// These are the 
 	int *realPerm = (int *)malloc(sizeof(int) * m->_size);
@@ -762,7 +783,12 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	}
 
 	// create permuter
-	gp = createGroupPermuter(m->_groupNum,groupSizes,m->_size,opOrder);
+	if (type == SN && opOrder > 2) {
+		addGroupsOfTwo = 1;
+	} else {
+		addGroupsOfTwo = 0;
+	}
+	gp = createGroupPermuter(m->_groupNum,groupSizes,m->_size,opOrder, addGroupsOfTwo);
 	if (!gp){
 		if (writeOpenu) {
 			printf("ERR* Failed to create groupPermuter *ERR\n");

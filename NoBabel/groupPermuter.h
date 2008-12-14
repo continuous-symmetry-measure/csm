@@ -24,7 +24,8 @@ typedef struct groupPermuter {
 	int _firstPermutation;  // boolean flag - the first permuation is unique, not permuted
 } groupPermuter;
 
-groupPermuter* createGroupPermuter(int numberOfGroups, int* sizesOfGroups, int totalSize, int permutationGroupSize);
+groupPermuter* createGroupPermuter(int numberOfGroups, int* sizesOfGroups, int totalSize, int permutationGroupSize, 
+		int addGroupsOfTwo);
 
 int nextGroupPermutation(groupPermuter *gp);
 

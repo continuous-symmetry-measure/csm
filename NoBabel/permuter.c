@@ -23,7 +23,7 @@
  * 
  */
  int findFreeIndex(permuter *p, int startingAt) {
-	 int i;
+	 int i;	
 	 for (i = startingAt; i < p->_size; i++) {
 		 if (!p->_used[i])
 			 return i;
@@ -67,7 +67,7 @@ void cancelCycle(permuter *p, cycle *c, int clearUsed) {
 */
 void applyCycle(permuter *p, cycle *c) {
 	int i;
-	for (i = 0; i < c->_cycleSize; i++) {
+	for (i = 0; i < c->_cycleSize; i++) {		
 		p->_index[c->_cycle[i]] = c->_cycle[(i + 1) % c->_cycleSize];
 		p->_used[c->_cycle[i]] = TRUE;
 	}
@@ -160,13 +160,25 @@ int advanceCycle(permuter *p, int cycleIndex) {
 /* Interface Functions                                                                     */
 /************************************************************************/
 
-permuter* createPermuter(int size,int groupSize) {
+permuter* createPermuter(int size,int groupSize, int addGroupsOfTwo) {	
 	permuter* p = (permuter*)malloc(sizeof(permuter));
 	p->_size = size;
 	p->_operationOrder = groupSize;
-	findDivisors(p);
+	// The cycles can only be of length 1 or operation order. 
+	//findDivisors(p);
+	if (addGroupsOfTwo && groupSize > 2) {
+		p->_divisors = (int *)malloc(sizeof(int) * 2);
+		p->_divisors[0] = 2;
+		p->_divisors[1] = p->_operationOrder;
+		p->_numDivisors = 2;
+	} else {
+		p->_divisors = (int *)malloc(sizeof(int) * 1);
+		p->_divisors[0] = p->_operationOrder;
+		p->_numDivisors = 1;
+	}
+
 	p->_maxCycles = p->_size / p->_divisors[0];
-	p->_cycles = (cycle**)malloc(sizeof(cycle*) * p->_maxCycles);
+	p->_cycles = (cycle**)malloc(sizeof(cycle*) * p->_maxCycles);	
 	p->_index = (int *)malloc(sizeof(int) * size);
 	p->_used = (int *)malloc(sizeof(int) * size);
 	p->_numCycles = 0;
@@ -259,7 +271,7 @@ int nextPermutation(permuter *p) {
 			int i;
 			clearPerm(p);
 			p->_cycles[p->_numCycles] = (cycle*)malloc(sizeof(cycle));
-			p->_cycles[p->_numCycles]->_cycle = (int *)malloc(sizeof(p->_operationOrder));
+			p->_cycles[p->_numCycles]->_cycle = (int *)malloc(p->_operationOrder * sizeof(int));
 			p->_numCycles++;
 			for (i = 0; i < p->_numCycles; i++) {
 				initCycle(p, p->_cycles[i], 0, i * p->_divisors[0], TRUE);

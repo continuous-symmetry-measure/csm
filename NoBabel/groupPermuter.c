@@ -17,7 +17,7 @@
  * sizesOfGroups - array of the size of each group
  * permuationGroupSize - the 'n' gouped item size in a permutation, see permuter.c for details
  */
-groupPermuter* createGroupPermuter(int numberOfGroups, int* sizesOfGroups, int totalSize, int permutationGroupSize){
+groupPermuter* createGroupPermuter(int numberOfGroups, int* sizesOfGroups, int totalSize, int permutationGroupSize, int addGroupsOfTwo){
 
     int i;
 
@@ -37,7 +37,7 @@ groupPermuter* createGroupPermuter(int numberOfGroups, int* sizesOfGroups, int t
 
 	// init permuters
 	for ( i=0;  i< numberOfGroups ;  i++ ){
-		gp->_permuters[i] = createPermuter(sizesOfGroups[i],permutationGroupSize);
+		gp->_permuters[i] = createPermuter(sizesOfGroups[i],permutationGroupSize, addGroupsOfTwo);
 	}
 
 	gp->_firstPermutation = TRUE;
