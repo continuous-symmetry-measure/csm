@@ -765,9 +765,9 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	double res = 0.0;
 
 	for (i = 0; i < m->_size; i++) {
+		// initialize with identity operation
 		curPerm[i] = i;
 		for (j = 0; j < 3; j++) {
-			// initialize with identity operation
 			outAtoms[i][j] = m->_pos[i][j];
 		}
 	}
@@ -786,14 +786,16 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 					sin(angle) * tmpMatrix[j][k];
 			}
 		}
+
 		for (j = 0; j < m->_size; j++) {
 			for (k = 0; k < 3; k++) {
 				for (l = 0; l < 3; l++) {
-					outAtoms[curPerm[j]][k] += rotaionMatrix[k][l] * m->_pos[j][l];
+					outAtoms[j][k] += rotaionMatrix[k][l] * m->_pos[curPerm[j]][l];
 				}
 			}
 		}
 	}
+	
 	for (j = 0; j < m->_size; j++) {
 		for (k = 0; k < 3; k++) {
 			outAtoms[j][k] /= opOrder;
@@ -801,6 +803,7 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 			res += SQR(outAtoms[j][k]);
 		}
 	}
+
 	free(curPerm);
 
 	return sqrt(res);
@@ -1050,7 +1053,11 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 	fprintf(out, "%s: %.4lf\n",opName,fabs(csm));
 	fprintf(out, "SCALING FACTOR: %7lf\n", dMin);
 
+	// TODO - should we print the centered molecule, or the original one (and, accordingly, the symmetric struct)
+
 	fprintf(out, "\n INITIAL STRUCTURE COORDINATES %i\n\n",m->_size);
+
+	updateCoordinates(mol, m->_pos);
 
 	writeMolecule(mol, format, out, fname);
 
