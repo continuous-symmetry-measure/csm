@@ -1,4 +1,3 @@
-
 #ifndef MASTER_EQ_H
 #define MASTER_EQ_H
 
@@ -175,6 +174,7 @@ public:
 			}
 
 
+			// Next, go over self interactions
 			for (size_t i = 0; i < selfInteractions.size(); i++) {
 				const self_interaction &si = selfInteractions[i];
 				size_t ii = indices[si.input];
@@ -225,6 +225,29 @@ public:
 					(i1 * i2 * state[pos]));
 			}
 
+			// Next, go over Dissociations
+			for (size_t i = 0; i < dissociations.size(); i++) {
+				const dissociation &di = dissociations[i];
+				size_t i1 = indices[di.input];				
+
+				// Build the new index:
+				size_t inputState = pos + diffs[di.input];
+				bool use = true;
+				for (size_t k = 0; k < di.outputs.size(); ++k) {
+					if (di.outputs[k] < chemicalTypes.size()) {
+						if (indices[di.outputs[k]] == 0) {
+							use = false;
+							break;
+						} else {
+							inputState -= diffs[di.outputs[k]];
+						}
+					}
+				}
+
+				res[pos] += (di.D) *
+					((((i1 == chemicalTypes[di.input].cutoff) || (!use)) ?
+					0 : ((i1 + 1) * state[inputState])) - (i1 * state[pos]));
+			}
 
 			// Advance...
 			for (size_t i = 0; i < chemicalTypes.size(); ++i) {
@@ -266,7 +289,7 @@ public:
 					chemicalTypes[i].W * indices[i];
 			}
 
-
+			// Go over self interactions
 			for (size_t i = 0; i < selfInteractions.size(); i++) {
 				const self_interaction &si = selfInteractions[i];
 				size_t ii = indices[si.input];
@@ -278,9 +301,15 @@ public:
 				const interaction &ii = interactions[i];
 				size_t i1 = indices[ii.input1];
 				size_t i2 = indices[ii.input2];
-				res -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * (i1 * i2);
+				res -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * i1 * i2;
 			}
 
+			// Go over dissociations
+			for (size_t i = 0; i < dissociations.size(); i++) {
+				const dissociation& di = dissociations[i];
+				size_t i1 = indices[di.input];
+				res -= di.D * i1;
+			}
 
 			// Advance...
 			for (size_t i = 0; i < chemicalTypes.size(); ++i) {
@@ -318,45 +347,17 @@ public:
 			cout << "Error: " << err << endl;
 		}
 
-		file.open("master_newton.out");
-		vec avgVec = prepareResultsVec(state);
-		vec momentVec = prepareSecondMomentVec(state);
-		vec corrVec = prepareCorrVec(state);
-
-		for (size_t i = 0; i < chemicalTypes.size(); i++) {
-			file << "Mean of " << chemicalTypes[i].name << " is " << avgVec[i] << endl;
-		}
-		for (size_t i = 0; i < selfInteractions.size(); i++) {
-			self_interaction &si = selfInteractions[i];
-			file << "Production Rate of ";
-			for (size_t k = 0; k < si.outputs.size(); ++k) {
-				file << "R_" << getOutputName(si.outputs[k]);
-				if (k != si.outputs.size() - 1) {
-					file << ",";
-				}
-			}
-			file << " is " << (chemicalTypes[si.input].A * (momentVec[si.input] - avgVec[si.input])) << endl;
-		}
-
-		for (size_t i = 0; i < interactions.size(); i++) {
-			interaction &ii = interactions[i];
-			file << "Production Rate of ";
-			for (size_t k = 0; k < ii.outputs.size(); ++k) {
-				file << "R_" << getOutputName(ii.outputs[k]);
-				if (k != ii.outputs.size() - 1) {
-					file << ",";
-				}
-			}
-			file << " is " << ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input1].A) * corrVec[i]) << endl;
-		}
-		file.close();
-
+		stepNum = 1;
+		rk_params dummy;
+		solvingStarted(dummy, state);
+		stepPerformed(0, 0, state, state);
+		solutionComplete(state);
 	}
 
 
 	/**
-	* Announce that the solving has started
-	*/
+	 * Announce that the solving has started
+	 */
 	virtual void solvingStarted(const rk_params &params, const vec& initialState) {
 		file.open("master.out");
 		file.width(10);
@@ -392,6 +393,19 @@ public:
 				}
 			}
 		}
+
+		for (size_t i = 0; i < dissociations.size(); i++) {
+			dissociation &di = dissociations[i];
+			for (size_t k = 0; k < di.outputs.size(); ++k) {
+				file << "R_" << getOutputName(di.outputs[k]);
+				if (k != di.outputs.size() - 1) {
+					file << ",";
+				} else {
+					file << "\t";
+				}
+			}
+		}
+
 		file << endl;
 	}
 
@@ -405,7 +419,6 @@ public:
 
 		stepNum++;
 		if (stepNum % 40 != 1) return;
-
 
 		vec avgVec = prepareResultsVec(state);
 		vec momentVec = prepareSecondMomentVec(state);
@@ -427,14 +440,18 @@ public:
 			file << (chemicalTypes[si.input].A * (momentVec[si.input] - avgVec[si.input])) << "\t";
 		}
 
+		for (size_t i = 0; i < dissociations.size(); i++) {
+			dissociation &di = dissociations[i];
+			file << di.D * (avgVec[di.input]) << "\t";
+		}
+
 		file << endl;
 	}
 
 	/**
 	 * Announce that the solving is complete
  	 */
-	virtual void solutionComplete(const vec& finalState) {
-		file << "Finished Solving" << endl;
+	virtual void solutionComplete(const vec& finalState) {		
 		file.close();
 	}
 };
