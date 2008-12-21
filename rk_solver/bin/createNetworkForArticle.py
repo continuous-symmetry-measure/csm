@@ -14,6 +14,7 @@ from math import exp
 # X9 - H2CO
 # X10 - H3CO
 # X11 - CH3OH
+# X12 - CO2
 
 S = float(argv[1])
 
@@ -56,6 +57,8 @@ f.write("X1 X7 => X8" + "\n")
 f.write("X1 X8 => X9" + "\n")
 f.write("X1 X9 => X10" + "\n")
 f.write("X1 X10 => X11" + "\n")
+f.write("X2 X8  => X12 + X1" + "\n")
+f.write("X2 X7  => X12" + "\n")
 f.write("End" + "\n")
 
 
