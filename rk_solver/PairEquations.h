@@ -178,6 +178,7 @@ public:
 
 					// B. Self interactions with either of these is the output
 					// There are several cases - both are the output of the self interaction, one is, or none are
+					// We do not (!) treat the case in which the reactant is also a reactant with one of the products.
 					for (size_t l = 0; l < chemicalTypes.size(); l++) {
 						if (l == inter.input1 || l == inter.input2) { 
 							// One of the interacting types is the input, continue since we've taken care of this
@@ -293,6 +294,68 @@ public:
 								((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
 						}
 
+					}
+
+					//4. Go over dissociations
+					//A. Dissiciations in which one of the types is the input
+					if (dissociationMat(inter.input1, inter.input1) != 1) {
+						const dissociation& di = dissociations[dissociationMat(inter.input1, inter.input1)];
+						// Check if the other one is an output of the dissociation
+						if (dissociationMat(inter.input1, inter.input2) != -1) {
+							interRes(j,k) += di.D *
+								(((((j + 1) <= input1.cutoff) && k > 0) ? 
+									((j+1)*stateMat(j+1, k - 1)) : 0) - (j * stateMat(j,k)));
+						} else { 
+							interRes(j,k) += di.D *
+								(((((j + 1) <= input1.cutoff)) ? 
+									((j+1)*stateMat(j+1, k)) : 0) - (j * stateMat(j,k)));
+						}
+					}
+					if (dissociationMat(inter.input2, inter.input2) != 1) {
+						const dissociation& di = dissociations[dissociationMat(inter.input2, inter.input2)];
+						// Check if the other one is an output of the dissociation
+						if (dissociationMat(inter.input2, inter.input1) != -1) {
+							interRes(j,k) += di.D *
+								(((((k + 1) <= input2.cutoff) && j > 0) ? 
+									((k+1)*stateMat(j-1, k+1)) : 0) - (k * stateMat(j,k)));
+						} else { 
+							interRes(j,k) += di.D *
+								(((((k + 1) <= input2.cutoff)) ? 
+									((k+1)*stateMat(j, k+1)) : 0) - (l * stateMat(j,k)));
+						}
+					}
+					
+					// B. Dissociations with either of these is the output
+					// There are several cases - both are the output of the dissociation, one is, or none are
+					// We do not (!) treat the case in which the dissociated species is also a reactant with one of the products.
+					for (size_t l = 0; l < chemicalTypes.size(); l++) {
+						if (l == inter.input1 || l == inter.input2) { 
+							// One of the interacting types is the input, continue since we've taken care of this
+							continue;
+						} 
+						int first = dissociationMat(l, inter.input1);
+						int second = dissociationMat(l, inter.input2);
+						double param = 0;
+						if (first != -1 || second != -1) {
+							const interaction &ii = interactions[dissociations[first].locations[0]];
+							const interaction_data &iid = interactionData[dissociations[first].locations[0]];
+							const dissociation &di = dissociations[first];
+							// Check if it is the first or second input
+							const param = (l == ii.input1) ?
+								iid.totalMean1 : 
+								iid.totalMean2; 
+							if (first != -1 && second != -1) { 
+								interRes(j,k) += param * di.D *
+									((j == 0 || k == 0 ? 0 : stateMat(j - 1, k - 1)) - stateMat(j, k));
+							} else if (first != -1) {
+								interRes(j,k) += param * di.D *
+									((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
+							} else if (second != -1) { 
+								interRes(j,k) += param * di.D *
+									((k == 0 ? 0 : stateMat(j, k - 1)) - stateMat(j, k));
+							}							
+						}
+					
 					}
 
 				}
