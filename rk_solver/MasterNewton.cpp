@@ -26,5 +26,5 @@ using namespace std;
 	}
 	is.close();
 
-	solver.solve(params, initialState, 50);
+	solver.solve(params, initialState, 20);
 }
