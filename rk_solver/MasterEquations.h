@@ -294,7 +294,7 @@ public:
 			for (size_t i = 0; i < selfInteractions.size(); i++) {
 				const self_interaction &si = selfInteractions[i];
 				size_t ii = indices[si.input];
-				res -= chemicalTypes[si.input].A * ii * (ii - 1);
+				res[pos] -= chemicalTypes[si.input].A * ii * (ii - 1);
 			}
 
 			// Next - Go over two-component interactions
@@ -302,14 +302,14 @@ public:
 				const interaction &ii = interactions[i];
 				size_t i1 = indices[ii.input1];
 				size_t i2 = indices[ii.input2];
-				res -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * i1 * i2;
+				res[pos] -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * i1 * i2;
 			}
 
 			// Go over dissociations
 			for (size_t i = 0; i < dissociations.size(); i++) {
 				const dissociation& di = dissociations[i];
 				size_t i1 = indices[di.input];
-				res -= di.D * i1;
+				res[pos] -= di.D * i1;
 			}
 
 			// Advance...
