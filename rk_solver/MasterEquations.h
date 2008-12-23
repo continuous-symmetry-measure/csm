@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <vm/vec_mat.h>
+#include "rk_solver.h"
 #include "ChemicalNetwork.h"
 
 using namespace std;
@@ -266,7 +267,7 @@ public:
 
 	// Compute the partial derivative of each derivative equation according to the probability variable
 	// used for 1D newton method
-	vec compute_derivative_derivative(const vec& state)  {
+	virtual vec compute_derivative_derivative(const vec& state)  {
 		vec res(maxPos);
 		res = 0;
 
@@ -335,27 +336,6 @@ public:
 	}
 
 	/**
- 	 * Perform newton's method to find Steady State Solutions
-	 */
-	void performNewtonMethod(double max_err) {
-		vec state = createInitialConditions();
-		double err = max_err + 1;
-		while (err > max_err) {
-			vec newState = state - (compute_derivative(0.0,state) / compute_derivative_derivative(state));
-			err = abs((newState - state) / state).max();
-			state = newState;
-			cout << "Error: " << err << endl;
-		}
-
-		stepNum = 1;
-		rk_params dummy;
-		solvingStarted(dummy, state);
-		stepPerformed(0, 0, state, state);
-		solutionComplete(state);
-	}
-
-
-	/**
 	 * Announce that the solving has started
 	 */
 	virtual void solvingStarted(const rk_params &params, const vec& initialState) {
@@ -393,7 +373,7 @@ public:
 				}
 			}
 		}
-
+		
 		for (size_t i = 0; i < dissociations.size(); i++) {
 			dissociation &di = dissociations[i];
 			for (size_t k = 0; k < di.outputs.size(); ++k) {
@@ -415,10 +395,10 @@ public:
 	* @param dt	The chosen delta
 	* @param state The state after the step
 	*/
-	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) {
+	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState, bool forcePrint = false) {
 
 		stepNum++;
-		if (stepNum % 40 != 1) return;
+		if (stepNum % 40 != 1 && (!forcePrint)) return;
 
 		vec avgVec = prepareResultsVec(state);
 		vec momentVec = prepareSecondMomentVec(state);

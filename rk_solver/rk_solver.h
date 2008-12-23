@@ -31,8 +31,9 @@ public:
 	 * @param time	The time
 	 * @param dt	The chosen delta
 	 * @param state The state after the step
+	 * @param forcePrint Force a state print
 	 */
-	virtual void stepPerformed(double time, double dt, const res_vec& state, const res_vec& prevState) { }
+	virtual void stepPerformed(double time, double dt, const res_vec& state, const res_vec& prevState, bool forcePrint = false) { }
 	
 	/** 
 	 * Announce that the solving is complete
@@ -139,5 +140,34 @@ public:
 		
 		processor.solutionComplete(state);
 	}
+
+	void runSteps(const rk_params& paramSet, vec& initialState, size_t numSteps) {
+
+		// Copy Params
+		params = paramSet;
+
+		// Initialize
+		state.reshape(initialState.size());
+		state = initialState;
+		time = params.initial_time;
+		delta = params.initialDelta;
+		double error = params.limit + 1;
+
+		processor.solvingStarted(params, initialState);				
+
+		size_t step = 0;
+
+		while (step < numSteps) {
+			vec result = performStep();
+			error = eqSet.computeError(result, state, usedDelta);
+			processor.stepPerformed(time, delta, result, state);
+			state = result;
+			step ++;
+			std::cout << "Error: " << error << std::endl;
+		}
+		
+		processor.solutionComplete(state);
+	}
+
 };
 #endif

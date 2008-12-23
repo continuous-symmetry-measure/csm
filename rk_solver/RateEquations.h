@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <vm/vec_mat.h>
+#include "rk_solver.h"
 #include "ChemicalNetwork.h"
 
 
@@ -59,6 +60,11 @@ public:
 				res[i] -= 2 * s.A * (state[i] * state[i]);
 			}
 
+			// Check if there is a dissociation for this:
+			if (dissociationMat(i,i) != -1) {
+				res[i] -= dissociations[dissociationMat(i,i)].D * state[i];
+			}
+
 			// Check all interactions in which this is the input
 			for (size_t j = 0; j < chemicalTypes.size(); ++j) {
 				if (i != j && interactionMat(i,j) != -1) {
@@ -76,7 +82,14 @@ public:
 				res[i] += chemicalTypes[si.input].A * state[si.input] * state[si.input];
 			}
 
-			// Check all  interactions in which this is output (currently - only one...)
+			// Check all  dissociations in which this is output 
+			for (size_t j = 0; j < indexedDissociations[i].size(); ++j) {
+				size_t pos = indexedDissociations[i][j];
+				dissociation &di = dissociations[pos];
+				res[i] += di.D * state[di.input];					
+			}
+
+			// Check all  interactions in which this is output 
 			for (size_t j = 0; j < indexedOutputs[i].size(); ++j) {
 				size_t pos = indexedOutputs[i][j];
 				interaction &ii = interactions[pos];
@@ -85,7 +98,6 @@ public:
 			}
 		}
 		return res;
-
 	}
 
 	vec createInitialConditions() {
@@ -141,7 +153,7 @@ public:
 	 * @param dt	The chosen delta
 	 * @param state The state after the step
 	 */
-	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) {
+	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState, bool forceUpdate) {
 
 		file << time << "\t" << dt << "\t";
 

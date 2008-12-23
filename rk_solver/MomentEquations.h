@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <vm/vec_mat.h>
+#include "rk_solver.h"
 #include "ChemicalNetwork.h"
 
 class MomentEquations : public EquationSet<double>, public RKResultProcessor<double>, public ChemicalNetwork {
@@ -148,7 +149,6 @@ public:
 		return result;
 	}
 
-
 	/**
 	* Announce that the solving has started
 	*/
@@ -197,7 +197,7 @@ public:
 	 * @param dt	The chosen delta
 	 * @param state The state after the step
 	 */
-	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) {
+	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState, bool forcePrint = false) {
 
 		file << time << "\t" << dt << "\t";
 

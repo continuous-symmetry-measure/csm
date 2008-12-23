@@ -3,8 +3,8 @@ CC = gcc
 CXX = g++
 
 # the compiler flags
-CFLAGS = -Wall -g -I. -O3 
-CXXFLAGS = -Wall -g -I. -O3 
+CFLAGS = -Wall -g -I.  
+CXXFLAGS = -Wall -g -I.  
 
 LFLAGS = -lm  -g
 
@@ -14,12 +14,13 @@ MOMENT_OBJ = MomentEq.o
 RATE_OBJ = RateEq.o
 PAIRS_OBJ = PairEq.o
 MASTER_OBJ = MasterEq.o
-NEWTON_OBJ = MasterNewton.o
+MASTER_NEWTON_OBJ = MasterNewton.o
+PAIR_NEWTON_OBJ = PairNewton.o
 
 
 # the first target. All executables will be made when 'make' is
 # invoked with no target
-all: moment rate pairs master newton
+all: moment rate pairs master master_newton pair_newton
 
 # general rule how to compile a source file and produce an object file
 %.c,%.o:
@@ -42,8 +43,11 @@ pairs: $(PAIRS_OBJ)
 master: $(MASTER_OBJ)
 	$(CXX) $(LFLAGS)  $(MASTER_OBJ) -o $(BIN)/$@
  
-newton: $(NEWTON_OBJ)
-	$(CXX) $(LFLAGS)  $(NEWTON_OBJ) -o $(BIN)/$@
+master_newton: $(MASTER_NEWTON_OBJ)
+	$(CXX) $(LFLAGS)  $(MASTER_NEWTON_OBJ) -o $(BIN)/$@
+
+pair_newton: $(PAIR_NEWTON_OBJ)
+	$(CXX) $(LFLAGS)  $(PAIR_NEWTON_OBJ) -o $(BIN)/$@
 
 
 # remove object files and backups

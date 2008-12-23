@@ -39,6 +39,19 @@ public:
 	 */ 
 	virtual vec compute_derivative(const double t, const vec& state) = 0;
 
+	/** 
+	 * For newton's method of finding steady state - 
+	 * compute the partial derivative of the equation for the time derivative
+	 * according the the variable it belongs to
+	 * 
+	 * @param state The current state to compute derivative for
+	 * @return the derivative's partial derivative
+	 */
+	virtual vec compute_derivative_derivative(const vec& state) {
+		vmerror("Not Implemented");
+		return const_cast<vec&>(state);
+	}
+
 	virtual ~EquationSet() {}
 };
 

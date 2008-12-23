@@ -1,4 +1,3 @@
-
 #ifndef PAIR_EQ
 #define PAIR_EQ
 
@@ -8,6 +7,7 @@
 #include <vector>
 #include <vm/vec_mat.h>
 #include "ChemicalNetwork.h"
+#include "rk_solver.h"
 
 // Here the state is a vector of matrices, each (cutoff1 + 1) x (cutoff2 + 1)
 // sized according to the interaction types
@@ -15,10 +15,12 @@ class PairEquations : public ChemicalNetwork, public EquationSet<Matrix<double> 
 
 protected:
 	struct interaction_data {
-		Vector<double> mean1;		// The mean values for the first input given the second value
-		Vector<double> mean2;		// The mean values for the second input given the first value
-		double totalMean1;		// The total mean of the first input
-		double totalMean2;		// The total mean of the second input
+		Vector<double> conditionalMean1;		// The mean values for the first input given the second value
+		Vector<double> conditionalMean2;		// The mean values for the second input given the first value
+		Vector<double> conditionalSecond1;		// The second moment of the first input given the second input
+		Vector<double> conditionalSecond2;		// The second moment of the second input given the first
+		double mean1;		// The total mean of the first input
+		double mean2;		// The total mean of the second input
 		double secondMoment1;		// The second moment
 		double secondMoment2;		// The second moment
 		double corr;			// <input1 * input2>
@@ -35,8 +37,8 @@ protected:
 		int pos = 0;
 		for (size_t i = 0; i < interactions.size(); i++) {
 			interaction_data &inter = interactionData[i];
-			results[pos++] = inter.totalMean1;
-			results[pos++] = inter.totalMean2;
+			results[pos++] = inter.mean1;
+			results[pos++] = inter.mean2;
 			results[pos++] = inter.secondMoment1;
 			results[pos++] = inter.secondMoment2;
 			results[pos++] = inter.corr;
@@ -48,8 +50,10 @@ protected:
 		for (size_t i = 0; i < interactions.size(); i++) {
 			const interaction &ii = interactions[i];
 			interaction_data id;
-			id.mean1.resize(chemicalTypes[ii.input2].cutoff + 1);
-			id.mean2.resize(chemicalTypes[ii.input1].cutoff + 1);
+			id.conditionalMean1.resize(chemicalTypes[ii.input2].cutoff + 1);
+			id.conditionalMean2.resize(chemicalTypes[ii.input1].cutoff + 1);
+			id.conditionalSecond1.resize(chemicalTypes[ii.input2].cutoff + 1);
+			id.conditionalSecond2.resize(chemicalTypes[ii.input1].cutoff + 1);
 			interactionData.push_back(id);
 		}
 	}
@@ -76,10 +80,12 @@ public:
 			const Matrix<double> &probs = state[i];
 
 			// Compute means
-			id.totalMean1 = 0.0;
-			id.totalMean2 = 0.0;
-			id.mean1   = 0.0;
-			id.mean2   = 0.0;
+			id.conditionalMean1   = 0.0;
+			id.conditionalMean2   = 0.0;
+			id.conditionalSecond1 = 0.0;
+			id.conditionalSecond2 = 0.0;
+			id.mean1 = 0.0;
+			id.mean2 = 0.0;
 			id.secondMoment1 = id.secondMoment2 = 0.0;
 			id.corr    = 0.0;
 			double rowSum = 0.0;
@@ -89,10 +95,12 @@ public:
 				rowSum = probs.row(j).sum();
 				for (size_t k = 0; k <= chemicalTypes[inter.input2].cutoff; k++) {
 					colSum = probs.column(k).sum();
-					id.mean1[k] += (colSum > 0.0) ? (j * probs(j,k) / colSum) : 0.0;
-					id.mean2[j] += (rowSum > 0.0) ? (k * probs(j,k) / rowSum) : 0.0;
-					id.totalMean1 += j * probs(j,k);
-					id.totalMean2 += k * probs(j,k);
+					id.conditionalMean1[k] += (colSum > 0.0) ? (j * probs(j,k) / colSum) : 0.0;
+					id.conditionalMean2[j] += (rowSum > 0.0) ? (k * probs(j,k) / rowSum) : 0.0;					
+					id.conditionalSecond1[k] += (colSum > 0.0) ? (j * j * probs(j,k) / colSum) : 0.0;
+					id.conditionalSecond2[j] += (rowSum > 0.0) ? (k * k * probs(j,k) / rowSum) : 0.0;					
+					id.mean1 += j * probs(j,k);
+					id.mean2 += k * probs(j,k);
 					id.secondMoment1 += j * j * probs(j,k);
 					id.secondMoment2 += k * k * probs(j,k);
 					id.corr += k * j * probs(j,k);
@@ -178,7 +186,6 @@ public:
 
 					// B. Self interactions with either of these is the output
 					// There are several cases - both are the output of the self interaction, one is, or none are
-					// We do not (!) treat the case in which the reactant is also a reactant with one of the products.
 					for (size_t l = 0; l < chemicalTypes.size(); l++) {
 						if (l == inter.input1 || l == inter.input2) { 
 							// One of the interacting types is the input, continue since we've taken care of this
@@ -186,24 +193,61 @@ public:
 						} 
 						int first = selfInteractionMat(l, inter.input1);
 						int second = selfInteractionMat(l, inter.input2);
-						double param = 0;
-						if (first != -1 || second != -1) {
-							interaction &ii = interactions[selfInteractions[first].locations[0]];
-							interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
-							// Check if it is the first or second input
-							param = (l == ii.input1) ?
-								iid.secondMoment1 - iid.totalMean1 : 
-								iid.secondMoment2 - iid.totalMean2; 							
-						}
-						if (first != -1 && second != -1) { 
-							interRes(j,k) += param * chemicalTypes[l].A *
-								((j == 0 || k == 0 ? 0 : stateMat(j - 1, k - 1)) - stateMat(j, k));
-						} else if (first != -1) {
-							interRes(j,k) += param * chemicalTypes[l].A *
-								((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
-						} else if (second != -1) { 
-							interRes(j,k) += param * chemicalTypes[l].A *
-								((k == 0 ? 0 : stateMat(j, k - 1)) - stateMat(j, k));
+						int firstIn = interactionMat(l, inter.input1);
+						int secondIn = interactionMat(l, inter.input2);
+
+						double param1 = 0;
+						double param2 = 0;
+						if (first != -1 || second != -1) {													
+							// If the reactants produces only one and does not interact with it, 
+							// or produces both and either does not interact with none
+							// interactes with both (special case)
+							if (((first != -1 && second != -1) && 
+									((firstIn != -1 && secondIn != -1) || (firstIn == -1 && secondIn == -1))) ||
+									(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {	
+								interaction &ii = interactions[selfInteractions[first].locations[0]];
+								interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
+								// Check if it is the first or second input
+								param1 = param2 = (l == ii.input1) ?
+									iid.secondMoment1 - iid.mean1 : 
+									iid.secondMoment2 - iid.mean2; 							
+								} else if (first != -1 && firstIn != -1) {
+									interaction &ii = interactions[interactionMat(l, inter.input1)];
+									interaction_data &iid = interactionData[interactionMat(l, inter.input1)];
+									// Check if it is the first or second input								
+									if (j != 0) {
+										param1 = (l == ii.input1) ?
+										iid.conditionalSecond1[j - 1] - iid.conditionalMean1[j - 1] : 
+										iid.conditionalSecond2[j - 1] - iid.conditionalMean2[j - 1]; 								
+									}
+									param2 = (l == ii.input1) ?
+										iid.conditionalSecond1[j] - iid.conditionalMean1[j] : 
+										iid.conditionalSecond2[j] - iid.conditionalMean2[j]; 							
+								} else if (second != -1 && secondIn != -1) {
+									interaction &ii = interactions[interactionMat(l, inter.input2)];
+									interaction_data &iid = interactionData[interactionMat(l, inter.input2)];
+									// Check if it is the first or second input								
+									if (k != 0) {
+										param1 = (l == ii.input1) ?
+											iid.conditionalSecond1[k - 1] - iid.conditionalMean1[k - 1] : 
+											iid.conditionalSecond2[k - 1] - iid.conditionalMean2[k - 1]; 								
+									}
+									param2 = (l == ii.input1) ?
+										iid.conditionalSecond1[k] - iid.conditionalMean1[k] : 
+										iid.conditionalSecond2[k] - iid.conditionalMean2[k]; 							
+								} else {
+									vmerror("BUGBUGBUG");
+								}
+							}
+							if (first != -1 && second != -1) { 
+								interRes(j,k) += chemicalTypes[l].A * 
+									(param1 * (j == 0 || k == 0 ? 0 : stateMat(j - 1, k - 1)) - param2 * stateMat(j, k));
+							} else if (first != -1) {
+								interRes(j,k) += chemicalTypes[l].A * 
+									(param1 * (j == 0 ? 0 : stateMat(j - 1, k)) - param2 * stateMat(j, k));
+							} else if (second != -1) { 
+								interRes(j,k) += chemicalTypes[l].A *
+								(param1 * (k == 0 ? 0 : stateMat(j, k - 1)) - param2 * stateMat(j, k));
 						}
 					}
 
@@ -215,7 +259,7 @@ public:
 								interaction &ii = interactions[interactionMat(inter.input1,l)];
 								interaction_data &iid = interactionData[interactionMat(inter.input1,l)];
 								// Check if it is the first or second input
-								Vector<double> &means = (ii.input1 == inter.input1) ? iid.mean2 : iid.mean1;
+								Vector<double> &means = (ii.input1 == inter.input1) ? iid.conditionalMean2 : iid.conditionalMean1;
 								// Handle the case in which the one of the outputs is the other species
 								// Check if the other is one of the outputs
 								bool isOutput = false;
@@ -239,7 +283,7 @@ public:
 								interaction &ii = interactions[interactionMat(inter.input2,l)];
 								interaction_data &iid = interactionData[interactionMat(inter.input2,l)];
 								// Check if it is the first or second input
-								Vector<double> &means = (ii.input1 == inter.input2) ? iid.mean2 : iid.mean1;
+								Vector<double> &means = (ii.input1 == inter.input2) ? iid.conditionalMean2 : iid.conditionalMean1;
 								bool isOutput = false;
 								for (size_t l = 0; l < ii.outputs.size(); l++) {
 									if (ii.outputs[l] == inter.input1) isOutput = true;
@@ -298,7 +342,7 @@ public:
 
 					//4. Go over dissociations
 					//A. Dissiciations in which one of the types is the input
-					if (dissociationMat(inter.input1, inter.input1) != 1) {
+					if (dissociationMat(inter.input1, inter.input1) != -1) {
 						const dissociation& di = dissociations[dissociationMat(inter.input1, inter.input1)];
 						// Check if the other one is an output of the dissociation
 						if (dissociationMat(inter.input1, inter.input2) != -1) {
@@ -311,7 +355,7 @@ public:
 									((j+1)*stateMat(j+1, k)) : 0) - (j * stateMat(j,k)));
 						}
 					}
-					if (dissociationMat(inter.input2, inter.input2) != 1) {
+					if (dissociationMat(inter.input2, inter.input2) != -1) {
 						const dissociation& di = dissociations[dissociationMat(inter.input2, inter.input2)];
 						// Check if the other one is an output of the dissociation
 						if (dissociationMat(inter.input2, inter.input1) != -1) {
@@ -321,13 +365,12 @@ public:
 						} else { 
 							interRes(j,k) += di.D *
 								(((((k + 1) <= input2.cutoff)) ? 
-									((k+1)*stateMat(j, k+1)) : 0) - (l * stateMat(j,k)));
+									((k+1)*stateMat(j, k+1)) : 0) - (k * stateMat(j,k)));
 						}
 					}
 					
 					// B. Dissociations with either of these is the output
-					// There are several cases - both are the output of the dissociation, one is, or none are
-					// We do not (!) treat the case in which the dissociated species is also a reactant with one of the products.
+					// There are several cases - both are the output of the dissociation, one is, or none are					
 					for (size_t l = 0; l < chemicalTypes.size(); l++) {
 						if (l == inter.input1 || l == inter.input2) { 
 							// One of the interacting types is the input, continue since we've taken care of this
@@ -335,34 +378,281 @@ public:
 						} 
 						int first = dissociationMat(l, inter.input1);
 						int second = dissociationMat(l, inter.input2);
-						double param = 0;
-						if (first != -1 || second != -1) {
-							const interaction &ii = interactions[dissociations[first].locations[0]];
-							const interaction_data &iid = interactionData[dissociations[first].locations[0]];
-							const dissociation &di = dissociations[first];
-							// Check if it is the first or second input
-							const param = (l == ii.input1) ?
-								iid.totalMean1 : 
-								iid.totalMean2; 
-							if (first != -1 && second != -1) { 
-								interRes(j,k) += param * di.D *
-									((j == 0 || k == 0 ? 0 : stateMat(j - 1, k - 1)) - stateMat(j, k));
-							} else if (first != -1) {
-								interRes(j,k) += param * di.D *
-									((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
-							} else if (second != -1) { 
-								interRes(j,k) += param * di.D *
-									((k == 0 ? 0 : stateMat(j, k - 1)) - stateMat(j, k));
-							}							
-						}
-					
-					}
+						int firstIn = interactionMat(l, inter.input1);
+						int secondIn = interactionMat(l, inter.input2);
 
+						double param1 = 0;
+						double param2 = 0;
+						if (first != -1 || second != -1) {													
+							// If the reactants produces only one and does not interact with it, 
+							// or produces both and either does not interact with none
+							// interactes with both (special case)
+							if (((first != -1 && second != -1) && 
+								((firstIn != -1 && secondIn != -1) || (firstIn == -1 && secondIn == -1))) ||
+								(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {	
+									interaction &ii = interactions[selfInteractions[first].locations[0]];
+									interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
+									// Check if it is the first or second input
+									param1 = param2 = (l == ii.input1) ?
+										iid.mean1 : 
+										iid.mean2; 							
+							} else if (first != -1 && firstIn != -1) {
+								interaction &ii = interactions[interactionMat(l, inter.input1)];
+								interaction_data &iid = interactionData[interactionMat(l, inter.input1)];
+								// Check if it is the first or second input								
+								if (j != 0) {
+									param1 = (l == ii.input1) ?
+										iid.conditionalMean1[j - 1] : 
+										iid.conditionalMean2[j - 1]; 								
+								}
+								param2 = (l == ii.input1) ?
+									iid.conditionalMean1[j] : 
+									iid.conditionalMean2[j]; 							
+							} else if (second != -1 && secondIn != -1) {
+								interaction &ii = interactions[interactionMat(l, inter.input2)];
+								interaction_data &iid = interactionData[interactionMat(l, inter.input2)];
+								// Check if it is the first or second input								
+								if (k != 0) {
+									param1 = (l == ii.input1) ?
+										iid.conditionalMean1[k - 1] : 
+										iid.conditionalMean2[k - 1]; 								
+								}
+								param2 = (l == ii.input1) ?
+									iid.conditionalMean1[k] : 
+									iid.conditionalMean2[k]; 							
+
+							} else {
+								vmerror("BUGBUGBUG");
+							}
+
+							const dissociation& di = dissociations[first != -1 ? first : second];
+							if (first != -1 && second != -1) { 
+								interRes(j,k) += di.D *
+									(param1 * (j == 0 || k == 0 ? 0 : stateMat(j - 1, k - 1)) - param2 * stateMat(j, k));
+							} else if (first != -1) {
+								interRes(j,k) += di.D *
+									(param1 * (j == 0 ? 0 : stateMat(j - 1, k)) - param2 * stateMat(j, k));
+							} else if (second != -1) { 
+								interRes(j,k) += di.D *
+									(param1 * (k == 0 ? 0 : stateMat(j, k - 1)) - param2 * stateMat(j, k));
+							}					
+						}
+					}
 				}
 			}
 		}
 		return res;
+	}
 
+	/** 
+	* For newton's method of finding steady state - 
+	* compute the partial derivative of the equation for the time derivative
+	* according the the variable it belongs to
+	* 
+	* @param state The current state to compute derivative for
+	* @return the derivative's partial derivative
+	*/
+	virtual vec compute_derivative_derivative(const vec& state) {
+		updateParameters(state);
+		vec res = state.copy();
+
+		// First - go over the two-component interactions
+		for (size_t i = 0; i < interactions.size(); i++) {
+			interaction& inter = interactions[i];
+			species& input1 = chemicalTypes[inter.input1];
+			species& input2 = chemicalTypes[inter.input2];
+			Matrix<double>& interRes = res[i];			
+
+			for (size_t j = 0; j <= input1.cutoff; ++j) {
+				for (size_t k = 0; k <= input2.cutoff; ++k) {
+
+					// 1. Take care of the non interaction part and this pair interaction
+					interRes(j, k) =
+						// Non-interaction parts
+						- input1.Flux 
+						- input2.Flux
+						- input1.W * j 
+						- input2.W * k 
+						// current pair interaction
+						- (input1.A + input2.A) * j * k;
+
+					// 2. Go over self interactions:
+					// A. Self interactions where these are the inputs
+					if (interactionMat(inter.input1, inter.input1) != -1) {
+						interRes(j,k) -= input1.A * j * (j-1);
+					}
+					
+					if (interactionMat(inter.input2, inter.input2) != -1) {
+						interRes(j,k) -= input2.A * k * (k-1);
+					}
+
+					// B. Self interactions with either of these is the output
+					// There are several cases - both are the output of the self interaction, one is, or none are
+					for (size_t l = 0; l < chemicalTypes.size(); l++) {
+						if (l == inter.input1 || l == inter.input2) { 
+							// One of the interacting types is the input, continue since we've taken care of this
+							continue;
+						} 
+						int first = selfInteractionMat(l, inter.input1);
+						int second = selfInteractionMat(l, inter.input2);
+						int firstIn = interactionMat(l, inter.input1);
+						int secondIn = interactionMat(l, inter.input2);
+						
+						double param2 = 0;
+						if (first != -1 || second != -1) {													
+							// If the reactants produces only one and does not interact with it, 
+							// or produces both and either does not interact with none
+							// interactes with both (special case)
+							if (((first != -1 && second != -1) && 
+								((firstIn != -1 && secondIn != -1) || (firstIn == -1 && secondIn == -1))) ||
+								(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {	
+									interaction &ii = interactions[selfInteractions[first].locations[0]];
+									interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
+									// Check if it is the first or second input
+									param2 = (l == ii.input1) ?
+										iid.secondMoment1 - iid.mean1 : 
+										iid.secondMoment2 - iid.mean2; 							
+							} else if (first != -1 && firstIn != -1) {
+								interaction &ii = interactions[interactionMat(l, inter.input1)];
+								interaction_data &iid = interactionData[interactionMat(l, inter.input1)];
+								// Check if it is the first or second input																
+								param2 = (l == ii.input1) ?
+									iid.conditionalSecond1[j] - iid.conditionalMean1[j] : 
+									iid.conditionalSecond2[j] - iid.conditionalMean2[j]; 							
+							} else if (second != -1 && secondIn != -1) {
+								interaction &ii = interactions[interactionMat(l, inter.input2)];
+								interaction_data &iid = interactionData[interactionMat(l, inter.input2)];
+								// Check if it is the first or second input								
+								param2 = (l == ii.input1) ?
+									iid.conditionalSecond1[k] - iid.conditionalMean1[k] : 
+									iid.conditionalSecond2[k] - iid.conditionalMean2[k]; 							
+
+							} else {
+								vmerror("BUGBUGBUG");
+							}
+						}
+						interRes(j,k) -= chemicalTypes[l].A * param2;
+					}
+
+					// 3. Go Over two-component interactions
+					// A. Interactions in which one of these types takes part, as an input
+					for (size_t l = 0; l < chemicalTypes.size(); l++) {
+						if (l != inter.input1 && l != inter.input2) {
+							if (interactionMat(inter.input1,l) != -1) {
+								interaction &ii = interactions[interactionMat(inter.input1,l)];
+								interaction_data &iid = interactionData[interactionMat(inter.input1,l)];
+								// Check if it is the first or second input
+								Vector<double> &means = (ii.input1 == inter.input1) ? iid.conditionalMean2 : iid.conditionalMean1;
+								interRes(j, k) -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
+									j * means[j];
+							}
+							if (interactionMat(inter.input2,l) != -1) {
+								interaction &ii = interactions[interactionMat(inter.input2,l)];
+								interaction_data &iid = interactionData[interactionMat(inter.input2,l)];
+								// Check if it is the first or second input
+								Vector<double> &means = (ii.input1 == inter.input2) ? iid.conditionalMean2 : iid.conditionalMean1;
+								interRes(j, k) -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * 
+										k * means[k];
+							}
+						}
+					}
+
+					// THERE IS A BUG HERE - it may be that an interaction produces both...
+					// B. Interactions in which one of these types takes part, as an output
+					for (size_t l = 0; l < indexedOutputs[inter.input1].size(); l++) {
+						size_t pos = indexedOutputs[inter.input1][l];
+						const interaction& ii = interactions[pos];
+						const interaction_data &iid = interactionData[pos];
+						const species &s1 = chemicalTypes[ii.input1];
+						const species &s2 = chemicalTypes[ii.input2];
+						// if the other input of this interaction is also
+						// an input of the other interaction - we have taken care of this already
+						if (ii.input1 != inter.input2 && ii.input2 != inter.input2) {
+							// both input species should be traced over, as they are not part of this
+							// interaction
+							interRes(j,k) -= (s1.A + s2.A) * iid.corr;								
+						}
+					}
+
+					for (size_t l = 0; l < indexedOutputs[inter.input2].size(); l++) {
+						size_t pos = indexedOutputs[inter.input2][l];
+						const interaction& ii = interactions[pos];
+						const interaction_data &iid = interactionData[pos];
+						const species &s1 = chemicalTypes[ii.input1];
+						const species &s2 = chemicalTypes[ii.input2];
+						// if the other input of this interaction is also
+						// an input of the other interaction - we have taken care of this already
+						if (ii.input1 != inter.input1 && ii.input2 != inter.input1) {
+							// both species should be traced over, as they are not part of this
+							// interaction
+							// CHECK IF IT WAS NOT ALREADY COUNTED
+							interRes(j,k) -= (s1.A + s2.A) * iid.corr;								
+						}
+
+					}
+
+					//4. Go over dissociations
+					//A. Dissiciations in which one of the types is the input
+					if (dissociationMat(inter.input1, inter.input1) != -1) {
+						const dissociation& di = dissociations[dissociationMat(inter.input1, inter.input1)];
+						interRes(j,k) -= di.D * j;
+					}
+					if (dissociationMat(inter.input2, inter.input2) != -1) {
+						const dissociation& di = dissociations[dissociationMat(inter.input2, inter.input2)];
+						interRes(j,k) -= di.D * k;
+					}
+
+					// B. Dissociations with either of these is the output
+					// There are several cases - both are the output of the dissociation, one is, or none are					
+					for (size_t l = 0; l < chemicalTypes.size(); l++) {
+						if (l == inter.input1 || l == inter.input2) { 
+							// One of the interacting types is the input, continue since we've taken care of this
+							continue;
+						} 
+						int first = dissociationMat(l, inter.input1);
+						int second = dissociationMat(l, inter.input2);
+						int firstIn = interactionMat(l, inter.input1);
+						int secondIn = interactionMat(l, inter.input2);
+
+						double param2 = 0;
+						if (first != -1 || second != -1) {													
+							// If the reactants produces only one and does not interact with it, 
+							// or produces both and either does not interact with none
+							// interactes with both (special case)
+							if (((first != -1 && second != -1) && 
+								((firstIn != -1 && secondIn != -1) || (firstIn == -1 && secondIn == -1))) ||
+								(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {	
+									interaction &ii = interactions[selfInteractions[first].locations[0]];
+									interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
+									// Check if it is the first or second input
+									param2 = (l == ii.input1) ?
+										iid.mean1 : 
+										iid.mean2; 							
+							} else if (first != -1 && firstIn != -1) {
+								interaction &ii = interactions[interactionMat(l, inter.input1)];
+								interaction_data &iid = interactionData[interactionMat(l, inter.input1)];
+								param2 = (l == ii.input1) ?
+									iid.conditionalMean1[j] : 
+									iid.conditionalMean2[j]; 							
+							} else if (second != -1 && secondIn != -1) {
+								interaction &ii = interactions[interactionMat(l, inter.input2)];
+								interaction_data &iid = interactionData[interactionMat(l, inter.input2)];
+								// Check if it is the first or second input								
+								param2 = (l == ii.input1) ?
+									iid.conditionalMean1[k] : 
+									iid.conditionalMean2[k]; 							
+							} else {
+								vmerror("BUGBUGBUG");
+							}
+
+							const dissociation& di = dissociations[first != -1 ? first : second];
+							interRes(j,k) -= di.D * param2;
+						}
+					}
+				}
+			}
+		}
+		return res;
 	}
 
 	vec createInitialConditions() {
@@ -433,38 +723,39 @@ public:
 	 * @param dt	The chosen delta
 	 * @param state The state after the step
 	 */
-	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState) {
+	virtual void stepPerformed(double time, double dt, const vec& state, const vec& prevState, bool forcePrint = false) {
 		updateParameters(state);
 		const double MAX_DEV = 0.0001;
-		for (size_t i = 0; i < interactions.size(); i++) {
-			const Matrix<double> &probs = state[i];
+		if (!forcePrint) {
+			for (size_t i = 0; i < interactions.size(); i++) {
+				const Matrix<double> &probs = state[i];
 
-			// Sum over all just to test...
-			double sum = 0;
-			for (size_t j = 0; j < probs.nrows(); j++) {
-				sum += probs.row(j).sum();
+				// Sum over all just to test...
+				double sum = 0;
+				for (size_t j = 0; j < probs.nrows(); j++) {
+					sum += probs.row(j).sum();
+				}
+				if (fabs(sum - 1.0) > MAX_DEV) {
+					cout << "Probability does not sum up to 1: " << sum << " - exiting..." << endl;	
+					exit(1);
+				}
 			}
-			if (fabs(sum - 1.0) > MAX_DEV) {
-				cout << "Probability does not sum up to 1: " << sum << " - exiting..." << endl;	
-				exit(1);
-			}
+			stepNum++;
+			if (stepNum % 50 != 1) return;
 		}
-		
-		stepNum++;
-		if (stepNum % 50 != 1) return;
 
 		file << time << "\t" << dt << "\t";
 		for (size_t i = 0; i < interactions.size(); ++i) {
 			const interaction& inter = interactions[i];
 			const interaction_data &id = interactionData[i];
-			file << id.totalMean1 << "\t";
-			file << id.totalMean2 << "\t";
+			file << id.mean1 << "\t";
+			file << id.mean2 << "\t";
 			file << (chemicalTypes[inter.input1].A + chemicalTypes[inter.input2].A)*(id.corr) << "\t";
 			if (interactionMat(inter.input1,inter.input1) != -1) {
-				file << chemicalTypes[inter.input1].A * (id.secondMoment1 - id.totalMean1) << "\t";
+				file << chemicalTypes[inter.input1].A * (id.secondMoment1 - id.mean1) << "\t";
 			}
 			if (interactionMat(inter.input2,inter.input2) != -1) {
-				file << chemicalTypes[inter.input2].A * (id.secondMoment2 - id.totalMean2) << "\t";
+				file << chemicalTypes[inter.input2].A * (id.secondMoment2 - id.mean2) << "\t";
 			}
 		}
 		file << endl;
