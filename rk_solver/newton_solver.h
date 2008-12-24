@@ -32,6 +32,8 @@ public:
 	void solve(const rk_params& paramSet, vec& initialState, size_t initialSteps) {
 		// Copy Params
 		params = paramSet;
+
+		state = initialState.copy();
 		
 		std::cerr << "Running Runga-Kutta to get initial guess" << endl; 
 
@@ -51,7 +53,7 @@ public:
 			processor.stepPerformed(step++, 0, newState, state, true);
 			err = eqSet.computeError(newState, state, 1);
 			state = newState;			
-			cout << "Error: " << err << endl;
+			cout << "Error: " << err << ", Max prob: " << scalarMax(eqSet.compute_derivative(0.0, state)) << endl;
 		}
 		
 		processor.solutionComplete(state);
