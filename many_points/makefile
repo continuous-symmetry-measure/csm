@@ -2,7 +2,7 @@
 FORTRAN = gfortran
 
 # the compiler flags
-FLAGS = -Wall -O3 -fno-range-check -std=legacy -fconvert=little-endian
+FLAGS = -O3 -fno-range-check -fconvert=little-endian
 
 # the first target. All executables will be made when 'make' is
 # invoked with no target
