@@ -5,10 +5,10 @@
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
 
+      CHARACTER*100 CHARBUFF
       INTEGER*8 I0
       REAL*4 FZ_XY(NN,NN,NN)
 
-      CHARACTER *100 BUFFER
       DIMENSION FX(NN), FY_X(NN,NN)
       DIMENSION XX(NN), YY(NN), ZZ(NN)
       DIMENSION PX(N_POINT),PY(N_POINT),PZ(N_POINT)
@@ -26,8 +26,8 @@
 c----------------------------------------------------------
 
 
-      CALL GETARG(3, BUFFER)
-      OPEN(UNIT=10,FILE=BUFFER,
+      CALL GETARG(3, CHARBUFF)
+      OPEN(UNIT=10,FILE=CHARBUFF,
      *     STATUS='UNKNOWN',FORM='FORMATTED')
 
 
@@ -82,6 +82,7 @@ C*********************************************************************
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
 
+      CHARACTER*100 CHARBUFF
       INTEGER*4 nr1, nr2, nx, ny, nz
       REAL*4 xmax, xmin, ymax, ymin, zmax, zmin
       REAL*4 FZ_XY(NN,NN,NN)
@@ -94,8 +95,8 @@ C*********************************************************************
 c*******   INPUT    ***************
 
 
-     CALL GETARG(1,BUFFER)
-      OPEN(UNIT=3,FILE=BUFFER,
+        CALL GETARG(1,CHARBUFF)
+      OPEN(UNIT=3,FILE=CHARBUFF,
      *STATUS='OLD',ACCESS='DIRECT',RECL=44, FORM='UNFORMATTED')
       nrec = 1
 
@@ -111,8 +112,8 @@ c*******   INPUT    ***************
       CLOSE(3)     
       
 
-      CALL GETARG(3, BUFFER)
-      OPEN(UNIT=3,FILE=BUFFER,
+      CALL GETARG(2, CHARBUFF)
+      OPEN(UNIT=3,FILE=CHARBUFF,
      *STATUS='OLD',ACCESS='DIRECT',RECL=nx * 4, FORM='UNFORMATTED')
       NREC = 1
       DO K=1,nz

@@ -5,10 +5,9 @@
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
 
+      CHARACTER*100 CHARBUFF
       INTEGER*8 I0
       REAL*4 FZ_XY(NN,NN,NN)
-      CHARACTER *100 BUFFER
-
       DIMENSION FX(NN), FY_X(NN,NN)
       DIMENSION XX(NN), YY(NN), ZZ(NN)
       DIMENSION PX(N_POINT),PY(N_POINT),PZ(N_POINT)
@@ -32,12 +31,12 @@ c----------------------------------------------------------
       ABSV = DIR_COS(1)**2+DIR_COS(2)**2+DIR_COS(3)**2
       IF(ABS(ABSV-1.0D0).GT.1.D-10) THEN
          PRINT *,'WRONG DIR. COS. VECTOR'
-	 STOP
+         STOP
       END IF
       
 
-      CALL GETARG(3, BUFFER)
-      OPEN(UNIT=10,FILE=BUFFER,
+      CALL GETARG(3, CHARBUFF)
+      OPEN(UNIT=10,FILE=CHARBUFF,
      *     STATUS='UNKNOWN',FORM='FORMATTED')
 
 
@@ -92,6 +91,7 @@ C*********************************************************************
 
       IMPLICIT DOUBLE PRECISION (A-H,O-Z)
 
+      CHARACTER*100 CHARBUFF
       INTEGER*4 nr1, nr2, nx, ny, nz
       REAL*4 xmax, xmin, ymax, ymin, zmax, zmin
       REAL*4 FZ_XY(NN,NN,NN)
@@ -104,13 +104,15 @@ C*********************************************************************
 c*******   INPUT    ***************
 
 
-     CALL GETARG(1,BUFFER)
-      OPEN(UNIT=3,FILE=BUFFER,
+        CALL GETARG(1,CHARBUFF)
+      OPEN(UNIT=3,FILE=CHARBUFF,
      *STATUS='OLD',ACCESS='DIRECT',RECL=44, FORM='UNFORMATTED')
       nrec = 1
       read (3,rec=nrec) nr1, nr2, nx, ny, nz,
      *      zmin, zmax, ymin, ymax, xmin, xmax
      
+         print *,nr1, nr2, nx, ny, nz,
+     *      zmin, zmax, ymin, ymax, xmin, xmax         
      
       dx = (xmax-xmin)/dble(nx-1)
       dy = (ymax-ymin)/dble(ny-1)
@@ -118,9 +120,9 @@ c*******   INPUT    ***************
       CLOSE(3)     
       
 
-      CALL GETARG(3, BUFFER)
-      OPEN(UNIT=3,FILE=BUFFER,
-     *STATUS='OLD',ACCESS='DIRECT',RECL=nx, FORM='UNFORMATTED')
+      CALL GETARG(2, CHARBUFF)
+      OPEN(UNIT=3,FILE=CHARBUFF,
+     *STATUS='OLD',ACCESS='DIRECT',RECL=nx * 4, FORM='UNFORMATTED')
       NREC = 1
       DO K=1,nz
          DO J=1,ny
@@ -476,13 +478,13 @@ C*********************************************************************
          R2MIN = 1.0D10
          DO II=1,NNP
             JJ = NUMBERS(II)
-	  
-	  
-	    SK_MUL = PX(JJ)*DIR_COS(1)+PY(JJ)*DIR_COS(2)+
+  
+  
+            SK_MUL = PX(JJ)*DIR_COS(1)+PY(JJ)*DIR_COS(2)+
      *                PZ(JJ)*DIR_COS(3)
             X = 2.0D0*SK_MUL*DIR_COS(1)-PX(JJ)
-            Y = 2.0D0*SK_MUL*DIR_COS(2)-PY(JJ)	  
-            Z = 2.0D0*SK_MUL*DIR_COS(3)-PZ(JJ)	  	    
+            Y = 2.0D0*SK_MUL*DIR_COS(2)-PY(JJ)  
+            Z = 2.0D0*SK_MUL*DIR_COS(3)-PZ(JJ)
             R2 = (X-CX(1))**2+(Y-CY(1))**2+(Z-CZ(1))**2
             IF(R2.LT.R2MIN) THEN
                R2MIN = R2
@@ -525,8 +527,8 @@ C*********************************************************************
       SK_MUL = CX(2)*DIR_COS(1)+CY(2)*DIR_COS(2)+
      *         CZ(2)*DIR_COS(3)
       X = 2.0D0*SK_MUL*DIR_COS(1)-CX(2)
-      Y = 2.0D0*SK_MUL*DIR_COS(2)-CY(2)	  
-      Z = 2.0D0*SK_MUL*DIR_COS(3)-CZ(2)	  	          
+      Y = 2.0D0*SK_MUL*DIR_COS(2)-CY(2)
+      Z = 2.0D0*SK_MUL*DIR_COS(3)-CZ(2)          
 
       XC = 0.5D0*(CX(1)+X)
       YC = 0.5D0*(CY(1)+Y)
