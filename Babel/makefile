@@ -15,13 +15,14 @@ LIBOBJ = Molecule.o parseFunctions.o permuter.o groupPermuter.o main.o babelAdap
 OBJ1 = c2helpers.o 
 OBJ2 = mirhelpers.o  
 OBJ3 = chiralhelpers.o rpoly.o nrutil.o
-OBJ4 = invhelpers.o  
+OBJ4 = invhelpers.o 
+OBJ5 = csm2pdb.o parseFunctions.o Molecule.o
 
 OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o mainRot.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
 
 # the first target. All executables will be made when 'make' is
 # invoked with no target
-all: libcsm.a c2 mir chiral inv csm
+all: libcsm.a c2 mir chiral inv csm csm2pdb
 
 # general rule how to compile a source file and produce an object file
 %.c,%.o:
@@ -31,24 +32,27 @@ all: libcsm.a c2 mir chiral inv csm
 	$(CXX) $(CFLAGS) -c $<
 
 # linking rule for the first executable
-c2: $(OBJ1)
+c2: $(OBJ1) libcsm.a
 	$(CXX) $(LFLAGS) -lcsm $(OBJ1) -o $(BIN)/$@
 
 # linking rule for the second executable
-mir: $(OBJ2)
+mir: $(OBJ2) libcsm.a
 	$(CXX) $(LFLAGS) -lcsm $(OBJ2) -o $(BIN)/$@
 
 # linking rule for the third executable
-chiral: $(OBJ3)
+chiral: $(OBJ3) libcsm.a
 	$(CXX) $(LFLAGS) -lcsm $(OBJ3) -o $(BIN)/$@
 
 # linking rule for the fourth executable
-inv: $(OBJ4)
+inv: $(OBJ4) libcsm.a
 	$(CXX) $(LFLAGS) -lcsm $(OBJ4) -o $(BIN)/$@
 
 # linking rule for the csm executable
-csm: $(OBJCSM)
+csm: $(OBJCSM) libcsm.a
 	$(CXX) $(LFLAGS) $(OBJCSM) -o $(BIN)/$@
+
+csm2pdb: $(OBJ5)
+	$(CC) $(LFLAGS) $(OBJ5) -o $(BIN)/$@
 
 libcsm.a: $(LIBOBJ)
 	ar -r $@ $(LIBOBJ)
