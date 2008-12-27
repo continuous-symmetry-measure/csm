@@ -2,20 +2,21 @@
 FORTRAN = gfortran
 
 # the compiler flags
-FLAGS = -O3 -fno-range-check 
+# FLAGS = -O3 -fno-range-check 
+FLAGS = -O3 -fno-range-check -fconvert=big-endian
 
 # the first target. All executables will be made when 'make' is
 # invoked with no target
-all: mir inv c2 
+all: mir_big inv_big c2_big
 
-c2: c2_3d_symmetry.f
+c2_big: c2_3d_symmetry.f
 	$(FORTRAN) $(FLAGS) $^ -o $@
 
-inv: inv3d_symmetry.f
+inv_big: inv3d_symmetry.f
 	$(FORTRAN) $(FLAGS) $^ -o $@
 
-mir: mir3d_symmetry.f
+mir_big: mir3d_symmetry.f
 	$(FORTRAN) $(FLAGS) $^  -o $@
 
-clean: 
-	rm -f mir inv c2
+clean:
+	rm -f c2_big mir_big inv_big
