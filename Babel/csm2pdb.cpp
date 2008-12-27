@@ -7,11 +7,13 @@
 *
 */
 
+extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h> //for strcmp,strlen
 #include "Molecule.h"
+}
 
 #define TRUE 1
 #define FALSE 0
