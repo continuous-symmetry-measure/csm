@@ -17,7 +17,9 @@
 #define FALSE 0
 
 // function declarations
-void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out);
+
+void printOutputPDB(Molecule* m, FILE *out);
+
 
 // file pointers
 FILE* inFile = NULL;
