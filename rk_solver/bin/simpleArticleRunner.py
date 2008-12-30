@@ -10,7 +10,7 @@ f = open("sizes", "w")
 i = 1
 for gs in grain_sizes:
 	f.write(str(i) + " " + str(gs) + "\n")
-	system("bash ./createSimpleNetworkForArticle.py " + str(gs) +"; mv params.net params" + str(i) + ".net" )
+	system("./createSimpleNetworkForArticle.py " + str(gs) +"; mv params.net params" + str(i) + ".net" )
 	filenames.append("params" + str(i) + ".net")
 	i = i+1
 
