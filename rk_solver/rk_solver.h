@@ -135,7 +135,7 @@ public:
 			error = eqSet.computeError(result, state, usedDelta);
 			processor.stepPerformed(time, delta, result, state);
 			state = result;
-			std::cout << "Error: " << error << std::endl;
+			std::cout << "Error: " << error << ", Max derivative: " << scalarMax(eqSet.compute_derivative(0.0, state)) << std::endl;
 		}
 		
 		processor.solutionComplete(state);
