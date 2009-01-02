@@ -29,6 +29,11 @@ public:
 	parsed_network pn = ChemicalNetwork::parseChemicalNetwork(input);
 	input.close();
 
+	bool force = false;
+	if (argc == 3 && strcmp(argv[2], "-force")) {
+		force = true;
+	}
+
 	rk_params params;	params.final_time = 3e10;
 	params.initial_time = 0;
 	params.max_error = 1e-8;
@@ -41,7 +46,8 @@ public:
 		is >> params.initial_time >> params.final_time >> params.max_error >> params.limit >> params.initialDelta;
 	}
 	is.close();
-	
+
+	if (!force) {
 	cout << "Running Rate Equations and updating cutoffs" << endl;
 
 	// First - run rate equations to compute avarages
@@ -51,10 +57,16 @@ public:
 	RKSolver<double> rateSolver(cp, req);
 	RateEquations::vec initial = req.createInitialConditions();		
 	rateSolver.solve(params, initial);
-
 	cout << "Running Pairwise multiplane equations with updated cutoffs " << endl;	
 	PairEquations eq(cp.pn);
-//	PairEquations eq(pn);	NewtonSolver<Matrix<double> > solver(eq, eq);
+	NewtonSolver<Matrix<double> > solver(eq, eq);
 	PairEquations::vec initialState = eq.createInitialConditions();
 	solver.solve(params, initialState, 100);
+	} else {
+	PairEquations eq(pn);
+	NewtonSolver<Matrix<double> > solver(eq, eq);
+	PairEquations::vec initialState = eq.createInitialConditions();
+	solver.solve(params, initialState, 100);
+	}
+
 }
