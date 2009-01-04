@@ -376,6 +376,16 @@ int main(int argc, char *argv[]){
        
 	perm = (int *)malloc(sizeof(int) * m->_size);
 
+	//normalize Molecule
+	if (!normalizeMolecule(m)){
+		if (writeOpenu) {
+			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
+		} else {
+			printf("Failed to normalize atom positions: dimension of set of points = zero\n");
+		}
+		exit(1);
+	}
+
 	if (useperm) {	
 		if (type == CH) {
 			printf("Chirality can't be given a permutation, run the specific csm operation instead\n");
@@ -438,7 +448,7 @@ int main(int argc, char *argv[]){
 		outAtoms[i][0] *= m->_norm;
 		outAtoms[i][1] *= m->_norm;
 		outAtoms[i][2] *= m->_norm;
-	}
+	}	
 
    	if (useFormat) {
 		// If a specific format is used, read molecule using that format
@@ -830,12 +840,6 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	// These are the 
 	int *realPerm = (int *)malloc(sizeof(int) * m->_size);
 
-	//normalize Molecule
-	if (!normalizeMolecule(m)){
-		printf("Failed to normalize atom positions: dimension of set of points = zero\n");
-		exit(1);
-	}
-
 	// allocate memory for index arrays arrays
 	idxToPos = (int*)malloc(m->_size * sizeof(int));
 	posToIdx = (int*)malloc(m->_size * sizeof(int));
@@ -918,17 +922,6 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
  * Calculates csm, dMin and directional cosines for a given permutation
  */
 void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, double* dir, double* dMin, OperationType type){
-
-	//normalize Molecule
-	if (!normalizeMolecule(m)){
-		if (writeOpenu) {
-			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
-		} else {
-			printf("Failed to normalize atom positions: dimension of set of points = zero\n");
-		}
-		exit(1);
-	}
-
 	*csm = calcRefPlane(m, perm, dir, type);
 
 
