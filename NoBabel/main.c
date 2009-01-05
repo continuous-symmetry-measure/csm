@@ -299,7 +299,7 @@ int main(int argc, char *argv[]){
 	else
 		printOutput(m, outAtoms, csm, dir, dMin, outFile);
 
-	fprintf(outFile, "\n PERMUTATIION:\n\n");
+	fprintf(outFile, "\n PERMUTATION:\n\n");
 	for (i = 0; i < m->_size; i++) {
 		fprintf(outFile, "%d ", perm[i] + 1);
 	}
@@ -614,7 +614,7 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 		fprintf(out,"\n");
 	}
 
-	fprintf(out, "\n DIRECTIONAL COSINUSES:\n\n");
+	fprintf(out, "\n DIRECTIONAL COSINES:\n\n");
 	fprintf(out, "%lf %lf %lf\n", dir[0], dir[1], dir[2]);
 
 }
@@ -677,7 +677,7 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 	else
 		printf( "%s: %.4lf\n",operationName,fabs(csm));
 	printf( "SCALING FACTOR: %7lf\n", dMin);
-	printf( "DIRECTIONAL COSINUSES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
+	printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
 
 }
 
