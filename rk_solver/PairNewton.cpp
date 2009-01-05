@@ -30,7 +30,7 @@ public:
 	input.close();
 
 	bool force = false;
-	if (argc == 3 && strcmp(argv[2], "-force")) {
+	if (argc == 3 && strcmp(argv[2], "-force") == 0) {
 		force = true;
 	}
 

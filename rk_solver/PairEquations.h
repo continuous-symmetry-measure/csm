@@ -695,7 +695,7 @@ public:
 				self_interaction &si = selfInteractions[interactionMat(ii.input1,ii.input1)];
 				for (size_t k = 0; k < si.outputs.size(); k++) {
 					file << "R_" << getOutputName(si.outputs[k]);
-					if (k != ii.outputs.size() - 1) {
+					if (k != si.outputs.size() - 1) {
 						 file << ",";
 					} else {
 						file << "\t";
@@ -706,7 +706,7 @@ public:
 				self_interaction &si = selfInteractions[interactionMat(ii.input2,ii.input2)];
 				for (size_t k = 0; k < si.outputs.size(); k++) {
 					file << "R_" << getOutputName(si.outputs[k]);
-					if (k != ii.outputs.size() - 1) {
+					if (k != si.outputs.size() - 1) {
 						 file << ",";
 					} else {
 						file << "\t";
