@@ -14,10 +14,10 @@ public:
 	virtual void solutionComplete(const res_vec& finalState) { 
 		cout << endl;
 		for (size_t i = 0; i < finalState.size(); i++) {
-			if (floor(5 * finalState[i] + 5 + log(finalState.max()) / log(10)) > 0) {
+			if (floor(5 * finalState[i] + 5 + log(finalState.max()) / log(10)) > 2) {
 				pn.types[i].cutoff = (size_t)floor(5 * finalState[i] + 5 + log(finalState.max()) / log(10));
 			} else {
-				pn.types[i].cutoff = 1;
+				pn.types[i].cutoff = 2;
 			}
 			cout << "Updated Cutoff for " << pn.types[i].name << " is " << pn.types[i].cutoff << endl;
 		}
