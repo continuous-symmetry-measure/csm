@@ -5,11 +5,11 @@ from math import exp
 
 S = float(argv[1])
 
-F1 = 1e-6 * S
+F1 = 1e-7 * S
 F2 = 0.01 * F1
 F3 = 0.1 * F1
 F4 = 0.01 * F1
-F5 = 0.0
+F5 = 0.05 * F1
 
 W1 = 1e-4
 W2 = W1
