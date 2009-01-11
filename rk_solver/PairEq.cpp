@@ -58,7 +58,7 @@ public:
 		RateEquations::vec initial = req.createInitialConditions();		
 		rateSolver.solve(params, initial);	
 	
-		cout << "Running Master equations with updated cutoffs " << endl;	
+		cout << "Running Pair equations with updated cutoffs " << endl;	
 		PairEquations eq(cp.pn);
 		RKSolver<Matrix<double> > solver(eq, eq);
 		PairEquations::vec initialState = eq.createInitialConditions();

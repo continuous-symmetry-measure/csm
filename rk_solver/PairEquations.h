@@ -318,7 +318,7 @@ public:
 							// both input species should be traced over, as they are not part of this
 							// interaction
 							interRes(j,k) += (s1.A + s2.A) * iid.corr *
-								((k == 0 ? 0 : stateMat(j, k - 1)) - stateMat(j, k));
+								((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
 						}
 					}
 
@@ -335,7 +335,7 @@ public:
 							// interaction
 							// CHECK IF IT WAS NOT ALREADY COUNTED
 							interRes(j,k) += (s1.A + s2.A) * iid.corr *
-								((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
+								((k == 0 ? 0 : stateMat(j, k - 1)) - stateMat(j, k));
 						}
 
 					}
