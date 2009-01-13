@@ -655,6 +655,24 @@ public:
 		return res;
 	}
 
+	/** 
+    	 * Normalize the results (if relevant)
+	 * 
+	 * @param state The un-normalized state
+	 * @return normalized result
+	 */ 
+	virtual vec normalize(const vec& state) { 
+		vec res = state.copy();
+		for (size_t i = 0; i < interactions.size(); i++) { 
+			double sum = 0.0;
+			for (size_t n = 0; n < state[i].nrows(); n++) {
+				sum += state[i].row(n).sum();
+			}
+			res[i] /= sum;
+		}
+		return res;
+	}
+
 	vec createInitialConditions() {
 		vec result(interactions.size());
 		// Start with empty state;

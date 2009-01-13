@@ -45,13 +45,14 @@ public:
 
 		processor.solvingStarted(params, state);
 		
-		double max_err = params.max_error;
+		double max_err = params.limit;
 		double err = max_err + 1;
 		size_t step = 0;
 		while (err > max_err) {
 			vec newState = state - (eqSet.compute_derivative(0.0,state) / eqSet.compute_derivative_derivative(state));
+			newState = eqSet.normalize(newState);
 			processor.stepPerformed(step++, 0, newState, state, true);
-			err = eqSet.computeError(newState, state, 1);
+			err = eqSet.computeError(newState, state, 1);			
 			state = newState;			
 			cout << "Error: " << err << ", Max prob: " << scalarMax(eqSet.compute_derivative(0.0, state)) << endl;
 		}

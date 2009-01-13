@@ -335,6 +335,16 @@ public:
 		return result;
 	}
 
+	/** 
+    	 * Normalize the results (if relevant)
+	 * 
+	 * @param state The un-normalized state
+	 * @return normalized result
+	 */ 
+	virtual vec normalize(const vec& state) { 
+		return state.copy() / state.sum();
+	}
+
 	/**
 	 * Announce that the solving has started
 	 */

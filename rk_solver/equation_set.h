@@ -40,6 +40,14 @@ public:
 	virtual vec compute_derivative(const double t, const vec& state) = 0;
 
 	/** 
+    	 * Normalize the results (if relevant)
+	 * 
+	 * @param state The un-normalized state
+	 * @return normalized result
+	 */ 
+	virtual vec normalize(const vec& state) { return state; }
+
+	/** 
 	 * For newton's method of finding steady state - 
 	 * compute the partial derivative of the equation for the time derivative
 	 * according the the variable it belongs to
