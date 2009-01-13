@@ -4,6 +4,9 @@ from os import system
 
 st = 10 ** 0.5
 grain_sizes = [10, 10 * st, 100, 100 * st, 1000, 1000 * st, 10000, 10000 * st, 100000]
+indices = [1,2,3,4,5,6,7,8,9]
+
+
 filenames = []
 f = open("sizes", "w")
 
@@ -17,20 +20,18 @@ for gs in grain_sizes:
 f.close()
 
 # run rate
-i = 1
-for ff in filenames:
+for i in indices:
+	ff = filenames[i - 1]
 	system("ulimit -t 200; ./rate " + ff + " > rate" + str(i) + ".res; mv rate.out rate" + str(i) + ".out")
-	i = i+1
 
 # run pairs
-i = 1
-for ff in filenames:
+for i in indices:
+	ff = filenames[i - 1]
 	system("ulimit -t 2000; ./pairs " + ff + " > pair" + str(i) + ".res; mv pairs.out pairs" + str(i) + ".out")
-	i = i+1
 
 # run master
 i = 1
-for ff in filenames:
+for i in indices:
+	ff = filenames[i - 1]
 	system("ulimit -t 100000; ./master " + ff + " > master" + str(i) + ".res; mv master.out master" + str(i) + ".out")
-	i = i+1
 
