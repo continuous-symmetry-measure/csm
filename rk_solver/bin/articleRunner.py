@@ -5,8 +5,8 @@ from os import system
 st = 10 ** 0.5
 grain_sizes = [10, 10 * st, 100, 100 * st, 1000, 1000 * st, 10000, 10000 * st, 100000]	
 #grain_sizes = [100000 * st, 1000000, 1000000 * st, 10000000]
-indices = [1,2,3,4,5]
-
+#indices = [1,2,3,4,5]
+indices = [1,2,3,4,5,6,7,8,9]
 
 filenames = []
 f = open("sizes2" , "w")
@@ -27,7 +27,7 @@ for i in indices:
 # run moment
 for i in indices:
        ff = filenames[i - 1]
-        system("ulimit -t 1000; ./moment " + ff + " > moment" + str(i) + ".res; mv moment.out moment" + str(i) + ".out")
+       system("ulimit -t 1000; ./moment " + ff + " > moment" + str(i) + ".res; mv moment.out moment" + str(i) + ".out")
 
 
 
