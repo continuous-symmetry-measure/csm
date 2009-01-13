@@ -30,7 +30,6 @@ for i in indices:
 	system("ulimit -t 2000; ./pairs " + ff + " > pair" + str(i) + ".res; mv pairs.out pairs" + str(i) + ".out")
 
 # run master
-i = 1
 for i in indices:
 	ff = filenames[i - 1]
 	system("ulimit -t 100000; ./master " + ff + " > master" + str(i) + ".res; mv master.out master" + str(i) + ".out")
