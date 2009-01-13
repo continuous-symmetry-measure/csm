@@ -390,8 +390,8 @@ public:
 							if (((first != -1 && second != -1) && 
 								((firstIn != -1 && secondIn != -1) || (firstIn == -1 && secondIn == -1))) ||
 								(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {	
-									interaction &ii = interactions[selfInteractions[first].locations[0]];
-									interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
+									interaction &ii = interactions[dissociations[first].locations[0]];
+									interaction_data &iid = interactionData[dissociations[first].locations[0]];
 									// Check if it is the first or second input
 									param1 = param2 = (l == ii.input1) ?
 										iid.mean1 : 
@@ -622,8 +622,8 @@ public:
 							if (((first != -1 && second != -1) && 
 								((firstIn != -1 && secondIn != -1) || (firstIn == -1 && secondIn == -1))) ||
 								(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {	
-									interaction &ii = interactions[selfInteractions[first].locations[0]];
-									interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
+									interaction &ii = interactions[dissociations[first].locations[0]];
+									interaction_data &iid = interactionData[dissociations[first].locations[0]];
 									// Check if it is the first or second input
 									param2 = (l == ii.input1) ?
 										iid.mean1 : 
