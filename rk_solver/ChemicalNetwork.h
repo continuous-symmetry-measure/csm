@@ -299,8 +299,8 @@ public:
 	 * ...
 	 *
 	 * Interaction
-	 * <input1> <input2> => <output1> ... <outputn> | <rate>
-	 * <input1> <input2> => <output1> ... <outputn> | <rate>
+	 * <input1> <input2> => <output1> ... <outputn>
+	 * <input1> <input2> => <output1> ... <outputn> 
 	 * Dissociation
 	 * <input> => <output1> ... <outputn> | <rate>
 	 * End
@@ -402,7 +402,7 @@ public:
 						desc.input = str1;
 						is >> str2;												
 						if (str2 != ARROW_LABEL) {
-							cerr << "Interaction format: <input1> => <output1> ... <outputn> | <rate>" << endl;
+							cerr << "Dissociation format: <input1> => <output1> ... <outputn> | <rate>" << endl;
 							exit(1);
 						}
 						is >> str3;
@@ -416,7 +416,7 @@ public:
 						if (str3 == SEPARATOR_LABEL) {
 							is >> desc.D;
 						} else {
-							cerr << "dissociation format: <input1> => <output1> ... <outputn> | <rate>" << endl;
+							cerr << "Dissociation format: <input1> => <output1> ... <outputn> | <rate>" << endl;
 							exit(1);
 						}			
 						dis.push_back(desc);
