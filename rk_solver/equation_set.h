@@ -40,6 +40,14 @@ public:
 	virtual vec compute_derivative(const double t, const vec& state) = 0;
 
 	/** 
+	 * Compute Rn/Wn for iterative method. Rn - sum of changes to derivative entering from ext. sources. 
+	 * wn - sum of coeff. of exiting state
+	 * @param state
+	 * @return Rn / Wn
+	 */
+	virtual vec comptueRnDivWn(const vec& state) { return state; }
+
+	/** 
     	 * Normalize the results (if relevant)
 	 * 
 	 * @param state The un-normalized state

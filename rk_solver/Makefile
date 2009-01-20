@@ -16,6 +16,7 @@ PAIRS_OBJ = PairEq.o
 MASTER_OBJ = MasterEq.o
 MASTER_NEWTON_OBJ = MasterNewton.o
 PAIR_NEWTON_OBJ = PairNewton.o
+MASTER_ITER_OBJ = MasterIter.o
 
 
 # the first target. All executables will be made when 'make' is
@@ -48,6 +49,9 @@ master_newton: $(MASTER_NEWTON_OBJ)
 
 pair_newton: $(PAIR_NEWTON_OBJ)
 	$(CXX) $(LFLAGS)  $(PAIR_NEWTON_OBJ) -o $(BIN)/$@
+
+master_iter: $(MASTER_ITER_OBJ)
+	$(CXX) $(LFLAGS)  $(MASTER_ITER_OBJ) -o $(BIN)/$@
 
 
 # remove object files and backups

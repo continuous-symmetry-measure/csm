@@ -265,6 +265,127 @@ public:
 
 	}
 
+	/** 
+	 * Compute Rn/Wn for iterative method. Rn - sum of changes to derivative entering from ext. sources. 
+	 * wn - sum of coeff. of exiting state
+	 * @param state
+	 * @return Rn / Wn
+	 */
+	virtual vec comptueRnDivWn(const vec& state) { 
+				vec res(maxPos);
+		res = 0;
+
+		// Generic code for enumeration
+		vector<size_t> indices(chemicalTypes.size());
+		for (size_t i = 0; i < chemicalTypes.size(); i++) {
+			indices[i] = 0;
+		}
+		size_t pos = 0;
+
+		while (pos < maxPos) {		
+			// Operate on current state
+			double wn = 0.0;
+			double rn = 0.0;
+
+			// First - go over types
+			for (size_t i = 0; i < chemicalTypes.size(); i++) {
+				wn += (chemicalTypes[i].Flux + chemicalTypes[i].W * indices[i]);
+				rn += chemicalTypes[i].Flux * ((indices[i] == 0) ? 0 : state[pos - diffs[i]])
+					+ chemicalTypes[i].W * ((indices[i] == chemicalTypes[i].cutoff) ? 0 : (indices[i] + 1) * state[pos + diffs[i]]);
+			}
+
+			// Next, go over self interactions
+			for (size_t i = 0; i < selfInteractions.size(); i++) {
+				const self_interaction &si = selfInteractions[i];
+				size_t ii = indices[si.input];
+
+				// Build the new index:
+				size_t inputState = pos + 2 * diffs[si.input];
+				bool use = true;
+				for (size_t k = 0; k < si.outputs.size(); ++k) {
+					if (si.outputs[k] < chemicalTypes.size()) {
+						if (indices[si.outputs[k]] == 0) {
+							use = false;
+							break;
+						} else {
+							inputState -= diffs[si.outputs[k]];
+						}
+					}
+				}
+
+				wn += chemicalTypes[si.input].A * ii * (ii - 1);
+				rn += chemicalTypes[si.input].A *
+				    (((ii >= chemicalTypes[si.input].cutoff - 1) || (!use)) ?
+				    		0 : ((ii + 2) * (ii + 1) * state[inputState]));
+			}
+
+			// Next - Go over two-component interactions
+			for (size_t i = 0; i < interactions.size(); i++) {
+				const interaction &ii = interactions[i];
+				size_t i1 = indices[ii.input1];
+				size_t i2 = indices[ii.input2];
+
+				// Build the new index:
+				size_t inputState = pos + diffs[ii.input1] + diffs[ii.input2];
+				bool use = true;
+				for (size_t k = 0; k < ii.outputs.size(); ++k) {
+					if (ii.outputs[k] < chemicalTypes.size()) {
+						if (indices[ii.outputs[k]] == 0) {
+							use = false;
+							break;
+						} else {
+							inputState -= diffs[ii.outputs[k]];
+						}
+					}
+				}
+
+				wn += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * i1 * i2;
+				rn += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
+					(((i1 == chemicalTypes[ii.input1].cutoff) || (i2 == chemicalTypes[ii.input2].cutoff) || (!use)) ?
+					 	0 : ((i1 + 1) * (i2 + 1) * state[inputState]));
+			}
+
+			// Next, go over Dissociations
+			for (size_t i = 0; i < dissociations.size(); i++) {
+				const dissociation &di = dissociations[i];
+				size_t i1 = indices[di.input];				
+
+				// Build the new index:
+				size_t inputState = pos + diffs[di.input];
+				bool use = true;
+				for (size_t k = 0; k < di.outputs.size(); ++k) {
+					if (di.outputs[k] < chemicalTypes.size()) {
+						if (indices[di.outputs[k]] == 0) {
+							use = false;
+							break;
+						} else {
+							inputState -= diffs[di.outputs[k]];
+						}
+					}
+				}
+				
+				wn = (di.D) * i1;
+				res[pos] += (di.D) *
+					((i1 == chemicalTypes[di.input].cutoff) || (!use)) ?
+					0 : ((i1 + 1) * state[inputState]);
+			}				
+			
+			res[pos] = rn / wn;
+
+			// Advance...
+			for (size_t i = 0; i < chemicalTypes.size(); ++i) {
+				indices[i] += 1;
+				if (indices[i] == chemicalTypes[i].cutoff + 1) {
+					indices[i] = 0;
+				} else {
+					break;
+				}
+			}
+			pos++;
+		}
+		return res;
+	} 
+
 	// Compute the partial derivative of each derivative equation according to the probability variable
 	// used for 1D newton method
 	virtual vec compute_derivative_derivative(const vec& state)  {
