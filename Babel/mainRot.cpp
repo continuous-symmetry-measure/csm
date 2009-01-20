@@ -347,7 +347,7 @@ int main(int argc, char *argv[]){
 		if (ignoreHy)
 			n = stripAtoms(m,removeList,2,FALSE);
 		else //removeHy 
-			n = stripAtoms(m,removeList,2,TRUE);			
+			n = stripAtoms(m,removeList,2,TRUE);		
 	
 		mol.DeleteHydrogens();
 		

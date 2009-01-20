@@ -18,6 +18,22 @@ extern Molecule * allocateMolecule(int size);
 extern void initSimilarity(Molecule *m,int depth);		
 extern void replaceSymbols(Molecule* m);
 
+const char *(ELEMENT_TABLE[]) = {
+	"H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", 
+	"Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
+	"Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", 
+	"Ga", "Ge", "As", "Se",	"Br","Kr", "Rb", "Sr", "Y", "Zr",
+	"Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+	"Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd",
+	"Pn", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb",
+	"Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
+	"Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra",	"Ac", "Th",
+	"Pa", "U", "Np", "Pu", "An", "Cn", "Bk", "Cf", "Es","Fm",
+	"Md", "No", "Lr", "Rf", "Ha"
+};
+
+#define N_ELEMS 105
+
 
 /** 
  * Create a molecule from an OBMol
@@ -30,9 +46,13 @@ Molecule* babel2Mol(OBMol &obmol, int replaceSym) {
 	int i,j;
 	Molecule *mol = allocateMolecule(numAtoms);
 
-	for (i = 0; i < numAtoms; i++) {
-		OBAtom* atom = obmol.GetAtom(i + 1);
-		mol->_symbol[i] = strdup(atom->GetType());		
+	for (i = 0; i < numAtoms; i++) {		
+		OBAtom* atom = obmol.GetAtom(i + 1);	
+		if (atom->GetAtomicNum() <= N_ELEMS && atom->GetAtomicNum() > 0) {
+			mol->_symbol[i] = strdup(ELEMENT_TABLE[atom->GetAtomicNum() - 1]);		
+		} else {
+			mol->_symbol[i] = strdup(atom->GetType());		
+		}
 		mol->_valency[i] = atom->GetValence();
 		mol->_adjacent[i] = (int*)malloc(mol->_valency[i] * sizeof(int));
 		j = 0;
