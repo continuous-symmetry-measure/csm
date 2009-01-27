@@ -706,7 +706,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	for (i = 1; i <= 3; i++) {	
 		dir[i - 1]= 0.0;
 		for (j = 1; j <=3; j++) {
-			if ((fabs(diag[j] - maxval) < MINDOUBLE)) {
+			if ((fabs(diag[j] - maxval) < 1e-6)) {
 				dir[i - 1]= copyMat[i][j];
 				break;
 			} else {
