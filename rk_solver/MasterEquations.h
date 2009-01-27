@@ -352,6 +352,7 @@ public:
 
 				// Build the new index:
 				size_t inputState = pos + diffs[di.input];
+
 				bool use = true;
 				for (size_t k = 0; k < di.outputs.size(); ++k) {
 					if (di.outputs[k] < chemicalTypes.size()) {
@@ -364,10 +365,10 @@ public:
 					}
 				}
 				
-				wn = (di.D) * i1;
-				res[pos] += (di.D) *
+				wn += (di.D) * i1;
+				rn += (di.D) *
 					((i1 == chemicalTypes[di.input].cutoff) || (!use)) ?
-					0 : ((i1 + 1) * state[inputState]);
+					0 : ((i1 + 1) * state[inputState]);;
 			}				
 			
 			res[pos] = rn / wn;
