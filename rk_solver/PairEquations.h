@@ -392,7 +392,7 @@ public:
 								(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {	
 									int dis = (first == -1 ? second : first);
 									interaction &ii = interactions[dissociations[dis].locations[0]];
-									interaction_data &iid = interactionData[dissociations[first].locations[0]];
+									interaction_data &iid = interactionData[dissociations[dis].locations[0]];
 									// Check if it is the first or second input
 									param1 = param2 = (l == ii.input1) ?
 										iid.mean1 : 
