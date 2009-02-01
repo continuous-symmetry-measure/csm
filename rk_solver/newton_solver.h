@@ -51,7 +51,7 @@ public:
 		double err = max_err + 1;
 		double max_der = 1;
 		size_t step = 0;
-		while (err > max_err || max_der < MAX_DER_LIMIT) {
+		while (err > max_err && max_der > MAX_DER_LIMIT) {
 			vec newState = state - (eqSet.compute_derivative(0.0,state) / eqSet.compute_derivative_derivative(state));
 			newState = eqSet.normalize(newState);
 			processor.stepPerformed(step++, 0, newState, state, true);

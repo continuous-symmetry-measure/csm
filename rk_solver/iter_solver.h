@@ -50,7 +50,7 @@ public:
 		double err = max_err + 1;
 		double max_der = 1;
 		size_t step = 0;
-		while (err > max_err || max_der < MAX_DER_LIMIT) {
+		while (err > max_err && max_der > MAX_DER_LIMIT) {
 			vec newState = a * state + (1 - a) * eqSet.comptueRnDivWn(state);
 			processor.stepPerformed(step++, 0, eqSet.normalize(newState), eqSet.normalize(state), true);
 			err = eqSet.computeError(newState, state, 1);			
