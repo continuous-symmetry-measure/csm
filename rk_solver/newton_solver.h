@@ -9,6 +9,8 @@
 #include "rk_solver.h"
 #include <iostream>
 
+#define MAX_DER_LIMIT 1e-40
+
 using namespace std;
 
 template <typename T>
@@ -47,14 +49,16 @@ public:
 		
 		double max_err = params.limit;
 		double err = max_err + 1;
+		double max_der = 1;
 		size_t step = 0;
-		while (err > max_err) {
+		while (err > max_err || max_der < MAX_DER_LIMIT) {
 			vec newState = state - (eqSet.compute_derivative(0.0,state) / eqSet.compute_derivative_derivative(state));
 			newState = eqSet.normalize(newState);
 			processor.stepPerformed(step++, 0, newState, state, true);
 			err = eqSet.computeError(newState, state, 1);			
-			state = newState;			
-			cout << "Error: " << err << ", Max prob: " << scalarMax(eqSet.compute_derivative(0.0, state)) << endl;
+			state = newState;	
+			max_der = fabs(scalarMax(eqSet.compute_derivative(0.0, state)));		
+			cout << "Error: " << err << ", Max prob: " << max_der << endl;
 		}
 		
 		processor.solutionComplete(state);
