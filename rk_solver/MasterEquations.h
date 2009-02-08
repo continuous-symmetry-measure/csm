@@ -175,8 +175,8 @@ public:
 			}
 
 
-			// Next, go over self interactions
-			for (size_t i = 0; i < selfInteractions.size(); i++) {
+			// Next, go over self interactions			
+			for (size_t i = 0; i < selfInteractions.size(); i++) {				
 				const self_interaction &si = selfInteractions[i];
 				size_t ii = indices[si.input];
 
@@ -543,7 +543,7 @@ public:
 		}
 		for (size_t i = 0; i < interactions.size(); i++) {
 			interaction &ii = interactions[i];
-			file << ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input1].A) * corrVec[i])
+			file << ((chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * corrVec[i])
 				<< "\t";
 		}
 
