@@ -259,7 +259,8 @@ public:
 
 					// 3. Go Over two-component interactions
 					for (size_t index = 0; index < interactions.size()) { 
-						interaction &ii = interactions[ii];
+						interaction &ii = interactions[index];
+						if (ii.input1 = inter.input1
 						
 					} 					
 					
