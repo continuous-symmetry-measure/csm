@@ -311,14 +311,24 @@ public:
 						const interaction& ii = interactions[pos];
 						const interaction_data &iid = interactionData[pos];
 						const species &s1 = chemicalTypes[ii.input1];
-						const species &s2 = chemicalTypes[ii.input2];
+						const species &s2 = chemicalTypes[ii.input2];						
 						// if the other input of this interaction is also
 						// an input of the other interaction - we have taken care of this already
 						if (ii.input1 != inter.input2 && ii.input2 != inter.input2) {
 							// both input species should be traced over, as they are not part of this
 							// interaction
-							interRes(j,k) += (s1.A + s2.A) * iid.corr *
-								((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
+							// but - check if the second input of the interaction is also an output
+							bool isSecondOutput = false;
+							for (size_t iii = 0; iii < ii.outputs.size(); iii++)  {
+								if (ii.outputs[iii] == inter.input2) isSecondOutput = true;
+							}
+							if (isSecondOutput) {
+								interRes(j,k) += (s1.A + s2.A) * iid.corr *
+									((j == 0 || k == 0 ? 0 : stateMat(j - 1, k - 1)) - stateMat(j, k));
+							} else {
+								interRes(j,k) += (s1.A + s2.A) * iid.corr *
+									((j == 0 ? 0 : stateMat(j - 1, k)) - stateMat(j, k));
+							}
 						}
 					}
 
@@ -333,9 +343,14 @@ public:
 						if (ii.input1 != inter.input1 && ii.input2 != inter.input1) {
 							// both species should be traced over, as they are not part of this
 							// interaction
-							// CHECK IF IT WAS NOT ALREADY COUNTED
-							interRes(j,k) += (s1.A + s2.A) * iid.corr *
-								((k == 0 ? 0 : stateMat(j, k - 1)) - stateMat(j, k));
+							bool isFirstOutput = false;
+							for (size_t iii = 0; iii < ii.outputs.size(); iii++)  {
+								if (ii.outputs[iii] == inter.input1) isFirstOutput = true;
+							}				
+							if (!isFirstOutput) { 
+								interRes(j,k) += (s1.A + s2.A) * iid.corr *
+									((k == 0 ? 0 : stateMat(j, k - 1)) - stateMat(j, k));
+							}
 						}
 
 					}
