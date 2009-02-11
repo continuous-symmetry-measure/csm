@@ -57,6 +57,7 @@ protected:
 				id.conditionalMean2.resize(chemicalTypes[i].cutoff + 1);
 				id.conditionalSecond1.resize(chemicalTypes[j].cutoff + 1);
 				id.conditionalSecond2.resize(chemicalTypes[i].cutoff + 1);
+				interactionData(j,i) = interactionData(i,j);
 		}
 	}
 
@@ -78,7 +79,7 @@ public:
 		// Compute the mean values for each column and row of the interaction equations
 		size_t pos = 0;
 		for (size_t m = 0; m < interactionData.nrows(); n++) {
-			for (size_t n = 0; m < n; m++) { 				
+			for (size_t n = 0; n < m; m++) { 				
 				interaction_data& id = interactionData(m,n);
 				const Matrix<double> &probs = state[pos];
 				pos++;
@@ -178,6 +179,7 @@ public:
 									((j+1)*(j+2)*stateMat(j+2, k)) : 0) - (j * (j-1)*stateMat(j,k)));
 						}
 					}
+
 					if (interactionMat(inter.input2, inter.input2) != -1) {
 						// Check if the other is one of the outputs					
 						if (selfInteractionMat(inter.input2, inter.input1) != -1) {
@@ -208,38 +210,35 @@ public:
 						if (first != -1 || second != -1) {													
 							// If the reactants produces only one and does not interact with it, 
 							// or produces both and either does not interact with none
-							// interactes with both (special case)
+							// interactes with both (special cases
 							if (((first != -1 && second != -1) && 
 									((firstIn != -1 && secondIn != -1) || (firstIn == -1 && secondIn == -1))) ||
-									(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {	
-								interaction &ii = interactions[selfInteractions[first].locations[0]];
-								interaction_data &iid = interactionData[selfInteractions[first].locations[0]];
+									(first != -1 && firstIn == -1) || (second != -1 && secondIn == -1)) {								
+								interaction_data &iid = interactionData(min(l, inter.input1), max(l,inter.input1)) ;
 								// Check if it is the first or second input
-								param1 = param2 = (l == ii.input1) ?
+								param1 = param2 = (l < inter.input1) ?
 									iid.secondMoment1 - iid.mean1 : 
 									iid.secondMoment2 - iid.mean2; 							
 								} else if (first != -1 && firstIn != -1) {
-									interaction &ii = interactions[interactionMat(l, inter.input1)];
-									interaction_data &iid = interactionData[interactionMat(l, inter.input1)];
+									interaction_data &iid = interactionData(min(l,inter.input1), max(l, inter.input1));
 									// Check if it is the first or second input								
 									if (j != 0) {
-										param1 = (l == ii.input1) ?
+										param1 = (l < inter.input1) ?
 										iid.conditionalSecond1[j - 1] - iid.conditionalMean1[j - 1] : 
 										iid.conditionalSecond2[j - 1] - iid.conditionalMean2[j - 1]; 								
 									}
-									param2 = (l == ii.input1) ?
+									param2 = (l < inter.input1) ?
 										iid.conditionalSecond1[j] - iid.conditionalMean1[j] : 
 										iid.conditionalSecond2[j] - iid.conditionalMean2[j]; 							
 								} else if (second != -1 && secondIn != -1) {
-									interaction &ii = interactions[interactionMat(l, inter.input2)];
-									interaction_data &iid = interactionData[interactionMat(l, inter.input2)];
+									interaction_data &iid = interactionData(min(l,inter.input2), max(l, inter.input2));
 									// Check if it is the first or second input								
 									if (k != 0) {
-										param1 = (l == ii.input1) ?
+										param1 = (l < inter.input2) ?
 											iid.conditionalSecond1[k - 1] - iid.conditionalMean1[k - 1] : 
 											iid.conditionalSecond2[k - 1] - iid.conditionalMean2[k - 1]; 								
 									}
-									param2 = (l == ii.input1) ?
+									param2 = (l < inter.input2) ?
 										iid.conditionalSecond1[k] - iid.conditionalMean1[k] : 
 										iid.conditionalSecond2[k] - iid.conditionalMean2[k]; 							
 								} else {
@@ -259,14 +258,19 @@ public:
 					}
 
 					// 3. Go Over two-component interactions
+					for (size_t index = 0; index < interactions.size()) { 
+						interaction &ii = interactions[ii];
+						
+					} 					
+					
 					// A. Interactions in which one of these types takes part, as an input
 					for (size_t l = 0; l < chemicalTypes.size(); l++) {
 						if (l != inter.input1 && l != inter.input2) {
 							if (interactionMat(inter.input1,l) != -1) {
 								interaction &ii = interactions[interactionMat(inter.input1,l)];
-								interaction_data &iid = interactionData[interactionMat(inter.input1,l)];
+								interaction_data &iid = interactionData(min(l, inter.input1),max(l,inter.input1));
 								// Check if it is the first or second input
-								Vector<double> &means = (ii.input1 == inter.input1) ? iid.conditionalMean2 : iid.conditionalMean1;
+								Vector<double> &means = (l < inter.input1) ? iid.conditionalMean1 : iid.conditionalMean2;
 								// Handle the case in which the one of the outputs is the other species
 								// Check if the other is one of the outputs
 								bool isOutput = false;
@@ -288,9 +292,9 @@ public:
 							}
 							if (interactionMat(inter.input2,l) != -1) {
 								interaction &ii = interactions[interactionMat(inter.input2,l)];
-								interaction_data &iid = interactionData[interactionMat(inter.input2,l)];
+								interaction_data &iid = interactionData(min(l, inter.input2),max(l,inter.input2));
 								// Check if it is the first or second input
-								Vector<double> &means = (ii.input1 == inter.input2) ? iid.conditionalMean2 : iid.conditionalMean1;
+								Vector<double> &means = (l < inter.input2) ? iid.conditionalMean1 : iid.conditionalMean2;
 								bool isOutput = false;
 								for (size_t l = 0; l < ii.outputs.size(); l++) {
 									if (ii.outputs[l] == inter.input1) isOutput = true;
@@ -423,7 +427,7 @@ public:
 								if (k != 0) {
 									param1 = (l == ii.input1) ?
 										iid.conditionalMean1[k - 1] : 
-										iid.conditionalMean2[k - 1]; 								
+				(l < inter.input1)						iid.conditionalMean2[k - 1]; 								
 								}
 								param2 = (l == ii.input1) ?
 									iid.conditionalMean1[k] : 
