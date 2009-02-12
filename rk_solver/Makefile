@@ -13,6 +13,7 @@ BIN = bin
 MOMENT_OBJ = MomentEq.o
 RATE_OBJ = RateEq.o
 PAIRS_OBJ = PairEq.o
+FULL_PAIRS_OBJ = FullPairEq.o
 MASTER_OBJ = MasterEq.o
 MASTER_NEWTON_OBJ = MasterNewton.o
 PAIR_NEWTON_OBJ = PairNewton.o
@@ -21,7 +22,7 @@ MASTER_ITER_OBJ = MasterIter.o
 
 # the first target. All executables will be made when 'make' is
 # invoked with no target
-all: moment rate pairs master master_newton pair_newton master_iter
+all: moment rate pairs master master_newton pair_newton master_iter full_pairs
 
 # general rule how to compile a source file and produce an object file
 %.c,%.o:
@@ -40,6 +41,9 @@ rate: $(RATE_OBJ)
 
 pairs: $(PAIRS_OBJ)
 	$(CXX) $(LFLAGS)  $(PAIRS_OBJ) -o $(BIN)/$@
+	
+full_pairs: $(FULL_PAIRS_OBJ)
+	$(CXX) $(LFLAGS)  $(FULL_PAIRS_OBJ) -o $(BIN)/$@
 
 master: $(MASTER_OBJ)
 	$(CXX) $(LFLAGS)  $(MASTER_OBJ) -o $(BIN)/$@
