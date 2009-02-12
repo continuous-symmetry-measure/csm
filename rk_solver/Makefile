@@ -21,7 +21,7 @@ MASTER_ITER_OBJ = MasterIter.o
 
 # the first target. All executables will be made when 'make' is
 # invoked with no target
-all: moment rate pairs master master_newton pair_newton
+all: moment rate pairs master master_newton pair_newton master_iter
 
 # general rule how to compile a source file and produce an object file
 %.c,%.o:
