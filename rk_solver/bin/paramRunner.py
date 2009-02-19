@@ -25,7 +25,7 @@ system("rm -f rate.dat")
 for i in indices:	
 	ff = filenames[i - 1]
 	system("ulimit -t 200; ./rate " + ff + " > rate" + str(i) + ".res; mv rate.out rate" + str(i) + ".out")
-	system("echo " + str(grain_sizes[i]) + " `tail -1 rate" + str(i) + ".out | cut -f3-` >> rate.dat") 
+	system("echo " + str(grain_sizes[i-1]) + " `tail -1 rate" + str(i) + ".out | cut -f3-` >> rate.dat") 
 
 # run master
 system("rm -f master.dat")
@@ -33,11 +33,11 @@ master_cmd = "master_iter"
 for i in indices:
 	ff = filenames[i - 1]	
 	system("ulimit -t 500; ./" + master_cmd + " " + ff + "  > " + master_cmd + str(i) + ".res; mv master.out " + master_cmd + str(i) + ".out")
-	system("echo " + str(grain_sizes[i]) + " `tail -1 " + master_cmd + str(i) + ".out | cut -f3-` >> master.dat")
+	system("echo " + str(grain_sizes[i-1]) + " `tail -1 " + master_cmd + str(i) + ".out | cut -f3-` >> master.dat")
 
 # run pairs
 system("rm -f pairs.dat")
 for i in indices:
 	ff = filenames[i - 1]
 	system("ulimit -t 10000; ./pairs " + ff + " > pair" + str(i) + ".res; mv pairs.out pairs" + str(i) + ".out")
-	system("echo " + str(grain_sizes[i]) + " `tail -1 pairs" + str(i) + ".out | cut -f3-` >> pairs.dat") 
+	system("echo " + str(grain_sizes[i-1]) + " `tail -1 pairs" + str(i) + ".out | cut -f3-` >> pairs.dat") 
