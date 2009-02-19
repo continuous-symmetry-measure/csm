@@ -178,7 +178,6 @@ public:
 	 * Announce that the solving is complete
  	 */
 	virtual void solutionComplete(const vec& finalState) {
-		file << "Finished Solving" << endl;
 		file.close();
 	}
 };
