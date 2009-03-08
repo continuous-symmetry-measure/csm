@@ -166,8 +166,9 @@ public:
 			// First - go over types
 			for (size_t i = 0; i < chemicalTypes.size(); i++) {
 				res[pos] +=
-					// Flux Term
-					chemicalTypes[i].Flux * (((indices[i] == 0) ? 0 : state[pos - diffs[i]]) - state[pos]) +
+					// Flux Term - not allowed to get out of cutoff
+					chemicalTypes[i].Flux * (((indices[i] == 0) ? 0 : state[pos - diffs[i]]) - 
+						(indices[i] == chemicalTypes[i].cutoff ? 0 : state[pos])) +
 					// W Term
 					chemicalTypes[i].W *
 					(((indices[i] == chemicalTypes[i].cutoff) ? 0 : (indices[i] + 1) * state[pos + diffs[i]]) -
@@ -183,21 +184,25 @@ public:
 				// Build the new index:
 				size_t inputState = pos + 2 * diffs[si.input];
 				bool use = true;
+				bool useOut = true;				
 				for (size_t k = 0; k < si.outputs.size(); ++k) {
 					if (si.outputs[k] < chemicalTypes.size()) {
-						if (indices[si.outputs[k]] == 0) {
-							use = false;
-							break;
+						size_t sp = si.outputs[k];
+						if (indices[sp] == 0) {
+							use = false;							
 						} else {
-							inputState -= diffs[si.outputs[k]];
+							inputState -= diffs[sp];
 						}
-					}
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
+						}
+					}			
 				}
 
 				res[pos] += chemicalTypes[si.input].A *
 				    ((((ii >= chemicalTypes[si.input].cutoff - 1) || (!use)) ?
 				    		0 : ((ii + 2) * (ii + 1) * state[inputState])) -
-				    		(ii * (ii - 1) * state[pos]));
+				    		(!useOut ? 0 : (ii * (ii - 1) * state[pos])));
 			}
 
 			// Next - Go over two-component interactions
@@ -209,13 +214,17 @@ public:
 				// Build the new index:
 				size_t inputState = pos + diffs[ii.input1] + diffs[ii.input2];
 				bool use = true;
+				bool useOut = true;
 				for (size_t k = 0; k < ii.outputs.size(); ++k) {
 					if (ii.outputs[k] < chemicalTypes.size()) {
+						size_t sp = ii.outputs[k];
 						if (indices[ii.outputs[k]] == 0) {
 							use = false;
-							break;
 						} else {
 							inputState -= diffs[ii.outputs[k]];
+						}
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
 						}
 					}
 				}
@@ -223,7 +232,7 @@ public:
 				res[pos] += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
 					((((i1 == chemicalTypes[ii.input1].cutoff) || (i2 == chemicalTypes[ii.input2].cutoff) || (!use)) ?
 					 	0 : ((i1 + 1) * (i2 + 1) * state[inputState])) -
-					(i1 * i2 * state[pos]));
+					(!useOut ? 0 : i1 * i2 * state[pos]));
 			}
 
 			// Next, go over Dissociations
@@ -233,21 +242,25 @@ public:
 
 				// Build the new index:
 				size_t inputState = pos + diffs[di.input];
-				bool use = true;
+				bool use = true;	
+				bool useOut = true;
 				for (size_t k = 0; k < di.outputs.size(); ++k) {
 					if (di.outputs[k] < chemicalTypes.size()) {
-						if (indices[di.outputs[k]] == 0) {
-							use = false;
-							break;
+						size_t sp = di.outputs[k];
+						if (indices[sp] == 0) {
+							use = false;							
 						} else {
 							inputState -= diffs[di.outputs[k]];
+						}
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
 						}
 					}
 				}
 
 				res[pos] += (di.D) *
 					((((i1 == chemicalTypes[di.input].cutoff) || (!use)) ?
-					0 : ((i1 + 1) * state[inputState])) - (i1 * state[pos]));
+					0 : ((i1 + 1) * state[inputState])) - (!useOut ? 0 : i1 * state[pos]));
 			}
 
 			// Advance...
@@ -289,7 +302,7 @@ public:
 
 			// First - go over types
 			for (size_t i = 0; i < chemicalTypes.size(); i++) {
-				wn += (chemicalTypes[i].Flux + chemicalTypes[i].W * indices[i]);
+				wn += ((indices[i] == chemicalTypes[i].cutoff) ? 0 : chemicalTypes[i].Flux) + chemicalTypes[i].W * indices[i];
 				rn += chemicalTypes[i].Flux * ((indices[i] == 0) ? 0 : state[pos - diffs[i]])
 					+ chemicalTypes[i].W * ((indices[i] == chemicalTypes[i].cutoff) ? 0 : (indices[i] + 1) * state[pos + diffs[i]]);
 			}
@@ -302,18 +315,22 @@ public:
 				// Build the new index:
 				size_t inputState = pos + 2 * diffs[si.input];
 				bool use = true;
+				bool useOut = true;				
 				for (size_t k = 0; k < si.outputs.size(); ++k) {
 					if (si.outputs[k] < chemicalTypes.size()) {
-						if (indices[si.outputs[k]] == 0) {
-							use = false;
-							break;
+						size_t sp = si.outputs[k];
+						if (indices[sp] == 0) {
+							use = false;							
 						} else {
-							inputState -= diffs[si.outputs[k]];
+							inputState -= diffs[sp];
 						}
-					}
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
+						}
+					}			
 				}
 
-				wn += chemicalTypes[si.input].A * ii * (ii - 1);
+				wn += (!useOut) ? 0 : chemicalTypes[si.input].A * ii * (ii - 1);
 				rn += chemicalTypes[si.input].A *
 				    (((ii >= chemicalTypes[si.input].cutoff - 1) || (!use)) ?
 				    		0 : ((ii + 2) * (ii + 1) * state[inputState]));
@@ -328,18 +345,22 @@ public:
 				// Build the new index:
 				size_t inputState = pos + diffs[ii.input1] + diffs[ii.input2];
 				bool use = true;
+				bool useOut = true;
 				for (size_t k = 0; k < ii.outputs.size(); ++k) {
 					if (ii.outputs[k] < chemicalTypes.size()) {
+						size_t sp = ii.outputs[k];
 						if (indices[ii.outputs[k]] == 0) {
 							use = false;
-							break;
 						} else {
 							inputState -= diffs[ii.outputs[k]];
+						}
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
 						}
 					}
 				}
 
-				wn += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * i1 * i2;
+				wn += (!useOut) ? 0 : (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * i1 * i2;
 				rn += (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) *
 					(((i1 == chemicalTypes[ii.input1].cutoff) || (i2 == chemicalTypes[ii.input2].cutoff) || (!use)) ?
 					 	0 : ((i1 + 1) * (i2 + 1) * state[inputState]));
@@ -352,20 +373,23 @@ public:
 
 				// Build the new index:
 				size_t inputState = pos + diffs[di.input];
-
-				bool use = true;
+				bool use = true;	
+				bool useOut = true;
 				for (size_t k = 0; k < di.outputs.size(); ++k) {
 					if (di.outputs[k] < chemicalTypes.size()) {
-						if (indices[di.outputs[k]] == 0) {
-							use = false;
-							break;
+						size_t sp = di.outputs[k];
+						if (indices[sp] == 0) {
+							use = false;							
 						} else {
 							inputState -= diffs[di.outputs[k]];
+						}
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
 						}
 					}
 				}
 				
-				wn += (di.D) * i1;
+				wn += (!useOut) ? 0 : (di.D) * i1;
 				rn += (di.D) *
 					((i1 == chemicalTypes[di.input].cutoff) || (!use)) ?
 					0 : ((i1 + 1) * state[inputState]);;
@@ -407,7 +431,7 @@ public:
 			for (size_t i = 0; i < chemicalTypes.size(); i++) {
 				res[pos] -=
 					// Flux Term
-					chemicalTypes[i].Flux +
+					(indices[i] == chemicalTypes[i].cutoff ? 0 : chemicalTypes[i].Flux) +
 					// W Term
 					chemicalTypes[i].W * indices[i];
 			}
@@ -415,8 +439,20 @@ public:
 			// Go over self interactions
 			for (size_t i = 0; i < selfInteractions.size(); i++) {
 				const self_interaction &si = selfInteractions[i];
+
+				// Build the new index:
+				bool useOut = true;				
+				for (size_t k = 0; k < si.outputs.size(); ++k) {
+					if (si.outputs[k] < chemicalTypes.size()) {
+						size_t sp = si.outputs[k];
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
+						}
+					}			
+				}
+
 				size_t ii = indices[si.input];
-				res[pos] -= chemicalTypes[si.input].A * ii * (ii - 1);
+				res[pos] -= (!useOut) ? 0 : chemicalTypes[si.input].A * ii * (ii - 1);
 			}
 
 			// Next - Go over two-component interactions
@@ -424,14 +460,37 @@ public:
 				const interaction &ii = interactions[i];
 				size_t i1 = indices[ii.input1];
 				size_t i2 = indices[ii.input2];
-				res[pos] -= (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * i1 * i2;
+
+				// Build the new index:
+				bool useOut = true;
+				for (size_t k = 0; k < ii.outputs.size(); ++k) {
+					if (ii.outputs[k] < chemicalTypes.size()) {
+						size_t sp = ii.outputs[k];
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
+						}
+					}
+				}
+
+				res[pos] -= (!useOut) ? 0 : (chemicalTypes[ii.input1].A + chemicalTypes[ii.input2].A) * i1 * i2;
 			}
 
 			// Go over dissociations
 			for (size_t i = 0; i < dissociations.size(); i++) {
 				const dissociation& di = dissociations[i];
 				size_t i1 = indices[di.input];
-				res[pos] -= di.D * i1;
+
+				// Build the new index:
+				bool useOut = true;
+				for (size_t k = 0; k < di.outputs.size(); ++k) {
+					if (di.outputs[k] < chemicalTypes.size()) {
+						size_t sp = di.outputs[k];
+						if (indices[sp] == chemicalTypes[sp].cutoff) { 
+							useOut = false;
+						}
+					}
+				}
+				res[pos] -= (!useOut) ? 0 : di.D * i1;
 			}
 
 			// Advance...
