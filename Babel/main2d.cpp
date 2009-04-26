@@ -115,7 +115,7 @@ double factorial(int n){
  * checks if the molecule's group permutations exceed GROUPSIZE_FACTOR_PER_MINUTE * MINUTES
  */
 double numPermutations(Molecule *m, int operationOrder, OperationType t) {
-	int i,j, k; 	
+	int i,j; 	
 	double total = 1.0;
 	for (i = 1; i <= m->_groupNum; i++) {
 		int groupSize = getGroupSize(m, i);
@@ -184,8 +184,6 @@ void parseInput(int argc, char *argv[]){
 	// get commandline flags
 	int i;
 	int nextIsPermFile = FALSE;
-	int nextIsMaxSn = FALSE;
-
 	for ( i=4;  i< argc ;  i++ ){
 		if (nextIsPermFile) {
 			char* permfileName = argv[i];
@@ -496,9 +494,12 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		csm = fabs(100 * (1.0 - csm / opOrder));
 		free(curPerm);
 
+		return csm;
+
 	} else if (type == CS) {
+		return -1;
 	}
-	return csm;
+	return -1;
 }
 
 double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, double *dir, OperationType type, double dMin) {
@@ -506,9 +507,8 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 
 	if (type == CN) { 
 		int *curPerm = (int *)malloc(sizeof(int) * m->_size);
-		double rotated[2];
 		int i,j,k;
-		double res;
+		double res = 0;
 	
 		for (i = 0; i < m->_size; i++) {
 			// initialize with identity operation
@@ -539,6 +539,7 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 
 
 	
+		
 		for (j = 0; j < m->_size; j++) {
 			for (k = 0; k < 2; k++) {
 				outAtoms[j][k] /= opOrder;
@@ -550,6 +551,8 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	} else if (type == CS) {
 		return -1;
 	} 
+
+	return -1;
 }
 
 
