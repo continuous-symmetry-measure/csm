@@ -458,7 +458,7 @@ void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos){
 double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	if (type == CN) { 
-
+		int *curPerm = (int *)malloc(sizeof(int) * m->_size);
 		double rotated[2], dist, csm;
 		int i, j;
 	
@@ -507,10 +507,11 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 
 
 	if (type == CN) { 
+		int *curPerm = (int *)malloc(sizeof(int) * m->_size);
 		double rotated[2];
 		int i,j,k;
 		double res;
-
+	
 		for (i = 0; i < m->_size; i++) {
 			// initialize with identity operation
 			curPerm[i] = i;
