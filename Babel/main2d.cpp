@@ -459,7 +459,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	if (type == CN) { 
 		int *curPerm = (int *)malloc(sizeof(int) * m->_size);
-		double rotated[2], dist, csm;
+		double rotated[2], dists csm;
 		int i, j;
 	
 		// initialize identity permutation
@@ -485,16 +485,14 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 					rotated[1] = s * m->_pos[curPerm[j][0] + c* m->_pos[curPerm[j][1];
 					dists += (m->_pos[j][0] * rotated[0] + m->_pos[j][1] * rotated[1]); 
 				}
-				csm += cos(angle) * dists;
-	
+				csm += dists;
 			} else {
 				csm += 1.0;	
 			}
 		}	
 		// DEBUG printf("%.6f %.6f %.6f\n", csm, maxval, scl);
 		// DEBUG printf("dir: %.6f %.6f %.6f\n", dir[0], dir[1], dir[2]);
-		// DEBUG printf("eig: %.6f %.6f %.6f\n",  diag[1], diag[2], diag[3]);
-		csm += (maxval -  scl) / 2;
+		// DEBUG printf("eig: %.6f %.6f %.6f\n",  diag[1], diag[2], diag[3]);
 		csm = fabs(100 * (1.0 - csm / opOrder));
 		free(curPerm);
 
@@ -535,9 +533,6 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 					outAtoms[j][0] += c * m->_pos[curPerm[j][0] - s * m->_pos[curPerm[j][1];
 					outAtoms[j][1] += s * m->_pos[curPerm[j][0] + c* m->_pos[curPerm[j][1];
 				}
-	
-			} else {
-				csm += 1.0;	
 			}
 		}	
 		free(curPerm);
