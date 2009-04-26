@@ -10,12 +10,21 @@ extern "C" {
 using namespace OpenBabel;
 
 /** 
+ * Get the atomic mass of a given element
+ * @param atomName The atom's symbol
+ *  
+ * @return The atomic mass
+ */ 
+double getAtomicMass(char *atomName);
+
+/** 
  * Create a molecule from an OBMol
  * 
  * @param obmol The OpenBabel Molecule
  * @param replaceSym Whether to ignore atom names or not
+ * @param useMass Whether to use the mass of the atoms
  */
- Molecule* babel2Mol(OBMol &obmol, int reaplaceSym);
+ Molecule* babel2Mol(OBMol &obmol, int reaplaceSym, bool useMass);
 
 /**
  * Updates the coordinates of the OpenBabel Molecule according to the Molecule data

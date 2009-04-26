@@ -46,6 +46,7 @@ int ignoreSym = FALSE;
 int useFormat = FALSE;
 int writeOpenu = FALSE;
 int useperm    = FALSE;
+int useMass    = FALSE;
 int limitRun = TRUE;
 char *format = NULL;
 int babelBond = FALSE;
@@ -151,6 +152,8 @@ void parseInput(int argc, char *argv[]){
 			nextIsPermFile = TRUE;
 		} else if (strcmp(argv[i], "-babelbond") == 0) {
 			babelBond = TRUE;			
+		} else if (strcmp(argv[i], "-useMass") == 0) { 
+			useMass = TRUE;
 		} else if (strcmp(argv[i], "-help") == 0) {
 			usage(argv[0]);
 			exit(0);
@@ -221,9 +224,14 @@ int main(int argc, char *argv[]){
 	// If a specific format is used, read molecule using that format
 	if (strcasecmp(format, CSMFORMAT) == 0) {
 		m = createMolecule(inFile,stdout,ignoreSym && !useperm);
+		if (useMass) { 
+			for (int i = 0; i < m->_size; i++) { 
+				m->_mass[i] = getAtomicMass(m->_symbol[i]);
+			}
+		} 
 	} else {
 		mol = readMolecule (inFileName, format, babelBond);
-		m = babel2Mol(mol, ignoreSym && !useperm );	
+		m = babel2Mol(mol, ignoreSym && !useperm, useMass);	
 	}
    } else {
 	format = getExtension(inFileName);	
@@ -231,9 +239,14 @@ int main(int argc, char *argv[]){
 	// if the extension is CSM - use csm
 	if (strcasecmp(format, CSMFORMAT) == 0) {
 		m = createMolecule(inFile,stdout,ignoreSym && !useperm);
+		if (useMass) { 
+			for (int i = 0; i < m->_size; i++) { 
+				m->_mass[i] = getAtomicMass(m->_symbol[i]);
+			}
+		} 
 	} else {
 		mol = readMolecule (inFileName, NULL, babelBond);
-		m = babel2Mol(mol, ignoreSym && !useperm );	
+		m = babel2Mol(mol, ignoreSym && !useperm, useMass);	
 	}
    }
 

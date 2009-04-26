@@ -34,6 +34,25 @@ const char *(ELEMENT_TABLE[]) = {
 
 #define N_ELEMS 105
 
+/** 
+ * Get the atomic mass of a given element
+ * @param atomName The atom's symbol
+ *  
+ * @return The atomic mass
+ */ 
+double getAtomicMass(char *atomName) { 
+	for (int i = 0; i < N_ELEMS; i++) { 
+		if (!strcmp(atomName, ELEMENT_TABLE[i])) { 
+			OBAtom a;
+			a.SetAtomicNum(i+1);
+			a.SetIsotope(0);
+			return a.GetAtomicMass();
+		}
+	}
+	printf("Failed: Unknown atom type %s\n", atomName);
+	exit(1);
+	return 1;
+} 
 
 /** 
  * Create a molecule from an OBMol
@@ -41,7 +60,7 @@ const char *(ELEMENT_TABLE[]) = {
  * @param obmol The OpenBabel Molecule
  * @param replaceSym Whether to ignore atom names or not
  */
-Molecule* babel2Mol(OBMol &obmol, int replaceSym) {
+Molecule* babel2Mol(OBMol &obmol, int replaceSym, bool useMass = false) {
 	int numAtoms = obmol.NumAtoms();
 	int i,j;
 	Molecule *mol = allocateMolecule(numAtoms);
@@ -52,6 +71,9 @@ Molecule* babel2Mol(OBMol &obmol, int replaceSym) {
 			mol->_symbol[i] = strdup(ELEMENT_TABLE[atom->GetAtomicNum() - 1]);		
 		} else {
 			mol->_symbol[i] = strdup(atom->GetType());		
+		}
+		if (useMass) {
+			mol->_mass[i] = atom->GetAtomicMass();
 		}
 		mol->_valency[i] = atom->GetValence();
 		mol->_adjacent[i] = (int*)malloc(mol->_valency[i] * sizeof(int));

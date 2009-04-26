@@ -69,6 +69,7 @@ OperationType type;
 OperationType chMinType;
 int opOrder;
 int useperm    = FALSE;
+int useMass    = FALSE;
 int limitRun = TRUE;
 char *format = NULL;
 int babelBond = FALSE;
@@ -99,6 +100,7 @@ void usage(char *op) {
 	printf("-useperm permfile  -  only compute for a single permutation\n");
 	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
 	printf("-babelbond	   - Let openbabel compute bonding\n");
+	printf("-useMass	   - Use the atomic masses to define center of mass\n");
 	printf("-timeOnly	   - Only print the time and exit\n");
 	printf("-sn_max	<max n> - The maximal sn to try, relevant only for chirality\n");
 	printf("-help - print this help file\n");
@@ -274,7 +276,9 @@ void parseInput(int argc, char *argv[]){
 			useperm = TRUE;
 			nextIsPermFile = TRUE;
 		} else if (strcmp(argv[i], "-babelbond") == 0) {
-			babelBond = TRUE;			
+			babelBond = TRUE;
+		} else if (strcmp(argv[i], "-useMass") == 0) { 
+			useMass = TRUE;					
 		} else if (strcmp(argv[i], "-timeonly") == 0) {
 			timeOnly = TRUE;
 		} else if (strcmp(argv[i], "-help") == 0) {
@@ -313,9 +317,14 @@ int main(int argc, char *argv[]){
 		// If a specific format is used, read molecule using that format
 		if (strcasecmp(format, CSMFORMAT) == 0) {
 			m = createMolecule(inFile,stdout,ignoreSym && !useperm);
+			if (useMass) { 
+				for (int i = 0; i < m->_size; i++) { 
+					m->_mass[i] = getAtomicMass(m->_symbol[i]);
+				}
+			} 
 		} else {
 			mol = readMolecule (inFileName, format, babelBond);
-			m = babel2Mol(mol, ignoreSym && !useperm );	
+			m = babel2Mol(mol, ignoreSym && !useperm, useMass);	
 		}
    	} else {
 		format = getExtension(inFileName);
@@ -323,10 +332,15 @@ int main(int argc, char *argv[]){
 		// if the extension is CSM - use csm
 		if (strcasecmp(format, CSMFORMAT) == 0) {
 			m = createMolecule(inFile,stdout,ignoreSym && !useperm);
+			if (useMass) { 
+				for (int i = 0; i < m->_size; i++) { 
+					m->_mass[i] = getAtomicMass(m->_symbol[i]);
+				}
+			}
 		} else {
 			
 			mol = readMolecule (inFileName, NULL, babelBond);
-			m = babel2Mol(mol, ignoreSym && !useperm );			
+			m = babel2Mol(mol, ignoreSym && !useperm, useMass);			
 		}
    	}
 

@@ -53,6 +53,12 @@ Molecule * allocateMolecule(int size){
     //allocate symbols
 	m->_symbol = (char **)malloc(size * sizeof(char*));
 	// individual strings allocated on reading
+   
+    //allocate mass (initially - equal mass)
+    m->_mass = (double *)malloc(size * sizeof(double));
+	for ( i=0;  i< size ;  i++ ){
+		m->_mass[i] = 1.0;
+	}
 
     //allocate adjacency
     m->_adjacent = (int **)malloc(size * sizeof(int*));
@@ -307,6 +313,8 @@ Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize,
 		for (j=0; j<DIM; j++){
 			dest->_pos[i][j] = src->_pos[old_i][j];
 		}
+		// Copy mass
+		dest->_mass[i] = src->_mass[old_i];
 
 		// copy similar
 		if (newGroups[src->_similar[old_i] - 1] == 0) {
@@ -584,14 +592,16 @@ int normalizeMolecule(Molecule *m){
 
 	x_avg = y_avg = z_avg = 0.0;
 
+	double mass_sum = 0;
 	for(i=0; i< m->_size; i++){
-		x_avg += m->_pos[i][0];
-		y_avg += m->_pos[i][1];
-		z_avg += m->_pos[i][2];
+		x_avg += m->_pos[i][0] * m->_mass[i];
+		y_avg += m->_pos[i][1] * m->_mass[i];
+		z_avg += m->_pos[i][2] * m->_mass[i];
+		mass_sum += m->_mass[i];
 	}
-	x_avg /= (double)(m->_size);
-	y_avg /= (double)(m->_size);
-	z_avg /= (double)(m->_size);
+	x_avg /= (double)(mass_sum);
+	y_avg /= (double)(mass_sum);
+	z_avg /= (double)(mass_sum);
 
 	norm = 0.0;
 	for(i=0; i< m->_size; i++){
@@ -835,6 +845,9 @@ void freeMolecule(Molecule *m){
 		free(m->_pos[i]);
 	}
 	free(m->_pos);
+
+    // Free mass
+    free(m->_mass);
 
     // free symbols
     for (i=0;i<m->_size;i++){

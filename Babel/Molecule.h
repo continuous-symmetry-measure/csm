@@ -32,7 +32,8 @@ typedef struct MoleculeTag {
     int* _similar;           // similarity
     int* _marked;            // for marking atoms - general use
     int  _groupNum;          // the number of groups of similarity
-	double _norm;			 // The normalization factor
+    double _norm;	     // The normalization factor
+    double* _mass;	     // The atomic masses
 } Molecule;
 
 Molecule* createMolecule(FILE *in,FILE *err,int replaceSym);
