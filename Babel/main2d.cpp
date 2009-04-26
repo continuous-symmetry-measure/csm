@@ -461,27 +461,31 @@ void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos){
 double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	if (type == CN) { 
+
+		double rotated[2], dist, csm;
 	
 		// initialize identity permutation
 		for (i = 0; i < m->_size; i++) {
 			curPerm[i] = i;
 		}
-
+	
 		// compute CSM	
 		csm = 0.0;		
 		for (i = 0; i < opOrder; i++) {		
-			// This can be more efficient - save results of matrix computation
 			if (i != 0) {
-				angle = isZeroAngle ? 0.0 : ((2 * PI * i) / opOrder);
+				double angle  = (2 * PI * i) / opOrder;
 				dists = 0.0;
+				double c = cos(angle);
+				double s = sin(angle);
 				for (j = 0; j < m->_size; j++) {
 					// i'th power of permutation
 					curPerm[j] = perm[curPerm[j]];	
 				}
+				
 				for (j = 0; j < m->_size; j++) {
-					dists += (m->_pos[j][0] * m->_pos[curPerm[j]][0] + 
-						m->_pos[j][1] * m->_pos[curPerm[j]][1] + 
-						m->_pos[j][2] * m->_pos[curPerm[j]][2]); 
+					rotated[0] = c * m->_pos[curPerm[j][0] - s * m->_pos[curPerm[j][1];
+					rotated[1] = s * m->_pos[curPerm[j][0] + c* m->_pos[curPerm[j][1];
+					dists += (m->_pos[j][0] * rotated[0] + m->_pos[j][1] * rotated[1]); 
 				}
 				csm += cos(angle) * dists;
 	
@@ -502,58 +506,56 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 }
 
 double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, double *dir, OperationType type, double dMin) {
-	int isImproper = (type != CN) ? TRUE : FALSE;
-	int isZeroAngle = (type == CS) ? TRUE : FALSE;
-	int i, j, k, l;
-	int *curPerm = (int *)malloc(sizeof(int) * m->_size);
-	double rotaionMatrix[3][3];
-	double tmpMatrix[3][3] = {{0.0, -dir[2], dir[1]}, {dir[2], 0.0, -dir[0]}, {-dir[1], dir[0], 0.0}};
-	double angle;
-	double res = 0.0;
 
-	for (i = 0; i < m->_size; i++) {
-		// initialize with identity operation
-		curPerm[i] = i;
-		for (j = 0; j < 3; j++) {
-			outAtoms[i][j] = m->_pos[i][j];
-		}
-	}
 
-	for (i = 1; i < opOrder; i++) {
-		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
-		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
-		for (j = 0; j < m->_size; j++) {
-			curPerm[j] = perm[curPerm[j]];
-		}
-		for (j = 0; j < 3; j++) {
-			for (k = 0; k < 3; k++) {
-				rotaionMatrix[j][k] = 
-					((j == k) ? cos(angle) : 0) + 
-					(factor - cos(angle)) * dir[j] * dir[k] + 
-					sin(angle) * tmpMatrix[j][k];
+	if (type == CN) { 
+		double rotated[2];
+		int i,j,k;
+		double res;
+
+		for (i = 0; i < m->_size; i++) {
+			// initialize with identity operation
+			curPerm[i] = i;
+			for (j = 0; j < 2; j++) {
+				outAtoms[i][j] = m->_pos[i][j];
 			}
 		}
-
-		for (j = 0; j < m->_size; j++) {
-			for (k = 0; k < 3; k++) {
-				for (l = 0; l < 3; l++) {
-					outAtoms[j][k] += rotaionMatrix[k][l] * m->_pos[curPerm[j]][l];
-				}
-			}
-		}
-	}
 	
-	for (j = 0; j < m->_size; j++) {
-		for (k = 0; k < 3; k++) {
-			outAtoms[j][k] /= opOrder;
-			outAtoms[j][k] *= dMin;
-			res += SQR(outAtoms[j][k]);
+		// compute CSM	
+		for (i = 0; i < opOrder; i++) {		
+			if (i != 0) {
+				double angle  = (2 * PI * i) / opOrder;
+				double c = cos(angle);
+				double s = sin(angle);
+				for (j = 0; j < m->_size; j++) {
+					// i'th power of permutation
+					curPerm[j] = perm[curPerm[j]];	
+				}
+				
+				for (j = 0; j < m->_size; j++) {
+					outAtoms[j][0] += c * m->_pos[curPerm[j][0] - s * m->_pos[curPerm[j][1];
+					outAtoms[j][1] += s * m->_pos[curPerm[j][0] + c* m->_pos[curPerm[j][1];
+				}
+	
+			} else {
+				csm += 1.0;	
+			}
+		}	
+		free(curPerm);
+
+
+	
+		for (j = 0; j < m->_size; j++) {
+			for (k = 0; k < 2; k++) {
+				outAtoms[j][k] /= opOrder;
+				outAtoms[j][k] *= dMin;
+				res += SQR(outAtoms[j][k]);
+			}
 		}
-	}
-
-	free(curPerm);
-
-	return sqrt(res);
+		return sqrt(res);
+	} else if (type == CS) {
+		return -1;
+	} 
 }
 
 

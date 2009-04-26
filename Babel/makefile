@@ -20,9 +20,14 @@ OBJ5 = csm2pdb.o parseFunctions.o Molecule.o
 
 OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o mainRot.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
 
+OBJCSM2D = Molecule.o parseFunctions.o permuter.o groupPermuter.o main2d.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
+
+
+
+
 # the first target. All executables will be made when 'make' is
 # invoked with no target
-all: libcsm.a c2 mir chiral inv csm csm2pdb
+all: libcsm.a c2 mir chiral inv csm csm2pdb csm2d
 
 # general rule how to compile a source file and produce an object file
 %.c,%.o:
@@ -50,6 +55,11 @@ inv: $(OBJ4) libcsm.a
 # linking rule for the csm executable
 csm: $(OBJCSM) libcsm.a
 	$(CXX) $(LFLAGS) $(OBJCSM) -o $(BIN)/$@
+
+# linking rule for the csm2d executable
+csm2d: $(OBJCSM2D) libcsm.a
+	$(CXX) $(LFLAGS) $(OBJCSM2D) -o $(BIN)/$@
+
 
 csm2pdb: $(OBJ5)
 	$(CC) $(LFLAGS) $(OBJ5) -o $(BIN)/$@
