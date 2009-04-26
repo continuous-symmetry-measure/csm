@@ -198,9 +198,6 @@ void parseInput(int argc, char *argv[]){
 				exit(1);
 			}
 			nextIsPermFile = FALSE;
-		} else if (nextIsMaxSn) { 
-			sn_max = atoi(argv[i]);
-			nextIsMaxSn = FALSE;
 		} else if (strcmp(argv[i],"-ignoreHy" ) == 0 )
 			ignoreHy = TRUE;
 		else if (strcmp(argv[i],"-removeHy" ) == 0 )
@@ -463,6 +460,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	if (type == CN) { 
 
 		double rotated[2], dist, csm;
+		int i, j;
 	
 		// initialize identity permutation
 		for (i = 0; i < m->_size; i++) {
