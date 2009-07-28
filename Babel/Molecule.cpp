@@ -532,8 +532,8 @@ int getMaxGroupSize(Molecule *m){
     for ( i=0;  i<m->_groupNum;  i++ )
     	count[i] = 0;
 
-	// count the number of members of each group
-	for ( i=0;  i< m->_groupNum ;  i++ ){
+    // count the number of members of each group
+	for ( i=0;  i< m->_size ;  i++ ){
 		count[m->_similar[i] - 1]++;
 	}
 
