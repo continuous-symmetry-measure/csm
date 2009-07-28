@@ -38,6 +38,23 @@ typedef enum {
 	CH
 } OperationType;
 
+struct distRecord {
+	double distance;
+	int row; 
+	int col;
+};
+
+int distComp(const void *pd1, const void* pd2) { 
+	const struct distRecord* d1 = (const struct distRecord*)pd1;
+	const struct distRecord* d2 = (const struct distRecord*)pd2;
+	if (d1->distance > d2->distance) { 
+		return 1;
+	} else if (d1->distance < d2->distance) { 
+		return -1;
+	}
+	return 0;
+}
+
 extern "C" {
 
 // from tqli.c - nrbook
@@ -55,6 +72,8 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, char *fname);
 void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void runSinglePerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type);
+void findBestPerm(Molecule* m, int* perm, OperationType type);
+void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type);
 void readPerm(FILE* permfile, int* perm, int size);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
@@ -69,6 +88,7 @@ OperationType type;
 OperationType chMinType;
 int opOrder;
 int useperm    = FALSE;
+int findPerm = FALSE; 
 int useMass    = FALSE;
 int limitRun = TRUE;
 char *format = NULL;
@@ -99,6 +119,7 @@ void usage(char *op) {
 	printf("-nolimit - Allows running program while ignoring computational complexity\n");
 	printf("-useperm permfile  -  only compute for a single permutation\n");
 	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
+	printf("-findperm	   - Attempt to search for a permutation\n");
 	printf("-babelbond	   - Let openbabel compute bonding\n");
 	printf("-useMass	   - Use the atomic masses to define center of mass\n");
 	printf("-timeOnly	   - Only print the time and exit\n");
@@ -284,6 +305,8 @@ void parseInput(int argc, char *argv[]){
 		} else if (strcmp(argv[i], "-help") == 0) {
 			usage(argv[0]);
 			exit(0);
+		} else if (strcmp(argv[i], "-findperm") == 0) { 
+			findPerm = TRUE;
 		}
 	}
 	if (writeOpenu) {
@@ -309,6 +332,11 @@ int main(int argc, char *argv[]){
 
 	// init options
 	parseInput(argc,argv);
+
+	if (findPerm && useperm) { 
+		printf("-findperm and -useperm can't be used together...");
+		exit(1);
+	} 
 
 	// try to read molecule from infile
 	Molecule* m;
@@ -379,9 +407,17 @@ int main(int argc, char *argv[]){
 		// continue as per usual
 	}
 
-	printf("Going to enumerate over %5.2f permutations\n", totalNumPermutations(m));
-	printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0*totalNumPermutations(m) / 3600 / 		APPROX_RUN_PER_SEC );
-	if (timeOnly) { return 0; };
+	if (!findPerm) {
+		if (!useperm) {
+			printf("Going to enumerate over %5.2f permutations\n", totalNumPermutations(m));
+			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0*totalNumPermutations(m) / 3600 / 
+				APPROX_RUN_PER_SEC );
+		} else {
+			printf("Going to enumerate over %5.2f permutations\n", 1.0);
+			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0 / 3600 / 		APPROX_RUN_PER_SEC );
+		}
+		if (timeOnly) { return 0; };
+	}
 
 	// allocate memory for outAtoms
 	outAtoms = (double **)malloc(m->_size * sizeof(double*));
@@ -410,7 +446,12 @@ int main(int argc, char *argv[]){
 	} else {
 		if (type != CH) { 
 			// perform operation
-			csmOperation(m, outAtoms, perm, &csm, dir, &dMin, type);			
+			if (findPerm) { 
+				findBestPerm(m, perm, type);
+				runSinglePerm(m, outAtoms, perm, &csm, dir, &dMin, type);		 
+			} else {
+				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, type);			
+			}
 		} else {
 			// chirality support 
 			double chCsm, chdMin;
@@ -425,12 +466,22 @@ int main(int argc, char *argv[]){
 			chPerm = (int *)malloc(sizeof(int) * m->_size);
 			chMinType = CS;						
 			opOrder = 2;
-			csmOperation(m, outAtoms, perm, &csm, dir, &dMin, CS);			
+			if (findPerm) { 
+				findBestPerm(m, perm, CS); 
+				runSinglePerm(m, outAtoms, perm, &csm, dir, &dMin, CS);
+			} else { 
+				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, CS);			
+			}
 
 			if (csm > MINDOUBLE) {							
 				for (i = 2; i <= sn_max; i+=2) {
 					opOrder = i;
-					csmOperation(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
+					if (findPerm) { 
+						findBestPerm(m, chPerm, SN);				
+						runSinglePerm(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
+					} else {
+						csmOperation(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
+					}
 					if (chCsm < csm) {
 						int j;
 						chMinType = SN;
@@ -942,6 +993,155 @@ void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, doubl
 	// which is DMIN?
 	*dMin = (1.0 - (*csm / 100 * opOrder / (opOrder - 1)));
 	createSymmetricStructure(m, outAtoms, perm, dir, type, *dMin);
+}
+
+/**
+ * Finds an approximate permutation which can be used in the analytical computation.
+ */
+void findBestPerm(Molecule* m, int* perm, OperationType type) {
+	double dir[3] = {1.0,0.0,0.0};
+
+	// The algorithm aims to find the best perm which can then be used for the analytic solution	
+	if ((type == CI) || (type == SN && opOrder == 2)) { 
+		// For inversion - simply find for each orbit the best matching - the closest after the operation.	
+		// Do nothing - no need to find axis. yay.
+	} else { 
+		// 1. go over the orbits and avarage each one
+		int i = 0;
+		int* groupSizes = (int*)malloc(sizeof(int) * m->_groupNum);
+		double** groupAvarages = (double**)malloc(sizeof(double*) * m->_groupNum);
+		
+		for (i = 0; i < m->_groupNum; i++) { 
+			groupSizes[i] = 0;
+			groupAvarages[i] = (double*)malloc(sizeof(double) * 3);
+			groupAvarages[i][0] = groupAvarages[i][1] = groupAvarages[i][2] = 0.0;
+		}
+
+		for (i = 0; i < m->_size; i++) { 
+			groupSizes[m->_similar[i] - 1]++;
+			groupAvarages[m->_similar[i] - 1][0] += m->_pos[i][0];
+			groupAvarages[m->_similar[i] - 1][1] += m->_pos[i][1];
+			groupAvarages[m->_similar[i] - 1][2] += m->_pos[i][2];
+		}
+
+		for (i = 0; i < m->_groupNum; i++) { 					
+			groupAvarages[i][0] /= 	groupSizes[i];	
+			groupAvarages[i][1] /= 	groupSizes[i];	
+			groupAvarages[i][2] /= 	groupSizes[i];	
+		}
+
+		if (type == CS) { 
+			// For CS 			
+			// 2. Assuming that all orbit center-of-masses are found on the plane of reflection - find it			
+			
+		
+		} else {
+			// For CN and SN with N > 2			
+			// 2. Assuming that all orbit center-of-masses are found on the axis of symmetry - find it			
+		}
+
+		for (i = 0; i < m->_groupNum; i++) { 		
+			free(groupAvarages[i]);
+		}
+		free(groupSizes);
+		free(groupAvarages);
+	}
+
+	// find the permutation
+	estimatePerm(m, perm, dir, type);	
+}
+
+void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
+	int isImproper = (type != CN) ? TRUE : FALSE;
+	int isZeroAngle = (type == CS) ? TRUE : FALSE;
+	int maxGroupSize = getMaxGroupSize(m);
+	int *group = (int*)malloc(sizeof(int) * maxGroupSize);
+	int i, j, k, l;
+	double rotaionMatrix[3][3];
+	double tmpMatrix[3][3] = {{0.0, -dir[2], dir[1]}, {dir[2], 0.0, -dir[0]}, {-dir[1], dir[0], 0.0}};
+	double angle;
+	double **rotated = (double**)malloc(sizeof(double*) * m->_size);
+	struct distRecord * distances = (struct distRecord *)malloc(sizeof(struct distRecord) * maxGroupSize * maxGroupSize);
+	int factor = (isImproper ? (-1) : 1);
+	angle = isZeroAngle ? 0.0 : (2 * PI / opOrder);
+	
+	for (j = 0; j < m->_size; j++) {
+		rotated[j] = (double *)malloc(sizeof(double) * 3);		
+		rotated[j][0] = rotated[j][1] = rotated[j][2] = 0;
+		perm[j] = -1;
+	}	
+
+	// Prepare the rotation matrix
+	for (j = 0; j < 3; j++) {
+		for (k = 0; k < 3; k++) {
+			rotaionMatrix[j][k] = 
+				((j == k) ? cos(angle) : 0) + 
+				(factor - cos(angle)) * dir[j] * dir[k] + 
+				sin(angle) * tmpMatrix[j][k];
+		}		
+	}
+
+	// Run the operation on the current point set
+	for (j = 0; j < m->_size; j++) {
+		for (k = 0; k < 3; k++) {
+			for (l = 0; l < 3; l++) {
+				rotated[j][k] += rotaionMatrix[k][l] * m->_pos[j][l];				
+			}
+		}
+	}
+
+	// run over the groups
+	for (i = 0; i < m->_groupNum; i++) { 
+		// Get the group
+		int groupSize = getGroup(m, i + 1,group);
+
+		// compute the distance matrix
+		for (j = 0; j <	groupSize; j++) { 
+			for (k = 0; k < groupSize; k++) { 	
+					int index = j * groupSize + k;
+					distances[index].row = j;
+					distances[index].col = k;
+					distances[index].distance = 0;
+					for (l = 0; l < 3; l++ ) { 
+						distances[index].distance += (m->_pos[group[j]][l] - rotated[group[k]][l]) * 
+							(m->_pos[group[j]][l] - rotated[group[k]][l]);
+					}		
+					distances[index].distance = sqrt(distances[index].distance);
+			}			
+		}
+
+		// Sort the distances			
+		qsort(distances, groupSize * groupSize, sizeof(struct distRecord), distComp);	
+	
+		// Go over the sorted group, and set the permutation
+		for (j = 0; j < groupSize * groupSize; j++) { 
+			int row = group[distances[j].row];
+			int col = group[distances[j].col];			
+			if (opOrder == 2) {			
+				// Special treatment - only size 1 and two orbits are allowed 
+				// If both elements are not yet set, use the element.			
+				if (perm[row] == -1 && perm[col] == -1)  { 
+					perm[row] = col;
+					perm[col] = row;
+				}
+			} else {
+				if (perm[row] == -1) {
+					perm[row] = col;
+				}
+			}
+		}
+						
+	}
+
+	// verify that the orbits are correct?
+	
+	for (j = 0; j < m->_size; j++) { 
+		free(rotated[j]);		
+	}
+
+	free(rotated);	
+	free(distances);
+	free(group);
 }
 
 
