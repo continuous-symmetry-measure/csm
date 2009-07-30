@@ -72,9 +72,12 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, char *fname);
 void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void runSinglePerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type);
-void findBestPerm(Molecule* m, int* perm, OperationType type);
+void findBestPerm(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
+void findSymmetryDirection(Molecule *m, double  dirs[3][3], OperationType type);
 void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type);
 void readPerm(FILE* permfile, int* perm, int size);
+void lineFit(double **points, int nPoints, double dirs[3][3]);
+void planeFit(double **points, int nPoints, double dirs[3][3]);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
 
@@ -447,8 +450,7 @@ int main(int argc, char *argv[]){
 		if (type != CH) { 
 			// perform operation
 			if (findPerm) { 
-				findBestPerm(m, perm, type);
-				runSinglePerm(m, outAtoms, perm, &csm, dir, &dMin, type);		 
+				findBestPerm(m, outAtoms, perm, &csm, dir, &dMin, type);				
 			} else {
 				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, type);			
 			}
@@ -467,8 +469,7 @@ int main(int argc, char *argv[]){
 			chMinType = CS;						
 			opOrder = 2;
 			if (findPerm) { 
-				findBestPerm(m, perm, CS); 
-				runSinglePerm(m, outAtoms, perm, &csm, dir, &dMin, CS);
+				findBestPerm(m, outAtoms, perm, &csm, dir, &dMin, CS);				
 			} else { 
 				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, CS);			
 			}
@@ -477,8 +478,7 @@ int main(int argc, char *argv[]){
 				for (i = 2; i <= sn_max; i+=2) {
 					opOrder = i;
 					if (findPerm) { 
-						findBestPerm(m, chPerm, SN);				
-						runSinglePerm(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
+						findBestPerm(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
 					} else {
 						csmOperation(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
 					}
@@ -998,57 +998,108 @@ void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, doubl
 /**
  * Finds an approximate permutation which can be used in the analytical computation.
  */
-void findBestPerm(Molecule* m, int* perm, OperationType type) {
-	double dir[3] = {1.0,0.0,0.0};
-
+void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type) {
 	// The algorithm aims to find the best perm which can then be used for the analytic solution	
-	if ((type == CI) || (type == SN && opOrder == 2)) { 
+	if ((type == CI) || (type == SN && opOrder == 2)) { 		
 		// For inversion - simply find for each orbit the best matching - the closest after the operation.	
 		// Do nothing - no need to find axis. yay.
-	} else { 
-		// 1. go over the orbits and avarage each one
-		int i = 0;
-		int* groupSizes = (int*)malloc(sizeof(int) * m->_groupNum);
-		double** groupAvarages = (double**)malloc(sizeof(double*) * m->_groupNum);
-		
-		for (i = 0; i < m->_groupNum; i++) { 
-			groupSizes[i] = 0;
-			groupAvarages[i] = (double*)malloc(sizeof(double) * 3);
-			groupAvarages[i][0] = groupAvarages[i][1] = groupAvarages[i][2] = 0.0;
-		}
+		dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
+		estimatePerm(m, perm, dir, type);
+		runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);
+	} else { 		
+		double dirs[3][3] = {{1.0,0.0,0.0}, {1.0,0.0,0.0}, {1.0,0.0,0.0}};		
+		int *bestPerm = (int*)malloc(sizeof(int) * m->_size);
+		int *temp = (int*)malloc(sizeof(int) * m->_size);
+		int i = 0;	
+		int maxIters = 10;
+		*csm = MAXDOUBLE;
 
-		for (i = 0; i < m->_size; i++) { 
-			groupSizes[m->_similar[i] - 1]++;
-			groupAvarages[m->_similar[i] - 1][0] += m->_pos[i][0];
-			groupAvarages[m->_similar[i] - 1][1] += m->_pos[i][1];
-			groupAvarages[m->_similar[i] - 1][2] += m->_pos[i][2];
-		}
+		// Find an initial approximated symmetry axis/plain
+		findSymmetryDirection(m, dirs, type);
 
-		for (i = 0; i < m->_groupNum; i++) { 					
-			groupAvarages[i][0] /= 	groupSizes[i];	
-			groupAvarages[i][1] /= 	groupSizes[i];	
-			groupAvarages[i][2] /= 	groupSizes[i];	
-		}
-
-		if (type == CS) { 
-			// For CS 			
-			// 2. Assuming that all orbit center-of-masses are found on the plane of reflection - find it			
+		// Find the permutation best matching this direction - there are 3 results to the algorithm
+		for (i = 0; i < 3; i++) { 
+			double dist = MAXDOUBLE, old = MAXDOUBLE, best = MAXDOUBLE;				
+			int iterNum = 1;
+			estimatePerm(m, bestPerm, dirs[i], type);	
+			runSinglePerm(m, outAtoms, bestPerm, &dist, dir, dMin, type);	
+			old = MAXDOUBLE; best = dist;
 			
-		
-		} else {
-			// For CN and SN with N > 2			
-			// 2. Assuming that all orbit center-of-masses are found on the axis of symmetry - find it			
-		}
+			// solve analytically using this permutation, repeat until converged
+			// Pick the best one
+			while (fabs(old - dist) > 1e-7 && iterNum < maxIters) {
+				old = dist;
+				estimatePerm(m, temp, dir, type);
+				runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);					
+				if (dist < best) {
+					best = dist;
+					memcpy(bestPerm, temp, sizeof(int) * m->_size);
+				}	
+				iterNum++;			
+				//printf("Old csm: %6.4f New csm %6.4f\n", old, dist);
+			};
 
-		for (i = 0; i < m->_groupNum; i++) { 		
-			free(groupAvarages[i]);
+			// Keep the best solution so far...
+			if (best < *csm) { 
+				*csm = dist;
+				memcpy(perm, bestPerm , sizeof(int) * m->_size);				
+			}		
+			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
 		}
-		free(groupSizes);
-		free(groupAvarages);
+		free(bestPerm);
+		free(temp);
+		runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);
+	}	
+	
+}
+
+/*
+ * Find an initial guess for the approximated symmetry direction, 
+ * which in the case of mirror symmetry is vector perpendicular to the mirror plane, 
+ * and in other cases, the symmetry axis.
+ * This is done using least-mean-squares, which provides 3 guesses.
+ */
+void findSymmetryDirection(Molecule *m, double  dirs[3][3], OperationType type) { 	
+	int* groupSizes = (int*)malloc(sizeof(int) * m->_groupNum);
+	double** groupAverages = (double**)malloc(sizeof(double*) * m->_groupNum);
+	int i;
+		
+	for (i = 0; i < m->_groupNum; i++) { 
+		groupSizes[i] = 0;
+		groupAverages[i] = (double*)malloc(sizeof(double) * 3);
+		groupAverages[i][0] = groupAverages[i][1] = groupAverages[i][2] = 0.0;
+	}
+	
+	for (i = 0; i < m->_size; i++) { 
+		groupSizes[m->_similar[i] - 1]++;
+		groupAverages[m->_similar[i] - 1][0] += m->_pos[i][0];
+		groupAverages[m->_similar[i] - 1][1] += m->_pos[i][1];
+		groupAverages[m->_similar[i] - 1][2] += m->_pos[i][2];
 	}
 
-	// find the permutation
-	estimatePerm(m, perm, dir, type);	
+	for (i = 0; i < m->_groupNum; i++) { 					
+		groupAverages[i][0] /= 	groupSizes[i];	
+		groupAverages[i][1] /= 	groupSizes[i];	
+		groupAverages[i][2] /= 	groupSizes[i];	
+	}
+
+	if (type == CS) { 
+		// For CS 			
+		// Assuming that all orbit center-of-masses are found on the plane of reflection - find it			
+		// for some reason - we get a few options
+		planeFit(groupAverages, m->_groupNum, dirs);		
+	} else {
+		// For CN and SN with N > 2			
+		// Assuming that all orbit center-of-masses are found on the axis of symmetry - find it			
+		// for some reason - we get a few options
+		lineFit(groupAverages, m->_groupNum, dirs);		
+	}
+
+	for (i = 0; i < m->_groupNum; i++) { 		
+		free(groupAverages[i]);
+	}
+	free(groupSizes);
+	free(groupAverages);
 }
 
 void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
@@ -1056,20 +1107,24 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	int isZeroAngle = (type == CS) ? TRUE : FALSE;
 	int maxGroupSize = getMaxGroupSize(m);
 	int *group = (int*)malloc(sizeof(int) * maxGroupSize);
+	int *used = (int*)malloc(sizeof(int) * m->_size);
 	int i, j, k, l;
 	double rotaionMatrix[3][3];
 	double tmpMatrix[3][3] = {{0.0, -dir[2], dir[1]}, {dir[2], 0.0, -dir[0]}, {-dir[1], dir[0], 0.0}};
 	double angle;
 	double **rotated = (double**)malloc(sizeof(double*) * m->_size);
 	struct distRecord * distances = (struct distRecord *)malloc(sizeof(struct distRecord) * maxGroupSize * maxGroupSize);
-	int factor = (isImproper ? (-1) : 1);
+	int factor = (isImproper ? (-1) : 1);	
+	int tableSize = 0;
+	int orbitDone, orbitSize, orbitStart;
+	int left;
 	angle = isZeroAngle ? 0.0 : (2 * PI / opOrder);
-	
+		
 	for (j = 0; j < m->_size; j++) {
 		rotated[j] = (double *)malloc(sizeof(double) * 3);		
 		rotated[j][0] = rotated[j][1] = rotated[j][2] = 0;
-		perm[j] = -1;
-	}	
+		perm[j] = -1;		
+	}		
 
 	// Prepare the rotation matrix
 	for (j = 0; j < 3; j++) {
@@ -1088,62 +1143,282 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				rotated[j][k] += rotaionMatrix[k][l] * m->_pos[j][l];				
 			}
 		}
+		//printf("%d (%4.2f, %4.2f, %4.2f) -> (%4.2f, %4.2f, %4.2f)\n", j,
+		//	m->_pos[j][0], m->_pos[j][1], m->_pos[j][2], 
+		//	rotated[j][0], rotated[j][1], rotated[j][2]);
 	}
 
 	// run over the groups
 	for (i = 0; i < m->_groupNum; i++) { 
 		// Get the group
-		int groupSize = getGroup(m, i + 1,group);
-
+		int groupSize = getGroup(m, i + 1,group);		
+		for (j = 0; j < m->_size; j++) { 
+			used[j] = 0;
+		}
+		
 		// compute the distance matrix
 		for (j = 0; j <	groupSize; j++) { 
 			for (k = 0; k < groupSize; k++) { 	
 					int index = j * groupSize + k;
-					distances[index].row = j;
-					distances[index].col = k;
+					distances[index].row = group[j];
+					distances[index].col = group[k];
 					distances[index].distance = 0;
 					for (l = 0; l < 3; l++ ) { 
-						distances[index].distance += (m->_pos[group[j]][l] - rotated[group[k]][l]) * 
+						distances[index].distance += 
+							(m->_pos[group[j]][l] - rotated[group[k]][l]) * 
 							(m->_pos[group[j]][l] - rotated[group[k]][l]);
 					}		
 					distances[index].distance = sqrt(distances[index].distance);
-			}			
+			}		
 		}
+	
+		tableSize = groupSize * groupSize;
 
 		// Sort the distances			
-		qsort(distances, groupSize * groupSize, sizeof(struct distRecord), distComp);	
+		qsort(distances, tableSize, sizeof(struct distRecord), distComp);
 	
+		/*	
+		printf("Working on group: ");
+		for (j = 0; j < groupSize; j++) { 
+			printf("%d ", group[j]);
+		}
+		printf("\n");
+		*/
+		
+
+		left = groupSize;			
 		// Go over the sorted group, and set the permutation
-		for (j = 0; j < groupSize * groupSize; j++) { 
-			int row = group[distances[j].row];
-			int col = group[distances[j].col];			
+		for (j = 0; j < tableSize && left > 0; j++) { 			
+			int enoughForFullOrbit = left >= opOrder;			
+			int row = distances[j].row;
+			int col = distances[j].col;				
+	
+			// If we have used this item already - skip it.
+			if (perm[row] != -1) continue;							
+			//printf("%d %d -- %f\n", row, col,distances[j].distance);
+			
+			// If we do not have enought to full groups, set all remaining items to themselves
+			if (left == 1 || (type == CN && !enoughForFullOrbit)) { 							
+				for (k = 0; k < groupSize; k++) { 
+					if (used[group[k]] == 0) { 
+						perm[group[k]] = group[k];						
+						//printf("set %d<->%d\n", group[k], group[k]);
+					}				
+				}				
+				break;
+			} 			
 			if (opOrder == 2) {			
 				// Special treatment - only size 1 and two orbits are allowed 
 				// If both elements are not yet set, use the element.			
 				if (perm[row] == -1 && perm[col] == -1)  { 
 					perm[row] = col;
-					perm[col] = row;
+					perm[col] = row;					
+					//printf("set %d<->%d\n", row, col);
+					left -= (row == col) ? 1 : 2;
 				}
 			} else {
-				if (perm[row] == -1) {
+				// we now want to complete an orbit. 
+				if (perm[row] == -1 && used[col] == 0) {					
 					perm[row] = col;
+					used[col] = 1;				
+					//printf("set %d->%d\n", row, col);
+					left--;						
+				} else {
+					continue;
 				}
-			}
-		}
+
+				// if this is an orbit of size one...
+				if (row == col) continue;
+
+				// If there is no more room for full orbit, must be SN and size two orbit
+				if (type == SN && !enoughForFullOrbit) { 
+					perm[col] = row;
+					used[row] = 1;					
+					//printf("set %d->%d\n", col, row);
+					left--;					
+					continue;
+				}
+
+				// Run until an orbit is complete
+				orbitDone = FALSE;
+				orbitStart = row;				
+				orbitSize = 1;	
+				
+				while (!orbitDone) {									
+					if (orbitSize == opOrder - 1) { 
+						//printf("Closing orbit...\n");
+						//Close the group - we've reached the end							
+						row = col;
+						col = orbitStart;
+						orbitDone = TRUE;
+					} else {								
+						// Search for the next orbit element
+						for (k = j + 1; k < tableSize; k++) { 
+							if (distances[k].row == col && used[distances[k].col] == 0 && 			
+								distances[k].col != distances[k].row) {
+								if (orbitStart == distances[k].col) { 
+									if (type == SN && orbitSize ==1) { 
+										// we have now closed an orbit of size 2			
+										orbitDone = TRUE;
+									} else {	
+										continue;
+									}
+								}
+								row = distances[k].row;
+								col = distances[k].col;
+								orbitSize++;								
+								break;		
+							}
+						}								
+					}									
+					perm[row] = col;
+					used[col] = 1;
+					//printf("set %d->%d\n", row, col);	
+					left--;					
+				}
+			}		
+		} 	
 						
-	}
+	}	
 
 	// verify that the orbits are correct?
 	
-	for (j = 0; j < m->_size; j++) { 
-		free(rotated[j]);		
-	}
+	for (j = 0; j < m->_size; j++) { 		
+		free(rotated[j]);			
+	}	
 
 	free(rotated);	
 	free(distances);
 	free(group);
 }
 
+void lineFit(double **points, int nPoints, double dirs[3][3]) {
+	// taken from http://www.mapleprimes.com/forum/linear-regression-in-3d
+	double A[3] = {0,0,0};	
+	double matrix[3][3] = { {0,0,0}, {0,0,0}, {0,0,0}};
+
+	double **copyMat = dmatrix(1,3,1,3);	
+	double *diag = dvector(1,3);
+	double *secdiag = dvector(1,3);	
+
+	double norm;
+	int i,j,k;	
+
+	// Compute A
+	for (i = 0 ; i < nPoints; i++) { 
+		A[0] += points[i][0];
+		A[1] += points[i][1];
+		A[2] += points[i][2];
+	}
+	A[0] /= nPoints;
+	A[1] /= nPoints;
+	A[2] /= nPoints;
+	
+	// Compute matrix
+	for (i = 0; i < nPoints; i++) { 
+		for (j = 0; j < 3; j++) { 
+			for (k = 0; k < 3; k++) { 
+				matrix[j][k] += (points[i][j] - A[j]) * (points[i][k] - A[k]);
+			}
+		}
+	}
+
+
+	// perhaps actual copying is needed
+	for (i = 0; i < 3; i++) {		
+		for (j = 0; j < 3; j++) {
+			copyMat[i + 1][j + 1] = matrix[i][j];
+		}
+	}		
+
+	// compute the matrix's eigenvalues and eigenvectors.
+	// In the end - diag is eigenvals
+	// cols of matrix are eigen vecs
+	tred2(copyMat, 3, diag, secdiag);
+	tqli(diag, secdiag, 3, copyMat);
+
+	// We just try the three lines?...	
+	for (i = 0; i < 3; i++) {		
+		for (j = 0; j < 3; j++) {
+			dirs[i][j] = copyMat[j + 1][i + 1];
+		}
+	}
+
+	for (i = 0; i < 3; i++) { 
+		norm = sqrt(dirs[i][0] * dirs[i][0] + dirs[i][1] * dirs[i][1] + dirs[i][2] * dirs[i][2]); 
+		dirs[i][0] /= norm;
+		dirs[i][1] /= norm;
+		dirs[i][2] /= norm;
+
+	}	
+
+	free_dmatrix(copyMat, 1, 3, 1, 3);	
+	free_dvector(diag, 1, 3);
+	free_dvector(secdiag, 1, 3);	
+}
+void planeFit(double **points, int nPoints, double dirs[3][3]) {
+	// taken from http://www.mapleprimes.com/forum/linear-regression-in-3d
+	double A[3] = {0,0,0};	
+	double matrix[3][3] = { {0,0,0}, {0,0,0}, {0,0,0}};
+
+	double **copyMat = dmatrix(1,3,1,3);	
+	double *diag = dvector(1,3);
+	double *secdiag = dvector(1,3);	
+
+	double norm;
+	int i,j,k;
+	
+	// Compute A
+	for (i = 0 ; i < nPoints; i++) { 
+		A[0] += points[i][0];
+		A[1] += points[i][1];
+		A[2] += points[i][2];
+	}
+	A[0] /= nPoints;
+	A[1] /= nPoints;
+	A[2] /= nPoints;
+
+	// Compute matrix
+	for (i = 0; i < nPoints; i++) { 
+		for (j = 0; j < 3; j++) { 
+			for (k = 0; k < 3; k++) { 
+				matrix[j][k] += (points[i][j] - A[j]) * (points[i][k] - A[k]);
+			}
+		}
+	}
+
+
+	// perhaps actual copying is needed
+	for (i = 0; i < 3; i++) {		
+		for (j = 0; j < 3; j++) {
+			copyMat[i + 1][j + 1] = matrix[i][j];
+		}
+	}		
+
+	// compute the matrix's eigenvalues and eigenvectors.
+	// In the end - diag is eigenvals
+	// cols of matrix are eigen vecs
+	tred2(copyMat, 3, diag, secdiag);
+	tqli(diag, secdiag, 3, copyMat);
+
+	// We just try the three planes...	
+	for (i = 0; i < 3; i++) {		
+		for (j = 0; j < 3; j++) {
+			dirs[i][j] = copyMat[j + 1][i + 1];
+		}		
+	}	
+	for (i = 0; i < 3; i++) { 
+		norm = sqrt(dirs[i][0] * dirs[i][0] + dirs[i][1] * dirs[i][1] + dirs[i][2] * dirs[i][2]); 
+		dirs[i][0] /= norm;
+		dirs[i][1] /= norm;
+		dirs[i][2] /= norm;
+
+	}	
+
+	free_dmatrix(copyMat, 1, 3, 1, 3);	
+	free_dvector(diag, 1, 3);
+	free_dvector(secdiag, 1, 3);	
+}
 
 
 /*
