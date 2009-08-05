@@ -1049,7 +1049,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
 		}
 
-		/*
+		
 		if (anneal) {
 			
 			double initialTemp = 0.1;
@@ -1059,6 +1059,14 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			int tempInt;
 			double dist;
 			double old = *csm;
+
+			int **groups = (int**)malloc(sizeof(int *) * m->_groupNum);
+			int *groupSizes = (int*) malloc(sizeof(int) * m->_groupNum);
+			for (i = 0; i < m->groupNum; i++) {
+				groupSizes[i] = getGroupSize(m, i + 1); 
+				groups[i] = (int*)malloc(sizeof(int) * groupSizes[i]);
+				getGroup(m, i + 1, groups[i]);
+			}
 			
 			srand( time (NULL) );
 			srand48( time (NULL) );			
@@ -1067,11 +1075,51 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			memcpy(temp, perm, sizeof(int) * m->_size);
 			for (t = initialTemp; t >= 1e-7; t *= alpha) { 
 				for (i = 0; i < stepsPerPart * m->_size; i++) { 
+					// select a node at random
 					int first = rand() % m->_size;
-					int second = rand() % m->_size;					
-					tempInt = temp[first];
-					temp[first] = temp[second];
-					temp[second] = tempInt;
+
+					// select another from its similarity group
+					int second = groups
+						[m->_similarity[first] - 1]
+						[rand() % groupsSizes[m->_similarity[first] - 1]];
+					
+					int temp1 = first, temp2 = second, firstSize = 1, secondSize = 1;
+					if (first == second) continue;
+					
+					// find the orbit size of the two nodes, as well as the atoms preceeding them	
+					while (temp[temp1] != first) {	
+						firstSize++;
+						temp1 = temp[temp1];
+					}	
+
+					while (temp[temp2] != second) {	
+						secondSize++;
+						temp2 = temp[temp2];
+					}	
+
+					// Now, finally, operate
+					if (firstSize == 1 && secondSize == 1) { 		
+						// both are single-orbits - so do nothing
+					} else if (firstSize == 1) {
+						// only first is a single orbit
+						temp[temp2] = first;
+						temp[first] = temp[second];
+						temp[second] = second;
+					} else if (secondSize == 1) { 
+						// only second is a single orbit
+						temp[temp1] = second;
+						temp[second] = temp[first];
+						temp[first] = first;
+					} else {
+						// both are not single orbits
+						int t = temp[first];	
+						temp[first] = temp[second];
+						temp[second] = t;	
+						t = temp[temp1];
+						temp[temp1] = temp[temp2];
+						temp[temp2] = t;
+					}
+					
 					runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);				
 					//printf("Tried to change from %4.2f to %4.2f: ", old, dist);
 					if (dist < old || drand48() < exp((old - dist) / t)) {	
@@ -1089,17 +1137,40 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 						old = dist;
 					} else {
 						// undo			
-						//printf("Reverted\n");	
-						tempInt = temp[first];
-						temp[first] = temp[second];
-						temp[second] = tempInt;
+						//printf("Reverted\n");								
+						if (firstSize == 1 && secondSize == 1) { 		
+							// both are single-orbits - so do nothing
+						} else if (firstSize == 1) {
+							// only first is a single orbit
+							temp[temp2] = second;
+							temp[second] = temp[first];
+							temp[first] = first;
+						} else if (secondSize == 1) { 
+							// only second is a single orbit
+							temp[temp1] = first;
+							temp[first] = temp[second];
+							temp[second] = second;
+						} else {
+							// both are not single orbits
+							int t = temp[first];	
+							temp[first] = temp[second];
+							temp[second] = t;	
+							t = temp[temp1];
+							temp[temp1] = temp[temp2];
+							temp[temp2] = t;
+						}						
 					} 
 				}	
 				
 				//printf("At T = %4.2f - csm %4.2f\n", t, *csm);
 			}
-		}	
-		*/	
+
+			for (i = 0; i < m->groupNum; i++) {
+				free(groups[i]);
+			}
+			free(groups);
+			free(groupSizes);
+		}		
 		
 		free(bestPerm);
 		free(temp);		
