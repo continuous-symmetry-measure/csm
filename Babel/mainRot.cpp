@@ -98,6 +98,7 @@ char *format = NULL;
 int babelBond = FALSE;
 int timeOnly = FALSE;
 int sn_max = 4;
+int anneal = TRUE;
 
 // file pointers
 FILE* inFile = NULL;
@@ -1014,6 +1015,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		int maxIters = 10;
 		*csm = MAXDOUBLE;
 
+
 		// Find an initial approximated symmetry axis/plain
 		findSymmetryDirection(m, dirs, type);
 
@@ -1046,8 +1048,61 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			}		
 			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
 		}
+
+		/*
+		if (anneal) {
+			
+			double initialTemp = 0.1;
+			double alpha = 0.99;
+			int stepsPerPart = 4;
+			double t;			
+			int tempInt;
+			double dist;
+			double old = *csm;
+			
+			srand( time (NULL) );
+			srand48( time (NULL) );			
+		
+			// try to anneal the best permutation
+			memcpy(temp, perm, sizeof(int) * m->_size);
+			for (t = initialTemp; t >= 1e-7; t *= alpha) { 
+				for (i = 0; i < stepsPerPart * m->_size; i++) { 
+					int first = rand() % m->_size;
+					int second = rand() % m->_size;					
+					tempInt = temp[first];
+					temp[first] = temp[second];
+					temp[second] = tempInt;
+					runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);				
+					//printf("Tried to change from %4.2f to %4.2f: ", old, dist);
+					if (dist < old || drand48() < exp((old - dist) / t)) {	
+						// if this improves - 
+						if (dist < old) { 
+							//printf("Better\n");	
+						} else {
+							//printf("Kept\n");
+						}
+						if (dist < *csm) { 
+							*csm = dist;
+							printf("Changed to %4.2f\n", *csm);
+							memcpy(perm, temp , sizeof(int) * m->_size);
+						}
+						old = dist;
+					} else {
+						// undo			
+						//printf("Reverted\n");	
+						tempInt = temp[first];
+						temp[first] = temp[second];
+						temp[second] = tempInt;
+					} 
+				}	
+				
+				//printf("At T = %4.2f - csm %4.2f\n", t, *csm);
+			}
+		}	
+		*/	
+		
 		free(bestPerm);
-		free(temp);
+		free(temp);		
 		runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);
 	}	
 	
