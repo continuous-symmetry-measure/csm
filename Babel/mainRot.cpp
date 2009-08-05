@@ -1056,13 +1056,12 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			double alpha = 0.99;
 			int stepsPerPart = 4;
 			double t;			
-			int tempInt;
 			double dist;
 			double old = *csm;
 
 			int **groups = (int**)malloc(sizeof(int *) * m->_groupNum);
 			int *groupSizes = (int*) malloc(sizeof(int) * m->_groupNum);
-			for (i = 0; i < m->groupNum; i++) {
+			for (i = 0; i < m->_groupNum; i++) {
 				groupSizes[i] = getGroupSize(m, i + 1); 
 				groups[i] = (int*)malloc(sizeof(int) * groupSizes[i]);
 				getGroup(m, i + 1, groups[i]);
@@ -1080,8 +1079,8 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 
 					// select another from its similarity group
 					int second = groups
-						[m->_similarity[first] - 1]
-						[rand() % groupsSizes[m->_similarity[first] - 1]];
+						[m->_similar[first] - 1]
+						[rand() % groupSizes[m->_similar[first] - 1]];
 					
 					int temp1 = first, temp2 = second, firstSize = 1, secondSize = 1;
 					if (first == second) continue;
@@ -1165,7 +1164,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 				//printf("At T = %4.2f - csm %4.2f\n", t, *csm);
 			}
 
-			for (i = 0; i < m->groupNum; i++) {
+			for (i = 0; i < m->_groupNum; i++) {
 				free(groups[i]);
 			}
 			free(groups);
