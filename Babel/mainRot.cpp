@@ -1,5 +1,5 @@
 /*
-* Author: shadi lahham, modified by Amir Zayit
+* Author: Amir Zayit
 *
 * Main body that initiates chirality operations.
 *
@@ -1052,16 +1052,21 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		
 		if (anneal) {
 			
-			double initialTemp = 0.1;
-			double alpha = 0.99;
-			int stepsPerPart = 4;
+			// The initial probability is set to be 2 / N 
+			// for a change of 0.0001
+			double initialTemp = 0.0001 * log(1.0 * m->_size/4.0);
+			// printf("IT = %4.2f\n", initialTemp);
+			double alpha = 0.9;
+			int stepsPerPart = 10000;
 			double t;			
 			double dist;
 			double old = *csm;
+			int factor = 1;
+			double flipProb = 0.0001;
 
 			int **groups = (int**)malloc(sizeof(int *) * m->_groupNum);
 			int *groupSizes = (int*) malloc(sizeof(int) * m->_groupNum);
-			for (i = 0; i < m->_groupNum; i++) {
+			for (i = 0; i < m->_groupNum; i++ ) {
 				groupSizes[i] = getGroupSize(m, i + 1); 
 				groups[i] = (int*)malloc(sizeof(int) * groupSizes[i]);
 				getGroup(m, i + 1, groups[i]);
@@ -1072,8 +1077,8 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		
 			// try to anneal the best permutation
 			memcpy(temp, perm, sizeof(int) * m->_size);
-			for (t = initialTemp; t >= 1e-7; t *= alpha) { 
-				for (i = 0; i < stepsPerPart * m->_size; i++) { 
+			for (t = initialTemp; t >= 0.0001*initialTemp; t *= alpha) { 
+				for (i = 0; i < stepsPerPart /* * m->_size */; i++) { 
 					// select a node at random
 					int first = rand() % m->_size;
 
@@ -1119,15 +1124,29 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 						temp[temp2] = t;
 					}
 					
-					runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);				
-					//printf("Tried to change from %4.2f to %4.2f: ", old, dist);
-					if (dist < old || drand48() < exp((old - dist) / t)) {	
-						// if this improves - 
-						if (dist < old) { 
-							//printf("Better\n");	
-						} else {
-							//printf("Kept\n");
+					runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);	
+
+					if (factor == 1) { 
+						if (drand48() < flipProb) { 
+							factor = -1;
 						}
+					} else { 	
+						// spend one tenth of the time in reverted state
+						if (drand48() < (flipProb * 100)) { 	
+							factor = 1;
+						}
+					}
+
+					// printf("Tried to change from %4.2f to %4.2f: ", factor * old, factor * dist);
+					if (dist < old || drand48() < exp(factor * (old - dist) / t)) {	
+						// if this improves - 	
+						/*
+						if (dist < old) { 
+							printf("Better\n");	
+						} else {
+							printf("Kept\n");
+						}
+						*/
 						if (dist < *csm) { 
 							*csm = dist;
 							printf("Changed to %4.2f\n", *csm);
@@ -1159,9 +1178,10 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 							temp[temp2] = t;
 						}						
 					} 
+
 				}	
 				
-				//printf("At T = %4.2f - csm %4.2f\n", t, *csm);
+				// printf("At T = %4.2f - csm %4.2f\n", t, *csm);
 			}
 
 			for (i = 0; i < m->_groupNum; i++) {
