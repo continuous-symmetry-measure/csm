@@ -30,6 +30,63 @@ extern "C" {
 #define TRUE 1
 #define FALSE 0
 
+/* borrowed from libc/misc/drand48.c in Linux libc-5.4.46 this quick
+* hack by Martin Hamilton <martinh@gnu.org> to make Squid build on
+* Win32 with GNU-Win32 - sorry, folks! */
+
+#ifdef _WIN32
+
+#define N	16
+#define MASK	((unsigned)(1 << (N - 1)) + (1 << (N - 1)) - 1)
+#define LOW(x)	((unsigned)(x) & MASK)
+#define HIGH(x)	LOW((x) >> N)
+#define MUL(x, y, z)	{ long l = (long)(x) * (long)(y); \
+	(z)[0] = LOW(l); (z)[1] = HIGH(l); }
+#define CARRY(x, y)	((long)(x) + (long)(y) > MASK)
+#define ADDEQU(x, y, z)	(z = CARRY(x, (y)), x = LOW(x + (y)))
+#define X0	0x330E
+#define X1	0xABCD
+#define X2	0x1234
+#define A0	0xE66D
+#define A1	0xDEEC
+#define A2	0x5
+#define C	0xB
+
+static void next(void);
+static unsigned x[3] =
+{X0, X1, X2}, a[3] =
+{A0, A1, A2}, c = C;
+
+double drand48(void);
+
+double
+drand48(void)
+{
+	static double two16m = 1.0 / (1L << N);
+	next();
+	return (two16m * (two16m * (two16m * x[0] + x[1]) + x[2]));
+}
+
+static void
+next(void)
+{
+	unsigned p[2], q[2], r[2], carry0, carry1;
+
+	MUL(a[0], x[0], p);
+	ADDEQU(p[0], c, carry0);
+	ADDEQU(p[1], carry0, carry1);
+	MUL(a[0], x[1], q);
+	ADDEQU(p[1], q[0], carry0);
+	MUL(a[1], x[0], r);
+	x[2] = LOW(carry0 + carry1 + CARRY(p[1], r[0]) + q[1] + r[1] +
+		a[0] * x[2] + a[1] * x[1] + a[2] * x[0]);
+	x[1] = LOW(p[1] + r[0]);
+	x[0] = LOW(p[0]);
+}
+
+#endif /* HAVE_DRAND48 */
+
+
 typedef enum {
 	CN,
 	SN, 
@@ -98,7 +155,7 @@ char *format = NULL;
 int babelBond = FALSE;
 int timeOnly = FALSE;
 int sn_max = 4;
-int anneal = TRUE;
+int anneal = FALSE;
 
 // file pointers
 FILE* inFile = NULL;
@@ -124,6 +181,7 @@ void usage(char *op) {
 	printf("-useperm permfile  -  only compute for a single permutation\n");
 	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
 	printf("-findperm	   - Attempt to search for a permutation\n");
+	printf("-anneal		   - Try to anneal the result\n");
 	printf("-babelbond	   - Let openbabel compute bonding\n");
 	printf("-useMass	   - Use the atomic masses to define center of mass\n");
 	printf("-timeOnly	   - Only print the time and exit\n");
@@ -311,6 +369,8 @@ void parseInput(int argc, char *argv[]){
 			exit(0);
 		} else if (strcmp(argv[i], "-findperm") == 0) { 
 			findPerm = TRUE;
+		} else if (strcmp(argv[i], "-anneal") == 0) {
+			anneal = TRUE;
 		}
 	}
 	if (writeOpenu) {
@@ -372,7 +432,7 @@ int main(int argc, char *argv[]){
 		} else {
 			
 			mol = readMolecule (inFileName, NULL, babelBond);
-			m = babel2Mol(mol, ignoreSym && !useperm, useMass);			
+			m = babel2Mol(mol, ignoreSym && !useperm, useMass);						
 		}
    	}
 
@@ -1000,21 +1060,20 @@ void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, doubl
  * Finds an approximate permutation which can be used in the analytical computation.
  */
 void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type) {
+	int *temp = (int*)malloc(sizeof(int) * m->_size);
+	int i = 0;	
 	// The algorithm aims to find the best perm which can then be used for the analytic solution	
 	if ((type == CI) || (type == SN && opOrder == 2)) { 		
 		// For inversion - simply find for each orbit the best matching - the closest after the operation.	
 		// Do nothing - no need to find axis. yay.
 		dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
 		estimatePerm(m, perm, dir, type);
-		runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);
+		runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);	
 	} else { 		
 		double dirs[3][3] = {{1.0,0.0,0.0}, {1.0,0.0,0.0}, {1.0,0.0,0.0}};		
-		int *bestPerm = (int*)malloc(sizeof(int) * m->_size);
-		int *temp = (int*)malloc(sizeof(int) * m->_size);
-		int i = 0;	
-		int maxIters = 10;
+		int *bestPerm = (int*)malloc(sizeof(int) * m->_size);		
+		int maxIters = 10;	
 		*csm = MAXDOUBLE;
-
 
 		// Find an initial approximated symmetry axis/plain
 		findSymmetryDirection(m, dirs, type);
@@ -1048,72 +1107,123 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			}		
 			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
 		}
+		free(bestPerm);	
+	}
 
 		
-		if (anneal) {
+	if (anneal) {
 			
-			// The initial probability is set to be 2 / N 
-			// for a change of 0.0001
-			double initialTemp = 0.0001 * log(1.0 * m->_size/4.0);
-			// printf("IT = %4.2f\n", initialTemp);
-			double alpha = 0.9;
-			int stepsPerPart = 10000;
-			double t;			
-			double dist;
-			double old = *csm;
-			int factor = 1;
-			double flipProb = 0.0001;
+		// The initial probability is set to be 2 / N 
+		// for a change of 0.0001
+		double initialTemp = 0.0001 * log(1.0 * m->_size/4.0);
+		// printf("IT = %4.2f\n", initialTemp);
+		double alpha = 0.9;
+		int stepsPerPart = 2000;
+		double t;			
+		double dist;
+		double old = *csm;
+		int factor = 1;
+		double flipProb = 0.001;
 
-			int **groups = (int**)malloc(sizeof(int *) * m->_groupNum);
-			int *groupSizes = (int*) malloc(sizeof(int) * m->_groupNum);
-			for (i = 0; i < m->_groupNum; i++ ) {
-				groupSizes[i] = getGroupSize(m, i + 1); 
-				groups[i] = (int*)malloc(sizeof(int) * groupSizes[i]);
-				getGroup(m, i + 1, groups[i]);
-			}
-			
-			srand( time (NULL) );
-			srand48( time (NULL) );			
-		
-			// try to anneal the best permutation
-			memcpy(temp, perm, sizeof(int) * m->_size);
-			for (t = initialTemp; t >= 0.0001*initialTemp; t *= alpha) { 
-				for (i = 0; i < stepsPerPart /* * m->_size */; i++) { 
-					// select a node at random
-					int first = rand() % m->_size;
+		int **groups = (int**)malloc(sizeof(int *) * m->_groupNum);
+		int *groupSizes = (int*) malloc(sizeof(int) * m->_groupNum);
+		for (i = 0; i < m->_groupNum; i++ ) {
+			groupSizes[i] = getGroupSize(m, i + 1); 
+			groups[i] = (int*)malloc(sizeof(int) * groupSizes[i]);
+			getGroup(m, i + 1, groups[i]);
+		}
 
-					// select another from its similarity group
-					int second = groups
-						[m->_similar[first] - 1]
-						[rand() % groupSizes[m->_similar[first] - 1]];
+		srand( time (NULL) );
+#ifndef _WIN32
+		srand48( time (NULL) );			
+#endif
+		// try to anneal the best permutation
+		memcpy(temp, perm, sizeof(int) * m->_size);
+		for (t = initialTemp; t >= 0.0001*initialTemp; t *= alpha) { 
+			for (i = 0; i < stepsPerPart /* * m->_size */; i++) { 
+				// select a node at random
+				int first = rand() % m->_size;
+
+				// select another from its similarity group
+				int second = groups
+					[m->_similar[first] - 1]
+					[rand() % groupSizes[m->_similar[first] - 1]];
+				
+				int temp1 = first, temp2 = second, firstSize = 1, secondSize = 1;
+				if (first == second) continue;
 					
-					int temp1 = first, temp2 = second, firstSize = 1, secondSize = 1;
-					if (first == second) continue;
-					
-					// find the orbit size of the two nodes, as well as the atoms preceeding them	
-					while (temp[temp1] != first) {	
-						firstSize++;
-						temp1 = temp[temp1];
-					}	
-
-					while (temp[temp2] != second) {	
-						secondSize++;
-						temp2 = temp[temp2];
-					}	
-
-					// Now, finally, operate
+				// find the orbit size of the two nodes, as well as the atoms preceeding them	
+				while (temp[temp1] != first) {	
+					firstSize++;
+					temp1 = temp[temp1];
+				}	
+				while (temp[temp2] != second) {	
+					secondSize++;
+					temp2 = temp[temp2];
+				}	
+				// Now, finally, operate
+				if (firstSize == 1 && secondSize == 1) { 		
+					// both are single-orbits - so do nothing
+				} else if (firstSize == 1) {
+					// only first is a single orbit
+					temp[temp2] = first;
+					temp[first] = temp[second];
+					temp[second] = second;
+				} else if (secondSize == 1) { 
+					// only second is a single orbit
+					temp[temp1] = second;
+					temp[second] = temp[first];
+					temp[first] = first;
+				} else {
+					// both are not single orbits
+					int t = temp[first];	
+					temp[first] = temp[second];
+					temp[second] = t;	
+					t = temp[temp1];
+					temp[temp1] = temp[temp2];
+					temp[temp2] = t;
+				}
+				
+				runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);	
+				if (factor == 1) { 
+					if (drand48() < flipProb) { 
+						factor = -1;
+					}
+				} else { 	
+					// spend one tenth of the time in reverted state
+					if (drand48() < (flipProb * 100)) { 	
+						factor = 1;
+					}
+				}
+				// printf("Tried to change from %4.2f to %4.2f: ", factor * old, factor * dist);
+				if (dist < old || drand48() < exp(factor * (old - dist) / t)) {	
+					// if this improves - 					
+					/*if (dist < old) { 
+						printf("Better\n");	
+					} else {
+						printf("Kept\n");
+					} */
+					if (dist < *csm) { 
+						*csm = dist;
+						printf("Changed to %4.2f\n", *csm);
+						memcpy(perm, temp , sizeof(int) * m->_size);
+					}
+					old = dist;
+				} else {
+						// undo			
+					//printf("Reverted\n");								
 					if (firstSize == 1 && secondSize == 1) { 		
 						// both are single-orbits - so do nothing
 					} else if (firstSize == 1) {
 						// only first is a single orbit
-						temp[temp2] = first;
-						temp[first] = temp[second];
-						temp[second] = second;
-					} else if (secondSize == 1) { 
-						// only second is a single orbit
-						temp[temp1] = second;
+						temp[temp2] = second;
 						temp[second] = temp[first];
 						temp[first] = first;
+					} else if (secondSize == 1) { 
+						// only second is a single orbit
+						temp[temp1] = first;
+						temp[first] = temp[second];
+						temp[second] = second;
 					} else {
 						// both are not single orbits
 						int t = temp[first];	
@@ -1122,79 +1232,21 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 						t = temp[temp1];
 						temp[temp1] = temp[temp2];
 						temp[temp2] = t;
-					}
-					
-					runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);	
+					}					
+				} 
+			}	
+			
+			// printf("At T = %4.2f - csm %4.2f\n", t, *csm);
+		}
 
-					if (factor == 1) { 
-						if (drand48() < flipProb) { 
-							factor = -1;
-						}
-					} else { 	
-						// spend one tenth of the time in reverted state
-						if (drand48() < (flipProb * 100)) { 	
-							factor = 1;
-						}
-					}
+		for (i = 0; i < m->_groupNum; i++) {
+			free(groups[i]);
+		}
+		free(groups);
+		free(groupSizes);
+	}					
 
-					// printf("Tried to change from %4.2f to %4.2f: ", factor * old, factor * dist);
-					if (dist < old || drand48() < exp(factor * (old - dist) / t)) {	
-						// if this improves - 	
-						/*
-						if (dist < old) { 
-							printf("Better\n");	
-						} else {
-							printf("Kept\n");
-						}
-						*/
-						if (dist < *csm) { 
-							*csm = dist;
-							printf("Changed to %4.2f\n", *csm);
-							memcpy(perm, temp , sizeof(int) * m->_size);
-						}
-						old = dist;
-					} else {
-						// undo			
-						//printf("Reverted\n");								
-						if (firstSize == 1 && secondSize == 1) { 		
-							// both are single-orbits - so do nothing
-						} else if (firstSize == 1) {
-							// only first is a single orbit
-							temp[temp2] = second;
-							temp[second] = temp[first];
-							temp[first] = first;
-						} else if (secondSize == 1) { 
-							// only second is a single orbit
-							temp[temp1] = first;
-							temp[first] = temp[second];
-							temp[second] = second;
-						} else {
-							// both are not single orbits
-							int t = temp[first];	
-							temp[first] = temp[second];
-							temp[second] = t;	
-							t = temp[temp1];
-							temp[temp1] = temp[temp2];
-							temp[temp2] = t;
-						}						
-					} 
-
-				}	
-				
-				// printf("At T = %4.2f - csm %4.2f\n", t, *csm);
-			}
-
-			for (i = 0; i < m->_groupNum; i++) {
-				free(groups[i]);
-			}
-			free(groups);
-			free(groupSizes);
-		}		
-		
-		free(bestPerm);
-		free(temp);		
-		runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);
-	}	
+	free(temp);	
 	
 }
 
