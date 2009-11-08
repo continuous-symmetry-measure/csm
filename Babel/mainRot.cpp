@@ -1102,7 +1102,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 
 			// Keep the best solution so far...
 			if (best < *csm) { 
-				*csm = dist;
+				*csm = best;
 				memcpy(perm, bestPerm , sizeof(int) * m->_size);				
 			}		
 			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
