@@ -130,11 +130,11 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void runSinglePerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type);
 void findBestPerm(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
-void findSymmetryDirection(Molecule *m, double  dirs[3][3], OperationType type);
+void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationType type);
 void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type);
 void readPerm(FILE* permfile, int* perm, int size);
-void lineFit(double **points, int nPoints, double dirs[3][3]);
-void planeFit(double **points, int nPoints, double dirs[3][3]);
+void lineFit(double **points, int nPoints, double **dirs, int* outlies);
+void planeFit(double **points, int nPoints, double **dirs, int *outliers);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
 
@@ -156,6 +156,8 @@ int babelBond = FALSE;
 int timeOnly = FALSE;
 int sn_max = 4;
 int anneal = FALSE;
+int detectOutliers = FALSE;
+double A = 2;
 
 // file pointers
 FILE* inFile = NULL;
@@ -181,6 +183,7 @@ void usage(char *op) {
 	printf("-useperm permfile  -  only compute for a single permutation\n");
 	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
 	printf("-findperm	   - Attempt to search for a permutation\n");
+	printf("-detectOutliers - Use statistical methods to try and improve -findperm's results\n");
 	printf("-anneal		   - Try to anneal the result\n");
 	printf("-babelbond	   - Let openbabel compute bonding\n");
 	printf("-useMass	   - Use the atomic masses to define center of mass\n");
@@ -254,6 +257,101 @@ double totalNumPermutations(Molecule *m) {
 char *getExtension(char *fname) {
 	return strrchr(fname,'.') + 1;
 }
+
+// Math utils
+
+double Magnitude( double *Point1, double *Point2 )
+{
+	double Vector[3];
+
+	Vector[0] = Point2[0] - Point1[0];
+	Vector[1] = Point2[1] - Point1[1];
+	Vector[2] = Point2[2] - Point1[2];
+
+	return sqrt( Vector[0] * Vector[0] + Vector[1]* Vector[1] + Vector[2] * Vector[2] );
+}
+
+double computeDistanceFromLine( double *Point, double *LineStart, double *LineEnd)
+{
+	double LineMag;
+	double U;
+	double Intersection[3];
+
+	LineMag = Magnitude( LineEnd, LineStart );
+
+	U = ( ( ( Point[0] - LineStart[0]) * ( LineEnd[0] - LineStart[0] ) ) +
+		( ( Point[1] - LineStart[1] ) * ( LineEnd[1] - LineStart[1] ) ) +
+		( ( Point[2] - LineStart[2] ) * ( LineEnd[2] - LineStart[2] ) ) ) /
+		( LineMag * LineMag );
+
+	Intersection[0] = LineStart[0] + U * ( LineEnd[0] - LineStart[0] );
+	Intersection[1]= LineStart[1] + U * ( LineEnd[1] - LineStart[1] );
+	Intersection[2] = LineStart[2] + U * ( LineEnd[2] - LineStart[2] );
+
+	return Magnitude( Point, Intersection );	
+}
+
+
+/*
+*  This Quickselect routine is based on the algorithm described in
+*  "Numerical recipes in C", Second Edition,
+*  Cambridge University Press, 1992, Section 8.5, ISBN 0-521-43108-5
+*  This code by Nicolas Devillard - 1998. Public domain.
+*/
+
+
+#define ELEM_SWAP(a,b) { register double t=(a);(a)=(b);(b)=t; }
+
+double findMedian(double arr[], int n) 
+{
+	int low, high ;
+	int median;
+	int middle, ll, hh;
+
+	low = 0 ; high = n-1 ; median = (low + high) / 2;
+	for (;;) {
+		if (high <= low) /* One element only */
+			return arr[median] ;
+
+		if (high == low + 1) {  /* Two elements only */
+			if (arr[low] > arr[high])
+				ELEM_SWAP(arr[low], arr[high]) ;
+			return arr[median] ;
+		}
+
+		/* Find median of low, middle and high items; swap into position low */
+		middle = (low + high) / 2;
+		if (arr[middle] > arr[high])    ELEM_SWAP(arr[middle], arr[high]) ;
+		if (arr[low] > arr[high])       ELEM_SWAP(arr[low], arr[high]) ;
+		if (arr[middle] > arr[low])     ELEM_SWAP(arr[middle], arr[low]) ;
+
+		/* Swap low item (now in position middle) into position (low+1) */
+		ELEM_SWAP(arr[middle], arr[low+1]) ;
+
+		/* Nibble from each end towards middle, swapping items when stuck */
+		ll = low + 1;
+		hh = high;
+		for (;;) {
+			do ll++; while (arr[low] > arr[ll]) ;
+			do hh--; while (arr[hh]  > arr[low]) ;
+
+			if (hh < ll)
+				break;
+
+			ELEM_SWAP(arr[ll], arr[hh]) ;
+		}
+
+		/* Swap middle item (in position low) back into correct position */
+		ELEM_SWAP(arr[low], arr[hh]) ;
+
+		/* Re-set active partition */
+		if (hh <= median)
+			low = ll;
+		if (hh >= median)
+			high = hh - 1;
+	}
+}
+
 
 /*
 * parses the command line parameters
@@ -369,6 +467,8 @@ void parseInput(int argc, char *argv[]){
 			exit(0);
 		} else if (strcmp(argv[i], "-findperm") == 0) { 
 			findPerm = TRUE;
+		} else if (strcmp(argv[i], "-detectOutliers") == 0) {
+			detectOutliers = TRUE;
 		} else if (strcmp(argv[i], "-anneal") == 0) {
 			anneal = TRUE;
 		}
@@ -1070,16 +1170,17 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		estimatePerm(m, perm, dir, type);
 		runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);	
 	} else { 		
-		double dirs[3][3] = {{1.0,0.0,0.0}, {1.0,0.0,0.0}, {1.0,0.0,0.0}};		
+		double** dirs;
+		int n_dirs;
 		int *bestPerm = (int*)malloc(sizeof(int) * m->_size);		
 		int maxIters = 10;	
 		*csm = MAXDOUBLE;
 
 		// Find an initial approximated symmetry axis/plain
-		findSymmetryDirection(m, dirs, type);
+		findSymmetryDirection(m, &dirs, &n_dirs, type);
 
-		// Find the permutation best matching this direction - there are 3 results to the algorithm
-		for (i = 0; i < 3; i++) { 
+		// Find the permutation best matching this direction - there are n_dirs results to the algorithm		
+		for (i = 0; i < n_dirs; i++) { 
 			double dist = MAXDOUBLE, old = MAXDOUBLE, best = MAXDOUBLE;				
 			int iterNum = 1;
 			estimatePerm(m, bestPerm, dirs[i], type);	
@@ -1107,9 +1208,12 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			}		
 			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
 		}
+		for (i = 1; i < n_dirs; i++) {
+			free(dirs[i]);
+		}
+		free(dirs);
 		free(bestPerm);	
 	}
-
 		
 	if (anneal) {
 			
@@ -1254,12 +1358,28 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
  * Find an initial guess for the approximated symmetry direction, 
  * which in the case of mirror symmetry is vector perpendicular to the mirror plane, 
  * and in other cases, the symmetry axis.
- * This is done using least-mean-squares, which provides 3 guesses.
+ * This is done using least-mean-squares, which provides 3 guesses, times 3 if we try to remove outliers
  */
-void findSymmetryDirection(Molecule *m, double  dirs[3][3], OperationType type) { 	
+void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationType type) {
 	int* groupSizes = (int*)malloc(sizeof(int) * m->_groupNum);
 	double** groupAverages = (double**)malloc(sizeof(double*) * m->_groupNum);
-	int i;
+	int *outliers = (int*)malloc(sizeof(int) * m->_groupNum);
+	int i,j;
+	double **testDir;
+	double median;
+	double zero[] = {0.0,0.0,0.0};
+	
+	// initialize results array
+	*n_dirs = detectOutliers ? 9 : 3;
+	(*dirs) = (double**)malloc(sizeof(double*) *(*n_dirs));
+	for (i = 0; i < *n_dirs; i++) {		
+		(*dirs)[i] = (double*)malloc(sizeof(double)*3);
+	}
+	testDir = (double**)malloc(sizeof(double*) * 3);
+	for (i = 0; i < 3; i++) {
+		testDir[i] = (double*)malloc(sizeof(double) * 3);
+	}	
+
 		
 	for (i = 0; i < m->_groupNum; i++) { 
 		groupSizes[i] = 0;
@@ -1275,6 +1395,7 @@ void findSymmetryDirection(Molecule *m, double  dirs[3][3], OperationType type) 
 	}
 
 	for (i = 0; i < m->_groupNum; i++) { 					
+		outliers[i] = FALSE;
 		groupAverages[i][0] /= 	groupSizes[i];	
 		groupAverages[i][1] /= 	groupSizes[i];	
 		groupAverages[i][2] /= 	groupSizes[i];	
@@ -1284,17 +1405,59 @@ void findSymmetryDirection(Molecule *m, double  dirs[3][3], OperationType type) 
 		// For CS 			
 		// Assuming that all orbit center-of-masses are found on the plane of reflection - find it			
 		// for some reason - we get a few options
-		planeFit(groupAverages, m->_groupNum, dirs);		
+		planeFit(groupAverages, m->_groupNum, testDir,outliers);		
 	} else {
 		// For CN and SN with N > 2			
 		// Assuming that all orbit center-of-masses are found on the axis of symmetry - find it			
 		// for some reason - we get a few options
-		lineFit(groupAverages, m->_groupNum, dirs);		
+		lineFit(groupAverages, m->_groupNum, testDir, outliers);		
+	}
+
+	if (detectOutliers) {			
+		for (j = 0; j < 3; j++) { 
+			// 1. Find the distance of each point from the line / plane
+			// 2. Find the median m
+			// 3. for each distance di, if (di / m > A || m / di > A - remove as outlier)
+			// 4. recompute line / plane
+			double* dists = (double *)malloc(m->_groupNum * sizeof(double));				
+			for (i = 0; i < m->_groupNum; i++) {
+				if (type == CS) { 
+					dists[i] = fabs(testDir[j][0] * groupAverages[i][0] + 
+						testDir[j][1] * groupAverages[i][1] + 
+						testDir[j][2] * groupAverages[i][2]);							
+				} else { 
+					dists[i] = computeDistanceFromLine(groupAverages[i],zero,testDir[j]);
+				}
+
+			}
+			median = findMedian(dists, m->_groupNum);
+			for (i = 0; i < m->_groupNum; i++) {
+				if (dists[i] / median > A || dists[i] / median > A) {					
+					outliers[i] = true; 
+				} 
+			}
+			if (type == CS) {	
+				planeFit(groupAverages, m->_groupNum, ((*dirs) + j * 3), outliers);		
+			} else {
+				lineFit(groupAverages, m->_groupNum, ((*dirs) + j * 3), outliers);		
+			}
+			free(dists);
+		}
+	} else {			
+		// just copy...
+		for (i = 0; i < 3; i++) 
+			for (j = 0; j < 3; j++) 
+				(*dirs)[i][j] = testDir[i][j];
 	}
 
 	for (i = 0; i < m->_groupNum; i++) { 		
 		free(groupAverages[i]);
 	}
+	for (i = 0; i < 3; i++) {
+		free(testDir[i]);
+	}
+	free(testDir);
+	free(outliers);
 	free(groupSizes);
 	free(groupAverages);
 }
@@ -1489,7 +1652,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	free(group);
 }
 
-void lineFit(double **points, int nPoints, double dirs[3][3]) {
+void lineFit(double **points, int nPoints, double **dirs, int *outliers) {
 	// taken from http://www.mapleprimes.com/forum/linear-regression-in-3d
 	double A[3] = {0,0,0};	
 	double matrix[3][3] = { {0,0,0}, {0,0,0}, {0,0,0}};
@@ -1497,29 +1660,34 @@ void lineFit(double **points, int nPoints, double dirs[3][3]) {
 	double **copyMat = dmatrix(1,3,1,3);	
 	double *diag = dvector(1,3);
 	double *secdiag = dvector(1,3);	
+	int realNum = 0;
 
 	double norm;
 	int i,j,k;	
 
 	// Compute A
 	for (i = 0 ; i < nPoints; i++) { 
-		A[0] += points[i][0];
-		A[1] += points[i][1];
-		A[2] += points[i][2];
+		if (!outliers[i]) {
+			A[0] += points[i][0];
+			A[1] += points[i][1];
+			A[2] += points[i][2];
+			realNum ++;
+		}
 	}
-	A[0] /= nPoints;
-	A[1] /= nPoints;
-	A[2] /= nPoints;
+	A[0] /= realNum;
+	A[1] /= realNum;
+	A[2] /= realNum;
 	
 	// Compute matrix
 	for (i = 0; i < nPoints; i++) { 
-		for (j = 0; j < 3; j++) { 
-			for (k = 0; k < 3; k++) { 
-				matrix[j][k] += (points[i][j] - A[j]) * (points[i][k] - A[k]);
+		if (!outliers[i]) {
+			for (j = 0; j < 3; j++) { 
+				for (k = 0; k < 3; k++) { 				
+					matrix[j][k] += (points[i][j] - A[j]) * (points[i][k] - A[k]);
+				}
 			}
 		}
 	}
-
 
 	// perhaps actual copying is needed
 	for (i = 0; i < 3; i++) {		
@@ -1553,7 +1721,7 @@ void lineFit(double **points, int nPoints, double dirs[3][3]) {
 	free_dvector(diag, 1, 3);
 	free_dvector(secdiag, 1, 3);	
 }
-void planeFit(double **points, int nPoints, double dirs[3][3]) {
+void planeFit(double **points, int nPoints, double **dirs, int* outliers) {
 	// taken from http://www.mapleprimes.com/forum/linear-regression-in-3d
 	double A[3] = {0,0,0};	
 	double matrix[3][3] = { {0,0,0}, {0,0,0}, {0,0,0}};
@@ -1564,26 +1732,30 @@ void planeFit(double **points, int nPoints, double dirs[3][3]) {
 
 	double norm;
 	int i,j,k;
+	int realNum = 0;
 	
 	// Compute A
 	for (i = 0 ; i < nPoints; i++) { 
-		A[0] += points[i][0];
-		A[1] += points[i][1];
-		A[2] += points[i][2];
+		if (!outliers[i]) {
+			realNum++;
+			A[0] += points[i][0];
+			A[1] += points[i][1];
+			A[2] += points[i][2];
+		}
 	}
-	A[0] /= nPoints;
-	A[1] /= nPoints;
-	A[2] /= nPoints;
+	A[0] /= realNum;
+	A[1] /= realNum;
+	A[2] /= realNum;
 
 	// Compute matrix
 	for (i = 0; i < nPoints; i++) { 
+		if (outliers[i]) continue;
 		for (j = 0; j < 3; j++) { 
 			for (k = 0; k < 3; k++) { 
 				matrix[j][k] += (points[i][j] - A[j]) * (points[i][k] - A[k]);
 			}
 		}
 	}
-
 
 	// perhaps actual copying is needed
 	for (i = 0; i < 3; i++) {		
