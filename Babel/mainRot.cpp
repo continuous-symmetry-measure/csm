@@ -1804,7 +1804,7 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 	fprintf(out, "%s: %.4lf\n",opName,fabs(csm));
 	fprintf(out, "SCALING FACTOR: %7lf\n", dMin);
 
-	fprintf(out, "\n INITIAL STRUCTURE COORDINATES %i\n\n",m->_size);
+	fprintf(out, "\n INITIAL STRUCTURE COORDINATES\n%i\n",m->_size);
 
 	for(i=0; i<m->_size; i++){
 		fprintf(out, "%3s%10lf %10lf %10lf\n",
@@ -1819,7 +1819,7 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 		fprintf(out,"\n");
 	}
 
-	fprintf(out, "\n RESULTING STRUCTURE COORDINATES %i\n\n",m->_size);
+	fprintf(out, "\n RESULTING STRUCTURE COORDINATES\n%i\n",m->_size);
 
 	for(i=0; i<m->_size; i++){
 		fprintf(out, "%3s%10lf %10lf %10lf\n",
@@ -1910,7 +1910,7 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 
 	// TODO - should we print the centered molecule, or the original one (and, accordingly, the symmetric struct)
 
-	fprintf(out, "\n INITIAL STRUCTURE COORDINATES %i\n\n",m->_size);
+	fprintf(out, "\n INITIAL STRUCTURE COORDINATES");
 
 	updateCoordinates(mol, m->_pos);
 
@@ -1918,7 +1918,7 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 
 	updateCoordinates(mol, outAtoms);
 
-	fprintf(out, "\n RESULTING STRUCTURE COORDINATES %i\n\n",m->_size);
+	fprintf(out, "\n RESULTING STRUCTURE COORDINATES");
 
 	writeMolecule(mol, format, out, fname);
 
