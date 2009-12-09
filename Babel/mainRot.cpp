@@ -573,12 +573,16 @@ int main(int argc, char *argv[]){
 
 	if (!findPerm) {
 		if (!useperm) {
+			double time = 1.0*totalNumPermutations(m) / 3600 / APPROX_RUN_PER_SEC;
+			if (time != time) {
+				// time is NaN
+				time = MAXDOUBLE;
+			}
 			printf("Going to enumerate over %5.2f permutations\n", totalNumPermutations(m));
-			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0*totalNumPermutations(m) / 3600 / 
-				APPROX_RUN_PER_SEC );
+			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", time  );
 		} else {
 			printf("Going to enumerate over %5.2f permutations\n", 1.0);
-			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0 / 3600 / 		APPROX_RUN_PER_SEC );
+			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0 / 3600 / APPROX_RUN_PER_SEC );
 		}
 		if (timeOnly) { return 0; };
 	}
