@@ -115,7 +115,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
 
     // read size
     if (fscanf(in,"%d",&size)!=1){
-        fprintf(err,"Input Error: Number of atoms not supplied!\n");
+        printf("Input Error: Number of atoms not supplied!\n");
         return NULL;
     }
     if (size == 0)
@@ -130,7 +130,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
         m->_symbol[i] = readString(in); // allocates space for symbol
 
         if(fscanf(in,"%lf%lf%lf",&(m->_pos[i][0]),&(m->_pos[i][1]),&(m->_pos[i][2]))!=3){
-            fprintf(err,"Input Error: Failed reading input for atom %d\n",i /* +0 */ +1);
+            printf("Input Error: Failed reading input for atom %d\n",i /* +0 */ +1);
             freeMolecule(m);
             return NULL;
         }
@@ -153,7 +153,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
         // read and check atom number
         fscanf(in,"%d",&atomNum);
         if (atomNum != i /* +0 */ +1){
-            fprintf(err,"Input Error: Failed reading connectivity for atom %d\n",i /* +0 */ +1);
+            printf("Input Error: Failed reading connectivity for atom %d\n",i /* +0 */ +1);
             freeMolecule(m);
             return NULL;
         }
@@ -178,7 +178,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
 
             // read neighbour number
             if( (fscanf(in,"%d",&neighbour) !=1) || (neighbour > /* >= */ size) ) {
-                fprintf(err,"Input Error: Failed reading connectivity for atom %d\n",i /* +0 */ +1);
+                printf("Input Error: Failed reading connectivity for atom %d\n",i /* +0 */ +1);
                 freeMolecule(m);
                 return NULL;
             }
@@ -229,7 +229,7 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
 		// note: readAtom allocates space for symbol
 
 		if (! readAtomPDB(in,&(m->_symbol[i]),m->_pos[i]) ){
-            fprintf(err,"Input Error: Failed reading input for atom %d\n",i);
+            printf("Input Error: Failed reading input for atom %d\n",i);
             freeMolecule(m);
             return NULL;
         }
@@ -247,7 +247,7 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
 
 		if ( (! readConnectivityPDB(in,&valency,neighbours,size,&curAtom) ) ||
 			(curAtom < 0) ){
-            fprintf(err,"Input Error: Failed reading connectivity element number %d\n",i+1);
+            printf("Input Error: Failed reading connectivity element number %d\n",i+1);
             freeMolecule(m);
             return NULL;
         }

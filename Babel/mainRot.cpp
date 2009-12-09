@@ -158,6 +158,7 @@ int sn_max = 4;
 int anneal = FALSE;
 int detectOutliers = FALSE;
 double A = 2;
+double babelTest = FALSE;
 
 // file pointers
 FILE* inFile = NULL;
@@ -188,6 +189,7 @@ void usage(char *op) {
 	printf("-babelbond	   - Let openbabel compute bonding\n");
 	printf("-useMass	   - Use the atomic masses to define center of mass\n");
 	printf("-timeOnly	   - Only print the time and exit\n");
+	printf("-babelTest	   - Test if the molecule is legal or not\n");
 	printf("-sn_max	<max n> - The maximal sn to try, relevant only for chirality\n");
 	printf("-help - print this help file\n");
 }
@@ -471,6 +473,8 @@ void parseInput(int argc, char *argv[]){
 			detectOutliers = TRUE;
 		} else if (strcmp(argv[i], "-anneal") == 0) {
 			anneal = TRUE;
+		} else if (strcmp(argv[i], "-babelTest") == 0) { 
+			babelTest = TRUE;
 		}
 	}
 	if (writeOpenu) {
@@ -505,10 +509,12 @@ int main(int argc, char *argv[]){
 	// try to read molecule from infile
 	Molecule* m;
 	OBMol mol; 
+	
 	if (useFormat) {
 		// If a specific format is used, read molecule using that format
 		if (strcasecmp(format, CSMFORMAT) == 0) {
 			m = createMolecule(inFile,stdout,ignoreSym && !useperm);
+			if (m==NULL) exit(1);
 			if (useMass) { 
 				for (int i = 0; i < m->_size; i++) { 
 					m->_mass[i] = getAtomicMass(m->_symbol[i]);
@@ -524,6 +530,7 @@ int main(int argc, char *argv[]){
 		// if the extension is CSM - use csm
 		if (strcasecmp(format, CSMFORMAT) == 0) {
 			m = createMolecule(inFile,stdout,ignoreSym && !useperm);
+			if (m==NULL) exit(1);
 			if (useMass) { 
 				for (int i = 0; i < m->_size; i++) { 
 					m->_mass[i] = getAtomicMass(m->_symbol[i]);
@@ -536,6 +543,8 @@ int main(int argc, char *argv[]){
 		}
    	}
 
+	if (babelTest) // Mol is ok - return 0
+		return 0;
 
 	if (!m){
 		if (writeOpenu) {
