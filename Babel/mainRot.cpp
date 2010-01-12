@@ -20,6 +20,7 @@ extern "C" {
 
 #include <openbabel/mol.h>
 #include "babelAdapter.h"
+#include <vector>
 
 #define CSMFORMAT "CSM"
 #define MAXDOUBLE  100000000.0
@@ -813,14 +814,14 @@ void computeMatrix(double **parray, int *perm, int size, double (*coef)[3][3], d
 
 
 /** 
-* Compute the part of the B vector relevant to the current permutation 
+* Compute the part of the B vec relevant to the current permutation 
 */
-void computeVector(double **parray, int *perm, int size, double (*vector)[3], double multiplier) {
+void computeVector(double **parray, int *perm, int size, double (*vec)[3], double multiplier) {
 	int atom;
 	for(atom = 0; atom < size; ++atom) {
-		(*vector)[0] += multiplier * (parray[atom][1] * parray[perm[atom]][2] - parray[atom][2] * parray[perm[atom]][1]);
-		(*vector)[1] += multiplier * (parray[atom][2] * parray[perm[atom]][0] - parray[atom][0] * parray[perm[atom]][2]);
-		(*vector)[2] += multiplier * (parray[atom][0] * parray[perm[atom]][1] - parray[atom][1] * parray[perm[atom]][0]);
+		(*vec)[0] += multiplier * (parray[atom][1] * parray[perm[atom]][2] - parray[atom][2] * parray[perm[atom]][1]);
+		(*vec)[1] += multiplier * (parray[atom][2] * parray[perm[atom]][0] - parray[atom][0] * parray[perm[atom]][2]);
+		(*vec)[2] += multiplier * (parray[atom][0] * parray[perm[atom]][1] - parray[atom][1] * parray[perm[atom]][0]);
 	}
 }
 
@@ -835,7 +836,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	double *temp = dvector(1,3);
 
 	double matrix[3][3] = { {0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
-	double vector[3] = {0.0,0.0,0.0};
+	double vec[3] = {0.0,0.0,0.0};
 	double scalar[3];
 	double maxval, scl, angle;
 	double rtr[6], rti[6];
@@ -864,12 +865,12 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		} else {
 			computeMatrix(m->_pos, curPerm, m->_size, &matrix, 1-cos(angle));	
 		}	  
-		computeVector(m->_pos, curPerm, m->_size, &vector, sin(angle));
+		computeVector(m->_pos, curPerm, m->_size, &vec, sin(angle));
 	}
 	
 	// perhaps actual copying is needed
 	for (i = 0; i < 3; i++) {
-		copyVec[i + 1] = vector[i];
+		copyVec[i + 1] = vec[i];
 		for (j = 0; j < 3; j++) {
 			copyMat[i + 1][j + 1] = matrix[i][j];
 		}
@@ -933,7 +934,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		temp[3] * diag[1] * diag[1] * diag[2] * diag[2] + 
 		diag[1] * diag[1] * diag[2] * diag[2] * diag[3] * diag[3]; // 1
 
-	// solve polynomial and find maximum eigenvalue and eigen vector
+	// solve polynomial and find maximum eigenvalue and eigen vec
 	rpoly(coeffs, 6, rtr, rti);
 
 	maxval = -MAXDOUBLE;
@@ -1221,7 +1222,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			}		
 			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
 		}
-		for (i = 1; i < n_dirs; i++) {
+		for (i = 0; i < n_dirs; i++) {
 			free(dirs[i]);
 		}
 		free(dirs);
@@ -1314,7 +1315,8 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 				}
 				// printf("Tried to change from %4.2f to %4.2f: ", factor * old, factor * dist);
 				if (dist < old || drand48() < exp(factor * (old - dist) / t)) {	
-					// if this improves - 					
+					// if this improves - 
+					
 					/*if (dist < old) { 
 						printf("Better\n");	
 					} else {
@@ -1349,7 +1351,8 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 						t = temp[temp1];
 						temp[temp1] = temp[temp2];
 						temp[temp2] = t;
-					}					
+					}
+					
 				} 
 			}	
 			
@@ -1369,7 +1372,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 
 /*
  * Find an initial guess for the approximated symmetry direction, 
- * which in the case of mirror symmetry is vector perpendicular to the mirror plane, 
+ * which in the case of mirror symmetry is vec perpendicular to the mirror plane, 
  * and in other cases, the symmetry axis.
  * This is done using least-mean-squares, which provides 3 guesses, times 3 if we try to remove outliers
  */
@@ -1381,18 +1384,13 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 	double **testDir;
 	double median;
 	double zero[] = {0.0,0.0,0.0};
-	
-	// initialize results array
-	*n_dirs = detectOutliers ? 9 : 3;
-	(*dirs) = (double**)malloc(sizeof(double*) *(*n_dirs));
-	for (i = 0; i < *n_dirs; i++) {		
-		(*dirs)[i] = (double*)malloc(sizeof(double)*3);
-	}
+	std::vector<double *> results;
+	int useOrthogonal = TRUE;
+
 	testDir = (double**)malloc(sizeof(double*) * 3);
 	for (i = 0; i < 3; i++) {
 		testDir[i] = (double*)malloc(sizeof(double) * 3);
 	}	
-
 		
 	for (i = 0; i < m->_groupNum; i++) { 
 		groupSizes[i] = 0;
@@ -1416,7 +1414,8 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 
 	if (type == CS) { 
 		// For CS 			
-		// Assuming that all orbit center-of-masses are found on the plane of reflection - find it			
+		// Assuming that all orbit center-of-masses are 
+		// found on the plane of reflection - find it			
 		// for some reason - we get a few options
 		planeFit(groupAverages, m->_groupNum, testDir,outliers);		
 	} else {
@@ -1424,10 +1423,17 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 		// Assuming that all orbit center-of-masses are found on the axis of symmetry - find it			
 		// for some reason - we get a few options
 		lineFit(groupAverages, m->_groupNum, testDir, outliers);		
-	}
+	}	
 
 	if (detectOutliers) {			
 		for (j = 0; j < 3; j++) { 
+			double **tempDir;
+
+			tempDir = (double**)malloc(sizeof(double*) * 3);
+			for (i = 0; i < 3; i++) {
+				tempDir[i] = (double*)malloc(sizeof(double) * 3);
+			}	
+
 			// 1. Find the distance of each point from the line / plane
 			// 2. Find the median m
 			// 3. for each distance di, if (di / m > A || m / di > A - remove as outlier)
@@ -1450,26 +1456,70 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 				} 
 			}
 			if (type == CS) {	
-				planeFit(groupAverages, m->_groupNum, ((*dirs) + j * 3), outliers);		
+				planeFit(groupAverages, m->_groupNum, tempDir, outliers);		
 			} else {
-				lineFit(groupAverages, m->_groupNum, ((*dirs) + j * 3), outliers);		
+				lineFit(groupAverages, m->_groupNum, tempDir, outliers);		
 			}
-			free(dists);
+			for (i = 0; i < 3; i++) { 	
+				results.push_back(tempDir[i]);
+			}
+
+			free(dists);				
+
+			for (i = 0; i < 3; i++) {
+				free(testDir[i]);
+			}
+			free(testDir);
+
 		}
-	} else {			
+	} else {					
 		// just copy...
-		for (i = 0; i < 3; i++) 
-			for (j = 0; j < 3; j++) 
-				(*dirs)[i][j] = testDir[i][j];
+		for (i = 0; i < 3; i++) {	
+			results.push_back(testDir[i]);
+		}
+	}
+
+	if (useOrthogonal) {	
+		// Go over all dirs and add two orthogonal axes
+		std::vector<double*> temp = results;
+		for (i = 0; i < temp.size(); i++) { 
+			double* dir = temp[i];
+			double* newDir = (double *)malloc(sizeof(double) * 3);
+			double* newDir2 = (double *)malloc(sizeof(double) * 3);
+			double norm;
+			if (fabs(dir[0]) < MINDOUBLE) { 
+				newDir[0] = 1.0; newDir[1] = 0.0; newDir[2] = 0.0;
+				newDir2[0] = 0.0; newDir2[1] = -dir[2]; newDir2[2] = dir[1];
+			} else if (fabs(dir[1]) < MINDOUBLE) {
+				newDir[0] = -dir[2]; newDir[1] = 0.0; newDir[2] = dir[0];
+				newDir2[0] = newDir2[2] = 0.0; newDir[1] = 1.0;	
+			} else {
+				newDir[0] = -dir[1]; newDir[1] = dir[0]; newDir[2] = 0.0;
+				newDir2[0] = 0.0; newDir2[1] = -dir[2]; newDir2[2] = dir[1];
+			}
+			norm = sqrt(newDir[0] * newDir[0] + newDir[1] * newDir[1] + newDir[2] * newDir[2]);
+			newDir[0] /= norm; newDir[1] /= norm; newDir[2] /= norm;
+			norm = sqrt(newDir2[0] * newDir2[0] + newDir2[1] * newDir2[1] + newDir2[2] * newDir2[2]);
+			newDir2[0] /= norm; newDir2[1] /= norm; newDir2[2] /= norm;
+
+			results.push_back(newDir); 
+			results.push_back(newDir2);
+
+		}
+	}
+
+
+
+	// initialize results array
+	*n_dirs = results.size();
+	(*dirs) = (double**)malloc(sizeof(double*) *(*n_dirs));
+	for (i = 0; i < *n_dirs; i++) {		
+		(*dirs)[i] = results[i];
 	}
 
 	for (i = 0; i < m->_groupNum; i++) { 		
 		free(groupAverages[i]);
 	}
-	for (i = 0; i < 3; i++) {
-		free(testDir[i]);
-	}
-	free(testDir);
 	free(outliers);
 	free(groupSizes);
 	free(groupAverages);
