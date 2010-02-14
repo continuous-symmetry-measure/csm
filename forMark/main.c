@@ -108,6 +108,14 @@ double totalNumPermutations(Molecule *m) {
 */
 void parseInput(int argc, char *argv[]){
 
+	// get commandline flags
+	int i;
+	int nextIsPermFile = FALSE;
+	int nextIsMaxSn = FALSE;
+
+	// try to open infile for reading
+	char* inFileName = argv[2];
+
 	// check number of arguments
 	if (argc < 3){
 		usage(argv[0]);
@@ -115,8 +123,6 @@ void parseInput(int argc, char *argv[]){
 	}
 	opOrder = atoi(argv[1]);
 		
-	// try to open infile for reading
-	char* inFileName = argv[2];
 	if ((inFile = fopen(inFileName, "rt")) == NULL){
 		if (writeOpenu) {
 			printf("ERR* Failed to open data file %s *ERR\n", inFileName);
@@ -127,10 +133,6 @@ void parseInput(int argc, char *argv[]){
 	}
 
 
-	// get commandline flags
-	int i;
-	int nextIsPermFile = FALSE;
-	int nextIsMaxSn = FALSE;
 
 	for ( i=3;  i< argc ;  i++ ){
 		if (strcmp(argv[i],"-ignoreHy" ) == 0 )
@@ -168,11 +170,13 @@ int main(int argc, char *argv[]){
 	int *perm_cn = NULL;	
 	int *perm_cs = NULL;
 
+	// try to read molecule from infile
+	Molecule* m;
+
 	// init options
 	parseInput(argc,argv);
 
-	// try to read molecule from infile
-	Molecule* m;
+	
 	if (readPDB)
     	m = createMoleculePDB(inFile,stdout,ignoreSym);
 	else
@@ -505,8 +509,8 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	}
 
 	for (i = 1; i < opOrder; i++) {
-		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
+		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
 		for (j = 0; j < m->_size; j++) {
 			curPerm[j] = perm[curPerm[j]];
 		}

@@ -106,6 +106,19 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
 
     int size,i;
 
+	// allocate molecule
+	Molecule* m;
+
+	// read connectivity
+	int atomNum,neighbour;
+	char c;
+
+	// allocate temporary buffer
+	int *buff = (int*)malloc(size * sizeof(int));
+	int pos;
+	int j;
+
+
     // read size
     if (fscanf(in,"%d",&size)!=1){
         fprintf(err,"Input Error: Number of atoms not supplied!\n");
@@ -114,8 +127,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
     if (size == 0)
 		return NULL;
 
-    // allocate molecule
-    Molecule* m = allocateMolecule(size);
+	m = allocateMolecule(size);
 
     // read atoms
     for (i=0; i<size; i++){
@@ -133,15 +145,11 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
     if (replaceSym)
     	replaceSymbols(m);
 
-    // read connectivity
-    int atomNum,neighbour;
-    char c;
-
     // allocate temporary buffer
-    int *buff = (int*)malloc(size * sizeof(int));
-    int pos;
+    buff = (int*)malloc(size * sizeof(int));
 
     for (i=0; i<size; i++){
+		int valency = 0;
 
         // read and check atom number
         fscanf(in,"%d",&atomNum);
@@ -150,8 +158,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
             freeMolecule(m);
             return NULL;
         }
-
-        int valency = 0;
+       
         pos = 0;
 
         // read neighbour numbers till newline
@@ -188,7 +195,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
         // allocate memory for neighbours and copy
         m->_adjacent[i] = (int*)malloc(valency * sizeof(int));
 
-        int j;
+
         for (j=0; j<valency; j++)
         	m->_adjacent[i][j] = buff[j];
 
@@ -207,6 +214,10 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
 Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
 
     int size,i;
+    Molecule* m;
+	int *neighbours;
+	int valency,curAtom;
+    int j;
 
     // read size
     size = countAtomsPDB(in);
@@ -214,7 +225,7 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
 		return NULL;
 
     // allocate molecule
-    Molecule* m = allocateMolecule(size);
+	m = allocateMolecule(size);
 
     // read atoms
     for (i=0; i<size; i++){
@@ -233,8 +244,8 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
     	replaceSymbols(m);
 
     // read connectivity
-    int *neighbours = (int*)malloc(size * sizeof(int));
-    int valency,curAtom;
+    
+	neighbours = (int*)malloc(size * sizeof(int));    
 
     for (i=0; i<size; i++){
 
@@ -249,8 +260,7 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
 
         // allocate memory for neighbours and copy
         m->_adjacent[curAtom] = (int*)malloc(valency * sizeof(int));
-
-        int j;
+    
         for (j=0; j<valency; j++)
         	m->_adjacent[curAtom][j] = neighbours[j];
 
@@ -274,6 +284,11 @@ Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize,
 
 	int i,j,old_i,len;
 
+	int *buff;
+	int *inversSelected;
+	int *newGroups;
+
+
 	// allocate molecule
     Molecule* dest = allocateMolecule(selectedAtomsSize);
     if (!dest){
@@ -281,9 +296,9 @@ Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize,
     }
 
 	//// allocate temporary buffers
-	int *buff = (int*)malloc(dest->_size * sizeof(int));
-	int *inversSelected = (int*)malloc(src->_size * sizeof(int));
-	int *newGroups = (int*)malloc(src->_groupNum * sizeof(int));
+	buff = (int*)malloc(dest->_size * sizeof(int));
+	inversSelected = (int*)malloc(src->_size * sizeof(int));
+	newGroups = (int*)malloc(src->_groupNum * sizeof(int));
 
 	// init inversSelected - is the inverse of selectedAtoms (index->element,element->index)
 	for ( i=0;  i< src->_size ;  i++ ) {
@@ -299,6 +314,9 @@ Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize,
 
 	// main loop
 	for (i=0; i<dest->_size; i++){
+		// update adjacency and valency
+		int pos = -1;
+		int valency = 0;
 
 		old_i = selectedAtoms[i];
 
@@ -319,9 +337,6 @@ Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize,
 		dest->_symbol[i] = (char *)malloc((len+1) * sizeof(char) );
 		strcpy(dest->_symbol[i],src->_symbol[old_i]);
 
-		// update adjacency and valency
-		int pos = -1;
-		int valency = 0;
 
     	// for each item in src adjacency list
 		for ( j=0;  j< src->_valency[old_i] ;  j++ ){
@@ -358,7 +373,8 @@ Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize,
 void initSimilarity(Molecule *m,int depth){
 
     int i,j,k,groupNum;
-
+	int *group;
+	int *subGroup;
     groupNum = 1;
     setMarked(m,FALSE);
 
@@ -378,8 +394,8 @@ void initSimilarity(Molecule *m,int depth){
         groupNum++;
     }
 
-    int *group = (int*)malloc(m->_size * sizeof(int));     //temporary buffer
-    int *subGroup = (int*)malloc(m->_size * sizeof(int));  //temporary buffer
+    group = (int*)malloc(m->_size * sizeof(int));     //temporary buffer
+    subGroup = (int*)malloc(m->_size * sizeof(int));  //temporary buffer
 
     // iteratively refine the breakdown into groups
     for (k=0; k < depth ; k++){
@@ -387,22 +403,22 @@ void initSimilarity(Molecule *m,int depth){
     	setMarked(m,FALSE); // reset marked
 
     	for (i=0; i < m->_size; i++){
+			int updated = FALSE;
 
+			int len = 0; //group size
+			int subLen = 0; //newGroup size
 	    	if (m->_marked[i])
 	    		continue;
 
 	    	// mark self as done
 	    	m->_marked[i] = TRUE;
 
-		    int len = 0; //group size
-
 	    	// create the items in the group of i
 	    	for(j=0; j < m->_size; j++)
 	    		if ((j!=i) && (m->_similar[j] == m->_similar[i])){
 	    			group[len++] = j;
-	    		}
+	    	}
 
-    		int subLen = 0; //newGroup size
 
 	    	// for each item in the group check if it can be split or not
 	    	for(j=0; j < len; j++){
@@ -415,7 +431,6 @@ void initSimilarity(Molecule *m,int depth){
 	    	}
 
 	    	// give subGroup members a new id
-	    	int updated = FALSE;
 	    	for(j=0; j < subLen; j++){
 	    		updated = TRUE;
 	    		m->_similar[subGroup[j]] = groupNum;

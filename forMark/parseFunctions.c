@@ -190,6 +190,8 @@ int readConnectivityLine(char *line, int *valency, int *neighbours,int size,int 
  */
 int readConnectivityPDB(FILE *in,int *valency,int *neighbours,int size,int *curAtom){
 
+	fpos_t filePos;
+
 	char line[LINE_LENGTH],linehead[LINE_HEAD_LENGTH];
 
 	*valency = 0;
@@ -209,8 +211,6 @@ int readConnectivityPDB(FILE *in,int *valency,int *neighbours,int size,int *curA
 
 	// save head of line
 	strncpy(linehead,line,LINE_HEAD_LENGTH);
-
-	fpos_t filePos;
 
 	// read subsquent lines and parse if line head is the same
 	while(1){
