@@ -1956,6 +1956,7 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 		printf( "%s: %.4lf\n",opName,fabs(csm));
 	printf( "SCALING FACTOR: %7lf\n", dMin);
 	printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
+	printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
 
 }
 
@@ -1992,6 +1993,7 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 		printf( "%s: %.4lf\n",opName,fabs(csm));
 	printf( "SCALING FACTOR: %7lf\n", dMin);
 	printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
+	printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
 
 }
 
