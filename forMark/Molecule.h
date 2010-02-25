@@ -20,7 +20,10 @@
 #define DEPTH_ITERATIONS 200   /* maximal depth to descend to when checking similarity */
 #define TRUE 1
 #define FALSE 0
+
+#ifndef SQR
 #define SQR(x)      ((x) * (x))
+#endif
 
 
 typedef struct MoleculeTag {

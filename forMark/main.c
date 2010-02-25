@@ -110,8 +110,6 @@ void parseInput(int argc, char *argv[]){
 
 	// get commandline flags
 	int i;
-	int nextIsPermFile = FALSE;
-	int nextIsMaxSn = FALSE;
 
 	// try to open infile for reading
 	char* inFileName = argv[2];

@@ -269,7 +269,7 @@ void fxshfr(int l2,int *nz)
 {
     double svu,svv,ui,vi,s;
     double betas,betav,oss,ovv,ss,vv,ts,tv;
-    double ots,otv,tvv,tss;
+    double ots=0.0,otv=0.0,tvv,tss;
 	int type, i,j,iflag,vpass,spass,vtry,stry;
 
 	*nz = 0;
@@ -381,7 +381,7 @@ _70:
 void quadit(double *uu,double *vv,int *nz)
 {
     double ui,vi;
-    double mp,omp,ee,relstp,t,zm;
+    double mp,omp=0.0,ee,relstp=0.0,t,zm;
 	int type,i,j,tried;
 
 	*nz = 0;
@@ -460,8 +460,8 @@ _50:
  */
 void realit(double *sss, int *nz, int *iflag)
 {
-    double pv,kv,t,s;
-    double ms,mp,omp,ee;
+    double pv,kv,t=0.0,s;
+    double ms,mp,omp=0.0,ee;
     int i,j;
 
     *nz = 0;
