@@ -1970,7 +1970,7 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 
 	// TODO - should we print the centered molecule, or the original one (and, accordingly, the symmetric struct)
 
-	fprintf(out, "\n INITIAL STRUCTURE COORDINATES");
+	fprintf(out, "\n INITIAL STRUCTURE COORDINATES\n");
 
 	updateCoordinates(mol, m->_pos);
 
@@ -1978,7 +1978,7 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 
 	updateCoordinates(mol, outAtoms);
 
-	fprintf(out, "\n RESULTING STRUCTURE COORDINATES");
+	fprintf(out, "\n RESULTING STRUCTURE COORDINATES\n");
 
 	writeMolecule(mol, format, out, fname);
 
