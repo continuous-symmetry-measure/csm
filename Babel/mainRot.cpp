@@ -30,6 +30,7 @@ extern "C" {
 #define APPROX_RUN_PER_SEC 8e4
 #define TRUE 1
 #define FALSE 0
+#define ZERO_IM_PART_MAX (1e-3)
 
 /* borrowed from libc/misc/drand48.c in Linux libc-5.4.46 this quick
 * hack by Martin Hamilton <martinh@gnu.org> to make Squid build on
@@ -818,7 +819,7 @@ void computeMatrix(double **parray, int *perm, int size, double (*coef)[3][3], d
 */
 void computeVector(double **parray, int *perm, int size, double (*vec)[3], double multiplier) {
 	int atom;
-	for(atom = 0; atom < size; ++atom) {
+	for(atom = 0; atom < size; ++atom) {		
 		(*vec)[0] += multiplier * (parray[atom][1] * parray[perm[atom]][2] - parray[atom][2] * parray[perm[atom]][1]);
 		(*vec)[1] += multiplier * (parray[atom][2] * parray[perm[atom]][0] - parray[atom][0] * parray[perm[atom]][2]);
 		(*vec)[2] += multiplier * (parray[atom][0] * parray[perm[atom]][1] - parray[atom][1] * parray[perm[atom]][0]);
@@ -883,7 +884,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	// compute square of scalar multiplications of eigen vectors with b
 	for (i = 0; i < 3; i++) {
 		scalar[i] = 0.0;
-		for (j = 0; j < 3; j++) {
+		for (j = 0; j < 3; j++) {				
 			scalar[i] += copyVec[j + 1] * copyMat[j+1][i+1];
 		}
 		temp[i + 1] = scalar[i] * scalar[i];
@@ -938,19 +939,19 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	rpoly(coeffs, 6, rtr, rti);
 
 	maxval = -MAXDOUBLE;
-	for (i = 0; i < 6; i++) {				
-		if (maxval < rtr[i] && (fabs(rti[i]) < 1e-6)) maxval = rtr[i];
-	}			
+	for (i = 0; i < 6; i++) {								
+		if (maxval < rtr[i] && (fabs(rti[i]) < ZERO_IM_PART_MAX)) maxval = rtr[i];
+	}						
+	
 	
 	scl = 0.0;
 	for (i = 1; i <= 3; i++) {	
 		dir[i - 1]= 0.0;
-		for (j = 1; j <=3; j++) {
-			if ((fabs(diag[j] - maxval) < 1e-6)) {
+		for (j = 1; j <=3; j++) {			
+			if ((fabs(diag[j] - maxval) < 1e-6) || (isZeroAngle) || (opOrder == 2)) {				
 				dir[i - 1]= copyMat[i][j];
 				break;
-			} else {
-				
+			} else {				
 				dir[i - 1] += scalar[j - 1] / (diag[j] - maxval) * copyMat[i][j];			
 			}
 		}		
@@ -1163,7 +1164,6 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
  */
 void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, double* dir, double* dMin, OperationType type){
 	*csm = calcRefPlane(m, perm, dir, type);
-
 
 	// which is DMIN?
 	*dMin = (1.0 - (*csm / 100 * opOrder / (opOrder - 1)));
