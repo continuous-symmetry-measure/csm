@@ -1486,7 +1486,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 			double* dir = temp[i];
 			double* newDir = (double *)malloc(sizeof(double) * 3);
 			double* newDir2 = (double *)malloc(sizeof(double) * 3);
-			double norm;
+			double norm, scal;
 			if (fabs(dir[0]) < MINDOUBLE) { 
 				newDir[0] = 1.0; newDir[1] = 0.0; newDir[2] = 0.0;
 				newDir2[0] = 0.0; newDir2[1] = -dir[2]; newDir2[2] = dir[1];
@@ -1497,8 +1497,13 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 				newDir[0] = -dir[1]; newDir[1] = dir[0]; newDir[2] = 0.0;
 				newDir2[0] = 0.0; newDir2[1] = -dir[2]; newDir2[2] = dir[1];
 			}
+			// normalize first
 			norm = sqrt(newDir[0] * newDir[0] + newDir[1] * newDir[1] + newDir[2] * newDir[2]);
 			newDir[0] /= norm; newDir[1] /= norm; newDir[2] /= norm;
+			// remove projection of first from second (both already orthogonal to dir
+			scal = newDir[0] * newDir2[0] + newDir[1] * newDir2[1] + newDir[2] * newDir2[2];
+			newDir2[0] -= scal * newDir[0]; newDir2[1] -= scal * newDir[1]; newDir2[2] -= scal * newDir[2];
+			// normalize second
 			norm = sqrt(newDir2[0] * newDir2[0] + newDir2[1] * newDir2[1] + newDir2[2] * newDir2[2]);
 			newDir2[0] /= norm; newDir2[1] /= norm; newDir2[2] /= norm;
 
