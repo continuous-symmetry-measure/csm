@@ -941,20 +941,39 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	maxval = -MAXDOUBLE;
 	for (i = 0; i < 6; i++) {								
 		if (maxval < rtr[i] && (fabs(rti[i]) < ZERO_IM_PART_MAX)) maxval = rtr[i];
-	}						
-	
+		printf("%10.8f + i%10.8f\n", rtr[i], rti[i]);
+	}	
+
+	printf("%10.8f\n", maxval);	
+	printf("Diag: %10.8f. %10.8f, %10.8f\n", diag[1], diag[2], diag[3]);
 	
 	scl = 0.0;
-	for (i = 1; i <= 3; i++) {	
-		dir[i - 1]= 0.0;
-		for (j = 1; j <=3; j++) {			
-			if ((fabs(diag[j] - maxval) < 1e-6) || (isZeroAngle) || (opOrder == 2)) {				
-				dir[i - 1]= copyMat[i][j];
-				break;
-			} else {				
-				dir[i - 1] += scalar[j - 1] / (diag[j] - maxval) * copyMat[i][j];			
+	if ((isZeroAngle) || (opOrder == 2)) {
+		// If we are in zero angle case, we should pick the direction matching maxval
+		double minDist = MAXDOUBLE;
+		int minarg = 0;
+		for (i = 1; i <= 3; i ++) {
+			if (fabs(diag[i] - maxval) < minDist) {
+				minDist = fabs(diag[i] - maxval);
+				minarg = i;
 			}
-		}		
+		}
+		for (i = 0; i < 3; i++) { 
+			dir[i] = copyMat[i+1][minarg];
+		}
+	} else {
+		for (i = 1; i <= 3; i++) {	
+			dir[i - 1]= 0.0;
+			for (j = 1; j <=3; j++) {					
+				// error safety
+				if (fabs(diag[j] - maxval) < 1e-6) {				
+					dir[i - 1]= copyMat[i][j];
+					break;
+				} else {				
+					dir[i - 1] += scalar[j - 1] / (diag[j] - maxval) * copyMat[i][j];			
+				}
+			}		
+		}
 				
 		scl += dir[i - 1] * copyVec[i];
 	}		
