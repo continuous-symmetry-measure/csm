@@ -940,13 +940,9 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	maxval = -MAXDOUBLE;
 	for (i = 0; i < 6; i++) {								
-		if (maxval < rtr[i] && (fabs(rti[i]) < ZERO_IM_PART_MAX)) maxval = rtr[i];
-		printf("%10.8f + i%10.8f\n", rtr[i], rti[i]);
+		if (maxval < rtr[i] && (fabs(rti[i]) < ZERO_IM_PART_MAX)) maxval = rtr[i];		
 	}	
 
-	printf("%10.8f\n", maxval);	
-	printf("Diag: %10.8f. %10.8f, %10.8f\n", diag[1], diag[2], diag[3]);
-	
 	scl = 0.0;
 	if ((isZeroAngle) || (opOrder == 2)) {
 		// If we are in zero angle case, we should pick the direction matching maxval
