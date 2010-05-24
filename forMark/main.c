@@ -160,13 +160,15 @@ void parseInput(int argc, char *argv[]){
 */
 int main(int argc, char *argv[]){
 
-	int i;
+	int i,j;
 	double csm, dMin;
 	double **outAtoms;                 // output atom coordinates
 	double dir_cn[3] = {0.0, 0.0, 0.0};   // directional cosines
 	double dir_cs[3] = {0.0, 0.0, 0.0};   // directional cosines
 	int *perm_cn = NULL;	
 	int *perm_cs = NULL;
+	int **perm_matrix = NULL;
+	int nSize = 0;
 
 	// try to read molecule from infile
 	Molecule* m;
@@ -218,7 +220,8 @@ int main(int argc, char *argv[]){
 
 	// perform operation
 	perm_cn = (int *)malloc(sizeof(int) * m->_size);
-	perm_cs = (int *)malloc(sizeof(int) * m->_size);	
+	perm_cs = (int *)malloc(sizeof(int) * m->_size);
+	nSize = opOrder;	
 	
 	// perform operation	
 	csmOperation(m, outAtoms, perm_cn, &csm, dir_cn, &dMin, CN);			
@@ -242,12 +245,52 @@ int main(int argc, char *argv[]){
 	printf("And the axis is: (%4.2f, %4.2f, %4.2f)\n", dir_cs[0],dir_cs[1],dir_cs[2]);		
 
 	printf("The cosine of the angle is: %4.2f\n", dir_cs[0] * dir_cn[0] + dir_cs[1] * dir_cn[1] +dir_cs[2] * dir_cn[2]);
+
+	// Create the permutation matrix
+	perm_matrix = (int **)malloc(sizeof(int *) * nSize * 2);	
+	for (i = 0; i < nSize * 2; i++) {
+		perm_matrix[i] = (int *)malloc(sizeof(int) * m->_size);
+	}
 	
+	for (i = 0; i < m->_size; i++) {
+		perm_matrix[0][i] = i;
+		perm_matrix[nSize][i] = perm_cs[i];
+	}
+
+	for (i = 1; i < nSize; i++) {
+		for (j = 0; j < m->_size; j++) { 	
+			perm_matrix[i][j] = perm_matrix[i-1][perm_cn[j]];
+			perm_matrix[nSize + i][j] = perm_cn[perm_matrix[nSize + i - 1][j]];
+		}
+	}
+	
+	printf("The matrix: \n");	
+	for (i = 0; i < nSize * 2; i++) {		
+		if (i == 0) {
+			printf("E\t\t\t");
+		} else if (i < nSize) { 
+			printf("(C%d)^%d\t\t\t", nSize, i);
+		} else if (i == nSize) {
+			printf("Cs\t\t\t"); 
+		} else {
+			printf("Cs*(C%d)^%d\t\t", nSize, i - nSize);
+		}
+		for (j = 0; j < m->_size; j++) { 	
+			printf("%d ",perm_matrix[i][j] + 1);
+		}
+		printf("\n");
+	}
+	
+		
 	// housekeeping
 	for (i=0;i<m->_size;i++){
 		free(outAtoms[i]);
 	}
 
+	for (i = 0; i<nSize*2; i++) 
+		free(perm_matrix[i]);
+
+	free(perm_matrix);
 	free(outAtoms);
 	freeMolecule(m);
 	free(perm_cs);
