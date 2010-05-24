@@ -16,6 +16,8 @@
 #include "mainhelpers.h"
 #include "nrutil.h"
 
+#include "f2c.h"                     /*   Mark  */
+
 #define MAXDOUBLE  100000000.0
 #define MINDOUBLE  1e-8
 #define GROUPSIZE_LIMIT 15
@@ -43,6 +45,7 @@ int rpoly(double *op, int degree, double *zeror, double *zeroi);
 void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
+
 
 // global options
 int ignoreHy = FALSE;
@@ -120,6 +123,7 @@ void parseInput(int argc, char *argv[]){
 		exit(1);
 	}
 	opOrder = atoi(argv[1]);
+		
 		
 	if ((inFile = fopen(inFileName, "rt")) == NULL){
 		if (writeOpenu) {
@@ -230,6 +234,11 @@ int main(int argc, char *argv[]){
 
 
 	// Print result
+	
+	
+	
+/*	
+	
 	printf("The permutation for CN is:");
 	for (i = 0; i < m->_size; i++) {
 		printf("%d ", perm_cn[i] + 1);
@@ -245,6 +254,13 @@ int main(int argc, char *argv[]){
 	printf("And the axis is: (%4.2f, %4.2f, %4.2f)\n", dir_cs[0],dir_cs[1],dir_cs[2]);		
 
 	printf("The cosine of the angle is: %4.2f\n", dir_cs[0] * dir_cn[0] + dir_cs[1] * dir_cn[1] +dir_cs[2] * dir_cn[2]);
+
+
+
+*/
+
+
+
 
 	// Create the permutation matrix
 	perm_matrix = (int **)malloc(sizeof(int *) * nSize * 2);	
@@ -263,7 +279,7 @@ int main(int argc, char *argv[]){
 			perm_matrix[nSize + i][j] = perm_cn[perm_matrix[nSize + i - 1][j]];
 		}
 	}
-	
+/*	
 	printf("The matrix: \n");	
 	for (i = 0; i < nSize * 2; i++) {		
 		if (i == 0) {
@@ -280,6 +296,103 @@ int main(int argc, char *argv[]){
 		}
 		printf("\n");
 	}
+	
+*/	
+	
+	
+/**************    Mark begin	 *******************/
+	
+	
+	
+	
+	
+	
+	
+
+{
+
+	    
+int icosahedron_(integer *, integer *, double *, double *, double *);
+
+double calc_cnv(Molecule* m, double **outAtoms, double *dir, int nSize,
+              int **perm_matrix);
+
+    
+    
+double x0[120000], y0[120000], z0[120000];
+double dir[3], dir_out[3];
+integer n_resolution, n_axes;
+double **rotAtoms;
+double sym, s = MAXDOUBLE;
+
+
+//  Normalize Molecule to rms size
+//  After normalization rms size of molecular is equal to 1
+if (!normalizeMolecule2(m)){
+   printf("Failed to normalize atom positions: dimension of set of points = zero\n");
+   exit(1);
+}  
+
+
+// allocate memory for rotAtoms
+rotAtoms = (double **)malloc(m->_size * sizeof(double*));
+for (i=0;i<m->_size;i++)
+    rotAtoms[i] = (double *)malloc(3 * sizeof(double));
+	    
+	    
+//  Array of "n_axes" axis	    
+n_resolution = 50;
+icosahedron_(&n_resolution, &n_axes, x0, y0, z0);
+ 
+
+//  Calculation of Cnv CSM
+
+for (i = 0; i < n_axes; i++) {    
+    
+    dir[0] = x0[i]; dir[1] = y0[i]; dir[2] = z0[i];
+    
+              
+    sym = calc_cnv(m, rotAtoms, dir, nSize, perm_matrix);  
+    
+    
+    if (sym < s) {
+        s = sym;
+	for (j = 0; j < 3; j++)
+	    dir_out[j] = dir[j];
+    }
+}
+	    
+
+printf("\nCnv CSM is equal to    %lf\n",s);	    
+printf("\nRotation axes  %15.10lf %15.10lf %15.10lf\n",dir_out[0],dir_out[1],dir_out[2]);	    
+   
+
+    
+  
+
+    
+    
+    
+
+  
+
+} 
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+/*****************     Mark End     *******************/
+	
 	
 		
 	// housekeeping
@@ -682,4 +795,139 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 }
 
 
+
+
+/*------------------------------------------------------------------------*/
+/*---------------------------   MARK       -------------------------------*/
+
+
+
+
+
+double calc_cnv(Molecule* m, double **rotAtoms, double *dir, int nSize,
+              int **perm_matrix)
+{
+
+	int i, ii, j, k, l;
+	
+	double angle, B1, B2, det, en_value_min, sum, sym;
+
+	double rotaionMatrix[3][3];
+	
+	double a_matrix[3][3]  = {{0.0, 0.0, 0.0}, 
+	                          {0.0, 0.0, 0.0}, 
+				  {0.0, 0.0, 0.0}};
+	
+	double tmpMatrix[3][3] = {{0.0, -dir[2], dir[1]}, 
+	                          {dir[2], 0.0, -dir[0]}, 
+				  {-dir[1], dir[0], 0.0}};
+				  
+	double EMatrix[3][3]   = {{1.0, 0.0, 0.0}, 
+	                          {0.0, 1.0, 0.0}, 
+				  {0.0, 0.0, 1.0}};
+				  
+	double **copyMat = dmatrix(1,3,1,3);
+	double *diag = dvector(1,3);
+	double *secdiag = dvector(1,3);			  
+				  
+	double temp[3],scalar[3];
+	
+
+        /*    Calculation of A-matrix    */
+						  				  
+		  		  	
+	for (i=0; i < nSize; i++) {
+	
+	    angle=i*PI/nSize;	  				  
+				  
+
+	    for (j = 0; j < 3; j++)
+	        for (k = 0; k < 3; k++)
+		    rotaionMatrix[j][k] = cos(angle)*EMatrix[j][k]+ 
+				      (1.0-cos(angle))*dir[j]*dir[k]+ 
+				      sin(angle)*tmpMatrix[j][k];
+				      
+	    for (j = 0; j < m->_size; j++)
+	        for (k = 0; k < 3; k++)
+	            rotAtoms[j][k] = 0.0;
+		
+	    for (j = 0; j < m->_size; j++)
+	        for (k = 0; k < 3; k++)
+		    for (l = 0; l < 3; l++)
+		        rotAtoms[j][k] += rotaionMatrix[k][l] * m->_pos[j][l];
+	     	     	
+	     for (j=0; j < m->_size; j++) {		
+	     	ii = perm_matrix[nSize+i][j];
+		     
+	        for (k = 0; k < 3; k++)
+		    for (l = 0; l < 3; l++)	     
+	               a_matrix[k][l] += rotAtoms[j][k]*rotAtoms[ii][l]+	     		
+		                         rotAtoms[ii][k]*rotAtoms[j][l];		 	
+			
+	    }
+			
+	}
+	
+		
+	/* Calculation of eigenvalues and eigenvectors of A_matrix  */	
+	/* Calculation of scalar multiplications of eigenvectors with axes   */	
+	
+
+	for (i = 0; i < 3; i++)
+	    for (j = 0; j < 3; j++)
+		copyMat[i + 1][j + 1] = a_matrix[i][j];		
+
+	tred2(copyMat, 3, diag, secdiag);
+	
+	tqli(diag, secdiag, 3, copyMat);
+	
+	for (i = 0; i < 3; i++) {
+	    scalar[i] = 0.0;
+	    for (j = 0; j < 3; j++)
+	       scalar[i] += dir[j]*copyMat[j+1][i+1];	       
+	    temp[i] = scalar[i] * scalar[i];
+	}
+	
+	
+	
+	/* Solution of quadratic equation  */
+	
+	
+	B1 = temp[0]*(diag[2]+diag[3])+
+	     temp[1]*(diag[1]+diag[3])+
+	     temp[2]*(diag[1]+diag[2]);
+	    
+	B2 = temp[0]*(diag[2]*diag[3])+
+	     temp[1]*(diag[1]*diag[3])+
+	     temp[2]*(diag[1]*diag[2]);
+	     
+	det = 0.25*B1*B1-B2;
+		
+	
+	if (det < 0.0) return(MAXDOUBLE);
+	
+	en_value_min = -0.5*B1-sqrt(det);
+	
+	
+	/* Calculation of Cnv measure   */
+	
+
+        sum = 0.0;	
+	for (i=0; i < nSize; i++)
+	    for (j = 0; j < m->_size; j++)	    
+	        for (k = 0; k < 3; k++)  {
+		   ii   = perm_matrix[nSize+i][j]; 
+	           sum += m->_pos[j][k]*m->_pos[ii][k];
+	        }		
+				
+        sym = 1.0+(en_value_min-sum)/(m->_size*nSize);
+
+	free_dmatrix(copyMat, 1, 3, 1, 3);
+	free_dvector(diag, 1, 3);
+	free_dvector(secdiag, 1, 3);
+	
+	return(abs(sym));
+		    
+		
+}
 

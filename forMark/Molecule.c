@@ -616,6 +616,7 @@ int normalizeMolecule(Molecule *m){
 	}
 	// normalize to 1 and not molecule size
 	// norm = sqrt(norm / (double)m->_size);
+	
 	norm = sqrt(norm);
 
 	if(norm < MINDOOUBLE)
@@ -875,4 +876,52 @@ void freeMolecule(Molecule *m){
 	//free molecule
 	free(m);
 
-};
+}
+
+
+/*------    Pinsky -------------------*/
+
+
+/*
+ * Normalizes the position of atoms of the molecule
+ * returns one [TRUE] if successful, zero[FALSE] otherwise
+ */
+int normalizeMolecule2(Molecule *m){
+
+	double tmp,x_avg, y_avg, z_avg,norm;
+	int i;
+
+	x_avg = y_avg = z_avg = 0.0;
+
+	for(i=0; i< m->_size; i++){
+		x_avg += m->_pos[i][0];
+		y_avg += m->_pos[i][1];
+		z_avg += m->_pos[i][2];
+	}
+	x_avg /= (double)(m->_size);
+	y_avg /= (double)(m->_size);
+	z_avg /= (double)(m->_size);
+
+	norm = 0.0;
+	for(i=0; i< m->_size; i++){
+		tmp = SQR(m->_pos[i][0]-x_avg) +
+		      SQR(m->_pos[i][1]-y_avg) +
+		      SQR(m->_pos[i][2]-z_avg);
+		norm += tmp;
+	}
+
+	norm = sqrt(norm / (double)m->_size);
+	
+
+	if(norm < MINDOOUBLE)
+		return FALSE;
+
+	for(i=0; i< m->_size; i++){
+		m->_pos[i][0] = ((m->_pos[i][0] - x_avg) / norm);
+		m->_pos[i][1] = ((m->_pos[i][1] - y_avg) / norm);
+		m->_pos[i][2] = ((m->_pos[i][2] - z_avg) / norm);
+	}
+
+	return TRUE;
+}
+

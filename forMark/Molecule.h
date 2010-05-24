@@ -53,6 +53,10 @@ Molecule* stripAtoms(Molecule *m, char** removeList, int removeListSize, int upd
 
 int normalizeMolecule(Molecule *m);
 
+
+/*------    Pinsky -------------------*/
+int normalizeMolecule2(Molecule *m);
+
 void printMolecule(Molecule *m);
 
 void printMoleculeBasic(Molecule *m);

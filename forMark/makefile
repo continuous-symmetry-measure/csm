@@ -9,7 +9,7 @@ LFLAGS = -lm -L.
 BIN = bin
 
 
-OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o main.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o
+OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o main.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o icosahedron.c
 
 # the first target. All executables will be made when 'make' is
 # invoked with no target
