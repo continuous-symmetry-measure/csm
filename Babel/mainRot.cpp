@@ -969,9 +969,8 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 					dir[i - 1] += scalar[j - 1] / (diag[j] - maxval) * copyMat[i][j];			
 				}
 			}		
-		}
-				
-		scl += dir[i - 1] * copyVec[i];
+			scl += dir[i - 1] * copyVec[i];
+		}						
 	}		
 
 	// initialize identity permutation
@@ -1398,7 +1397,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 	int i,j;
 	double **testDir;
 	double median;
-	double zero[] = {0.0,0.0,0.0};
+	double zero[3] = {0.0,0.0,0.0};
 	std::vector<double *> results;
 	int useOrthogonal = TRUE;
 
@@ -1479,19 +1478,19 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 				results.push_back(tempDir[i]);
 			}
 
-			free(dists);				
-
-			for (i = 0; i < 3; i++) {
-				free(testDir[i]);
-			}
-			free(testDir);
-
+			free(dists);		
+			free(tempDir);		
 		}
+		for (i = 0; i < 3; i++) {
+			free(testDir[i]);
+		}			
+
 	} else {					
 		// just copy...
 		for (i = 0; i < 3; i++) {	
 			results.push_back(testDir[i]);
 		}
+		
 	}
 
 	if (useOrthogonal) {	
@@ -1533,7 +1532,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 	// initialize results array
 	*n_dirs = results.size();
 	(*dirs) = (double**)malloc(sizeof(double*) *(*n_dirs));
-	for (i = 0; i < *n_dirs; i++) {		
+	for (i = 0; i < *n_dirs; i++) {				
 		(*dirs)[i] = results[i];
 	}
 
@@ -1543,6 +1542,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 	free(outliers);
 	free(groupSizes);
 	free(groupAverages);
+	free(testDir);
 }
 
 void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
