@@ -1201,7 +1201,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		double** dirs;
 		int n_dirs;
 		int *bestPerm = (int*)malloc(sizeof(int) * m->_size);		
-		int maxIters = 10;	
+		int maxIters = 50;	
 		*csm = MAXDOUBLE;
 
 		// Find an initial approximated symmetry axis/plain
@@ -1217,7 +1217,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			
 			// solve analytically using this permutation, repeat until converged
 			// Pick the best one
-			while (fabs(old - dist) > 1e-7 && iterNum < maxIters) {
+			while (fabs(old - dist) > 1e-4 && iterNum < maxIters) {
 				old = dist;
 				estimatePerm(m, temp, dir, type);
 				runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);					
