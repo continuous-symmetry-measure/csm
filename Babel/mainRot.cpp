@@ -161,6 +161,7 @@ int anneal = FALSE;
 int detectOutliers = FALSE;
 double A = 2;
 double babelTest = FALSE;
+double printNorm = FALSE;
 
 // file pointers
 FILE* inFile = NULL;
@@ -193,6 +194,7 @@ void usage(char *op) {
 	printf("-timeOnly	   - Only print the time and exit\n");
 	printf("-babelTest	   - Test if the molecule is legal or not\n");
 	printf("-sn_max	<max n> - The maximal sn to try, relevant only for chirality\n");
+	printf("-printNorm		- Print the normalization factor as well\n");
 	printf("-help - print this help file\n");
 }
 
@@ -466,6 +468,8 @@ void parseInput(int argc, char *argv[]){
 			useMass = TRUE;					
 		} else if (strcmp(argv[i], "-timeonly") == 0) {
 			timeOnly = TRUE;
+		} else if  (strcmp(argv[i], "-printNorm") == 0) {
+			printNorm = TRUE;
 		} else if (strcmp(argv[i], "-help") == 0) {
 			usage(argv[0]);
 			exit(0);
@@ -1916,6 +1920,14 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 	fprintf(out, "\n DIRECTIONAL COSINES:\n\n");
 	fprintf(out, "%lf %lf %lf\n", dir[0], dir[1], dir[2]);
 
+	if (printNorm) {
+		printf( "NORMALIZATION FACTOR: %7lf\n", m->_norm);
+		printf( "SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
+		printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
+		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+	}
+
+
 }
 
 /*
@@ -1974,9 +1986,13 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 		printf("SV* %.4lf *SV\n",fabs(csm));
 	else
 		printf( "%s: %.4lf\n",opName,fabs(csm));
-	printf( "SCALING FACTOR: %7lf\n", dMin);
-	printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
-	printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+
+	if (printNorm) {
+		printf( "NORMALIZATION FACTOR: %7lf\n", m->_norm);
+		printf( "SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
+		printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
+		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+	}
 
 }
 
@@ -2011,9 +2027,13 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 		printf("SV* %.4lf *SV\n",fabs(csm));
 	else
 		printf( "%s: %.4lf\n",opName,fabs(csm));
-	printf( "SCALING FACTOR: %7lf\n", dMin);
-	printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
-	printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+
+	if (printNorm) {
+		printf( "NORMALIZATION FACTOR: %7lf\n", m->_norm);
+		printf( "SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
+		printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
+		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+	}
 
 }
 
