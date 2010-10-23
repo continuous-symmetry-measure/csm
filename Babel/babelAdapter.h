@@ -24,7 +24,7 @@ double getAtomicMass(char *atomName);
  * @param replaceSym Whether to ignore atom names or not
  * @param useMass Whether to use the mass of the atoms
  */
- Molecule* babel2Mol(OBMol &obmol, int reaplaceSym, bool useMass);
+Molecule* babel2Mol(OBMol &obmol, int reaplaceSym, bool useMass);
 
 /**
  * Updates the coordinates of the OpenBabel Molecule according to the Molecule data
@@ -32,7 +32,7 @@ double getAtomicMass(char *atomName);
  * @param obmol The OpenBable molecule
  * @param outAtoms The output atoms' coordinates
  */
- void updateCoordinates(OBMol& obmol, double **outAtoms);
+void updateCoordinates(OBMol& obmol, double **outAtoms);
 
 /**
  * Read a molecule from a file file

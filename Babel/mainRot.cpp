@@ -1,17 +1,16 @@
 /*
-* Author: Amir Zayit
-*
-* Main body that initiates chirality operations.
-*
-* deals with input output, and the main logic of the high level calculation
-*
-*/
+ * Author: Amir Zait
+ *
+ * This is the main program. 
+ * It includes the algorithm itself, as well as dealing with the program's IO
+ */
 
 extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h> //for strcmp,strlen
+
 #include "Molecule.h"
 #include "groupPermuter.h"
 #include "mainhelpers.h"
@@ -31,6 +30,7 @@ extern "C" {
 #define TRUE 1
 #define FALSE 0
 #define ZERO_IM_PART_MAX (1e-3)
+#define MIN_GROUPS_FOR_OUTLIERS 10
 
 /* borrowed from libc/misc/drand48.c in Linux libc-5.4.46 this quick
 * hack by Martin Hamilton <martinh@gnu.org> to make Squid build on
@@ -126,9 +126,9 @@ int rpoly(double *op, int degree, double *zeror, double *zeroi);
 }
 
 // function declarations
-void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out);
+void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out, double* localCSM);
 void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out);
-void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, char *fname);
+void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, char *fname, double* localCSM);
 void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void runSinglePerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type);
 void findBestPerm(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
@@ -139,6 +139,7 @@ void lineFit(double **points, int nPoints, double **dirs, int* outlies);
 void planeFit(double **points, int nPoints, double **dirs, int *outliers);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
+double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
 
 // global options
 int ignoreHy = FALSE;
@@ -160,8 +161,9 @@ int sn_max = 4;
 int anneal = FALSE;
 int detectOutliers = FALSE;
 double A = 2;
-double babelTest = FALSE;
-double printNorm = FALSE;
+int babelTest = FALSE;
+int printNorm = FALSE;
+int printLocal = FALSE;
 
 // file pointers
 FILE* inFile = NULL;
@@ -195,6 +197,7 @@ void usage(char *op) {
 	printf("-babelTest	   - Test if the molecule is legal or not\n");
 	printf("-sn_max	<max n> - The maximal sn to try, relevant only for chirality\n");
 	printf("-printNorm		- Print the normalization factor as well\n");
+	printf("-printlocal		- Print the local CSM (csm for each atom) in the output file\n");
 	printf("-help - print this help file\n");
 }
 
@@ -481,6 +484,8 @@ void parseInput(int argc, char *argv[]){
 			anneal = TRUE;
 		} else if (strcmp(argv[i], "-babelTest") == 0) { 
 			babelTest = TRUE;
+		} else if (strcmp(argv[i], "-printlocal") == 0) { 
+			printLocal = TRUE;
 		}
 	}
 	if (writeOpenu) {
@@ -503,6 +508,7 @@ int main(int argc, char *argv[]){
 	double **outAtoms;                 // output atom coordinates
 	double dir[3] = {0.0, 0.0, 0.0};   // directional cosines
 	int *perm = NULL;	
+	double *localCSM = NULL;		 
 
 	// init options
 	parseInput(argc,argv);
@@ -684,8 +690,14 @@ int main(int argc, char *argv[]){
 			free(chPerm);
 		}		
 	}
+
+	if (printLocal) {	
+		localCSM = (double *)malloc(sizeof(double) * m->_size);
+		computeLocalCSM(m,localCSM, perm, dir,  type != CH ? type : chMinType);
+	}
+
 	
-	// Denormalize
+	// De-normalize
 	for (i = 0; i < m->_size; i++) { 
 		m->_pos[i][0] *= m->_norm;
 		m->_pos[i][1] *= m->_norm;
@@ -698,16 +710,16 @@ int main(int argc, char *argv[]){
    	if (useFormat) {
 		// If a specific format is used, read molecule using that format
 		if (strcasecmp(format, CSMFORMAT) == 0) {
-			printOutput(m, outAtoms, csm, dir, dMin, outFile);
+			printOutput(m, outAtoms, csm, dir, dMin, outFile, localCSM);
 		} else {
-			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, outFile, outFileName);
+			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, outFile, outFileName, localCSM);
 		}
 	} else {
 		// if the extension is CSM - use csm
 		if (strcasecmp(getExtension(inFileName), CSMFORMAT) == 0) {
-			printOutput(m, outAtoms, csm, dir, dMin, outFile);
+			printOutput(m, outAtoms, csm, dir, dMin, outFile, localCSM);
 		} else {
-			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, outFile, outFileName);
+			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, outFile, outFileName, localCSM);
 		}
 	}
 
@@ -732,6 +744,8 @@ int main(int argc, char *argv[]){
 	free(outAtoms);
 	freeMolecule(m);
 	free(perm);
+
+	if (printLocal) free(localCSM);
 
 	fclose(inFile);
 	fclose(outFile);
@@ -1061,10 +1075,11 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 				for (l = 0; l < 3; l++) {
 					outAtoms[j][k] += rotaionMatrix[k][l] * m->_pos[curPerm[j]][l];
 				}
-			}
+			}			
 		}
+
 	}
-	
+
 	for (j = 0; j < m->_size; j++) {
 		for (k = 0; k < 3; k++) {
 			outAtoms[j][k] /= opOrder;
@@ -1076,6 +1091,63 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	free(curPerm);
 
 	return sqrt(res);
+}
+
+double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type) {
+	int isImproper = (type != CN) ? TRUE : FALSE;
+	int isZeroAngle = (type == CS) ? TRUE : FALSE;
+	int i, j, k, l;
+	int *curPerm = (int *)malloc(sizeof(int) * m->_size);
+	double rotaionMatrix[3][3];
+	double tmpMatrix[3][3] = {{0.0, -dir[2], dir[1]}, {dir[2], 0.0, -dir[0]}, {-dir[1], dir[0], 0.0}};
+	double angle;
+	double res = 0.0;
+
+	double tempCSM = 0.0;
+
+
+	for (i = 0; i < m->_size; i++) {
+		// initialize with identity operation
+		curPerm[i] = i;
+		localCSM[i] = 0;
+	}
+
+	for (i = 1; i < opOrder; i++) {
+		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
+		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
+		for (j = 0; j < m->_size; j++) {
+			curPerm[j] = perm[curPerm[j]];
+		}
+		for (j = 0; j < 3; j++) {
+			for (k = 0; k < 3; k++) {
+				rotaionMatrix[j][k] = 
+					((j == k) ? cos(angle) : 0) + 
+					(factor - cos(angle)) * dir[j] * dir[k] + 
+					sin(angle) * tmpMatrix[j][k];
+			}
+		}
+
+		for (j = 0; j < m->_size; j++) {
+			double rotated[3] = {0.0,0.0,0.0};
+			for (k = 0; k < 3; k++) {
+				for (l = 0; l < 3; l++) {
+					rotated[k] += rotaionMatrix[k][l] * m->_pos[curPerm[j]][l];
+				}
+			}			
+			for (k = 0; k < 3; k++) {
+				tempCSM += SQR(rotated[k] - m->_pos[j][k]);
+				localCSM[j] += SQR(rotated[k] - m->_pos[j][k]);
+			}			
+		}
+
+	}
+
+	for (j = 0; j < m->_size; j++) {
+		localCSM[j] *= 100 / (2 * opOrder);
+	}
+	tempCSM *= 100.0 / (2 * opOrder);	
+
+	return tempCSM;
 }
 
 
@@ -1221,7 +1293,11 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			
 			// solve analytically using this permutation, repeat until converged
 			// Pick the best one
-			while (fabs(old - dist) > 1e-4 && iterNum < maxIters) {
+			// Stop once:
+			// 1. The csm is less than 1e-4
+			// 2. The difference between the old and new csm is less than 1%
+			// 3. The max number of iterations has been reached
+			while ((fabs(dist) > 1e-4) && (fabs(old - dist)/fabs(old) > 0.01) && (iterNum < maxIters)) {
 				old = dist;
 				estimatePerm(m, temp, dir, type);
 				runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);					
@@ -1443,7 +1519,8 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 		lineFit(groupAverages, m->_groupNum, testDir, outliers);		
 	}	
 
-	if (detectOutliers) {			
+	// if there are not enough groups for reliable outlier detection - don't invoke it.
+	if (detectOutliers && m->_groupNum >= MIN_GROUPS_FOR_OUTLIERS) {			
 		for (j = 0; j < 3; j++) { 
 			double **tempDir;
 
@@ -1880,7 +1957,7 @@ void planeFit(double **points, int nPoints, double **dirs, int* outliers) {
 /*
 * prints the Molecule position, outcome position, csm, dMin and directional cosines to output file
 */
-void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out){
+void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out, double* localCSM){
 
 	int i,j;
 	printf("%s: %.6lf\n",opName,fabs(csm));
@@ -1925,6 +2002,16 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 		printf( "SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
 		printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
 		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+	}
+
+	if (printLocal) {
+		double sum = 0;
+		fprintf(out,"\nLocal CSM: \n");	
+		for (i = 0; i < m->_size; i++) {
+			sum += localCSM[i];
+			fprintf(out,"%s %7lf\n", m->_symbol[i], localCSM[i]);
+		}
+		fprintf(out,"\nsum: %7lf\n", sum);
 	}
 
 
@@ -1999,7 +2086,7 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 /*
 * prints in PDB format the Molecule position, outcome position, csm, dMin and directional cosines to output file
 */
-void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, char *fname) {
+void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, char *fname, double* localCSM) {
 
 	fprintf(out, "%s: %.4lf\n",opName,fabs(csm));
 	fprintf(out, "SCALING FACTOR: %7lf\n", dMin);
@@ -2035,7 +2122,16 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
 	}
 
-}
+	if (printLocal) {
+		double sum = 0;
+		int i;
+		fprintf(out,"\nLocal CSM: \n");	
+		for (i = 0; i < m->_size; i++) {
+			sum += localCSM[i];
+			fprintf(out,"%s %7lf\n", m->_symbol[i], localCSM[i]);
+		}
+		fprintf(out,"\nsum: %7lf\n", sum);
+	}}
 
 
 

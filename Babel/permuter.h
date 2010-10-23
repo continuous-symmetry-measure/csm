@@ -1,12 +1,8 @@
 /*
- * Author: shadi lahham
+ * Author: Shadi Lahham, modified by Amir Zait
  *
- * generates permutations in the range 1 .. size
- * the permutations generated are limited to those containing
- * closed permutation groups of size groupSize
- *
- * permuter can generate permutations from a given integer array
- *
+ * Enumerates over all permutations in the range 1 .. N, 
+ * which are composed only of cycles of given sizes. 
  */
 
 #ifndef PERMUTER_H
@@ -15,6 +11,7 @@
 #define TRUE 1
 #define FALSE 0
 
+// A structure representing a cycle in the permutation
 typedef struct cycle {
 
 	// This cycle's size
@@ -27,6 +24,7 @@ typedef struct cycle {
 	int *_cycle;
 } cycle;
 
+// The main structure for the permuter
 typedef struct permuter {
 
 	// The size of the permutation
@@ -63,12 +61,34 @@ typedef struct permuter {
 	int _operationOrder;
 } permuter;
 
+/** 
+ * Initialize a new permuter
+ * 
+ * @param size The size of the permutations to generate (1 .. size)
+ * @param groupSize The size of allowed cycles (in addition to cycles of size 1)
+ * @param addGroupsOfTwo Should cycles of size 2 also be allowed
+ * 
+ * @return The new permuter object
+ */
 permuter* createPermuter(int size,int groupSize, int addGroupsOfTwo);
 
+/**
+ * Generate the next permutation
+ * 
+ * @param p The permuter object
+ * 
+ * @return TRUE if we have not yet reached the end of the enumerator, FALSE otherwise
+ */
 int nextPermutation(permuter *p);
 
+/** 
+ * Reset the permuter to re-initialize enumeration
+ */
 void resetPermuter(permuter *p);
 
+/** 
+ * Free the permuter
+ */
 void freePermuter(permuter *p);
 
 #endif
