@@ -114,7 +114,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
 	char c;
 
 	// allocate temporary buffer
-	int *buff = (int*)malloc(size * sizeof(int));
+	int *buff;
 	int pos;
 	int j;
 
@@ -123,10 +123,11 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
     if (fscanf(in,"%d",&size)!=1){
         fprintf(err,"Input Error: Number of atoms not supplied!\n");
         return NULL;
-    }
+    }	
     if (size == 0)
 		return NULL;
 
+	buff = (int*)malloc(size * sizeof(int));
 	m = allocateMolecule(size);
 
     // read atoms
