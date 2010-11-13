@@ -1,11 +1,23 @@
 #include <stdio.h>
 #include <python.h>
 
-using namespace std;
-
 extern "C" {
 	#include "Molecule.h"
 }
+typedef enum {
+	CN,
+	SN, 
+	CS,
+	CI, 
+	CH
+} OperationType;
+
+#define MAXDOUBLE  100000000.0
+#define MINDOUBLE  1e-8
+#define TRUE 1
+#define FALSE 0
+#define APPROX_RUN_PER_SEC 8e4
+
 extern Molecule * allocateMolecule(int size);
 extern void initSimilarity(Molecule *m,int depth);		
 extern void replaceSymbols(Molecule* m);
@@ -19,6 +31,7 @@ extern void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type
 extern void readPerm(FILE* permfile, int* perm, int size);
 extern double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
 extern double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
+extern double totalNumPermutations(Molecule *m);
 
 // global options
 extern int ignoreHy;
@@ -44,9 +57,12 @@ extern int printNorm;
 extern int printLocal;
 
 // file pointers
-extern FILE* permfile = NULL;
+extern FILE* permfile;
 
 extern char opName[100];
+
+Molecule* PyMol2Mol(PyObject *coords, PyObject *elements);
+PyObject *PyMain(Molecule *mol, char *csmType, PyObject *optionList);
 
 /**
  * The arguments are in the following form:
@@ -60,7 +76,7 @@ PyObject *computeCsm(PyObject* self, PyObject* args) {
 	Molecule *mol = NULL;
 
 	// Read the arguments
-	if ( ! PyArg_ParseTuple(args, "(OOsO)", &coords, &elems, &csmType, &optionList) ) {
+	if ( ! PyArg_ParseTuple(args, "OOsO", &coords, &elems, &csmType, &optionList) ) {
 		printf("Could not unparse objects\n");
         return NULL;
 	}	
@@ -70,7 +86,7 @@ PyObject *computeCsm(PyObject* self, PyObject* args) {
 
 	// Return the result as a tuple
 	// (csm, localCSM, );
-	return PyMain(mol, csmType, optionList);
+	return PyMain(mol, csmType, optionList);	
 }
 
 /** 
@@ -81,21 +97,53 @@ PyObject *computeCsm(PyObject* self, PyObject* args) {
 Molecule* PyMol2Mol(PyObject *coords, PyObject *elements) {
   int numAtoms = PyList_Size(coords);  
   Molecule *mol = allocateMolecule(numAtoms);
-    
+      
   for (int i = 0; i < numAtoms; i++) { 
-    PyObject* coords = PyList_GetItem(coords, i);
-    PyObject* elem = PyList_GetItem(element, i);
-    PyArg_ParseTuple("fff", &(mol->_pos[i][0]), &(mol->_pos[i][1]), &(mol->_pos[i][2]));
-    PyArg_ParseTuple("s", ,&(m->_symbol[i]));        
+    PyObject* coord = PyList_GetItem(coords, i);
+    PyObject* elem = PyList_GetItem(elements, i);	
+
+	mol->_pos[i][0] = PyFloat_AsDouble(PyTuple_GetItem(coord, 0));
+	mol->_pos[i][1] = PyFloat_AsDouble(PyTuple_GetItem(coord, 1));
+	mol->_pos[i][2] = PyFloat_AsDouble(PyTuple_GetItem(coord, 2));	
+	mol->_symbol[i] = strdup(PyString_AsString(elem));	
 	
 	// So far - we don't know how to extract valency and bond structure...
 	mol->_valency[i] = 0;
 	mol->_adjacent[i] = (int*)malloc(0);
   }
-  
+    
   initSimilarity(mol,DEPTH_ITERATIONS);
   return mol;
 }
+
+void PyUsage(char *op) {
+	printf("Usage: %s <type> input_file output_file [-options]\n", op);
+	printf("type is one of: cs, ci, cn, sn (n is replaced by the number)\n");
+	printf("Available options are:\n");
+	printf("-ignoreHy - ignore Hydrogen atoms in computations\n");
+	printf("-removeHy - remove Hydrogen atoms in computations,\n");
+	printf("	rebuild molecule without them and compute\n");
+	printf("-ignoreSym - Ignore all atomic symbols,\n");
+	printf("	performing a purely geometric operation\n");
+	printf("-formatXXX - Use a specific input/output format");
+	printf("-writeOpenu - Write output in open university format\n");
+	printf("-nolimit - Allows running program while ignoring computational complexity\n");
+	printf("-useperm permfile  -  only compute for a single permutation\n");
+	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
+	printf("-findperm	   - Attempt to search for a permutation\n");
+	printf("-detectOutliers - Use statistical methods to try and improve -findperm's results\n");
+	printf("-anneal		   - Try to anneal the result\n");
+	printf("-babelbond	   - Let openbabel compute bonding\n");
+	printf("-useMass	   - Use the atomic masses to define center of mass\n");
+	printf("-timeOnly	   - Only print the time and exit\n");
+	printf("-babelTest	   - Test if the molecule is legal or not\n");
+	printf("-sn_max	<max n> - The maximal sn to try, relevant only for chirality\n");
+	printf("-printNorm		- Print the normalization factor as well\n");
+	printf("-printlocal		- Print the local CSM (csm for each atom) in the output file\n");
+	printf("-help - print this help file\n");
+}
+
+
 
 /*
 * parses the command line parameters
@@ -116,7 +164,7 @@ int parsePyInput(char *csm_type, PyObject *args) {
 		sprintf(opName, "CHIRALITY");	
 	} else if (csm_type[0] == 'c') {
 		type = CN;
-		opOrder = atoi(argv[1] + 1);
+		opOrder = atoi(csm_type + 1);
 		sprintf(opName, "C%d SYMMETRY",opOrder);	
 	} else if (csm_type[0] == 's') {
 		type = SN;
@@ -133,10 +181,9 @@ int parsePyInput(char *csm_type, PyObject *args) {
 	int nextIsPermFile = FALSE;
 	int nextIsMaxSn = FALSE;
 
-	for ( i=0;  i< numItems ;  i++ ){
-		PyObject* elem = PyList_GetItem(element, i);
-		char *arg = NULL;
-		PyArg_ParseTuple("s", ,&(arg));  
+	for (int i=0;  i< numItems ;  i++ ){
+		PyObject* elem = PyList_GetItem(args, i);
+		char *arg = PyString_AsString(elem);		
 		if (nextIsPermFile) {
 			char* permfileName = arg;
 			if ((permfile = fopen(permfileName, "rt")) == NULL){
@@ -162,7 +209,7 @@ int parsePyInput(char *csm_type, PyObject *args) {
 		else if (strcmp(arg,"-removeHy" ) == 0 )
 			removeHy = TRUE;
 
-		else if (strcmp(arg,"-ignoreSym" ) == 0 )
+		else if (strcmp(arg,"-ignoreSym" ) == 0 ) {
 			ignoreSym = TRUE;
 		} else if (strcmp(arg, "-nolimit") == 0) { 
 			limitRun = FALSE;  
@@ -178,7 +225,7 @@ int parsePyInput(char *csm_type, PyObject *args) {
 		} else if  (strcmp(arg, "-printNorm") == 0) {
 			printNorm = TRUE;
 		} else if (strcmp(arg, "-help") == 0) {
-			usage(argv[0]);
+			PyUsage(csm_type);
 			return FALSE;
 		} else if (strcmp(arg, "-findperm") == 0) { 
 			findPerm = TRUE;
@@ -192,8 +239,7 @@ int parsePyInput(char *csm_type, PyObject *args) {
 			printLocal = TRUE;
 		}
 	}
-	if (writeOpenu) {
-		useFormat = TRUE;
+	if (writeOpenu) {		
 		format = strdup("PDB");		
 	}
 
@@ -204,7 +250,7 @@ int parsePyInput(char *csm_type, PyObject *args) {
 /*
 * main funciton - check valid parameters, parse molecule and call chirality Operation
 */
-PyObject *PyMain(Molecule *mol, char *csmType, PyObject *optionList){
+PyObject *PyMain(Molecule *m, char *csmType, PyObject *optionList) {
 
 	int i;
 	double csm, dMin;
@@ -230,9 +276,7 @@ PyObject *PyMain(Molecule *mol, char *csmType, PyObject *optionList){
 		if (ignoreHy)
 			n = stripAtoms(m,removeList,2,FALSE);
 		else //removeHy 
-			n = stripAtoms(m,removeList,2,TRUE);		
-	
-		mol.DeleteHydrogens();		
+			n = stripAtoms(m,removeList,2,TRUE);				
 	
 		if (!n){
 			if (writeOpenu) {
@@ -261,7 +305,7 @@ PyObject *PyMain(Molecule *mol, char *csmType, PyObject *optionList){
 			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0 / 3600 / APPROX_RUN_PER_SEC );
 		}
 		if (timeOnly) { return NULL; };
-	}
+	}	
 
 	// allocate memory for outAtoms
 	outAtoms = (double **)malloc(m->_size * sizeof(double*));
@@ -379,4 +423,15 @@ PyObject *PyMain(Molecule *mol, char *csmType, PyObject *optionList){
 
 	// Construct the object to return
 	return Py_BuildValue("(d)", csm);
+}
+
+static PyMethodDef csm_methods[] = {
+	{"computeCsm", computeCsm, METH_VARARGS, "computeCsm()"},
+	{NULL, NULL}
+};
+
+PyMODINIT_FUNC
+initcsm(void)
+{
+	Py_InitModule("csm", csm_methods);
 }
