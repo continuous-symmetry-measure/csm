@@ -390,6 +390,7 @@ PyObject *PyMain(Molecule *m, char *csmType, PyObject *optionList) {
 		}		
 	}
 
+	printLocal = TRUE;
 	if (printLocal) {	
 		localCSM = (double *)malloc(sizeof(double) * m->_size);
 		computeLocalCSM(m,localCSM, perm, dir,  type != CH ? type : chMinType);
@@ -406,6 +407,11 @@ PyObject *PyMain(Molecule *m, char *csmType, PyObject *optionList) {
 		outAtoms[i][2] *= m->_norm;
 	}	
 
+	PyObject *localCSMList = PyList_New(m->_size);
+	for (i = 0; i < m->_size; i++) {
+		PyList_SetItem(localCSMList, i, Py_BuildValue("f", localCSM[i]));
+	}
+
 
 	// housekeeping
 	for (i=0;i<m->_size;i++){
@@ -419,10 +425,10 @@ PyObject *PyMain(Molecule *m, char *csmType, PyObject *optionList) {
 	if (printLocal) free(localCSM);
 
 	if (permfile != NULL)
-		fclose(permfile);
+		fclose(permfile);	
 
 	// Construct the object to return
-	return Py_BuildValue("(d)", csm);
+	return Py_BuildValue("(dO)", csm, localCSMList);
 }
 
 static PyMethodDef csm_methods[] = {
