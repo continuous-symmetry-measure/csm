@@ -44,7 +44,7 @@ def csmFunc( sel, csm_type):
   for i in xrange(len(normalizedCsm)):
     color_name = "color_" + str(i)
     cmd.set_color(color_name, [normalizedCsm[i],0.0,1-normalizedCsm[i]])
-    print [normalizedCsm[i],0.0,1-normalizedCsm[i]]
+#    print [normalizedCsm[i],0.0,1-normalizedCsm[i]]
     cmd.color(color_name, "("+ sel + " and ID " + str(i + 1) + ")")
   
   print csmVal
