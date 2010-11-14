@@ -407,11 +407,23 @@ PyObject *PyMain(Molecule *m, char *csmType, PyObject *optionList) {
 		outAtoms[i][2] *= m->_norm;
 	}	
 
+	// Create a list of the new items
 	PyObject *localCSMList = PyList_New(m->_size);
 	for (i = 0; i < m->_size; i++) {
 		PyList_SetItem(localCSMList, i, Py_BuildValue("f", localCSM[i]));
 	}
 
+	// create a list for the axis coordinates
+	PyObject *pyDir = PyTuple_New(3);
+	for (i = 0; i < 3; i++) {
+		PyTuple_SetItem(pyDir, i, Py_BuildValue("f", dir[i]));
+	}
+
+	// Create a list for the outgoing coordinates
+	PyObject *pyOutAtoms = PyList_New(m->_size);
+	for (i = 0; i < m->_size; i++) {
+		PyList_SetItem(pyOutAtoms, i, Py_BuildValue("(fff)", outAtoms[i][0],outAtoms[i][1], outAtoms[i][2]));
+	}
 
 	// housekeeping
 	for (i=0;i<m->_size;i++){
@@ -428,7 +440,7 @@ PyObject *PyMain(Molecule *m, char *csmType, PyObject *optionList) {
 		fclose(permfile);	
 
 	// Construct the object to return
-	return Py_BuildValue("(dO)", csm, localCSMList);
+	return Py_BuildValue("(dOOO)", csm, localCSMList,pyDir,pyOutAtoms);
 }
 
 static PyMethodDef csm_methods[] = {
