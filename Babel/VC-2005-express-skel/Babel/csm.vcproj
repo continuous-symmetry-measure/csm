@@ -119,7 +119,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;C:\CSM\openbabel-2.1.1\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\amir\CSM\openbabel-2.1.1\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;WINVER=0x0501;_WIN32_WINNT 0x0501;NTDDI_VERSION=NTDDI_WINXP "
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
