@@ -282,14 +282,14 @@ int main(int argc, char *argv[]){
 	
 	
 	
-	perm_matrix[0][0] = 0; perm_matrix[0][1]=1; perm_matrix[0][2]=2;
-	perm_matrix[1][0] = 0; perm_matrix[1][1]=2; perm_matrix[1][2]=1;
-	perm_matrix[2][0] = 0; perm_matrix[2][1]=1; perm_matrix[2][2]=2;
-	perm_matrix[3][0] = 0; perm_matrix[3][1]=2; perm_matrix[3][2]=1;
+//	perm_matrix[0][0] = 0; perm_matrix[0][1]=1; perm_matrix[0][2]=2;
+//	perm_matrix[1][0] = 0; perm_matrix[1][1]=2; perm_matrix[1][2]=1;
+//	perm_matrix[2][0] = 0; perm_matrix[2][1]=1; perm_matrix[2][2]=2;
+//	perm_matrix[3][0] = 0; perm_matrix[3][1]=2; perm_matrix[3][2]=1;
 	
-/*	
 	
-	printf("The matrix: \n");	
+	
+	printf("The permutations matrix: matrix: \n");	
 	for (i = 0; i < nSize * 2; i++) {
 	
 	
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]){
 		printf("\n");
 	}
 	
-*/	
+	
 	
 	
 /**************    Mark begin	 *******************/
@@ -385,7 +385,7 @@ printf("\nRotation axes  %15.10lf %15.10lf %15.10lf\n",dir_out[0],dir_out[1],dir
     
   
 
-printf("%20.10lf\n",100.*s);    
+printf("\n%20.10lf\n",100.*s);    
     
     
 free(x0);
