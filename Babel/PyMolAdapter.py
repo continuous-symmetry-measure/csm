@@ -27,10 +27,20 @@ def csmFunc( sel, csm_type):
   stored.elems = []
   stored.mol = []
   stored.chain = []
+  stored.bonds = []
   
   cmd.iterate_state(1, mol, "stored.mol.append((x,y,z))")  
   cmd.iterate(mol, "stored.elems.append(elem)")
   cmd.iterate(mol, "stored.chain.append(ID)")
+
+  # prepare bond structure
+  for i in xrange(len(stored.elems)):
+    stored.bonds.append([])
+
+  atomModel = cmd.get_model(sel)
+  for b in atomModel.bond:
+    stored.bonds[b.index[0]].append(b.index[1])
+    stored.bonds[b.index[1]].append(b.index[0])
 
   options = ["-findperm"]
 #  f = open("ttt.ppp","w")
@@ -39,11 +49,12 @@ def csmFunc( sel, csm_type):
 #  params["elems"] = stored.elems
 #  params["csm_type"] = csm_type
 #  params["options"] = options
+#  params["bonds"] = stored.bonds
 #  pickle.dump(params,f)
 #  f.close()
   # call the c function to compute csm and return data
   # first version includes no connectivity data
-  [csmVal, atomicCSM,symElement, outAtomPos] = computeCsm(stored.mol, stored.elems, csm_type, options)
+  [csmVal, atomicCSM,symElement, outAtomPos] = computeCsm(stored.mol, stored.elems, stored.bonds, csm_type, options)
   
   stored.csm_center = [0.0,0.0,0.0]
   stored.csm_center[0] = float(sum([x[0] for x in stored.mol])) / len(outAtomPos)
@@ -62,7 +73,7 @@ def csmFunc( sel, csm_type):
   source_obj = sel
   new_object = source_obj+"_"+csm_type+"_sym"
   cmd.copy(new_object, source_obj)
-
+  
   stored.atomicCSM = atomicCSM
   stored.outAtomPos = outAtomPos
   stored.symElement = symElement

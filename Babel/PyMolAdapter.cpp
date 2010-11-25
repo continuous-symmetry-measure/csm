@@ -63,26 +63,28 @@ extern char opName[100];
 
 Molecule* PyMol2Mol(PyObject *coords, PyObject *elements);
 PyObject *PyMain(Molecule *mol, char *csmType, PyObject *optionList);
+Molecule* PyMol2Mol(PyObject *coords, PyObject *elements, PyObject *bonds);
 
 /**
  * The arguments are in the following form:
- * args = (positions, elements, csm_type, args)
+ * args = (positions, elements, bonds, csm_type, args)
  */
 PyObject *computeCsm(PyObject* self, PyObject* args) {
 	PyObject *coords = NULL;
-	PyObject *elems = NULL;	
+	PyObject *elems = NULL;
+	PyObject *bonds = NULL;
 	char *csmType = NULL;
 	PyObject *optionList = NULL;
 	Molecule *mol = NULL;
 
 	// Read the arguments
-	if ( ! PyArg_ParseTuple(args, "OOsO", &coords, &elems, &csmType, &optionList) ) {
+	if ( ! PyArg_ParseTuple(args, "OOOsO", &coords, &elems, &bonds, &csmType, &optionList) ) {
 		printf("Could not unparse objects\n");
         return NULL;
 	}	
 
 	// Construct molecule
-	mol = PyMol2Mol(coords, elems);
+	mol = PyMol2Mol(coords, elems, bonds);
 
 	// Return the result as a tuple
 	// (csm, localCSM, );
@@ -94,22 +96,26 @@ PyObject *computeCsm(PyObject* self, PyObject* args) {
  * tuples of (x,y,z)
  * list of element names inside tuples (name) 
  */
-Molecule* PyMol2Mol(PyObject *coords, PyObject *elements) {
+Molecule* PyMol2Mol(PyObject *coords, PyObject *elements, PyObject *bonds) {
   int numAtoms = PyList_Size(coords);  
   Molecule *mol = allocateMolecule(numAtoms);
       
   for (int i = 0; i < numAtoms; i++) { 
-    PyObject* coord = PyList_GetItem(coords, i);
-    PyObject* elem = PyList_GetItem(elements, i);	
+    PyObject *coord = PyList_GetItem(coords, i);
+    PyObject *elem = PyList_GetItem(elements, i);	
+	PyObject *atomBonds = PyList_GetItem(bonds, i);
 
 	mol->_pos[i][0] = PyFloat_AsDouble(PyTuple_GetItem(coord, 0));
 	mol->_pos[i][1] = PyFloat_AsDouble(PyTuple_GetItem(coord, 1));
 	mol->_pos[i][2] = PyFloat_AsDouble(PyTuple_GetItem(coord, 2));	
-	mol->_symbol[i] = strdup(PyString_AsString(elem));	
+	mol->_symbol[i] = strdup(PyString_AsString(elem));
 	
 	// So far - we don't know how to extract valency and bond structure...
-	mol->_valency[i] = 0;
-	mol->_adjacent[i] = (int*)malloc(0);
+	mol->_valency[i] = PyList_Size(atomBonds);
+	mol->_adjacent[i] = (int*)malloc(mol->_valency[i] * sizeof(int));
+	for (int j = 0; j < mol->_valency[i]; j++) {
+		mol->_adjacent[i][j] = PyInt_AsLong(PyList_GetItem(atomBonds, j));
+	}
   }
     
   initSimilarity(mol,DEPTH_ITERATIONS);
