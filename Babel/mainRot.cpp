@@ -269,6 +269,47 @@ char *getExtension(char *fname) {
 
 // Math utils
 
+/*
+ * Normalizes the position of atoms of the molecule
+ * returns one [TRUE] if successful, zero[FALSE] otherwise
+ */
+void normalize(double **coords, Molecule *m){
+
+	double tmp,x_avg, y_avg, z_avg,norm;
+	int i;
+
+	x_avg = y_avg = z_avg = 0.0;
+
+	double mass_sum = 0;
+	for(i=0; i< m->_size; i++){
+		x_avg += coords[i][0] * m->_mass[i];
+		y_avg += coords[i][1] * m->_mass[i];
+		z_avg += coords[i][2] * m->_mass[i];
+		mass_sum += m->_mass[i];
+	}
+	x_avg /= (double)(mass_sum);
+	y_avg /= (double)(mass_sum);
+	z_avg /= (double)(mass_sum);
+
+	norm = 0.0;
+	for(i=0; i< m->_size; i++){
+		tmp = SQR(coords[i][0]-x_avg) +
+		      SQR(coords[i][1]-y_avg) +
+		      SQR(coords[i][2]-z_avg);
+		norm += tmp;
+	}
+	// normalize to 1 and not molecule size
+	//norm = sqrt(norm / (double)m->_size);
+	norm = sqrt(norm);
+
+
+	for(i=0; i< m->_size; i++){
+		coords[i][0] = ((coords[i][0] - x_avg) / norm);
+		coords[i][1] = ((coords[i][1] - y_avg) / norm);
+		coords[i][2] = ((coords[i][2] - z_avg) / norm);
+	}
+}
+
 double Magnitude( double *Point1, double *Point2 )
 {
 	double Vector[3];
@@ -696,7 +737,8 @@ int main(int argc, char *argv[]){
 		computeLocalCSM(m,localCSM, perm, dir,  type != CH ? type : chMinType);
 	}
 
-	
+	normalize(outAtoms, m);
+
 	// De-normalize
 	for (i = 0; i < m->_size; i++) { 
 		m->_pos[i][0] *= m->_norm;
@@ -1276,7 +1318,8 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 	} else { 		
 		double** dirs;
 		int n_dirs;
-		int *bestPerm = (int*)malloc(sizeof(int) * m->_size);		
+		int *bestPerm = (int*)malloc(sizeof(int) * m->_size);	
+		double bestDir[3];
 		int maxIters = 50;	
 		*csm = MAXDOUBLE;
 
@@ -1285,10 +1328,11 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 
 		// Find the permutation best matching this direction - there are n_dirs results to the algorithm		
 		for (i = 0; i < n_dirs; i++) { 
-			double dist = MAXDOUBLE, old = MAXDOUBLE, best = MAXDOUBLE;				
+			double dist = MAXDOUBLE, old = MAXDOUBLE, best = MAXDOUBLE;	
+			double tempDir[3];
 			int iterNum = 1;
 			estimatePerm(m, bestPerm, dirs[i], type);	
-			runSinglePerm(m, outAtoms, bestPerm, &dist, dir, dMin, type);	
+			runSinglePerm(m, outAtoms, bestPerm, &dist, bestDir, dMin, type);	
 			old = MAXDOUBLE; best = dist;
 			
 			// solve analytically using this permutation, repeat until converged
@@ -1300,10 +1344,11 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			while ((fabs(dist) > 1e-4) && (fabs(old - dist)/fabs(old) > 0.01) && (iterNum < maxIters)) {
 				old = dist;
 				estimatePerm(m, temp, dir, type);
-				runSinglePerm(m, outAtoms, temp, &dist, dir, dMin, type);					
+				runSinglePerm(m, outAtoms, temp, &dist, tempDir, dMin, type);					
 				if (dist < best) {
 					best = dist;
 					memcpy(bestPerm, temp, sizeof(int) * m->_size);
+					memcpy(bestDir, tempDir, sizeof(double) * 3);
 				}	
 				iterNum++;			
 				//printf("Old csm: %6.4f New csm %6.4f\n", old, dist);
@@ -1312,7 +1357,8 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			// Keep the best solution so far...
 			if (best < *csm) { 
 				*csm = best;
-				memcpy(perm, bestPerm , sizeof(int) * m->_size);				
+				memcpy(perm, bestPerm , sizeof(int) * m->_size);
+				memcpy(dir, bestDir, sizeof(double) * 3);
 			}		
 			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
 		}

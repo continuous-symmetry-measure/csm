@@ -42,8 +42,11 @@ def csmFunc( sel, csm_type):
     stored.bonds[b.index[0]].append(b.index[1])
     stored.bonds[b.index[1]].append(b.index[0])
 
-  options = ["-findperm"]
-#  f = open("ttt.ppp","w")
+  options = []
+  if (len(stored.elems) > 20):
+    options.append("-findperm")
+
+  #  f = open("ttt.ppp","w")
 #  params = {}
 #  params["mol"] = stored.mol
 #  params["elems"] = stored.elems

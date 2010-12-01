@@ -32,6 +32,7 @@ extern void readPerm(FILE* permfile, int* perm, int size);
 extern double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
 extern double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
 extern double totalNumPermutations(Molecule *m);
+extern void normalize(double **coords, Molecule *m);
 
 // global options
 extern int ignoreHy;
@@ -401,6 +402,8 @@ PyObject *PyMain(Molecule *m, char *csmType, PyObject *optionList) {
 		localCSM = (double *)malloc(sizeof(double) * m->_size);
 		computeLocalCSM(m,localCSM, perm, dir,  type != CH ? type : chMinType);
 	}
+
+	normalize(outAtoms,m);
 
 	
 	// De-normalize
