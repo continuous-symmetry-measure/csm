@@ -769,6 +769,9 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 		exit(1);
 	};
 
+	// Since we want two orthogonal axis, we will ignore the identity permutation for all searches...
+	nextGroupPermutation(gp);
+
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
 	while ( nextGroupPermutation(gp) ) {
 
