@@ -198,6 +198,7 @@ void usage(char *op) {
 	printf("-sn_max	<max n> - The maximal sn to try, relevant only for chirality\n");
 	printf("-printNorm		- Print the normalization factor as well\n");
 	printf("-printlocal		- Print the local CSM (csm for each atom) in the output file\n");
+	printf("-approx			- Equivalent to -detectOutliers -findperm together");
 	printf("-help - print this help file\n");
 }
 
@@ -521,8 +522,9 @@ void parseInput(int argc, char *argv[]){
 			findPerm = TRUE;
 		} else if (strcmp(argv[i], "-detectOutliers") == 0) {
 			detectOutliers = TRUE;
-		} else if (strcmp(argv[i], "-anneal") == 0) {
-			anneal = TRUE;
+		} else if (strcmp(argv[i], "-approx") == 0) {
+			detectOutliers = TRUE;
+			findPerm = TRUE;
 		} else if (strcmp(argv[i], "-babelTest") == 0) { 
 			babelTest = TRUE;
 		} else if (strcmp(argv[i], "-printlocal") == 0) { 
@@ -1332,7 +1334,8 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			double tempDir[3];
 			int iterNum = 1;
 			estimatePerm(m, bestPerm, dirs[i], type);	
-			runSinglePerm(m, outAtoms, bestPerm, &dist, bestDir, dMin, type);	
+			runSinglePerm(m, outAtoms, bestPerm, &dist, tempDir, dMin, type);	
+			memcpy(bestDir, tempDir, sizeof(double) * 3);
 			old = MAXDOUBLE; best = dist;
 			
 			// solve analytically using this permutation, repeat until converged
@@ -1343,7 +1346,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			// 3. The max number of iterations has been reached
 			while ((fabs(dist) > 1e-4) && (fabs(old - dist)/fabs(old) > 0.01) && (iterNum < maxIters)) {
 				old = dist;
-				estimatePerm(m, temp, dir, type);
+				estimatePerm(m, temp, tempDir, type);
 				runSinglePerm(m, outAtoms, temp, &dist, tempDir, dMin, type);					
 				if (dist < best) {
 					best = dist;

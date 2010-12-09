@@ -244,6 +244,9 @@ int parsePyInput(char *csm_type, PyObject *args) {
 			babelTest = TRUE;
 		} else if (strcmp(arg, "-printlocal") == 0) { 
 			printLocal = TRUE;
+		} else if (strcmp(arg, "-approx") == 0) { 
+			findPerm = TRUE;
+			detectOutliers = TRUE;
 		}
 	}
 	if (writeOpenu) {		

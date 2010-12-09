@@ -55,6 +55,7 @@ int readPDB = FALSE;
 int writeOpenu = FALSE;
 OperationType type;
 int opOrder;
+int skipIdentityForCs = FALSE;
 
 // file pointers
 FILE* inFile = NULL;
@@ -229,6 +230,7 @@ int main(int argc, char *argv[]){
 	
 	// perform operation	
 	csmOperation(m, outAtoms, perm_cn, &csm, dir_cn, &dMin, CN);			
+	if (opOrder > 2) skipIdentityForCs = TRUE;
 	opOrder = 2;
 	csmOperation(m, outAtoms, perm_cs, &csm, dir_cs, &dMin, CS);
 
@@ -770,7 +772,10 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	};
 
 	// Since we want two orthogonal axis, we will ignore the identity permutation for all searches...
-	nextGroupPermutation(gp);
+
+	if (type == CS && skipIdentityForCs) {
+		nextGroupPermutation(gp);
+	}
 
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
 	while ( nextGroupPermutation(gp) ) {
