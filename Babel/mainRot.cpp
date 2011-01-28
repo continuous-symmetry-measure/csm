@@ -158,7 +158,7 @@ char *format = NULL;
 int babelBond = FALSE;
 int timeOnly = FALSE;
 int sn_max = 4;
-int anneal = FALSE;
+//int anneal = FALSE;
 int detectOutliers = FALSE;
 double A = 2;
 int babelTest = FALSE;
@@ -190,7 +190,7 @@ void usage(char *op) {
 	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
 	printf("-findperm	   - Attempt to search for a permutation\n");
 	printf("-detectOutliers - Use statistical methods to try and improve -findperm's results\n");
-	printf("-anneal		   - Try to anneal the result\n");
+//	printf("-anneal		   - Try to anneal the result\n");
 	printf("-babelbond	   - Let openbabel compute bonding\n");
 	printf("-useMass	   - Use the atomic masses to define center of mass\n");
 	printf("-timeOnly	   - Only print the time and exit\n");
@@ -1370,8 +1370,12 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		}
 		free(dirs);
 		free(bestPerm);	
+
+		// run once more to get the out atoms right !
+		runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);					
 	}
 		
+#if 0 
 	if (anneal) {
 			
 		// The initial probability is set to be 2 / N 
@@ -1508,6 +1512,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		free(groups);
 		free(groupSizes);
 	}					
+#endif
 
 	free(temp);	
 	

@@ -50,7 +50,6 @@ extern char *format;
 extern int babelBond;
 extern int timeOnly;
 extern int sn_max;
-extern int anneal;
 extern int detectOutliers;
 extern double A;
 extern int babelTest;
@@ -139,7 +138,7 @@ void PyUsage(char *op) {
 	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
 	printf("-findperm	   - Attempt to search for a permutation\n");
 	printf("-detectOutliers - Use statistical methods to try and improve -findperm's results\n");
-	printf("-anneal		   - Try to anneal the result\n");
+//	printf("-anneal		   - Try to anneal the result\n");
 	printf("-babelbond	   - Let openbabel compute bonding\n");
 	printf("-useMass	   - Use the atomic masses to define center of mass\n");
 	printf("-timeOnly	   - Only print the time and exit\n");
@@ -238,8 +237,8 @@ int parsePyInput(char *csm_type, PyObject *args) {
 			findPerm = TRUE;
 		} else if (strcmp(arg, "-detectOutliers") == 0) {
 			detectOutliers = TRUE;
-		} else if (strcmp(arg, "-anneal") == 0) {
-			anneal = TRUE;
+//		} else if (strcmp(arg, "-anneal") == 0) {
+//			anneal = TRUE;
 		} else if (strcmp(arg, "-babelTest") == 0) { 
 			babelTest = TRUE;
 		} else if (strcmp(arg, "-printlocal") == 0) { 
