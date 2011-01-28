@@ -43,6 +43,7 @@ int rpoly(double *op, int degree, double *zeror, double *zeroi);
 
 // function declarations
 void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
+void findCsPerm(Molecule* m, double** outAtoms, int *optimalPerm, double* dir, OperationType type, double *dir_cn);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
 
@@ -56,6 +57,7 @@ int writeOpenu = FALSE;
 OperationType type;
 int opOrder;
 int skipIdentityForCs = FALSE;
+int findCSbyOrth = TRUE;
 
 // file pointers
 FILE* inFile = NULL;
@@ -72,6 +74,7 @@ void usage(char *op) {
 	printf("	performing a purely geometric operation\n");
 	printf("-readPDB - Use PDB as the input format, instead of XYZ\n");
 	printf("-writeOpenu - Write output in open university format\n");	
+	printf("-bestCS - Find the CS element by CSM instead of orthogonality to cn\n"); 
 	printf("-help - print this help file\n");
 }
 
@@ -146,6 +149,8 @@ void parseInput(int argc, char *argv[]){
 			ignoreSym = TRUE;
 		else if (strcmp(argv[i],"-readPDB" ) == 0 )
 			readPDB = TRUE;
+		else if (strcmp(argv[i],"-bestCS") == 0)
+			findCSbyOrth = FALSE;
 		else if (strcmp(argv[i], "-help") == 0) {
 			usage(argv[0]);
 			exit(0);
@@ -232,7 +237,11 @@ int main(int argc, char *argv[]){
 	csmOperation(m, outAtoms, perm_cn, &csm, dir_cn, &dMin, CN);			
 	if (opOrder > 2) skipIdentityForCs = TRUE;
 	opOrder = 2;
-	csmOperation(m, outAtoms, perm_cs, &csm, dir_cs, &dMin, CS);
+	if (findCSbyOrth) {
+		findCsPerm(m, outAtoms, perm_cs, dir_cs, CS, dir_cn);
+	} else {
+		csmOperation(m, outAtoms, perm_cs, &csm, dir_cs, &dMin, CS);
+	}
 
 
 	// Print result
@@ -716,13 +725,12 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	return sqrt(res);
 }
 
-
 /*
-* Calculates minimal csm, dMin and directional cosines by applying the chiralityFunction
-* breaks down Molecule into groups of similar atoms and calculates the above only for
-* permutations that keep the similar atoms within the group ( groupPermuter class )
-* once it finds the optimal permutation , calls the chiralityFunction on the optimal permutation
-*/
+ * Calculates minimal csm, dMin and directional cosines by applying the chiralityFunction
+ * breaks down Molecule into groups of similar atoms and calculates the above only for
+ * permutations that keep the similar atoms within the group ( groupPermuter class )
+ * once it finds the optimal permutation , calls the chiralityFunction on the optimal permutation
+ */
 void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type){
 
 	int i;
@@ -811,6 +819,112 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	*dMin = (1.0 - (*csm / 100 * opOrder / (opOrder - 1)));
 	createSymmetricStructure(m, outAtoms, optimalPerm, dir, type, *dMin);
 		
+
+	// housekeeping
+	free(groupSizes);
+	free(idxToPos);
+	free(posToIdx);
+	freeGroupPermuter(gp);
+	free(realPerm);
+}
+
+
+/*
+ * This is like csmOperation, except that the score of each permutation is given by 
+ * the direction most orthogonal to the previously chosen Cn axis
+ */
+void findCsPerm(Molecule* m, double** outAtoms, int *optimalPerm, double* dir, OperationType type, double *dir_cn){
+
+	int i;
+	double bestOrth,curOrth,bestCsm;
+	double curDir[3];
+	int *idxToPos, *posToIdx;
+	int * groupSizes;
+	groupPermuter* gp;
+
+	// These are the 
+	int *realPerm = (int *)malloc(sizeof(int) * m->_size);
+
+	//normalize Molecule
+	if (!normalizeMolecule(m)){
+		printf("Failed to normalize atom positions: dimension of set of points = zero\n");
+		exit(1);
+	}
+
+	// allocate memory for index arrays arrays
+	idxToPos = (int*)malloc(m->_size * sizeof(int));
+	posToIdx = (int*)malloc(m->_size * sizeof(int));
+
+	// and group sizes arrays
+	groupSizes = (int*)malloc(m->_groupNum * sizeof(int*));	
+
+	for(i=0; i<m->_size; i++)    	
+		// init index arrays
+		initIndexArrays(m,posToIdx,idxToPos);
+
+	bestCsm = bestOrth = curOrth = MAXDOUBLE;
+
+	// get group sizes
+	for(i=1; i<= m->_groupNum ; i++){
+		groupSizes[i-1] = getGroupSize(m,i);
+	}
+
+	// create permuter
+	gp = createGroupPermuter(m->_groupNum,groupSizes,m->_size,opOrder);
+	if (!gp){
+		if (writeOpenu) {
+			printf("ERR* Failed to create groupPermuter *ERR\n");
+		} else {
+			printf("Failed to create groupPermuter \n");	
+		}	
+		exit(1);
+	};
+
+	// Since we want two orthogonal axis, we will ignore the identity permutation for all searches...
+
+	if (type == CS && skipIdentityForCs) {
+		nextGroupPermutation(gp);
+	}
+	
+/*	printf("CN: %5.2f, %5.2f, %5.2f\n",dir_cn[0],dir_cn[1],dir_cn[2]); */
+
+	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
+	while ( nextGroupPermutation(gp) ) {
+		double norm = 0;
+		double csm = 0;
+
+		for (i = 0; i < m->_size; i++) {
+			realPerm[i] = idxToPos[gp->_index[posToIdx[i]]];
+		}
+		
+		csm = calcRefPlane(m, realPerm, curDir, type);
+		norm = curDir[0] * curDir[0] + curDir[1] * curDir[1] + curDir[2] * curDir[2];
+		if (norm < 0.5) continue;
+
+		curOrth = abs(curDir[0] * dir_cn[0] + curDir[1] * dir_cn[1] + curDir[2] * dir_cn[2]);
+		// Make all almost-orthogonal values completely orthogonal	
+		// make only 100 different values...
+		curOrth = floor(curOrth * 100) * 1.0 / 100;
+
+		/*
+		printf("%5.2f, %5.2f, %5.2f - %7.5f - CSM: %5.3f - ",curDir[0],curDir[1],curDir[2],curOrth,csm);
+		for (i = 0; i < m->_size;i++) { 
+			printf("%d, ", realPerm[i] + 1);
+		}
+		printf("\n");
+		*/
+
+		// check, if it's a minimal csm, update maxGroupCsm and optimalAntimer
+		if(curOrth < bestOrth ||(curOrth == bestOrth && csm < bestCsm)) {
+			bestOrth = curOrth;
+			bestCsm = csm;
+			dir[0] = curDir[0]; dir[1] = curDir[1]; dir[2] = curDir[2];
+			
+			for (i = 0; i < m->_size; i++) {
+				optimalPerm[i] = realPerm[i];
+			}
+		}			
+	}		
 
 	// housekeeping
 	free(groupSizes);
