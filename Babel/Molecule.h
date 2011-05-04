@@ -50,7 +50,7 @@ int getMaxGroupSize(Molecule *m);
 
 Molecule* stripAtoms(Molecule *m, char** removeList, int removeListSize, int updateSimilarity);
 
-int normalizeMolecule(Molecule *m);
+int normalizeMolecule(Molecule *m, bool keepCenter);
 
 void printMolecule(Molecule *m);
 

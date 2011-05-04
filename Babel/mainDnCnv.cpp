@@ -182,7 +182,7 @@ int printLocal = FALSE;
 #ifdef CNV
 OperationType secondOpType = CS;
 #else // DN
-OperationType secondOpType = CS;
+OperationType secondOpType = CN;
 #endif 
 
 // file pointers
@@ -814,7 +814,7 @@ printf("\nRotation axes  %15.10lf %15.10lf %15.10lf\n",dir_out[0],dir_out[1],dir
     
   
 
-printf("\n%6.4lf\n",abs(100.*s));    
+printf("\nCNV: %6.4lf\n",abs(100.*s));    
 fprintf(outFile,"\nCNV: %6.4lf\n",abs(100.*s));    
     
     
@@ -1436,7 +1436,7 @@ double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, doubl
 			double* dMin, OperationType type, double* dir_cn){
 
 	int i;
-	double bestOrth,curOrth,bestCsm;
+	double bestOrth = MAXDOUBLE,curOrth,bestCsm;
 	double curDir[3];
 	int *idxToPos, *posToIdx;
 	int * groupSizes;
@@ -1558,7 +1558,7 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 	double** dirs;
 	int n_dirs;
 	int *bestPerm = (int*)malloc(sizeof(int) * m->_size);	
-	double bestDir[3];
+	double bestDir[3], bestOrth = MAXDOUBLE;
 	int maxIters = 50;	
 	*csm = MAXDOUBLE;
 
@@ -1568,7 +1568,7 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 	// Find the permutation best matching this direction - there are n_dirs results to the algorithm		
 	for (i = 0; i < n_dirs; i++) { 
 		double dist = MAXDOUBLE, old = MAXDOUBLE, best = MAXDOUBLE;	
-		double curOrth, norm, bestOrth = MAXDOUBLE;
+		double curOrth, norm;
 		double tempDir[3];
 		int iterNum = 1;
 		estimatePerm(m, bestPerm, dirs[i], type);	
@@ -1603,18 +1603,17 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 		// Make all almost-orthogonal values completely orthogonal	
 		// make only 100 different values...
 		curOrth = floor(curOrth * 100) * 1.0 / 100;
-
-		if(curOrth < bestOrth ||(curOrth == bestOrth && best < *csm)) {
+		
+		if((curOrth < bestOrth) || (curOrth == bestOrth && best < *csm)) { 
 			bestOrth = curOrth;
 			*csm = best;
 			dir[0] = bestDir[0]; dir[1] = bestDir[1]; dir[2] = bestDir[2];
-			
 			for (int i = 0; i < m->_size; i++) {
 				perm[i] = bestPerm[i];
 			}
 		}			
 
-		printf("Attempt #%d: best csm is %4.2f, cos(angle): %4.2f after %d iterations\n", (i+1), best,curOrth, iterNum);			
+		printf("Attempt #%d: csm is %4.2f, cos(angle): %4.2f after %d iterations\n", (i+1), best,curOrth, iterNum);				
 	}
 
 	for (i = 0; i < n_dirs; i++) {

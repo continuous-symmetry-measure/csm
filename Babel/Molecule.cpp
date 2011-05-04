@@ -585,23 +585,25 @@ Molecule* stripAtoms(Molecule *m, char** removeList, int removeListSize, int upd
  * Normalizes the position of atoms of the molecule
  * returns one [TRUE] if successful, zero[FALSE] otherwise
  */
-int normalizeMolecule(Molecule *m){
+int normalizeMolecule(Molecule *m, bool keepCenter = false){
 
 	double tmp,x_avg, y_avg, z_avg,norm;
 	int i;
 
 	x_avg = y_avg = z_avg = 0.0;
 
-	double mass_sum = 0;
-	for(i=0; i< m->_size; i++){
-		x_avg += m->_pos[i][0] * m->_mass[i];
-		y_avg += m->_pos[i][1] * m->_mass[i];
-		z_avg += m->_pos[i][2] * m->_mass[i];
-		mass_sum += m->_mass[i];
+	if (!keepCenter) {
+		double mass_sum = 0;
+		for(i=0; i< m->_size; i++){
+			x_avg += m->_pos[i][0] * m->_mass[i];
+			y_avg += m->_pos[i][1] * m->_mass[i];
+			z_avg += m->_pos[i][2] * m->_mass[i];
+			mass_sum += m->_mass[i];
+		}
+		x_avg /= (double)(mass_sum);
+		y_avg /= (double)(mass_sum);
+		z_avg /= (double)(mass_sum);
 	}
-	x_avg /= (double)(mass_sum);
-	y_avg /= (double)(mass_sum);
-	z_avg /= (double)(mass_sum);
 
 	norm = 0.0;
 	for(i=0; i< m->_size; i++){

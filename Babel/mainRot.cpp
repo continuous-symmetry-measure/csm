@@ -164,6 +164,7 @@ double A = 2;
 int babelTest = FALSE;
 int printNorm = FALSE;
 int printLocal = FALSE;
+bool keepCenter = FALSE;
 
 // file pointers
 FILE* inFile = NULL;
@@ -198,7 +199,8 @@ void usage(char *op) {
 	printf("-sn_max	<max n> - The maximal sn to try, relevant only for chirality\n");
 	printf("-printNorm		- Print the normalization factor as well\n");
 	printf("-printlocal		- Print the local CSM (csm for each atom) in the output file\n");
-	printf("-approx			- Equivalent to -detectOutliers -findperm together");
+	printf("-approx			- Equivalent to -detectOutliers -findperm together\n");
+	printf("-keepCenter		- Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass\n");
 	printf("-help - print this help file\n");
 }
 
@@ -281,16 +283,18 @@ void normalize(double **coords, Molecule *m){
 
 	x_avg = y_avg = z_avg = 0.0;
 
-	double mass_sum = 0;
-	for(i=0; i< m->_size; i++){
-		x_avg += coords[i][0] * m->_mass[i];
-		y_avg += coords[i][1] * m->_mass[i];
-		z_avg += coords[i][2] * m->_mass[i];
-		mass_sum += m->_mass[i];
+	if (!keepCenter) {
+		double mass_sum = 0;
+		for(i=0; i< m->_size; i++){
+			x_avg += coords[i][0] * m->_mass[i];
+			y_avg += coords[i][1] * m->_mass[i];
+			z_avg += coords[i][2] * m->_mass[i];
+			mass_sum += m->_mass[i];
+		}
+		x_avg /= (double)(mass_sum);
+		y_avg /= (double)(mass_sum);
+		z_avg /= (double)(mass_sum);
 	}
-	x_avg /= (double)(mass_sum);
-	y_avg /= (double)(mass_sum);
-	z_avg /= (double)(mass_sum);
 
 	norm = 0.0;
 	for(i=0; i< m->_size; i++){
@@ -529,6 +533,8 @@ void parseInput(int argc, char *argv[]){
 			babelTest = TRUE;
 		} else if (strcmp(argv[i], "-printlocal") == 0) { 
 			printLocal = TRUE;
+		} else if (strcmp(argv[i], "-keepCenter") == 0) { 
+			keepCenter = true;
 		}
 	}
 	if (writeOpenu) {
@@ -659,7 +665,7 @@ int main(int argc, char *argv[]){
 	perm = (int *)malloc(sizeof(int) * m->_size);
 
 	//normalize Molecule
-	if (!normalizeMolecule(m)){
+	if (!normalizeMolecule(m,keepCenter)){
 		if (writeOpenu) {
 			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
 		} else {
