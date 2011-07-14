@@ -131,10 +131,9 @@ OBMol readMolecule (char *filename, const char *format, int babelBond) {
 		if (f == NULL) {	
 			printf("Error discovering format from filename %s\n", filename);
 			exit(1);
-		}	
-		format = OBConversion::FormatFromExt(filename)->GetType().name();	
-		if (!conv.SetInFormat(OBConversion::FormatFromExt(filename))) {
-			printf ("Error setting input format to %s\n", format);
+		}			
+		if (!conv.SetInFormat(f)) {
+			printf ("Error setting openbabel format\n");
 			exit(1);
 		}
 	} else {
@@ -145,7 +144,7 @@ OBMol readMolecule (char *filename, const char *format, int babelBond) {
 	}
 	if (!babelBond) conv.SetOptions("b", OBConversion::INOPTIONS);
 	if (!conv.ReadFile(&mol, filename)) {
-		printf ("Error reading file %s using OpenBabel with format %s\n", filename, format);
+		printf ("Error reading file %s using OpenBabel\n", filename);
 		exit(1);		
 	}		
 	return mol;
@@ -168,9 +167,8 @@ void writeMolecule(OBMol& mol, const char *format, FILE* file, char *filename) {
 			printf("Error discovering format from filename %s\n", filename);
 			exit(1);
 		}
-		format = OBConversion::FormatFromExt(filename)->GetType().name();
-		if (!conv.SetOutFormat(OBConversion::FormatFromExt(filename))) {
-			printf ("Error setting output format to %s\n", format);
+		if (!conv.SetOutFormat(f)) {
+			printf ("Error setting openbabel format\n");
 			exit(1);
 		}		
 	} else {
@@ -180,7 +178,7 @@ void writeMolecule(OBMol& mol, const char *format, FILE* file, char *filename) {
 		}
 	}
 	if (!conv.Write(&mol, &os)) {
-		printf ("Error writing data file using OpenBabel with format %s\n", format);
+		printf ("Error writing data file using OpenBabel\n");
 		exit(1);
 	}
 	fprintf(file,os.str().c_str());
