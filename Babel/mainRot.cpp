@@ -534,7 +534,7 @@ void parseInput(int argc, char *argv[]){
 		} else if (strcmp(argv[i], "-printlocal") == 0) { 
 			printLocal = TRUE;
 		} else if (strcmp(argv[i], "-keepCenter") == 0) { 
-			keepCenter = true;
+			keepCenter = TRUE;
 		}
 	}
 	if (writeOpenu) {

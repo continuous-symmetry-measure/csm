@@ -147,8 +147,9 @@ void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
 double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
 double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, double* dir, 
-			double* dMin, OperationType type, double* dir_cn);
-void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type, double *dir_cn);
+			double* dMin, OperationType type, double* dir_cn, int skipIdentity);
+void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* csm, 
+						   double* dir, double* dMin, OperationType type, double *dir_cn, int skipIdentity);
 
 /*------    Mark -------------------*/
 int normalizeMolecule2(Molecule *m);
@@ -551,6 +552,7 @@ int main(int argc, char *argv[]){
 	int *perm_cn = NULL;	
 	int *perm_sec = NULL;
 	double *localCSM = NULL;		 
+	int skipIdentity = 0;
 
 	// init options
 	parseInput(argc,argv);
@@ -641,7 +643,7 @@ int main(int argc, char *argv[]){
        
 
 	//normalize Molecule
-	if (!normalizeMolecule(m)){
+	if (!normalizeMolecule(m,FALSE)){
 		if (writeOpenu) {
 			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
 		} else {
@@ -654,6 +656,7 @@ int main(int argc, char *argv[]){
 	perm_cn = (int *)malloc(sizeof(int) * m->_size);
 	perm_sec = (int *)malloc(sizeof(int) * m->_size);
 	nSize = opOrder;	
+	skipIdentity = (secondOpType == CS) && (opOrder > 2);
 	
 	// perform operation	
 	normalize(outAtoms, m);	
@@ -665,9 +668,9 @@ int main(int argc, char *argv[]){
 	csm_cn = csm;
 	opOrder = 2;
 	if (findPerm) {
-	    findBestSecondaryPerm(m, outAtoms, perm_sec, &csm_sec, dir_sec, &dMin, secondOpType, dir_cn);
+	    findBestSecondaryPerm(m, outAtoms, perm_sec, &csm_sec, dir_sec, &dMin, secondOpType, dir_cn,skipIdentity);
 	} else {
-		csm_sec = findSecondaryPerm(m, outAtoms, perm_sec, dir_sec, &dMin, secondOpType, dir_cn);
+		csm_sec = findSecondaryPerm(m, outAtoms, perm_sec, dir_sec, &dMin, secondOpType, dir_cn, skipIdentity);
 	}
 
 	// Print result
@@ -731,18 +734,23 @@ int main(int argc, char *argv[]){
 	}
 	
 	fprintf(outFile,"The permutations matrix: \n");	
-	for (i = 0; i < nSize * 2; i++) {
-	
-	
-			
+	for (i = 0; i < nSize * 2; i++) {			
 		if (i == 0) {
 			fprintf(outFile,"E\t\t\t");
 		} else if (i < nSize) { 
 			fprintf(outFile,"(C%d)^%d\t\t\t", nSize, i);
 		} else if (i == nSize) {
+#ifdef CNV
+			fprintf(outFile,"CS\t\t\t"); 
+#else // DN
 			fprintf(outFile,"C2\t\t\t"); 
+#endif 
 		} else {
+#ifdef CNV
+			fprintf(outFile,"CS*(C%d)^%d\t\t", nSize, i - nSize);
+#else // DN
 			fprintf(outFile,"C2*(C%d)^%d\t\t", nSize, i - nSize);
+#endif
 		}
 		
 		
@@ -1433,7 +1441,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 * once it finds the optimal permutation , calls the chiralityFunction on the optimal permutation
 */
 double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, double* dir, 
-			double* dMin, OperationType type, double* dir_cn){
+			double* dMin, OperationType type, double* dir_cn, int skipIdentity){
 
 	int i;
 	double bestOrth = MAXDOUBLE,curOrth,bestCsm;
@@ -1483,7 +1491,7 @@ double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, doubl
 	};
 
 	/* Since we are looking for orthogonal - skip identity perm */
-	nextGroupPermutation(gp);
+	if (skipIdentity) nextGroupPermutation(gp);
 
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
 	while ( nextGroupPermutation(gp) ) {
@@ -1540,7 +1548,8 @@ double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, doubl
 /*
  * Calculates csm, dMin and directional cosines for a given permutation
  */
-void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, double* dir, double* dMin, OperationType type){
+void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, double* dir, double* dMin, 
+				   OperationType type){
 	*csm = calcRefPlane(m, perm, dir, type);
 
 	// which is DMIN?
@@ -1548,10 +1557,19 @@ void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, doubl
 	createSymmetricStructure(m, outAtoms, perm, dir, type, *dMin);
 }
 
+int isIdentityPerm(int *perm, int size) {
+	int i = 0; 
+	for (i = 0; i < size; i++) {
+		if (perm[i] != i) return 0;
+	}
+	return 1;
+}
+
 /**
  * Finds an approximate permutation which can be used in the analytical computation.
  */
-void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type, double *dir_cn) {
+void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, 
+						   double* dMin, OperationType type, double *dir_cn, int skipIdentity) {
 
 	int *temp = (int*)malloc(sizeof(int) * m->_size);
 	int i = 0;	
@@ -1584,8 +1602,10 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 		// 3. The max number of iterations has been reached
 		while ((fabs(dist) > 1e-4) && (fabs(old - dist)/fabs(old) > 0.01) && (iterNum < maxIters)) {
 			old = dist;
-			estimatePerm(m, temp, tempDir, type);
+			estimatePerm(m, temp, tempDir, type);		
+			if (skipIdentity && isIdentityPerm(temp,m->_size)) continue;
 			runSinglePerm(m, outAtoms, temp, &dist, tempDir, dMin, type);					
+			
 			if (dist < best) {
 				best = dist;
 				memcpy(bestPerm, temp, sizeof(int) * m->_size);
@@ -1603,7 +1623,11 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 		// Make all almost-orthogonal values completely orthogonal	
 		// make only 100 different values...
 		curOrth = floor(curOrth * 100) * 1.0 / 100;
-		
+		if (skipIdentity && isIdentityPerm(bestPerm,m->_size)) 
+		{
+			printf("Identity permutation found - not allowed in cnv for n>2\n");
+			continue;
+		}
 		if((curOrth < bestOrth) || (curOrth == bestOrth && best < *csm)) { 
 			bestOrth = curOrth;
 			*csm = best;

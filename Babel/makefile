@@ -11,23 +11,25 @@ LFLAGS = -lm -L. -L/usr/local/lib -lopenbabel
 BIN = bin
 
 # object files for executables
-LIBOBJ = Molecule.o parseFunctions.o permuter.o groupPermuter.o main.o babelAdapter.o
-OBJ1 = c2helpers.o 
-OBJ2 = mirhelpers.o  
-OBJ3 = chiralhelpers.o rpoly.o nrutil.o
-OBJ4 = invhelpers.o 
-OBJ5 = csm2pdb.o parseFunctions.o Molecule.o
+#LIBOBJ = Molecule.o parseFunctions.o permuter.o groupPermuter.o main.o babelAdapter.o
+#OBJ1 = c2helpers.o 
+#OBJ2 = mirhelpers.o  
+#OBJ3 = chiralhelpers.o rpoly.o nrutil.o
+#OBJ4 = invhelpers.o 
+#OBJ5 = csm2pdb.o parseFunctions.o Molecule.o
 
-OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o mainRot.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
+OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o mainRot.o rpoly.o tqli.o tred2.o nrutil.o pythag.o babelAdapter.o
 
-OBJCSM2D = Molecule.o parseFunctions.o permuter.o groupPermuter.o main2d.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
+#OBJCSM2D = Molecule.o parseFunctions.o permuter.o groupPermuter.o main2d.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
 
 
 
 
 # the first target. All executables will be made when 'make' is
 # invoked with no target
-all: libcsm.a c2 mir chiral inv csm csm2pdb csm2d
+#all: libcsm.a c2 mir chiral inv csm csm2pdb csm2d
+all: csm 
+#csm2pdb
 
 # general rule how to compile a source file and produce an object file
 %.c,%.o:
@@ -37,36 +39,35 @@ all: libcsm.a c2 mir chiral inv csm csm2pdb csm2d
 	$(CXX) $(CFLAGS) -c $<
 
 # linking rule for the first executable
-c2: $(OBJ1) libcsm.a
-	$(CXX) $(LFLAGS) -lcsm $(OBJ1) -o $(BIN)/$@
+#c2: $(OBJ1) libcsm.a
+#	$(CXX) $(LFLAGS) -lcsm $(OBJ1) -o $(BIN)/$@
 
 # linking rule for the second executable
-mir: $(OBJ2) libcsm.a
-	$(CXX) $(LFLAGS) -lcsm $(OBJ2) -o $(BIN)/$@
+#mir: $(OBJ2) libcsm.a
+#	$(CXX) $(LFLAGS) -lcsm $(OBJ2) -o $(BIN)/$@
 
 # linking rule for the third executable
-chiral: $(OBJ3) libcsm.a
-	$(CXX) $(LFLAGS) -lcsm $(OBJ3) -o $(BIN)/$@
+#chiral: $(OBJ3) libcsm.a
+#	$(CXX) $(LFLAGS) -lcsm $(OBJ3) -o $(BIN)/$@
 
 # linking rule for the fourth executable
-inv: $(OBJ4) libcsm.a
-	$(CXX) $(LFLAGS) -lcsm $(OBJ4) -o $(BIN)/$@
+#inv: $(OBJ4) libcsm.a
+#	$(CXX) $(LFLAGS) -lcsm $(OBJ4) -o $(BIN)/$@
 
 # linking rule for the csm executable
-csm: $(OBJCSM) libcsm.a
+csm: $(OBJCSM) 
 	$(CXX) $(LFLAGS) $(OBJCSM) -o $(BIN)/$@
 
 # linking rule for the csm2d executable
-csm2d: $(OBJCSM2D) libcsm.a
-	$(CXX) $(LFLAGS) $(OBJCSM2D) -o $(BIN)/$@
-
+#csm2d: $(OBJCSM2D) libcsm.a
+#	$(CXX) $(LFLAGS) $(OBJCSM2D) -o $(BIN)/$@
 
 csm2pdb: $(OBJ5)
 	$(CC) $(LFLAGS) $(OBJ5) -o $(BIN)/$@
 
-libcsm.a: $(LIBOBJ)
-	ar -r $@ $(LIBOBJ)
-	ranlib $@
+#libcsm.a: $(LIBOBJ)
+#	ar -r $@ $(LIBOBJ)
+#	ranlib $@
 
 # make .o file dependencies
 depend:
