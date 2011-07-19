@@ -1,5 +1,7 @@
 #include <iostream>
 #include <sstream>
+#include <string.h>
+#include <limits.h>
 
 // Include Open Babel classes for OBMol and OBConversion
 #include <openbabel/mol.h>
@@ -181,5 +183,5 @@ void writeMolecule(OBMol& mol, const char *format, FILE* file, char *filename) {
 		printf ("Error writing data file using OpenBabel\n");
 		exit(1);
 	}
-	fprintf(file,os.str().c_str());
+	fprintf(file,"%s\n",os.str().c_str());
 }
