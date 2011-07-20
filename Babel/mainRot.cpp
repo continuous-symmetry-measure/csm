@@ -148,7 +148,6 @@ int ignoreSym = FALSE;
 int useFormat = FALSE;
 int writeOpenu = FALSE;
 OperationType type;
-OperationType chMinType;
 int opOrder;
 int useperm    = FALSE;
 int findPerm = FALSE; 
@@ -570,6 +569,8 @@ int main(int argc, char *argv[]){
 	// try to read molecule from infile
 	Molecule* m;
 	OBMol mol; 
+	OperationType chMinType = CS;
+	int chMinOrder = 2;
 	
 	if (useFormat) {
 		// If a specific format is used, read molecule using that format
@@ -720,6 +721,7 @@ int main(int argc, char *argv[]){
 					if (chCsm < csm) {
 						int j;
 						chMinType = SN;
+						chMinOrder = opOrder;
 						csm = chCsm;
 						dMin = chdMin;
 						memcpy(dir, chDir, sizeof(double)* 3);
@@ -742,6 +744,7 @@ int main(int argc, char *argv[]){
 
 	if (printLocal) {	
 		localCSM = (double *)malloc(sizeof(double) * m->_size);
+		if (type == CH) opOrder = chMinOrder;
 		computeLocalCSM(m,localCSM, perm, dir,  type != CH ? type : chMinType);
 	}
 
@@ -777,7 +780,7 @@ int main(int argc, char *argv[]){
 		if (chMinType == CS) { 		
 			fprintf(outFile, "\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n");
 		} else { 
-			fprintf(outFile, "\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n", opOrder);
+			fprintf(outFile, "\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n", chMinOrder);
 		}
 	}	
 
