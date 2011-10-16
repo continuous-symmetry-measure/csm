@@ -801,11 +801,12 @@ icosahedron_(&n_resolution, &n_axes, x0, y0, z0);
 
 //  Calculation of Cnv CSM
 
-for (i = 0; i < n_axes; i++) {    
-    
-    dir[0] = x0[i]; dir[1] = y0[i]; dir[2] = z0[i];
+for (i = 0; i < n_axes; i++) {
 
-    sym = calc_cnv(m, rotAtoms, dir, nSize, perm_matrix);  
+    
+    dir[0] = x0[i]; dir[1] = y0[i]; dir[2] = z0[i]; 
+    sym = calc_cnv(m, rotAtoms, dir, nSize, perm_matrix);
+          
         
     if (sym < s) {
         s = sym;
@@ -2239,6 +2240,7 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 
 	for (i = 0; i < m->_size; i++) {
 		fprintf(out, "%d ", i + 1);
+
 		for ( j = 0; j < m->_valency[i]; j++ ) {
 			fprintf(out, "%d ", m->_adjacent[i][j] + 1);
 		}
@@ -2459,7 +2461,7 @@ double calc_cnv(Molecule* m, double **rotAtoms, double *dir, int nSize,
 
 	int i, ii, j, k, l;
 	
-	double angle, B1, B2, det, en_value_min, sum, sym;
+	double angle, B1, B2, det, en_value_min, sum, sym, cn_sum;
 
 	double rotaionMatrix[3][3];
 	
@@ -2516,6 +2518,39 @@ double calc_cnv(Molecule* m, double **rotAtoms, double *dir, int nSize,
 	    }
 			
 	}
+		
+	
+	/*     Calculation of Cn transformation      */
+	
+
+	cn_sum = 0.0;
+	for (i=0; i < nSize; i++) {
+	
+	    angle=i*2.0*PI/nSize;
+	    
+
+	    for (j = 0; j < 3; j++)
+	        for (k = 0; k < 3; k++)
+		    rotaionMatrix[j][k] = cos(angle)*EMatrix[j][k]+ 
+				      (1.0-cos(angle))*dir[j]*dir[k]+ 
+				      sin(angle)*tmpMatrix[j][k];		
+				      
+	    for (j = 0; j < m->_size; j++)
+	        for (k = 0; k < 3; k++)
+	            rotAtoms[j][k] = 0.0;	
+	
+	    for (j = 0; j < m->_size; j++)
+	        for (k = 0; k < 3; k++)
+		    for (l = 0; l < 3; l++)
+		        rotAtoms[j][k] += rotaionMatrix[k][l] * m->_pos[j][l];
+			
+	     for (j=0; j < m->_size; j++) {		
+	     	 ii = perm_matrix[i][j];
+	         for (k = 0; k < 3; k++)
+		       cn_sum += m->_pos[j][k]*rotAtoms[ii][k];
+		       
+	     }				
+        }	
 	
 	
 		
@@ -2566,13 +2601,14 @@ double calc_cnv(Molecule* m, double **rotAtoms, double *dir, int nSize,
 	    for (j = 0; j < m->_size; j++)	    
 	        for (k = 0; k < 3; k++)  {
 		   ii   = perm_matrix[nSize+i][j]; 
-	           sum += m->_pos[j][k]*m->_pos[ii][k];		   
-		   
+	           sum += m->_pos[j][k]*m->_pos[ii][k];
+		   		   	   
 	        }
-		
+				
 												
-        sym = 1.0+(en_value_min-sum)/(m->_size*nSize);
+/*        sym = 1.0+(en_value_min-sum)/(m->_size*nSize);*/
 
+        sym = 1.0+(en_value_min-sum-cn_sum)/(2.0*m->_size*nSize);
 
 	free_dmatrix(copyMat, 1, 3, 1, 3);
 	free_dvector(diag, 1, 3);
@@ -2592,7 +2628,7 @@ double calc_dn(Molecule* m, double **rotAtoms, double *dir, int nSize,
 
 	int i, ii, j, k, l;
 	
-	double angle, B1, B2, det, en_value_min, en_value_max, sum, sym;
+	double angle, B1, B2, det, en_value_min, en_value_max, sum, cn_sum, sym;
 
 	double rotaionMatrix[3][3];
 	
@@ -2650,6 +2686,40 @@ double calc_dn(Molecule* m, double **rotAtoms, double *dir, int nSize,
 			
 	}
 	
+	
+	
+	/*     Calculation of Cn transformation      */
+	
+
+	cn_sum = 0.0;
+	for (i=0; i < nSize; i++) {
+	
+	    angle=i*2.0*PI/nSize;
+	    
+
+	    for (j = 0; j < 3; j++)
+	        for (k = 0; k < 3; k++)
+		    rotaionMatrix[j][k] = cos(angle)*EMatrix[j][k]+ 
+				      (1.0-cos(angle))*dir[j]*dir[k]+ 
+				      sin(angle)*tmpMatrix[j][k];		
+				      
+	    for (j = 0; j < m->_size; j++)
+	        for (k = 0; k < 3; k++)
+	            rotAtoms[j][k] = 0.0;	
+	
+	    for (j = 0; j < m->_size; j++)
+	        for (k = 0; k < 3; k++)
+		    for (l = 0; l < 3; l++)
+		        rotAtoms[j][k] += rotaionMatrix[k][l] * m->_pos[j][l];
+			
+	     for (j=0; j < m->_size; j++) {		
+	     	 ii = perm_matrix[i][j];
+	         for (k = 0; k < 3; k++)
+		       cn_sum += m->_pos[j][k]*rotAtoms[ii][k];
+		       
+	     }				
+        }	
+		
 	
 		
 	/* Calculation of eigenvalues and eigenvectors of A_matrix  */	
@@ -2705,8 +2775,10 @@ double calc_dn(Molecule* m, double **rotAtoms, double *dir, int nSize,
 	        }
 		
 												
-/*        sym = 1.0+(en_value_min-sum)/(m->_size*nSize);*/
-	sym = 1.0+(sum-en_value_max)/(m->_size*nSize);
+/*        sym = 1.0+(en_value_min-sum)/(m->_size*nSize);
+	sym = 1.0+(sum-en_value_max)/(m->_size*nSize); */
+	
+        sym = 1.0+(sum-cn_sum-en_value_max)/(2.0*m->_size*nSize);	
 
 
 	free_dmatrix(copyMat, 1, 3, 1, 3);
