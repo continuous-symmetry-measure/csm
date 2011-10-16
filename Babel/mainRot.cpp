@@ -132,9 +132,11 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void runSinglePerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type);
 void findBestPerm(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
+void findBestPermUsingDir(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationType type);
 void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type);
 void readPerm(FILE* permfile, int* perm, int size);
+void readDir(FILE* dirFile, double* dir);
 void lineFit(double **points, int nPoints, double **dirs, int* outlies);
 void planeFit(double **points, int nPoints, double **dirs, int *outliers);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
@@ -150,6 +152,7 @@ int writeOpenu = FALSE;
 OperationType type;
 int opOrder;
 int useperm    = FALSE;
+int useDir	   = FALSE;
 int findPerm = FALSE; 
 int useMass    = FALSE;
 int limitRun = TRUE;
@@ -169,6 +172,7 @@ bool keepCenter = FALSE;
 FILE* inFile = NULL;
 FILE* outFile = NULL;
 FILE* permfile = NULL;
+FILE* dirfile = NULL;
 char *inFileName = NULL;
 char *outFileName = NULL;
 
@@ -187,6 +191,7 @@ void usage(char *op) {
 	printf("-writeOpenu - Write output in open university format\n");
 	printf("-nolimit - Allows running program while ignoring computational complexity\n");
 	printf("-useperm permfile  -  only compute for a single permutation\n");
+	printf("-usedir dirfile  -  use a predefined axis as a starting point\n");
 	printf("	This options ignores the -ignoreSym/-ignoreHy/-removeHy flags\n");
 	printf("-findperm	   - Attempt to search for a permutation\n");
 	printf("-detectOutliers - Use statistical methods to try and improve -findperm's results\n");
@@ -470,7 +475,7 @@ void parseInput(int argc, char *argv[]){
 	int i;
 	int nextIsPermFile = FALSE;
 	int nextIsMaxSn = FALSE;
-
+	int nextIsDirFile = FALSE;
 	for ( i=4;  i< argc ;  i++ ){
 		if (nextIsPermFile) {
 			char* permfileName = argv[i];
@@ -483,6 +488,17 @@ void parseInput(int argc, char *argv[]){
 				exit(1);
 			}
 			nextIsPermFile = FALSE;
+		} else if (nextIsDirFile) {
+			char* dirfilename = argv[i];
+			if ((dirfile = fopen(dirfilename, "rt")) == NULL){
+				if (writeOpenu) {
+					printf("ERR* Failed to open dir file %s for reading *ERR\n", dirfilename);
+				} else {
+					printf("Failed to open dir file %s for reading\n", dirfilename);
+				}
+				exit(1);
+			}
+			nextIsDirFile = FALSE;
 		} else if (nextIsMaxSn) { 
 			sn_max = atoi(argv[i]);
 			nextIsMaxSn = FALSE;
@@ -510,6 +526,9 @@ void parseInput(int argc, char *argv[]){
 		} else if (strcmp(argv[i], "-useperm") == 0) {
 			useperm = TRUE;
 			nextIsPermFile = TRUE;
+		} else if (strcmp(argv[i], "-usedir") == 0) {
+			useDir = TRUE;
+			nextIsDirFile = TRUE;
 		} else if (strcmp(argv[i], "-babelbond") == 0) {
 			babelBond = TRUE;
 		} else if (strcmp(argv[i], "-useMass") == 0) { 
@@ -561,8 +580,8 @@ int main(int argc, char *argv[]){
 	// init options
 	parseInput(argc,argv);
 
-	if (findPerm && useperm) { 
-		printf("-findperm and -useperm can't be used together...");
+	if ((findPerm && useperm) || (findPerm && useDir) || (useDir && useperm)) { 
+		printf("-findperm, -useperm and -usedir are mutually exclusive...\n");
 		exit(1);
 	} 
 
@@ -643,7 +662,7 @@ int main(int argc, char *argv[]){
 	}
 
 	if (!findPerm) {
-		if (!useperm) {
+		if (!useperm && !useDir) {
 			double time = 1.0*totalNumPermutations(m) / 3600 / APPROX_RUN_PER_SEC;
 			if (time != time) {
 				// time is NaN
@@ -654,7 +673,7 @@ int main(int argc, char *argv[]){
 		} else {
 			printf("Going to enumerate over %5.2f permutations\n", 1.0);
 			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0 / 3600 / APPROX_RUN_PER_SEC );
-		}
+		} 
 		if (timeOnly) { return 0; };
 	}
 
@@ -674,6 +693,8 @@ int main(int argc, char *argv[]){
 		}
 		exit(1);
 	}
+ 
+	if (useDir) readDir(dirfile,dir);
 
 	if (useperm) {	
 		if (type == CH) {
@@ -685,7 +706,9 @@ int main(int argc, char *argv[]){
 	} else {
 		if (type != CH) { 
 			// perform operation
-			if (findPerm) { 
+			if (useDir) {
+				findBestPermUsingDir(m, outAtoms, perm, &csm, dir, &dMin, type);				
+			} else if (findPerm) { 
 				findBestPerm(m, outAtoms, perm, &csm, dir, &dMin, type);				
 			} else {
 				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, type);			
@@ -703,21 +726,25 @@ int main(int argc, char *argv[]){
        
 			chPerm = (int *)malloc(sizeof(int) * m->_size);
 			chMinType = CS;						
-			opOrder = 2;
-			if (findPerm) { 
+			opOrder = 2;		
+			if (useDir) {
+				findBestPermUsingDir(m, outAtoms, perm, &csm, dir, &dMin, CS);				
+			} else if (findPerm) { 
 				findBestPerm(m, outAtoms, perm, &csm, dir, &dMin, CS);				
 			} else { 
 				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, CS);			
 			}
 
 			if (csm > MINDOUBLE) {							
-				for (i = 2; i <= sn_max; i+=2) {
+				for (i = 2; i <= sn_max; i+=2) {				
 					opOrder = i;
-					if (findPerm) { 
+					if (useDir) {
+						findBestPermUsingDir(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
+					} else if (findPerm) { 
 						findBestPerm(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
 					} else {
 						csmOperation(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
-					}
+					}				
 					if (chCsm < csm) {
 						int j;
 						chMinType = SN;
@@ -806,7 +833,14 @@ int main(int argc, char *argv[]){
 	if (permfile != NULL)
 		fclose(permfile);
 
+	if (dirfile != NULL) 
+		fclose(dirfile);
+
 	return 0;
+}
+
+void readDir(FILE* dirfile, double* dir) { 
+	fscanf(dirfile, "%lf%lf%lf", &dir[0], &dir[1], &dir[2]);
 }
 
 /**
@@ -1311,6 +1345,11 @@ void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, doubl
 	// which is DMIN?
 	*dMin = (1.0 - (*csm / 100 * opOrder / (opOrder - 1)));
 	createSymmetricStructure(m, outAtoms, perm, dir, type, *dMin);
+}
+
+void findBestPermUsingDir(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type) {
+	estimatePerm(m, perm, dir, type);
+	runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);	
 }
 
 /**
