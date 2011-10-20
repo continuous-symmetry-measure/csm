@@ -823,8 +823,8 @@ printf("\nRotation axes  %15.10lf %15.10lf %15.10lf\n",dir_out[0],dir_out[1],dir
     
   
 
-printf("\nCNV: %6.4lf\n",abs(100.*s));    
-fprintf(outFile,"\nCNV: %6.4lf\n",abs(100.*s));    
+printf("\nC%dV: %6.4lf\n",abs(100.*s),nSize);    
+fprintf(outFile,"\nC%dV: %6.4lf\n",abs(100.*s),nSize);    
     
     
 free(x0);
@@ -896,8 +896,8 @@ printf("\nDn CSM is equal to    %20.10lf\n",s);
 printf("\nRotation axes  %15.10lf %15.10lf %15.10lf\n",dir_out[0],dir_out[1],dir_out[2]);	    
 fprintf(outFile, "\nRotation axes  %15.10lf %15.10lf %15.10lf\n",dir_out[0],dir_out[1],dir_out[2]);	    
 
-printf("\nDn =  %15.10lf\n",abs(100.*s));    
-fprintf(outFile, "\nDn =  %15.10lf\n",abs(100.*s));    
+printf("\nD%d: %15.10lf\n",abs(100.*s),nSize);    
+fprintf(outFile, "\nD%d:  %15.10lf\n",abs(100.*s),nSize);    
     
 free(x0);
 free(y0);
