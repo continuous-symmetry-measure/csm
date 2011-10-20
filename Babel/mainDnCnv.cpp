@@ -823,8 +823,8 @@ printf("\nRotation axes  %15.10lf %15.10lf %15.10lf\n",dir_out[0],dir_out[1],dir
     
   
 
-printf("\nC%dV: %6.4lf\n",abs(100.*s),nSize);    
-fprintf(outFile,"\nC%dV: %6.4lf\n",abs(100.*s),nSize);    
+printf("\nC%dV: %6.4lf\n",nSize, abs(100.*s));    
+fprintf(outFile,"\nC%dV: %6.4lf\n",nSize,abs(100.*s));    
     
     
 free(x0);
