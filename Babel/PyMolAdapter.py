@@ -13,52 +13,54 @@ import pickle
 
 def csmFunc( sel, csm_type): 
   """
-  Compute and print the csm of the selected protein
+  Compute and print the csm of the selected molecule
   """
 
   print "Running CSM"
   
-  # Read the molecular coordinates
+  # Read the molecule structure from pymol (sel identifies the molecule)
   mol = cmd.identify(sel, 1)[0][0]
 
-  #store stuff
+  # store stuff in the stored variable
   stored.csm_sel = sel
   stored.csm_type = csm_type
-  stored.elems = []
-  stored.mol = []
-  stored.chain = []
-  stored.bonds = []
-  
+  stored.elems = []         # The element types for each atom
+  stored.mol = []           # The coordinates
+  stored.bonds = []         # The bond structure
+
+  # read the coordinates, the elements and the ID from the molecule into the arrays 
   cmd.iterate_state(1, mol, "stored.mol.append((x,y,z))")  
   cmd.iterate(mol, "stored.elems.append(elem)")
-  cmd.iterate(mol, "stored.chain.append(ID)")
 
   # prepare bond structure
   for i in xrange(len(stored.elems)):
     stored.bonds.append([])
 
+  # go over all bonds and add to stored.bonds list
   atomModel = cmd.get_model(sel)
   for b in atomModel.bond:
     stored.bonds[b.index[0]].append(b.index[1])
     stored.bonds[b.index[1]].append(b.index[0])
 
+  # add the additional flags to the computation
   options = []
   if (len(stored.elems) > 20):
     options.append("-findperm")
 
-  #  f = open("ttt.ppp","w")
-#  params = {}
-#  params["mol"] = stored.mol
-#  params["elems"] = stored.elems
-#  params["csm_type"] = csm_type
-#  params["options"] = options
-#  params["bonds"] = stored.bonds
-#  pickle.dump(params,f)
-#  f.close()
   # call the c function to compute csm and return data
   # first version includes no connectivity data
+  # input: mol - array of (x,y,z) tupples for each atom
+  #        elems - array of the element for each atom
+  #        bonds - array of bonds - for each atom has a list of its neighbours
+  #        csm_type - the type of csm operation
+  #        options - additional flags
+  # output: csmVal - The CSM result
+  #         atomicCSM - The csm for each atom
+  #         symElement - The axis of the symmetry operation
+  #         outAtomPos - The positions representing the closest symmetric structure
   [csmVal, atomicCSM,symElement, outAtomPos] = computeCsm(stored.mol, stored.elems, stored.bonds, csm_type, options)
-  
+
+  # Create the new normalized-to-unity closest symmetric structure
   stored.csm_center = [0.0,0.0,0.0]
   stored.csm_center[0] = float(sum([x[0] for x in stored.mol])) / len(outAtomPos)
   stored.csm_center[1] = float(sum([x[1] for x in stored.mol])) / len(outAtomPos)
@@ -73,21 +75,24 @@ def csmFunc( sel, csm_type):
               outAtomPos[i][2] + stored.csm_center[2])
     outAtomPos[i] = newTup
 
-  source_obj = sel
-  new_object = source_obj+"_"+csm_type+"_sym"
-  cmd.copy(new_object, source_obj)
-  
+  # Store the results of the last computation for further use
   stored.atomicCSM = atomicCSM
   stored.outAtomPos = outAtomPos
   stored.symElement = symElement
 
-  cmd.alter_state(1, new_object, "(x,y,z)=stored.outAtomPos.pop(0)")  
+  # Create a new structure in PyMol for the closest symmetryc structure
+  source_obj = sel
+  new_object = source_obj+"_"+csm_type+"_sym"
+  cmd.copy(new_object, source_obj)  
+  cmd.alter_state(1, new_object, "(x,y,z)=stored.outAtomPos.pop(0)")
+  # since we modified the outAtomsPos - set it again
   stored.outAtomPos = outAtomPos
   
   
   print csmVal
 
 def csm_map():
+  """ Draw the symmetry map """
   normalizedCsm = [(x/max(stored.atomicCSM)) for x in stored.atomicCSM]
   for i in xrange(len(normalizedCsm)):
     color_name = "color_" + str(i)
@@ -97,6 +102,7 @@ def csm_map():
     cmd.color(color_name, "("+ stored.csm_sel + " and ID " + str(i + 1) + ")")    
 
 def csm_element(r=1.0, g=0.01, b=0, width=5.0):
+  """ Draw the symmetry axis from the center of mass """
   i = stored.symElement[0]
   j = stored.symElement[1]
   k = stored.symElement[2]
@@ -115,7 +121,8 @@ def csm_element(r=1.0, g=0.01, b=0, width=5.0):
     ]
   cmd.load_cgo(obj,stored.csm_sel + "_" + stored.csm_type + '_axis')
   
-  
+
+# Expose the new commands to PyMol
 cmd.extend("csm", csmFunc)
 cmd.extend("csm_map", csm_map)
 cmd.extend("csm_element", csm_element)

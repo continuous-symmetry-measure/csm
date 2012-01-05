@@ -10,6 +10,7 @@ extern "C" {
 #include <stdlib.h>
 #include <math.h>
 #include <string.h> //for strcmp,strlen
+#include <cmath>
 
 #include "Molecule.h"
 #include "groupPermuter.h"
@@ -20,6 +21,7 @@ extern "C" {
 #include <openbabel/mol.h>
 #include "babelAdapter.h"
 #include <vector>
+#include "utils.h"
 
 #include "f2c.h"                     /*   Mark  */
 
@@ -150,6 +152,10 @@ double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, doubl
 			double* dMin, OperationType type, double* dir_cn, int skipIdentity);
 void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* csm, 
 						   double* dir, double* dMin, OperationType type, double *dir_cn, int skipIdentity);
+double findBestPermForAxis(Molecule* m, double* dir, double** outAtoms, int *optimalPerm,  OperationType type);
+double findPermForAxis(Molecule* m, double* dir, double** outAtoms, int *optimalPerm,  OperationType type, int skipIdentity);
+void runSinglePermInKnownPlane(Molecule* m, int* perm, double* csm, double* dir, double *orthogonal_dir, OperationType type);
+double computeSimpleCsm(Molecule *m, double *dir, int *perm, OperationType type);
 
 /*------    Mark -------------------*/
 int normalizeMolecule2(Molecule *m);
@@ -545,12 +551,14 @@ int main(int argc, char *argv[]){
 	
 	int **perm_matrix = NULL;
 	int i,j,nSize;
-	double csm,csm_cn,csm_sec, dMin;
+	double csm,csm_cn,csm_sec, csm_third, dMin;
 	double **outAtoms;                 // output atom coordinates
 	double dir_cn[3] = {0.0, 0.0, 0.0};   // directional cosines
 	double dir_sec[3] = {0.0, 0.0, 0.0};   // directional cosines
+	double dir_third[3] = {0.0,0.0,0.0};
 	int *perm_cn = NULL;	
 	int *perm_sec = NULL;
+	int *perm_third = NULL;
 	double *localCSM = NULL;		 
 	int skipIdentity = 0;
 
@@ -654,7 +662,7 @@ int main(int argc, char *argv[]){
 
 	// perform operation
 	perm_cn = (int *)malloc(sizeof(int) * m->_size);
-	perm_sec = (int *)malloc(sizeof(int) * m->_size);
+	perm_sec = (int *)malloc(sizeof(int) * m->_size);	
 	nSize = opOrder;	
 	skipIdentity = (secondOpType == CS) && (opOrder > 2);
 	
@@ -665,12 +673,23 @@ int main(int argc, char *argv[]){
 	} else {
 		csmOperation(m, outAtoms, perm_cn, &csm, dir_cn, &dMin, CN);			
 	}
-	csm_cn = csm;
+	csm_cn = csm;	
 	opOrder = 2;
 	if (findPerm) {
 	    findBestSecondaryPerm(m, outAtoms, perm_sec, &csm_sec, dir_sec, &dMin, secondOpType, dir_cn,skipIdentity);
 	} else {
 		csm_sec = findSecondaryPerm(m, outAtoms, perm_sec, dir_sec, &dMin, secondOpType, dir_cn, skipIdentity);
+	}	
+
+	if (nSize % 2 == 0) {
+		perm_third = (int *)malloc(sizeof(int) * m->_size);
+		RotationMatrix rot = RotationMatrix(dir_cn,PI / nSize);
+		rot.transform(dir_sec, dir_third);
+		if (findPerm) {
+			csm_third = findBestPermForAxis(m, dir_third, outAtoms, perm_third, secondOpType);
+		} else {
+			csm_third = findPermForAxis(m, dir_third, outAtoms, perm_third, secondOpType, skipIdentity);
+		}	
 	}
 
 	// Print result
@@ -704,6 +723,26 @@ int main(int argc, char *argv[]){
 	printf("The cosine of the angle is: %4.2f\n", dir_sec[0] * dir_cn[0] + dir_sec[1] * dir_cn[1] +dir_sec[2] * dir_cn[2]);
 	fprintf(outFile,"The cosine of the angle is: %4.2f\n", dir_sec[0] * dir_cn[0] + dir_sec[1] * dir_cn[1] +dir_sec[2] * dir_cn[2]);
 
+	if (nSize %2 == 0) {
+#ifdef CNV
+		fprintf(outFile,"The permutation for Second CS is:");
+#else // DN
+		fprintf(outFile,"The permutation for Second C2 is:");
+#endif
+		for (i = 0; i < m->_size; i++) {
+			fprintf(outFile,"%d ", perm_third[i] + 1);
+		}
+		fprintf(outFile,"\n");
+		fprintf(outFile,"And the axis is: (%4.2f, %4.2f, %4.2f)\n", dir_third[0],dir_third[1],dir_third[2]);		
+
+#ifdef CNV
+	printf("The second CS axis is: (%4.2f, %4.2f, %4.2f)\n", dir_third[0],dir_third[1],dir_third[2]);		
+#else // DN
+	printf("The second C2 axis is: (%4.2f, %4.2f, %4.2f)\n", dir_third[0],dir_third[1],dir_third[2]);		
+#endif
+
+	}
+
 	printf("CSM for cn: %4.2f\n", csm_cn);
 	fprintf(outFile,"CSM for cn: %4.2f\n", csm_cn);
 
@@ -715,21 +754,55 @@ int main(int argc, char *argv[]){
 	fprintf(outFile,"CSM for c2: %4.2f\n", csm_sec);
 #endif
 
+	if (nSize %2 == 0) {
+#ifdef CNV
+		printf("CSM for second cs: %4.2f\n", csm_third);
+		fprintf(outFile,"CSM for sedond cs: %4.2f\n", csm_third);
+#else // DN
+		printf("CSM for second c2: %4.2f\n", csm_third);
+		fprintf(outFile,"CSM for second c2: %4.2f\n", csm_third);
+#endif
+	}
+
 	// Create the permutation matrix
 	perm_matrix = (int **)malloc(sizeof(int *) * nSize * 2);	
 	for (i = 0; i < nSize * 2; i++) {
 		perm_matrix[i] = (int *)malloc(sizeof(int) * m->_size);
 	}
-	
-	for (i = 0; i < m->_size; i++) {
-		perm_matrix[0][i] = i;
-		perm_matrix[nSize][i] = perm_sec[i];
-	}
 
-	for (i = 1; i < nSize; i++) {
-		for (j = 0; j < m->_size; j++) { 	
-			perm_matrix[i][j] = perm_matrix[i-1][perm_cn[j]];
-			perm_matrix[nSize + i][j] = perm_cn[perm_matrix[nSize + i - 1][j]];
+	if (nSize %2 != 0) {
+		for (i = 0; i < m->_size; i++) {
+			perm_matrix[0][i] = i;
+			perm_matrix[nSize][i] = perm_sec[i];
+		}
+
+		for (i = 1; i < nSize; i++) {	
+			for (j = 0; j < m->_size; j++) { 	
+				perm_matrix[i][j] = perm_matrix[i-1][perm_cn[j]];
+				perm_matrix[nSize + i][j] = perm_cn[perm_matrix[nSize + i - 1][j]];
+			}
+		}
+	} else {
+		for (i = 0; i < nSize; i++) { 
+			for (j = 0; j < m->_size; j++) { 							
+				if (i == 0) { 
+					perm_matrix[i][j] = j;
+				} else {
+					perm_matrix[i][j] = perm_matrix[i-1][perm_cn[j]];
+				}
+			}
+		}
+
+		for (i = 0; i < nSize; i++) { 
+			for (j = 0; j < m->_size; j++) { 							
+				if (i % 2 == 0) { 
+					perm_matrix[nSize + i][j] = perm_matrix[(i/2)*2][perm_third[j]];
+					
+				} else {
+					perm_matrix[nSize + i][j] = perm_matrix[(i/2)*2][perm_sec[j]];
+				
+				}
+			}	
 		}
 	}
 	
@@ -927,6 +1000,10 @@ free(z0);
 	freeMolecule(m);
 	free(perm_cn);
 	free(perm_sec);
+
+	if (perm_third != NULL) {
+		free(perm_third);
+	}
 
 	if (printLocal) free(localCSM);
 
@@ -1451,6 +1528,127 @@ double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, doubl
 	int * groupSizes;
 	groupPermuter* gp;
 	int addGroupsOfTwo;
+	double norm,curCsm = 0;	
+
+	// These are the 
+	int *realPerm = (int *)malloc(sizeof(int) * m->_size);
+
+	// allocate memory for index arrays arrays
+	idxToPos = (int*)malloc(m->_size * sizeof(int));
+	posToIdx = (int*)malloc(m->_size * sizeof(int));
+
+	// and group sizes arrays
+	groupSizes = (int*)malloc(m->_groupNum * sizeof(int*));	
+
+	for(i=0; i<m->_size; i++)    	
+		// init index arrays
+		initIndexArrays(m,posToIdx,idxToPos);
+
+	// init csm, curCsm
+	bestCsm = curCsm = MAXDOUBLE;
+
+	// get group sizes
+	for(i=1; i<= m->_groupNum ; i++){
+		groupSizes[i-1] = getGroupSize(m,i);
+	}
+
+	// create permuter
+	if (type == SN && opOrder > 2) {
+		addGroupsOfTwo = 1;
+	} else {
+		addGroupsOfTwo = 0;
+	}
+	gp = createGroupPermuter(m->_groupNum,groupSizes,m->_size,opOrder, addGroupsOfTwo);
+	if (!gp){
+		if (writeOpenu) {
+			printf("ERR* Failed to create groupPermuter *ERR\n");
+		} else {
+			printf("Failed to create groupPermuter \n");	
+		}	
+		exit(1);
+	};
+		
+	/* Since we are looking for orthogonal - skip identity perm */
+	if (skipIdentity) nextGroupPermutation(gp);
+
+	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
+	while ( nextGroupPermutation(gp) ) {
+
+		for (i = 0; i < m->_size; i++) {
+			realPerm[i] = idxToPos[gp->_index[posToIdx[i]]];			
+		}
+		runSinglePermInKnownPlane(m, realPerm, &curCsm, curDir, dir_cn,type);
+		if (curCsm < bestCsm) { 
+			bestCsm = curCsm;
+			dir[0] = curDir[0]; dir[1] = curDir[1]; dir[2] = curDir[2];
+			
+			for (i = 0; i < m->_size; i++) {
+				optimalPerm[i] = realPerm[i];
+			}
+
+		}
+
+		/*
+		curCsm = calcRefPlane(m, realPerm, curDir, type);		
+		norm = curDir[0] * curDir[0] + curDir[1] * curDir[1] + curDir[2] * curDir[2];
+		if (norm < 0.5) continue;		
+
+		curOrth = abs(curDir[0] * dir_cn[0] + curDir[1] * dir_cn[1] + curDir[2] * dir_cn[2]);
+		// Make all almost-orthogonal values completely orthogonal	
+		// make only 100 different values...
+		curOrth = floor(curOrth * 100) * 1.0 / 100;		
+
+		if(curOrth < bestOrth ||(curOrth == bestOrth && curCsm < bestCsm)) {
+			bestOrth = curOrth;
+			bestCsm = curCsm;
+			dir[0] = curDir[0]; dir[1] = curDir[1]; dir[2] = curDir[2];
+			
+			for (i = 0; i < m->_size; i++) {
+				optimalPerm[i] = realPerm[i];
+			}
+		}
+		*/
+	}
+
+	// failed to find value for any permutation
+	
+	if (bestCsm == MAXDOUBLE){
+		if (writeOpenu) {
+			printf("ERR* Failed to calculate a csm value for %s *ERR\n",opName);
+		} else {
+			printf("Failed to calculate a csm value for %s \n",opName);
+		}
+		exit(1);
+	}
+
+	// which is DMIN?
+	*dMin = (1.0 - (bestCsm / 100 * opOrder / (opOrder - 1)));
+	createSymmetricStructure(m, outAtoms, optimalPerm, dir, type, *dMin);		
+
+	// housekeeping
+	free(groupSizes);
+	free(idxToPos);
+	free(posToIdx);
+	freeGroupPermuter(gp);
+	free(realPerm);
+
+	return bestCsm;
+}
+
+/*
+* Calculates minimal csm, dMin and directional cosines by applying the chiralityFunction
+* breaks down Molecule into groups of similar atoms and calculates the above only for
+* permutations that keep the similar atoms within the group ( groupPermuter class )
+* once it finds the optimal permutation , calls the chiralityFunction on the optimal permutation
+*/
+double findPermForAxis(Molecule* m, double* dir, double** outAtoms, int *optimalPerm,  OperationType type, int skipIdentity) {
+	int i;
+	double bestOrth = MAXDOUBLE,bestCsm;
+	double curDir[3];
+	int *idxToPos, *posToIdx;
+	int * groupSizes;
+	groupPermuter* gp;
+	int addGroupsOfTwo;
 	double norm,curCsm = 0;
 
 	// These are the 
@@ -1499,25 +1697,14 @@ double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, doubl
 
 		for (i = 0; i < m->_size; i++) {
 			realPerm[i] = idxToPos[gp->_index[posToIdx[i]]];			
-		}			
-		curCsm = calcRefPlane(m, realPerm, curDir, type);		
-		norm = curDir[0] * curDir[0] + curDir[1] * curDir[1] + curDir[2] * curDir[2];
-		if (norm < 0.5) continue;
-
-		curOrth = abs(curDir[0] * dir_cn[0] + curDir[1] * dir_cn[1] + curDir[2] * dir_cn[2]);
-		// Make all almost-orthogonal values completely orthogonal	
-		// make only 100 different values...
-		curOrth = floor(curOrth * 100) * 1.0 / 100;
-
-		if(curOrth < bestOrth ||(curOrth == bestOrth && curCsm < bestCsm)) {
-			bestOrth = curOrth;
-			bestCsm = curCsm;
-			dir[0] = curDir[0]; dir[1] = curDir[1]; dir[2] = curDir[2];
-			
+		}
+		curCsm = computeSimpleCsm(m, dir, realPerm, type);
+		if (curCsm < bestCsm) { 
+			bestCsm = curCsm;			
 			for (i = 0; i < m->_size; i++) {
 				optimalPerm[i] = realPerm[i];
 			}
-		}			
+		}
 	}
 
 	// failed to find value for any permutation
@@ -1532,8 +1719,8 @@ double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, doubl
 	}
 
 	// which is DMIN?
-	*dMin = (1.0 - (bestCsm / 100 * opOrder / (opOrder - 1)));
-	createSymmetricStructure(m, outAtoms, optimalPerm, dir, type, *dMin);		
+	//*dMin = (1.0 - (bestCsm / 100 * opOrder / (opOrder - 1)));
+	//createSymmetricStructure(m, outAtoms, optimalPerm, dir, type, *dMin);		
 
 	// housekeeping
 	free(groupSizes);
@@ -1545,6 +1732,117 @@ double findSecondaryPerm(Molecule* m, double** outAtoms, int *optimalPerm, doubl
 	return bestCsm;
 }
 
+/* 
+ * Compute the CSM of either a C2 or a CS axis which is found in a known plane, described by the direction orthogonal_dir
+ */ 
+void runSinglePermInKnownPlane(Molecule* m, int* perm, double* csm, double* dir, double *orthogonal_dir,OperationType type) {
+	// First - rotate so that the orthogonal_dir is the z direction	
+	/* Find a single orthgonal dir */
+	double newDir[3];	
+	if (fabs(orthogonal_dir[0]) < MINDOOUBLE) {
+		newDir[0] = 1.0; newDir[1] = 0.0; newDir[2] = 0.0;
+	} else if (fabs(orthogonal_dir[1]) < MINDOUBLE) {
+		newDir[0] = -orthogonal_dir[2]; newDir[1] = 0.0; newDir[2] = orthogonal_dir[0];				
+	} else {
+		newDir[0] = -orthogonal_dir[1]; newDir[1] = orthogonal_dir[0]; newDir[2] = 0.0;
+	}
+	double norm = sqrt(newDir[0] * newDir[0] + newDir[1] * newDir[1] + newDir[2] * newDir[2]);
+	newDir[0] /= norm; newDir[1] /= norm; newDir[2] /= norm;
+
+	/* Solve for Theta, solved using mathematica */
+	double sum = 0.0;
+	double A=0.0,B=0.0;
+	for (int i = 0; i < m-> _size; i++) { 
+		if (type == CN) { 						
+			// Type is C2 					
+			A += 0. + newDir[0]*newDir[0]*(1.*m->_pos[i][0]*m->_pos[perm[i]][0] - 1.*orthogonal_dir[0]*orthogonal_dir[1]*m->_pos[perm[i]][0]*m->_pos[i][1] - 1.*orthogonal_dir[0]*orthogonal_dir[1]*m->_pos[i][0]*m->_pos[perm[i]][1] + 1.*orthogonal_dir[0]*orthogonal_dir[0]*orthogonal_dir[1]*orthogonal_dir[1]*m->_pos[i][1]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[2]*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] + 1.*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[perm[i]][1]*m->_pos[i][2] + orthogonal_dir[1]*(1.*orthogonal_dir[2]*m->_pos[i][1] - 1.*orthogonal_dir[1]*m->_pos[i][2])*m->_pos[perm[i]][2]) + 
+  newDir[1]*newDir[1]*(-1.*orthogonal_dir[2]*orthogonal_dir[2]*m->_pos[i][0]*m->_pos[perm[i]][0] + (1. - 2.*orthogonal_dir[1]*orthogonal_dir[1] + 1.*pow(orthogonal_dir[1],4))*m->_pos[i][1]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[0]*orthogonal_dir[0]*m->_pos[i][2]*m->_pos[perm[i]][2] + orthogonal_dir[0]*orthogonal_dir[2]*(1.*m->_pos[perm[i]][0]*m->_pos[i][2] + 1.*m->_pos[i][0]*m->_pos[perm[i]][2])) + 
+  newDir[1]*newDir[2]*(2.*pow(orthogonal_dir[1],3)*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] + orthogonal_dir[0]*orthogonal_dir[2]*(-1.*m->_pos[perm[i]][0]*m->_pos[i][1] - 1.*m->_pos[i][0]*m->_pos[perm[i]][1]) + 1.*m->_pos[perm[i]][1]*m->_pos[i][2] + 1.*m->_pos[i][1]*m->_pos[perm[i]][2] + orthogonal_dir[1]*(2.*orthogonal_dir[2]*m->_pos[i][0]*m->_pos[perm[i]][0] - 2.*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[0]*m->_pos[perm[i]][0]*m->_pos[i][2] - 1.*orthogonal_dir[0]*m->_pos[i][0]*m->_pos[perm[i]][2]) + orthogonal_dir[1]*orthogonal_dir[1]*(-1.*m->_pos[perm[i]][1]*m->_pos[i][2] - 1.*m->_pos[i][1]*m->_pos[perm[i]][2]) + 
+    orthogonal_dir[0]*orthogonal_dir[0]*(1.*m->_pos[perm[i]][1]*m->_pos[i][2] + 1.*m->_pos[i][1]*m->_pos[perm[i]][2])) + newDir[2]*newDir[2]*(-1.*orthogonal_dir[0]*orthogonal_dir[0]*m->_pos[i][1]*m->_pos[perm[i]][1] + orthogonal_dir[1]*orthogonal_dir[1]*(-1.*m->_pos[i][0]*m->_pos[perm[i]][0] + 1.*orthogonal_dir[2]*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1]) + 1.*m->_pos[i][2]*m->_pos[perm[i]][2] + orthogonal_dir[1]*(1.*orthogonal_dir[0]*m->_pos[perm[i]][0]*m->_pos[i][1] + 1.*orthogonal_dir[0]*m->_pos[i][0]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[2]*m->_pos[perm[i]][1]*m->_pos[i][2] - 1.*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][2])) + 
+  newDir[0]*(newDir[2]*(2.*orthogonal_dir[0]*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] + 1.*m->_pos[perm[i]][0]*m->_pos[i][2] + 1.*m->_pos[i][0]*m->_pos[perm[i]][2] + orthogonal_dir[1]*orthogonal_dir[1]*(2.*orthogonal_dir[0]*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] + 1.*m->_pos[perm[i]][0]*m->_pos[i][2] + 1.*m->_pos[i][0]*m->_pos[perm[i]][2]) + orthogonal_dir[1]*(-2.*orthogonal_dir[2]*m->_pos[perm[i]][0]*m->_pos[i][1] - 2.*orthogonal_dir[2]*m->_pos[i][0]*m->_pos[perm[i]][1] - 2.*orthogonal_dir[0]*m->_pos[perm[i]][1]*m->_pos[i][2] - 2.*orthogonal_dir[0]*m->_pos[i][1]*m->_pos[perm[i]][2])) + 
+    newDir[1]*(m->_pos[perm[i]][0]*((1. - 1.*orthogonal_dir[1]*orthogonal_dir[1] + 1.*orthogonal_dir[2]*orthogonal_dir[2])*m->_pos[i][1] - 1.*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[i][2]) + m->_pos[i][0]*((1. - 1.*orthogonal_dir[1]*orthogonal_dir[1] + 1.*orthogonal_dir[2]*orthogonal_dir[2])*m->_pos[perm[i]][1] - 1.*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[perm[i]][2]) + orthogonal_dir[0]*(-2.*orthogonal_dir[1]*m->_pos[i][1]*m->_pos[perm[i]][1] + 2.*pow(orthogonal_dir[1],3)*m->_pos[i][1]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[2]*m->_pos[perm[i]][1]*m->_pos[i][2] - 1.*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][2] + 2.*orthogonal_dir[1]*m->_pos[i][2]*m->_pos[perm[i]][2])));
+			B += 0. - 1.*m->_pos[perm[i]][1]*(newDir[0]*((-newDir[2])*orthogonal_dir[0] + newDir[0]*orthogonal_dir[2])*m->_pos[i][0] + ((-newDir[2])*orthogonal_dir[1] + newDir[1]*orthogonal_dir[2])*(newDir[0]*orthogonal_dir[0]*orthogonal_dir[1] + newDir[1]*(-1 + orthogonal_dir[1]*orthogonal_dir[1]) + newDir[2]*orthogonal_dir[1]*orthogonal_dir[2])*m->_pos[i][0] + 2*(newDir[2]*orthogonal_dir[0] - newDir[0]*orthogonal_dir[2])*(newDir[0]*orthogonal_dir[0]*orthogonal_dir[1] + newDir[1]*(-1 + orthogonal_dir[1]*orthogonal_dir[1]) + newDir[2]*orthogonal_dir[1]*orthogonal_dir[2])*m->_pos[i][1] + 
+    newDir[2]*((-newDir[2])*orthogonal_dir[0] + newDir[0]*orthogonal_dir[2])*m->_pos[i][2] + ((-newDir[1])*orthogonal_dir[0] + newDir[0]*orthogonal_dir[1])*(newDir[0]*orthogonal_dir[0]*orthogonal_dir[1] + newDir[1]*(-1 + orthogonal_dir[1]*orthogonal_dir[1]) + newDir[2]*orthogonal_dir[1]*orthogonal_dir[2])*m->_pos[i][2]) - 
+  1.*m->_pos[perm[i]][0]*(((-newDir[2])*orthogonal_dir[1] + newDir[1]*orthogonal_dir[2])*(newDir[1]*(-1 + orthogonal_dir[1]*orthogonal_dir[1])*m->_pos[i][1] + newDir[2]*(orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[i][1] - m->_pos[i][2])) + newDir[0]*newDir[0]*(orthogonal_dir[2]*m->_pos[i][1] - orthogonal_dir[1]*m->_pos[i][2]) + newDir[0]*(2*newDir[2]*orthogonal_dir[1]*m->_pos[i][0] - newDir[2]*orthogonal_dir[0]*(1 + orthogonal_dir[1]*orthogonal_dir[1])*m->_pos[i][1] + newDir[1]*(-2*orthogonal_dir[2]*m->_pos[i][0] + orthogonal_dir[0]*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[i][1] + orthogonal_dir[0]*m->_pos[i][2]))) - 
+  1.*((-newDir[1]*newDir[1])*orthogonal_dir[0]*(-1 + orthogonal_dir[1]*orthogonal_dir[1])*m->_pos[i][1] + newDir[2]*newDir[2]*(orthogonal_dir[1]*m->_pos[i][0] - orthogonal_dir[0]*m->_pos[i][1]) + newDir[0]*newDir[0]*orthogonal_dir[1]*(-m->_pos[i][0] + orthogonal_dir[0]*orthogonal_dir[1]*m->_pos[i][1]) - newDir[1]*newDir[2]*(orthogonal_dir[2]*m->_pos[i][0] + orthogonal_dir[0]*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[i][1] - 2*orthogonal_dir[0]*m->_pos[i][2]) + 
+    newDir[0]*(newDir[1]*orthogonal_dir[0]*m->_pos[i][0] + newDir[1]*orthogonal_dir[1]*(-1 - orthogonal_dir[0]*orthogonal_dir[0] + orthogonal_dir[1]*orthogonal_dir[1])*m->_pos[i][1] + newDir[2]*(1 + orthogonal_dir[1]*orthogonal_dir[1])*orthogonal_dir[2]*m->_pos[i][1] - 2*newDir[2]*orthogonal_dir[1]*m->_pos[i][2]))*m->_pos[perm[i]][2];
+			
+		} else { 
+			// Assume type is CS
+			A += 0. + newDir[0]*newDir[0]*(1.*m->_pos[i][0]*m->_pos[perm[i]][0] - 1.*orthogonal_dir[0]*orthogonal_dir[1]*m->_pos[perm[i]][0]*m->_pos[i][1] - 1.*orthogonal_dir[0]*orthogonal_dir[1]*m->_pos[i][0]*m->_pos[perm[i]][1] + 1.*orthogonal_dir[0]*orthogonal_dir[0]*orthogonal_dir[1]*orthogonal_dir[1]*m->_pos[i][1]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[2]*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] + 1.*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[perm[i]][1]*m->_pos[i][2] + orthogonal_dir[1]*(1.*orthogonal_dir[2]*m->_pos[i][1] - 1.*orthogonal_dir[1]*m->_pos[i][2])*m->_pos[perm[i]][2]) + 
+  newDir[1]*newDir[1]*(-1.*orthogonal_dir[2]*orthogonal_dir[2]*m->_pos[i][0]*m->_pos[perm[i]][0] + (1. - 2.*orthogonal_dir[1]*orthogonal_dir[1] + 1.*pow(orthogonal_dir[1],4))*m->_pos[i][1]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[0]*orthogonal_dir[0]*m->_pos[i][2]*m->_pos[perm[i]][2] + orthogonal_dir[0]*orthogonal_dir[2]*(1.*m->_pos[perm[i]][0]*m->_pos[i][2] + 1.*m->_pos[i][0]*m->_pos[perm[i]][2])) + 
+  newDir[1]*newDir[2]*(2.*pow(orthogonal_dir[1],3)*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] + orthogonal_dir[0]*orthogonal_dir[2]*(-1.*m->_pos[perm[i]][0]*m->_pos[i][1] - 1.*m->_pos[i][0]*m->_pos[perm[i]][1]) + 1.*m->_pos[perm[i]][1]*m->_pos[i][2] + 1.*m->_pos[i][1]*m->_pos[perm[i]][2] + orthogonal_dir[1]*(2.*orthogonal_dir[2]*m->_pos[i][0]*m->_pos[perm[i]][0] - 2.*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[0]*m->_pos[perm[i]][0]*m->_pos[i][2] - 1.*orthogonal_dir[0]*m->_pos[i][0]*m->_pos[perm[i]][2]) + orthogonal_dir[1]*orthogonal_dir[1]*(-1.*m->_pos[perm[i]][1]*m->_pos[i][2] - 1.*m->_pos[i][1]*m->_pos[perm[i]][2]) + 
+    orthogonal_dir[0]*orthogonal_dir[0]*(1.*m->_pos[perm[i]][1]*m->_pos[i][2] + 1.*m->_pos[i][1]*m->_pos[perm[i]][2])) + newDir[2]*newDir[2]*(-1.*orthogonal_dir[0]*orthogonal_dir[0]*m->_pos[i][1]*m->_pos[perm[i]][1] + orthogonal_dir[1]*orthogonal_dir[1]*(-1.*m->_pos[i][0]*m->_pos[perm[i]][0] + 1.*orthogonal_dir[2]*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1]) + 1.*m->_pos[i][2]*m->_pos[perm[i]][2] + orthogonal_dir[1]*(1.*orthogonal_dir[0]*m->_pos[perm[i]][0]*m->_pos[i][1] + 1.*orthogonal_dir[0]*m->_pos[i][0]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[2]*m->_pos[perm[i]][1]*m->_pos[i][2] - 1.*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][2])) + 
+  newDir[0]*(newDir[2]*(2.*orthogonal_dir[0]*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] + 1.*m->_pos[perm[i]][0]*m->_pos[i][2] + 1.*m->_pos[i][0]*m->_pos[perm[i]][2] + orthogonal_dir[1]*orthogonal_dir[1]*(2.*orthogonal_dir[0]*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][1] + 1.*m->_pos[perm[i]][0]*m->_pos[i][2] + 1.*m->_pos[i][0]*m->_pos[perm[i]][2]) + orthogonal_dir[1]*(-2.*orthogonal_dir[2]*m->_pos[perm[i]][0]*m->_pos[i][1] - 2.*orthogonal_dir[2]*m->_pos[i][0]*m->_pos[perm[i]][1] - 2.*orthogonal_dir[0]*m->_pos[perm[i]][1]*m->_pos[i][2] - 2.*orthogonal_dir[0]*m->_pos[i][1]*m->_pos[perm[i]][2])) + 
+    newDir[1]*(m->_pos[perm[i]][0]*((1. - 1.*orthogonal_dir[1]*orthogonal_dir[1] + 1.*orthogonal_dir[2]*orthogonal_dir[2])*m->_pos[i][1] - 1.*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[i][2]) + m->_pos[i][0]*((1. - 1.*orthogonal_dir[1]*orthogonal_dir[1] + 1.*orthogonal_dir[2]*orthogonal_dir[2])*m->_pos[perm[i]][1] - 1.*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[perm[i]][2]) + orthogonal_dir[0]*(-2.*orthogonal_dir[1]*m->_pos[i][1]*m->_pos[perm[i]][1] + 2.*pow(orthogonal_dir[1],3)*m->_pos[i][1]*m->_pos[perm[i]][1] - 1.*orthogonal_dir[2]*m->_pos[perm[i]][1]*m->_pos[i][2] - 1.*orthogonal_dir[2]*m->_pos[i][1]*m->_pos[perm[i]][2] + 2.*orthogonal_dir[1]*m->_pos[i][2]*m->_pos[perm[i]][2])));
+			B += 0. - 1.*m->_pos[perm[i]][1]*(newDir[0]*((-newDir[2])*orthogonal_dir[0] + newDir[0]*orthogonal_dir[2])*m->_pos[i][0] + ((-newDir[2])*orthogonal_dir[1] + newDir[1]*orthogonal_dir[2])*(newDir[0]*orthogonal_dir[0]*orthogonal_dir[1] + newDir[1]*(-1 + orthogonal_dir[1]*orthogonal_dir[1]) + newDir[2]*orthogonal_dir[1]*orthogonal_dir[2])*m->_pos[i][0] + 2*(newDir[2]*orthogonal_dir[0] - newDir[0]*orthogonal_dir[2])*(newDir[0]*orthogonal_dir[0]*orthogonal_dir[1] + newDir[1]*(-1 + orthogonal_dir[1]*orthogonal_dir[1]) + newDir[2]*orthogonal_dir[1]*orthogonal_dir[2])*m->_pos[i][1] + 
+    newDir[2]*((-newDir[2])*orthogonal_dir[0] + newDir[0]*orthogonal_dir[2])*m->_pos[i][2] + ((-newDir[1])*orthogonal_dir[0] + newDir[0]*orthogonal_dir[1])*(newDir[0]*orthogonal_dir[0]*orthogonal_dir[1] + newDir[1]*(-1 + orthogonal_dir[1]*orthogonal_dir[1]) + newDir[2]*orthogonal_dir[1]*orthogonal_dir[2])*m->_pos[i][2]) - 
+  1.*m->_pos[perm[i]][0]*(((-newDir[2])*orthogonal_dir[1] + newDir[1]*orthogonal_dir[2])*(newDir[1]*(-1 + orthogonal_dir[1]*orthogonal_dir[1])*m->_pos[i][1] + newDir[2]*(orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[i][1] - m->_pos[i][2])) + newDir[0]*newDir[0]*(orthogonal_dir[2]*m->_pos[i][1] - orthogonal_dir[1]*m->_pos[i][2]) + newDir[0]*(2*newDir[2]*orthogonal_dir[1]*m->_pos[i][0] - newDir[2]*orthogonal_dir[0]*(1 + orthogonal_dir[1]*orthogonal_dir[1])*m->_pos[i][1] + newDir[1]*(-2*orthogonal_dir[2]*m->_pos[i][0] + orthogonal_dir[0]*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[i][1] + orthogonal_dir[0]*m->_pos[i][2]))) - 
+  1.*((-newDir[1]*newDir[1])*orthogonal_dir[0]*(-1 + orthogonal_dir[1]*orthogonal_dir[1])*m->_pos[i][1] + newDir[2]*newDir[2]*(orthogonal_dir[1]*m->_pos[i][0] - orthogonal_dir[0]*m->_pos[i][1]) + newDir[0]*newDir[0]*orthogonal_dir[1]*(-m->_pos[i][0] + orthogonal_dir[0]*orthogonal_dir[1]*m->_pos[i][1]) - newDir[1]*newDir[2]*(orthogonal_dir[2]*m->_pos[i][0] + orthogonal_dir[0]*orthogonal_dir[1]*orthogonal_dir[2]*m->_pos[i][1] - 2*orthogonal_dir[0]*m->_pos[i][2]) + 
+    newDir[0]*(newDir[1]*orthogonal_dir[0]*m->_pos[i][0] + newDir[1]*orthogonal_dir[1]*(-1 - orthogonal_dir[0]*orthogonal_dir[0] + orthogonal_dir[1]*orthogonal_dir[1])*m->_pos[i][1] + newDir[2]*(1 + orthogonal_dir[1]*orthogonal_dir[1])*orthogonal_dir[2]*m->_pos[i][1] - 2*newDir[2]*orthogonal_dir[1]*m->_pos[i][2]))*m->_pos[perm[i]][2];			
+		}
+	}
+
+	double sols[2];
+	double nsols = 2;
+	if (fabs(A) < MINDOOUBLE) {
+		sols[0] = PI/2;
+		sols[1] = 0;
+	} else {
+		sols[0] = atan(-B/A)/2;
+		sols[1] = sols[0]-PI/2;
+	}
+
+	*csm = MAXDOUBLE;
+	double testDir[3] = {0.0,0.0,0.0};
+	double testCsm;
+	for (int k = 0; k < nsols; k++) {
+		/* Now, rotate the vector by the angle */		
+		RotationMatrix rm(orthogonal_dir, sols[k]);
+		rm.transform(newDir, testDir);		
+
+		testCsm = computeSimpleCsm(m, testDir, perm,type); 
+		if (testCsm < *csm) { 
+			*csm = testCsm;
+			dir[0] = testDir[0]; dir[1] = testDir[1]; dir[2] = testDir[2];
+		}
+	}
+
+/*
+	printf("Perm: %d %d %d %d %d %d\n", perm[0] + 1, perm[1] + 1, perm[2] + 1, perm[3] + 1, perm[4] + 1, perm[5] + 1);
+	printf ("pos: ");
+	for (int k = 0; k < 6; k++) { 
+		printf("(%4.2f %4.2f %4.2f)", m->_pos[k][0], m->_pos[k][1], m->_pos[k][2]);
+	}
+	printf("\n");
+	printf("Orth: %4.2f, %4.2f %4.2f\n", orthogonal_dir[0], orthogonal_dir[1], orthogonal_dir[2]);
+	printf("New: %4.2f, %4.2f %4.2f\n", newDir[0], newDir[1], newDir[2]);
+	printf("Rotated: %4.2f, %4.2f %4.2f\n", dir[0], dir[1], dir[2]);
+	printf("angle: %4.2f, csm %4.2f\n", sols[0], *csm);
+	printf("Sum: %4.2f\n", sum);
+*/
+}
+
+double  computeSimpleCsm(Molecule *m, double *dir, int *perm, OperationType type) { 
+	/* Finally - compute CSM */
+	double csm = 0.5;
+	TransformationMatrix *trans;
+	if (type == CN) {
+		trans = new RotationMatrix(dir, PI); 
+	} else {
+		trans = new ReflectionMatrix(dir);
+	}
+	double tempVec[3];
+	double rotatedVec[3];
+	for (int i = 0; i < m->_size; i++) {
+		for (int j = 0; j < 3; j++) {
+			tempVec[j] = m->_pos[perm[i]][j];				 
+		}
+		trans->transform(tempVec, rotatedVec);
+		csm -= 0.5 * (m->_pos[i][0] * rotatedVec[0] + m->_pos[i][1] * rotatedVec[1] + m->_pos[i][2] * rotatedVec[2]);		
+	}
+	return fabs(csm * 100);
+}
 
 /*
  * Calculates csm, dMin and directional cosines for a given permutation
@@ -1569,6 +1867,15 @@ int isIdentityPerm(int *perm, int size) {
 /**
  * Finds an approximate permutation which can be used in the analytical computation.
  */
+double findBestPermForAxis(Molecule* m, double* dir, double** outAtoms, int *optimalPerm,  OperationType type) {
+	estimatePerm(m, optimalPerm, dir, type);
+	return computeSimpleCsm(m, dir, optimalPerm, type);
+}
+
+
+/**
+ * Finds an approximate permutation which can be used in the analytical computation.
+ */
 void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, 
 						   double* dMin, OperationType type, double *dir_cn, int skipIdentity) {
 
@@ -1582,7 +1889,7 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 	*csm = MAXDOUBLE;
 
 	// Find an initial approximated symmetry axis/plain
-	findSymmetryDirection(m, &dirs, &n_dirs, type);
+	findSymmetryDirection(m, &dirs, &n_dirs, type);		
 
 	// Find the permutation best matching this direction - there are n_dirs results to the algorithm		
 	for (i = 0; i < n_dirs; i++) { 
@@ -1591,7 +1898,7 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 		double tempDir[3];
 		int iterNum = 1;
 		estimatePerm(m, bestPerm, dirs[i], type);	
-		runSinglePerm(m, outAtoms, bestPerm, &dist, tempDir, dMin, type);	
+		runSinglePermInKnownPlane(m, bestPerm, &dist, tempDir, dir_cn,type);		
 		memcpy(bestDir, tempDir, sizeof(double) * 3);
 		old = MAXDOUBLE; best = dist;
 
@@ -1605,7 +1912,9 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 			old = dist;
 			estimatePerm(m, temp, tempDir, type);		
 			if (skipIdentity && isIdentityPerm(temp,m->_size)) continue;
-			runSinglePerm(m, outAtoms, temp, &dist, tempDir, dMin, type);					
+			runSinglePermInKnownPlane(m, temp, &dist, tempDir, dir_cn,type);
+			/* runSinglePerm(m, outAtoms, temp, &dist, tempDir, dMin, type); */
+			
 			
 			if (dist < best) {
 				best = dist;
@@ -1617,6 +1926,23 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 			//printf("Old csm: %6.4f New csm %6.4f\n", old, dist);
 		}
 
+		if (skipIdentity && isIdentityPerm(bestPerm,m->_size)) 
+		{
+			printf("Identity permutation found - not allowed in cnv for n>2\n");
+			continue;
+		}
+
+		if (best < *csm) { 
+			*csm = best;
+			dir[0] = bestDir[0]; dir[1] = bestDir[1]; dir[2] = bestDir[2];
+			
+			for (int j= 0; j < m->_size; j++) {
+				perm[j] = bestPerm[j];
+			}
+
+		}
+
+/*
 		norm = bestDir[0] * bestDir[0] + bestDir[1] * bestDir[1] + bestDir[2] * bestDir[2];
 		if (norm < 0.5) continue;
 
@@ -1624,11 +1950,6 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 		// Make all almost-orthogonal values completely orthogonal	
 		// make only 100 different values...
 		curOrth = floor(curOrth * 100) * 1.0 / 100;
-		if (skipIdentity && isIdentityPerm(bestPerm,m->_size)) 
-		{
-			printf("Identity permutation found - not allowed in cnv for n>2\n");
-			continue;
-		}
 		if((curOrth < bestOrth) || (curOrth == bestOrth && best < *csm)) { 
 			bestOrth = curOrth;
 			*csm = best;
@@ -1637,8 +1958,8 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 				perm[i] = bestPerm[i];
 			}
 		}			
-
-		printf("Attempt #%d: csm is %4.2f, cos(angle): %4.2f after %d iterations\n", (i+1), best,curOrth, iterNum);				
+*/		
+		printf("Secondary Axis, attempt #%d: csm is: %4.2f after %d iterations\n", (i+1), best, iterNum);				
 	}
 
 	for (i = 0; i < n_dirs; i++) {
@@ -1649,7 +1970,8 @@ void findBestSecondaryPerm(Molecule* m, double** outAtoms, int* perm, double* cs
 	free(bestPerm);	
 
 	// run once more to get the out atoms right !
-	runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type);					
+	/* runSinglePerm(m, outAtoms, perm, csm, dir, dMin, type); */
+	runSinglePermInKnownPlane(m, perm, csm, dir, dir_cn,type);
 	
 	free(temp);	
 	
