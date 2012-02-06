@@ -11,44 +11,44 @@
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\babelAdapter.cpp">
+    <ClCompile Include="babelAdapter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\groupPermuter.c">
+    <ClCompile Include="mainRot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\mainRot.cpp">
+    <ClCompile Include="Molecule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\Molecule.cpp">
+    <ClCompile Include="groupPermuter.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\nrutil.c">
+    <ClCompile Include="nrutil.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\parseFunctions.c">
+    <ClCompile Include="parseFunctions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\permuter.c">
+    <ClCompile Include="permuter.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\poly_solve.c">
+    <ClCompile Include="poly_solve.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\pythag.c">
+    <ClCompile Include="pythag.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\rpoly.c">
+    <ClCompile Include="rpoly.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\tqli.c">
+    <ClCompile Include="tqli.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\csm\needed\tred2.c">
+    <ClCompile Include="tred2.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
