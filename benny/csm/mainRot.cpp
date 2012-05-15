@@ -5,7 +5,6 @@
  * It includes the algorithm itself, as well as dealing with the program's IO
  */
 
-extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -15,7 +14,6 @@ extern "C" {
 #include "groupPermuter.h"
 #include "mainhelpers.h"
 #include "nrutil.h"
-}
 
 #include <openbabel/mol.h>
 #include "babelAdapter.h"
@@ -61,8 +59,7 @@ static unsigned x[3] =
 
 double drand48(void);
 
-double
-drand48(void)
+double drand48(void)
 {
 	static double two16m = 1.0 / (1L << N);
 	next();
@@ -103,6 +100,11 @@ struct distRecord {
 	int col;
 };
 
+/**
+* recieves two pointers to distRecord and compares them
+* Parameters: pd1 - pointer to first dist Record,pd2 - pointer to first dist Record
+* Returns: 1 if pd1>pd2, -1 if pd1<pd2, 0 if equals.
+**/
 int distComp(const void *pd1, const void* pd2) { 
 	const struct distRecord* d1 = (const struct distRecord*)pd1;
 	const struct distRecord* d2 = (const struct distRecord*)pd2;
@@ -219,14 +221,14 @@ double factorial(int n){
 }
 
 /*
- * checks if the molecule's group permutations exceed GROUPSIZE_FACTOR_PER_MINUTE * MINUTES
+ * calculates the number of permutations that will be needed to calculate the CSM 
  */
 double numPermutations(Molecule *m, int operationOrder, OperationType t) {
 	int i,j, k; 	
 	double total = 1.0;
 	if (operationOrder > 2 && t == SN) {	
 		// In this case - we enumerate over groups of 1, 2, N
-		for (i = 1; i <= m->_groupNum; i++) {			
+		for (i = 1; i <= m->_groupNum; i++) {
 			int groupSize = getGroupSize(m, i);
 			double temp = 0;
 			double fact = factorial(groupSize);
@@ -240,8 +242,9 @@ double numPermutations(Molecule *m, int operationOrder, OperationType t) {
 				}
 			}
 			total *= (temp);
-		}		
-	} else { 
+		}
+	}
+	else {
 		for (i = 1; i <= m->_groupNum; i++) {
 			int groupSize = getGroupSize(m, i);
 			double temp = 0;
@@ -278,7 +281,6 @@ char *getExtension(char *fname) {
 
 /*
  * Normalizes the position of atoms of the molecule
- * returns one [TRUE] if successful, zero[FALSE] otherwise
  */
 void normalize(double **coords, Molecule *m){
 
@@ -319,6 +321,7 @@ void normalize(double **coords, Molecule *m){
 	}
 }
 
+// calculates the magnitude between two points
 double Magnitude( double *Point1, double *Point2 )
 {
 	double Vector[3];
@@ -330,6 +333,9 @@ double Magnitude( double *Point1, double *Point2 )
 	return sqrt( Vector[0] * Vector[0] + Vector[1]* Vector[1] + Vector[2] * Vector[2] );
 }
 
+/**
+* calculates the distance between a point and line the goes between LineStart and LineEnd
+**/
 double computeDistanceFromLine( double *Point, double *LineStart, double *LineEnd)
 {
 	double LineMag;
@@ -357,8 +363,6 @@ double computeDistanceFromLine( double *Point, double *LineStart, double *LineEn
 *  Cambridge University Press, 1992, Section 8.5, ISBN 0-521-43108-5
 *  This code by Nicolas Devillard - 1998. Public domain.
 */
-
-
 #define ELEM_SWAP(a,b) { register double t=(a);(a)=(b);(b)=t; }
 
 double findMedian(double arr[], int n) 
@@ -583,7 +587,7 @@ int main(int argc, char *argv[]){
 	if ((findPerm && useperm) || (findPerm && useDir) || (useDir && useperm)) { 
 		printf("-findperm, -useperm and -usedir are mutually exclusive...\n");
 		exit(1);
-	} 
+	}
 
 	// try to read molecule from infile
 	Molecule* m;
@@ -591,6 +595,7 @@ int main(int argc, char *argv[]){
 	OperationType chMinType = CS;
 	int chMinOrder = 2;
 	
+	// this part converts the file to Obmol and then to Molecule
 	if (useFormat) {
 		// If a specific format is used, read molecule using that format
 		if (strcasecmp(format, CSMFORMAT) == 0) {
