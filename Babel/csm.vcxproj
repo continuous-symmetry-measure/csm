@@ -65,14 +65,14 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;openbabel-2.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\openbabel-files\lib\x86\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\openbabel-files\windows\lib\x86\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)..\openbabel-files\dll\x86\Debug\openbabel-2.dll $(OutDir)
-copy $(ProjectDir)..\openbabel-files\external\x86\*.dll $(OutDir)</Command>
+      <Command>copy $(ProjectDir)..\openbabel-files\Windows\dll\x86\Debug\openbabel-2.dll $(OutDir)
+copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -86,7 +86,7 @@ copy $(ProjectDir)..\openbabel-files\external\x86\*.dll $(OutDir)</Command>
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;openbabel-2.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\openbabel-files\lib\x86\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\openbabel-files\windows\lib\x86\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -94,8 +94,8 @@ copy $(ProjectDir)..\openbabel-files\external\x86\*.dll $(OutDir)</Command>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)..\openbabel-files\dll\x86\Release\openbabel-2.dll $(OutDir)
-copy $(ProjectDir)..\openbabel-files\external\x86\*.dll $(OutDir)
+      <Command>copy $(ProjectDir)..\openbabel-files\Windows\dll\x86\Release\openbabel-2.dll $(OutDir)
+copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
