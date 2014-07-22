@@ -32,7 +32,6 @@ GNU General Public License for more details.
 #include <strings.h>
 #endif
 
-#include <openbabel/dlhandler.h>
 #include <openbabel/oberror.h>
 #include <openbabel/format.h>
 #include <openbabel/lineend.h>
@@ -86,7 +85,9 @@ namespace OpenBabel {
       static OBFormat*        FormatFromMIME(const char* MIME);
 
       ///Deprecated!.Repeatedly called to recover available Formats
+#ifndef SWIG
       static bool	        GetNextFormat(Formatpos& itr, const char*& str,OBFormat*& pFormat);
+#endif
       //@}
 
       /// @name Information
@@ -126,6 +127,7 @@ namespace OpenBabel {
       OBFormat*   GetInFormat() const{return pInFormat;};
       OBFormat*   GetOutFormat() const{return pOutFormat;};
       std::string GetInFilename() const{return InFilename;};
+      std::string GetOutFilename() const{return OutFilename;};
 
       ///Get the position in the input stream of the object being read
       std::streampos GetInPos()const{return wInpos;};
@@ -345,10 +347,9 @@ protected:
 //      static FMapType& FormatsMIMEMap();///<contains MIME and pointer to all OBFormat classes
       typedef std::map<std::string,int> OPAMapType;
       static OPAMapType& OptionParamArray(Option_type typ);
-      static int       LoadFormatFiles();
       bool             OpenAndSetFormat(bool SetFormat, std::ifstream* is, std::stringstream* ss=NULL);
 
-      std::string	  InFilename;
+      std::string	  InFilename, OutFilename; //OutFileName added v2.4.0
       std::istream*     pInStream;
       std::ostream*     pOutStream;
       static OBFormat*  pDefaultFormat;
@@ -367,12 +368,12 @@ protected:
       bool		  OneObjectOnly;
       bool		  ReadyToInput;
       bool      CheckedForGzip;      ///< input stream is gzip-encoded
+      bool      SkippedMolecules;    /// skip molecules using -f and -l
       bool      NeedToFreeInStream;
       bool      NeedToFreeOutStream;
       typedef   FilteringInputStreambuf< LineEndingExtractor > LErdbuf;
       LErdbuf*  pLineEndBuf;
 
-      static int FormatFilesLoaded;
       OBBase*		  pOb1;
       std::streampos wInpos; ///<position in the input stream of the object being written
       std::streampos rInpos; ///<position in the input stream of the object being read

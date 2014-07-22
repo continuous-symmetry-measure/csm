@@ -127,21 +127,32 @@ namespace OpenBabel
   //! \brief Used to store arbitrary attribute/value relationsips of any type.
   // More detailed description in generic.cpp
   template <class ValueT>
-    class OBAPI OBPairTemplate : public OBGenericData
+    class OBPairTemplate : public OBGenericData // Note: no OBAPI should be used
   {
   protected:
     ValueT _value; //!< The data for this key/value pair
   public:
   OBPairTemplate():
     OBGenericData("PairData", OBGenericDataType::PairData) {};
+    virtual OBGenericData* Clone(OBBase* /*parent*/) const
+      {return new OBPairTemplate<ValueT>(*this);}
     void SetValue(const ValueT t)             { _value = t;     }
     virtual const ValueT &GetGenericValue() const    { return(_value); }
+    const ValueT &GetGenericValueDef(const ValueT &def_val) const
+    { 
+      if(this == NULL)
+	return def_val;
+      else	
+        return GetGenericValue(); 
+    }
   };
 
   //! Store arbitrary key/value integer data like OBPairData
   typedef OBPairTemplate<int>     OBPairInteger;
   //! Store arbitrary key/value floating point data like OBPairData
   typedef OBPairTemplate<double>  OBPairFloatingPoint;
+  //! Store arbitrary key/value boolean data like OBPairData
+  typedef OBPairTemplate<bool>    OBPairBool;
 
   //! \class OBSetData generic.h <openbabel/generic.h>
   //! \brief Used to store arbitrary attribute/set relationships.
@@ -374,35 +385,49 @@ namespace OpenBabel
     //! of the molecule, based on the known space group
     void FillUnitCell(OBMol *);
 
+    //! @todo Remove nonconst overloads in OBUnitCell on next version bump
+
     //! \return vector a
     double GetA();
+    double GetA() const;
     //! \return vector b
     double GetB();
+    double GetB() const;
     //! \return vector c
     double GetC();
+    double GetC() const;
     //! \return angle alpha
     double GetAlpha();
+    double GetAlpha() const;
     //! \return angle beta
     double GetBeta();
+    double GetBeta() const;
     //! \return angle gamma
     double GetGamma();
+    double GetGamma() const;
     //! \return any offset in the origin of the periodic boundaries
     vector3 GetOffset();
+    vector3 GetOffset() const;
 
     //! \return the text representation of the space group for this unit cell
     const SpaceGroup* GetSpaceGroup() { return(_spaceGroup); }
+    const SpaceGroup* GetSpaceGroup() const { return(_spaceGroup); }
 
     //! \return the text representation of the space group for this unit cell
     const std::string GetSpaceGroupName() { return(_spaceGroupName); }
+    const std::string GetSpaceGroupName() const { return(_spaceGroupName); }
 
     //! \return lattice type (based on the @p spacegroup)
     LatticeType GetLatticeType( int spacegroup );
+    LatticeType GetLatticeType( int spacegroup ) const;
 
     //! \return lattice type (based on angles and distances)
     LatticeType GetLatticeType();
+    LatticeType GetLatticeType() const;
 
     //! \return v1, v2, v3 cell vectors
     std::vector<vector3> GetCellVectors();
+    std::vector<vector3> GetCellVectors() const;
     //! Access to the cell matrix as row vectors, useful for writing input files.
     //! Equivalent to the transpose of GetOrientationMatrix() * GetOrthoMatrix()
     //! \return The cell matrix with row vectors.
@@ -412,6 +437,7 @@ namespace OpenBabel
     //! \see OBUnitCell::FractionalToCartesian
     //! \see OBUnitCell::CartesianToFractional
     matrix3x3	GetCellMatrix();
+    matrix3x3	GetCellMatrix() const;
     //! \return The orthogonalization matrix, used for converting from fractional to Cartesian coords.
     //! \see OBUnitCell::GetCellMatrix
     //! \see OBUnitCell::GetFractionalMatrix
@@ -419,6 +445,7 @@ namespace OpenBabel
     //! \see OBUnitCell::FractionalToCartesian
     //! \see OBUnitCell::CartesianToFractional
     matrix3x3 GetOrthoMatrix();
+    matrix3x3 GetOrthoMatrix() const;
     //! Used to convert fractional and cartesian coordinates if the
     //! cell is not oriented in standard form (a parallel to x axis,
     //! b in xy plane)
@@ -429,6 +456,7 @@ namespace OpenBabel
     //! \see OBUnitCell::FractionalToCartesian
     //! \see OBUnitCell::CartesianToFractional
     matrix3x3 GetOrientationMatrix();
+    matrix3x3 GetOrientationMatrix() const;
     //! \return The fractionalization matrix, used for converting from Cartesian to fractional coords.
     //! \see OBUnitCell::GetOrthoMatrix
     //! \see OBUnitCell::GetCellMatrix
@@ -436,6 +464,7 @@ namespace OpenBabel
     //! \see OBUnitCell::FractionalToCartesian
     //! \see OBUnitCell::CartesianToFractional
     matrix3x3 GetFractionalMatrix();
+    matrix3x3 GetFractionalMatrix() const;
 
     //! Convenience function to convert fractional coordinates to
     //! cartesian coordinates. Returns
@@ -444,6 +473,7 @@ namespace OpenBabel
     //! \param frac Vector of fractional coordinates
     //! \return Cartesian coordinates
     vector3 FractionalToCartesian(vector3 frac);
+    vector3 FractionalToCartesian(vector3 frac) const;
     //! Convenience function to convert cartesian coordinates to
     //! fractional coordinates. Returns
     //!
@@ -451,20 +481,26 @@ namespace OpenBabel
     //! \param cart Vector of cartesian coordinates
     //! \return Fractional coordinates
     vector3 CartesianToFractional(vector3 cart);
+    vector3 CartesianToFractional(vector3 cart) const;
 
     //! Wraps cartesian coordinate to fall within the unit cell.
     //! \param cart Vector of cartesian coordinates
     //! \return Cartesian coordinates within cell boundaries.
     vector3 WrapCartesianCoordinate(vector3 cart);
+    vector3 WrapCartesianCoordinate(vector3 cart) const;
     //! Wraps fractional coordinate to fall within the unit cell.
     //! \param frac Vector of fractional coordinates
     //! \return Fractional coordinates within cell boundaries (between 0 and 1).
+    //! \todo Make OBUnitCell::WrapFractionalCoordinate static in the next ABI break
     vector3 WrapFractionalCoordinate(vector3 frac);
+    vector3 WrapFractionalCoordinate(vector3 frac) const;
 
     //! \return The numeric value of the given spacegroup
     int GetSpaceGroupNumber( std::string name = "" );
+    int GetSpaceGroupNumber( std::string name = "" ) const;
     //! \return The cell volume (in Angstroms^3)
     double GetCellVolume();
+    double GetCellVolume() const;
   };
 
   //! \class OBConformerData generic.h <openbabel/generic.h>
@@ -1065,6 +1101,83 @@ namespace OpenBabel
 
   protected:
     matrix3x3            _matrix; //!< 3x3 matrix to be stored
+  };
+
+  //! \class OBFreeGridPoint generic.h <openbabel/generic.h>
+  //! \brief Helper class for OBFreeGrid
+  //! Can hold a random coordinate and associated value.
+  class OBAPI OBFreeGridPoint
+  {
+  protected:
+    double _x,_y,_z,_V;
+    
+  public:
+    OBFreeGridPoint() {};
+    OBFreeGridPoint(double x,double y,double z,double V) { _x = x; _y = y; _z = z; _V = V; }
+    ~OBFreeGridPoint() {};
+    double GetX() { return _x; }
+    double GetY() { return _y; }
+    double GetZ() { return _z; }
+    double GetV() { return _V; }
+    void SetX(double x) { _x = x; }
+    void SetY(double y) { _y = y; }
+    void SetZ(double z) { _z = z; }
+    void SetV(double V) { _V = V; }
+  };
+  
+  //! A standard iterator over a vector of FreeGridPoints
+  typedef std::vector<OBFreeGridPoint*>::iterator OBFreeGridPointIterator;
+
+  //! \class OBFreeGrid generic.h <openbabel/generic.h>
+  //! \brief Handle double precision floating point data with coordinates not on a grid
+  //! Can hold array of random coordinates and associated values.
+  class OBAPI OBFreeGrid: public OBGenericData
+  {
+  protected:
+    std::vector<OBFreeGridPoint*> _points;  //!< coordinates with accompanying float values
+  public:
+
+    OBFreeGrid() 
+    {
+    }
+    
+    ~OBFreeGrid() 
+    {
+      //delete _points;
+    }
+
+    int NumPoints() 
+    { 
+      return _points.size(); 
+    }
+    
+    void AddPoint(double x,double y,double z, double V) 
+    {
+      _points.push_back(new OpenBabel::OBFreeGridPoint(x,y,z,V));
+    }
+
+    OBFreeGridPointIterator BeginPoints() 
+    { 
+      return _points.begin(); 
+    }
+    
+    OBFreeGridPointIterator EndPoints() 
+    {
+      return _points.begin() + NumPoints(); 
+    }
+    
+    OBFreeGridPoint *BeginPoint(OBFreeGridPointIterator &i)
+    {
+      i = _points.begin();
+      return((i == _points.end()) ? (OBFreeGridPoint*)NULL : (OBFreeGridPoint*)*i);
+    }
+
+    OBFreeGridPoint *NextPoint(OBFreeGridPointIterator &i)
+    {
+      ++i;
+      return((i == _points.end()) ? (OBFreeGridPoint*)NULL : (OBFreeGridPoint*)*i);
+    }
+
   };
 
  //! A standard iterator over vectors of OBGenericData (e.g., inherited from OBBase)

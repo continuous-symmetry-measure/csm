@@ -1,7 +1,7 @@
 /**********************************************************************
-svgpainter.h - Rendering in SVG
+commandpainter.h  - Render as depiction commands
 
-Copyright (C) 2009 by Chris Morley
+Copyright (C) 2012 by Noel O'Boyle
 
 This file is part of the Open Babel project.
 For more information, see <http://openbabel.org/>
@@ -15,27 +15,23 @@ but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 ***********************************************************************/
-#ifndef OB_SVGPAINTER_H
-#define OB_SVGPAINTER_H
+#ifndef OB_COMMANDPAINTER_H
+#define OB_COMMANDPAINTER_H
 
-#include <openbabel/babelconfig.h>
-#include <iostream>
 #include <openbabel/depict/painter.h>
 
 namespace OpenBabel
 {
-  class OBDEPICT SVGPainter : public OBPainter
+  class CommandPainter : public OBPainter
   {
     public:
-      SVGPainter();
-      SVGPainter(std::ostream& ofs, bool withViewBox=false,
-        double width=0.0, double height=0.0, double x=0.0, double y=0.0);
-      ~SVGPainter();
+      CommandPainter(std::ostream& ofs);
+      ~CommandPainter();
       //! @name OBPainter methods
       //@{
       void NewCanvas(double width, double height);
       bool IsGood() const;
-      void SetFontFamily(const std::string &fontFamily);
+      void SetFontFamily(const std::string &fontFamily) {} // FIXME
       void SetFontSize(int pointSize);
       void SetFillColor(const OBColor &color);
       void SetPenColor(const OBColor &color);
@@ -48,28 +44,16 @@ namespace OpenBabel
       OBFontMetrics GetFontMetrics(const std::string &text);
       //@}
 
-      //! @name CairoPainter specific
+      //! @name CommandPainter specific
       //@{
-      void WriteImage(const std::string &filename);
       //@}
-    private:
-      std::string MakeRGB(OBColor color);
-
-    private:
+ 
+    private:      
       std::ostream& m_ofs;
-      bool m_withViewBox;
-      double m_width, m_height, m_x, m_y;
-      OBColor m_Pencolor;
-      OBColor m_OrigBondcolor;
-      OBColor m_Fillcolor;
-      double m_PenWidth;
-      int m_fontPointSize;
-      std::string m_fontFamily;
+      std::streamsize m_oldprec;
+      double m_pen_width;
   };
 
 }
 
 #endif
-
-//! \file svgpainter.h
-//! \brief Generate 2D depictions in the SVG vector graphics format.

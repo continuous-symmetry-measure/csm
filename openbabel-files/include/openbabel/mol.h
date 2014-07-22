@@ -102,8 +102,12 @@ namespace OpenBabel
 #define OB_PATTERN_STRUCTURE     (1<<19)
   //! Largest Set of Smallest Rings (LSSR) done. See OBRing and OBMol::FindLSSR
 #define OB_LSSR_MOL              (1<<20)
-  // flags 21-32 unspecified
+  //! SpinMultiplicities on atoms have been set in OBMol::AssignSpinMultiplicity()
+#define OB_ATOMSPIN_MOL          (1<<21)
+  // flags 22-32 unspecified
 #define OB_CURRENT_CONFORMER	 -1
+
+enum HydrogenType { AllHydrogen, PolarHydrogen, NonPolarHydrogen };
 
   // class introduction in mol.cpp
  class OBAPI OBMol: public OBBase
@@ -186,8 +190,10 @@ namespace OpenBabel
     virtual void DestroyResidue(OBResidue*);
 
     //! Add the specified atom to this molecule
+    //! \param atom        the atom to add
+    //! \param forceNewId  whether to make a new atom Id even if the atom already has one (default is false)
     //! \return Whether the method was successful
-    bool AddAtom(OBAtom&);
+    bool AddAtom(OBAtom& atom, bool forceNewId = false);
     //! Add a new atom to this molecule (like AddAtom)
     //! Calls BeginModify() before insertion and EndModify() after insertion
     bool InsertAtom(OBAtom &);
@@ -312,6 +318,9 @@ namespace OpenBabel
     //! \return the angle (in degrees) between the three atoms @p a, @p b and @p c
     //!  (where  a-> b (vertex) -> c )
     double GetAngle(OBAtom* a, OBAtom* b, OBAtom* c);
+    //! \return the size of the smallest ring if a and b are in the same ring, 0 otherwise
+    //! \since version 2.4
+    int AreInSameRing(OBAtom *a, OBAtom *b);
     //! \return the stochoimetric formula (e.g., C4H6O)
     std::string  GetFormula();
     //! \return the stochoimetric formula in spaced format e.g. C 4 H 6 O 1
@@ -401,11 +410,13 @@ namespace OpenBabel
     void   SetHydrogensAdded()       { SetFlag(OB_H_ADDED_MOL);     }
     void   SetCorrectedForPH()       { SetFlag(OB_PH_CORRECTED_MOL);}
     void   SetAromaticCorrected()    { SetFlag(OB_AROM_CORRECTED_MOL);}
-    void   SetSpinMultiplicityAssigned(){ SetFlag(OB_TSPIN_MOL);    }
+    void   SetSpinMultiplicityAssigned(){ SetFlag(OB_ATOMSPIN_MOL);    }
     void   SetFlags(int flags)       { _flags = flags;              }
 
     void   UnsetAromaticPerceived()  { _flags &= (~(OB_AROMATIC_MOL));   }
     void   UnsetSSSRPerceived()  { _flags &= (~(OB_SSSR_MOL));   }
+    //! Mark that Largest Set of Smallest Rings will need to be run again if required (see OBRing class)
+    void   UnsetLSSRPerceived()  { _flags &= (~(OB_LSSR_MOL));   }
     void   UnsetRingTypesPerceived()  { _flags &= (~(OB_RINGTYPES_MOL));   }
     void   UnsetPartialChargesPerceived(){ _flags &= (~(OB_PCHARGE_MOL));}
     void   UnsetImplicitValencePerceived(){_flags &= (~(OB_IMPVAL_MOL)); }
@@ -457,6 +468,10 @@ namespace OpenBabel
     //! Delete all hydrogens from the supplied atom
     //! \return Success
     bool DeleteHydrogens(OBAtom*);
+    //! Delete all hydrogen atoms connected to a polar atom
+    //! \see OBAtom::IsPolarHydrogen
+    //! \since version 2.4
+    bool DeletePolarHydrogens();
     //! Delete all hydrogen atoms connected to a non-polar atom
     //! \see OBAtom::IsNonPolarHydrogen
     bool DeleteNonPolarHydrogens();
@@ -474,6 +489,12 @@ namespace OpenBabel
     bool AddHydrogens(OBAtom*);
     //! Add only polar hydrogens (i.e., attached to polar atoms, not C)
     bool AddPolarHydrogens();
+    //! Add only nonpolar hydrogens (i.e., attached to C)
+    //! \since version 2.4
+    bool AddNonPolarHydrogens();
+    //! Add polar and/or nonpolar hydrogens
+    //! \since verison 2.4
+    bool AddNewHydrogens(HydrogenType whichHydrogen, bool correctForPH=false, double pH=7.4);
 
     //! If @p threshold is not specified or is zero, remove all but the largest
     //! contiguous fragment. If @p threshold is non-zero, remove any fragments with fewer
@@ -485,11 +506,27 @@ namespace OpenBabel
     bool GetNextFragment( OpenBabel::OBMolAtomDFSIter& iter, OBMol& newMol );
     //! Converts the charged form of coordinate bonds, e.g.[N+]([O-])=O to N(=O)=O
     bool ConvertDativeBonds();
+    //! Converts 5-valent N and P only. Return true if conversion occurred.
+    //! \return has charged form of dative bonds(e.g.[N+]([O-])=O from N(=O)=O).
+    //! \since version 2.4
+    bool MakeDativeBonds();
+    /** Convert zero-order bonds to single or double bonds and adjust adjacent atom
+     *  charges in an attempt to achieve the correct valence state.
+     *  @return Whether any modifications were made
+     *  @since version 2.4
+     */
+    bool ConvertZeroBonds();
 
     //! Correct for pH by applying the OBPhModel transformations
     bool CorrectForPH(double pH=7.4);
     // docs in mol.cpp
     bool AssignSpinMultiplicity(bool NoImplicitH=false);
+
+    //! Put the specified molecular charge on appropriate atoms.
+    //! Assumes all the hydrogen is explicitly included in the molecule.
+    //! \since version 2.4
+    bool AssignTotalChargeToAtoms(int charge);
+
     //! The OBMol is a pattern, not a complete molecule. Left unchanged by Clear().
     void   SetIsPatternStructure()       { SetFlag(OB_PATTERN_STRUCTURE);}
 
@@ -586,7 +623,7 @@ namespace OpenBabel
     //! Has the molecule been corrected for pH by CorrectForPH?
     bool IsCorrectedForPH() { return(HasFlag(OB_PH_CORRECTED_MOL));     }
     //! Has total spin multiplicity been assigned?
-    bool HasSpinMultiplicityAssigned() { return(HasFlag(OB_TSPIN_MOL)); }
+    bool HasSpinMultiplicityAssigned() { return(HasFlag(OB_ATOMSPIN_MOL)); }
     //! Is this molecule chiral?
     bool IsChiral();
     //! Are there any atoms in this molecule?

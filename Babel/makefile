@@ -3,10 +3,9 @@ CC = gcc
 CXX = g++
 
 # the compiler flags
-CFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I/usr/local/include/openbabel-2.0 -g
-CXXFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I/usr/local/include/openbabel-2.0 -g
-
-LFLAGS = -lm -L. -L/usr/local/lib -lopenbabel
+CFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../openbabel-files/include -I../openbabel-files/os/include -g
+CXXFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../openbabel-files/include -I../openbabel-files/os/include -g
+LFLAGS = -L. -L../openbabel-files/os/lib -lopenbabel
 
 BIN = bin
 

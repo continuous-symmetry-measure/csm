@@ -1,20 +1,20 @@
 /* src/config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Where the data files are located */
-#define BABEL_DATADIR "D:/Developments/CSM/openbabel-2.3.2/windows-vc2008/install/share/openbabel"
+#define BABEL_DATADIR "/usr/local/share/openbabel"
 
 /* The version of Open Babel */
-#define BABEL_VERSION "2.3.2"
+#define BABEL_VERSION "2.3.90"
 
 /* Version check macro
    Can be used like #if (OB_VERSION >= OB_VERSION_CHECK(2, 2, 99)) */
 #define OB_VERSION_CHECK(major, minor, patch) ((major<<16)|(minor<<8)|(patch))
 
 /* OB_VERSION is (major << 16) + (minor << 8) + patch */
-#define OB_VERSION OB_VERSION_CHECK(2, 3, 2)
+#define OB_VERSION OB_VERSION_CHECK(2, 3, 90)
 
 /* The file extension used for shared modules */
-#define MODULE_EXTENSION ".obf"
+#define MODULE_EXTENSION ".so"
 
 // If we are using a recent GCC version with visibility support use it
 #ifdef HAVE_GCC_VISIBILITY
@@ -116,10 +116,10 @@
  #endif
 #endif  // _MSC_VER
 /* have <conio.h> */
-#define HAVE_CONIO_H 1
+/* #undef HAVE_CONIO_H */
 
 /* have <sys/time.h> */
-/* #undef HAVE_SYS_TIME_H */
+#define HAVE_SYS_TIME_H 1
 
 /* have <time.h> */
 #define HAVE_TIME_H 1
@@ -131,19 +131,19 @@
 #define HAVE_CLOCK_T 1
 
 /* have symbol rint */
-/* #undef HAVE_RINT */
+#define HAVE_RINT 1
 
 /* have symbol snprintf */
-/* #undef HAVE_SNPRINTF */
+#define HAVE_SNPRINTF 1
 
 /* have symbol sranddev */
-/* #undef HAVE_SRANDDEV */
+#define HAVE_SRANDDEV 1
 
 /* have symbol strcasecmp */
-/* #undef HAVE_STRCASECMP */
+#define HAVE_STRCASECMP 1
 
 /* have symbol strncasecmp */
-/* #undef HAVE_STRNCASECMP */
+#define HAVE_STRNCASECMP 1
 
 /* have struct clock_t */
 #define HAVE_CLOCK_T 1
@@ -177,7 +177,7 @@
  #define SCANDIR_CONST
 #endif
 
-#define OB_MODULE_PATH ""
+#define OB_MODULE_PATH "/usr/local/lib/openbabel/2.3.90"
 
 #ifndef TIME_WITH_SYS_TIME
   #ifdef HAVE_SYS_TIME
