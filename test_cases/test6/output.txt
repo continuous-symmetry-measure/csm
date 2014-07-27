@@ -1,0 +1,3 @@
+Going to enumerate over  1.00 permutations
+Entire run should take approx.  0.00 hours on a 2.0Ghz Computer
+S4 SYMMETRY: 100.0000
