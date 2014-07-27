@@ -1,1 +1,0 @@
-csm c2 ZnCu10-p9.csm result.txt -ignoreSym
