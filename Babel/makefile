@@ -4,7 +4,7 @@ CXX = g++
 
 # the compiler flags
 CFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../openbabel-files/include -I../openbabel-files/os/include -g
-CXXFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../openbabel-files/include -I../openbabel-files/os/include -g
+CXXFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../openbabel-files/include -I../openbabel-files/os/include -g -std=c++11
 LFLAGS = -L. -L../openbabel-files/os/lib -lopenbabel
 
 BIN = bin
@@ -55,7 +55,7 @@ all: csm
 
 # linking rule for the csm executable
 csm: $(OBJCSM) 
-	$(CXX) $(LFLAGS) $(OBJCSM) -o $(BIN)/$@
+	$(CXX) $(OBJCSM) $(LFLAGS) -o $(BIN)/$@
 
 # linking rule for the csm2d executable
 #csm2d: $(OBJCSM2D) libcsm.a
