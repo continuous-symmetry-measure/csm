@@ -1,0 +1,1 @@
+csm c2 AgCu10p1.xyz
