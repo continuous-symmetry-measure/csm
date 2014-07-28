@@ -1,1 +1,0 @@
-csm s4 AuCu10p6.xyz result.txt -babelbond
