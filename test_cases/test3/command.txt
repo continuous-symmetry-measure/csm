@@ -1,1 +1,0 @@
-csm c4 c_in_1282148276_benzene.mol

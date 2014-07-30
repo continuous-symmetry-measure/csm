@@ -71,7 +71,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)..\openbabel-files\Windows\dll\x86\Debug\openbabel-2.dll $(OutDir)
+      <Command>copy $(ProjectDir)..\openbabel-files\Windows\dll\x86\Debug\*.* $(OutDir)
 copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -94,7 +94,7 @@ copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)</Comma
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)..\openbabel-files\Windows\dll\x86\Release\openbabel-2.dll $(OutDir)
+      <Command>copy $(ProjectDir)..\openbabel-files\Windows\dll\x86\Release\*.* $(OutDir)
 copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
 </Command>
     </PostBuildEvent>
