@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x
-BASE_DIR=../../..
-OPENBABEL_DIR=$BASE_DIR/openbabel
+BASE_DIR=`pwd`
+OPENBABEL_DIR=$BASE_DIR/src
 BUILD_DIR=$OPENBABEL_DIR/build
 INSTALL_DIR=`pwd`
 
