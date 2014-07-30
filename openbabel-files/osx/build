@@ -1,0 +1,31 @@
+#!/bin/bash
+BASE_DIR=`pwd`
+OPENBABEL_DIR=$BASE_DIR/src
+BUILD_DIR=$OPENBABEL_DIR/build
+INSTALL_DIR=`pwd`
+
+if [ ! -d "$OPENBABEL_DIR" ]; then
+    while true; do
+        read -p "OpenBabel cannot be found. Clone git repository? " yn
+        case $yn in
+    	    [Yy]* ) break;;
+    	    [Nn]* ) echo "Stopping right here"; exit;;
+            * ) echo Please answer Yes or No
+       esac
+    done
+    echo Cloning the OpenBabel repository
+    git clone git://github.com/openbabel/openbabel.git $OPENBABEL_DIR
+fi
+
+if [ ! -d $BUILD_DIR ]; then
+    mkdir $BUILD_DIR
+fi
+
+cd $BUILD_DIR
+echo Running CMAKE
+cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DOB_MODULE_PATH=$INSTALL_DIR/openbabel/2.3.90
+echo Compiling OpenBabel
+make
+echo Installing OpenBabel
+make install
+echo Done.
