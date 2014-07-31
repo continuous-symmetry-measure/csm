@@ -1,3 +1,4 @@
+import pprint
 from tempfile import NamedTemporaryFile, mkstemp
 
 __author__ = 'zmbq'
@@ -69,64 +70,70 @@ def run_csm(test_dir, output_path):
         error = ps.stderr.readlines()
     return (output, error)
 
-def clean_molecules(lines):
+def parse_vector(line):
     """
-    Cleans the molecule output in lines
-    Sometimes a molecule looks like:
-    ##
-    pathname
-    At X Y Z
-    At X Y Z
-    .
-    .
-    .
-
-    And sometimes the pathname is missing
-
-    This change is due to different OpenBabel versions, and should not affect our tests
-
-    :param lines: Output lines
-    :return: Cleaned output lines, without the extra pathname
+    Parses a 3D vector, returing (x,y,z)
+    :param line: A line with a vector of 3 floating point numbers
+    :return: (x,y,z)
     """
+    floats = [float(s) for s in line.split()]
+    return tuple(floats)
 
-    output = []
-    ignore = None
+def parse_output(lines):
+    """
+    Parses the output, returning a dictionary with
+
+    symmetry: The symmetry measure line (string)
+    scaling: The scaling factor line (string)
+    direction: The directional cosine vector (x,y,z)
+    :param lines: File lines
+    :return: A dictionary with the parsed information
+    """
+    result = {}
+    result['symmetry'] = lines[0]
+    result['scaling'] = lines[1]
+    result['direction'] = ()
     for i in range(len(lines)):
-        if ignore is not None and ignore==i:
-            ignore = None
-            continue
-        output.append(lines[i])
-        if lines[i] in ['INITIAL STRUCTURE COORDINATES', 'RESULTING STRUCTURE COORDINATES']:  # Molecule header
-            suspect = lines[i+2]
-            if len(suspect.split(' '))==1: # Path, not the first table line
-                ignore = i+2
+        line = lines[i]
+        if line=='DIRECTIONAL COSINES:':
+            result['direction'] = parse_vector(lines[i+1])
+    return result
 
-    return output
 
 def compare_files(file1, file2):
-    lines1 = read_file(file1)
-    lines2 = read_file(file2)
+    def same_vector(vec1, vec2):
+        if len(vec1)!=len(vec2):
+            return False
+        for i in range(len(vec1)):
+            num1 = vec1[i]
+            num2 = vec2[i]
+            if abs(num1-num2) > 1e-6:
+                return False
+        return True
 
-    # Output may not be identical - OpenBabel changed the way molecules are displayed - sometimes the molecule files path
-    # is displayed, too. We need to ignore it, as it will make tests look different based on the file-system
-    lines1 = clean_molecules(lines1)
-    lines2 = clean_molecules(lines2)
+    output1 = parse_output(read_file(file1))
+    output2 = parse_output(read_file(file2))
 
-    if len(lines1)!=len(lines2):
+    if output1['symmetry']!=output2['symmetry']:
         return False
-    for i in range(len(lines1)):
-        if lines1[i]!=lines2[i]:
+    if output1['scaling']!=output2['scaling']:
+        return False
+    if not same_vector(output1['direction'], output2['direction']):
+        opposite = tuple([-x for x in output1['direction']])
+        if not same_vector(opposite, output2['direction']):
             return False
 
     return True
 
 def report_error(expected_file, generated_file):
-    print("Files are not identical\n\nEXPECTED:\n")
-    for line in read_file(expected_file):
-        print (line)
-    print ("\n\nGENERATED:")
-    for line in read_file(generated_file):
-        print (line)
+    print("Output was not identical")
+    expected = parse_output(read_file(expected_file))
+    generated = parse_output(read_file(generated_file))
+    pp = pprint.PrettyPrinter(indent=4)
+    print("Expected:")
+    pp.pprint(expected)
+    print("\nGenerated:")
+    pp.pprint(generated)
 
 def run_test(test_dir):
     try:
