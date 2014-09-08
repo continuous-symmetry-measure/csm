@@ -1,0 +1,37 @@
+# the compiler
+CC = gcc
+CXX = g++
+
+# the compiler flags
+CFLAGS = -Wall -O3 -DCNV -DUSE_ORDER2_PERMUTER -I/usr/local/include/openbabel-2.0 -g
+CXXFLAGS = -Wall -O3 -DCNV -DUSE_ORDER2_PERMUTER -I/usr/local/include/openbabel-2.0 -g
+
+LFLAGS = -lm -L. -L/usr/local/lib -lopenbabel
+
+BIN = bin
+
+OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o mainDnCnv.o rpoly.o tqli.o tred2.o nrutil.o pythag.o babelAdapter.o icosahedron.o
+
+# the first target. All executables will be made when 'make' is
+# invoked with no target
+all: cnv 
+
+# general rule how to compile a source file and produce an object file
+%.c,%.o:
+	$(CXX) $(CFLAGS) -c $<
+
+%.cpp,%.o:
+	$(CXX) $(CFLAGS) -c $<
+
+# linking rule for the csm executable
+cnv: $(OBJCSM)
+	$(CXX) $(LFLAGS) $(OBJCSM) -o $(BIN)/$@
+
+depend:
+	echo -e "###\n" >> makefile
+	$(CXX) -MM *.c >> makefile
+
+# remove object files and backups
+clean:
+	rm -f *.o *~
+
