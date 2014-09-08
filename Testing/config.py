@@ -4,7 +4,7 @@ Mainly folder paths
 """
 
 # Path for csm or CSM.EXE
-CSM_PATH = '../Babel/bin/csm'
+CSM_PATH = '../CSM/bin/csm'
 
 # Path for all the test subfolders
 TEST_PATH = r'../test_cases'
