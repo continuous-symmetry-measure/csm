@@ -1252,7 +1252,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	double curDir[3];
 	int *idxToPos, *posToIdx;
 	int * groupSizes;
-	groupPermuter* gp;
+	GroupPermuter* gp;
 	int addGroupsOfTwo;
 
 	// These are the 
@@ -1283,7 +1283,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	} else {
 		addGroupsOfTwo = 0;
 	}
-	gp = createGroupPermuter(m->_groupNum,groupSizes,m->_size,opOrder, addGroupsOfTwo);
+	gp = new GroupPermuter(m->_groupNum,groupSizes,m->_size,opOrder, addGroupsOfTwo);
 	if (!gp){
 		if (writeOpenu) {
 			printf("ERR* Failed to create groupPermuter *ERR\n");
@@ -1294,10 +1294,10 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	};
 
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
-	while ( nextGroupPermutation(gp) ) {
+	while ( gp->nextGroupPermutation() ) {
 
 		for (i = 0; i < m->_size; i++) {
-			realPerm[i] = idxToPos[gp->_index[posToIdx[i]]];			
+			realPerm[i] = idxToPos[gp->elementAt(posToIdx[i])];
 		}			
 		curCsm = calcRefPlane(m, realPerm, curDir, type);		
 
@@ -1332,7 +1332,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	free(groupSizes);
 	free(idxToPos);
 	free(posToIdx);
-	freeGroupPermuter(gp);
+	delete gp;
 	free(realPerm);
 }
 

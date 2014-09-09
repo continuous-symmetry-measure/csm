@@ -101,7 +101,7 @@ copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="babelAdapter.cpp" />
-    <ClCompile Include="groupPermuter.c" />
+    <ClCompile Include="groupPermuter.cpp" />
     <ClCompile Include="mainRot.cpp" />
     <ClCompile Include="Molecule.cpp" />
     <ClCompile Include="nrutil.c" />
