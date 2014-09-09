@@ -77,12 +77,7 @@ void Permuter::applyCycle(Cycle *c) {
 int Permuter::initCycle(Cycle* c, int divisorIndex, int startingIndex, int ignoreUsed) {
 	int i;	
 	c->_cycleSize = _divisors[divisorIndex];
-	if (c->_cycle != NULL && c->_divisor != divisorIndex) {
-		free(c->_cycle);
-		c->_cycle = (int *)malloc(sizeof(int) * c->_cycleSize);
-	} else if (c->_cycle == NULL) {
-		c->_cycle = (int *)malloc(sizeof(int) * c->_cycleSize);
-	}
+	c->_cycle = vector<int>(c->_cycleSize);
 	c->_divisor = divisorIndex; 
 	c->_cycle[0] = findFreeIndex(startingIndex);
 	for (i = 1; i < c->_cycleSize; i++) {
@@ -98,8 +93,7 @@ int Permuter::initCycle(Cycle* c, int divisorIndex, int startingIndex, int ignor
 }
 
 void Permuter::freeCycle(Cycle *c) {
-	free(c->_cycle);
-	free(c);
+	delete c;
 }
 
 /**
@@ -268,8 +262,9 @@ bool Permuter::next() {
 			// add a cycle, resize all cycles to smallest size			
 			int i;
 			clearPerm();
-			_cycles[_numCycles] = (Cycle*)malloc(sizeof(Cycle));
-			_cycles[_numCycles]->_cycle = (int *)malloc(_operationOrder * sizeof(int));
+			_cycles[_numCycles] = new Cycle();
+			// Don't initialize this, initCycle below will take care of it
+			//_cycles[_numCycles]->_cycle = (int *)malloc(_operationOrder * sizeof(int));
 			_numCycles++;
 			for (i = 0; i < _numCycles; i++) {
 				initCycle(_cycles[i], 0, i * _divisors[0], true);
