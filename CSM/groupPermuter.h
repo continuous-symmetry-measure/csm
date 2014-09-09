@@ -10,9 +10,7 @@
 #ifndef GROUP_PERMUTER_H
 #define GROUP_PERMUTER_H
 
-extern "C" {
-	#include "permuter.h"
-}
+#include "permuter.h"
 
 class GroupPermuter
 {
@@ -21,8 +19,8 @@ private:
 	int* _sizesOfGroups;
 	int _size;
 	int* _index;
-	permuter** _permuters;
-	int _firstPermutation;  // boolean flag - the first permuation is unique, not permuted
+	Permuter** _permuters;
+	bool _firstPermutation;  // boolean flag - the first permuation is unique, not permuted
 
 	void copyIndexes();
 public:
@@ -44,9 +42,9 @@ public:
 	/**
 	* Generate the next permutation
 	*
-	* @return TRUE if we have not yet reached the end of the enumerator, FALSE otherwise
+	* @return true if we have not yet reached the end of the enumerator, false otherwise
 	*/
-	int nextGroupPermutation();
+	bool next();
 
 	/**
 	* Reset the group permuter to re-initialize enumeration

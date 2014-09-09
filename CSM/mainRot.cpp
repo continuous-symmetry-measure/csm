@@ -12,11 +12,11 @@ extern "C" {
 #include <string.h> //for strcmp,strlen
 
 #include "Molecule.h"
-#include "groupPermuter.h"
 #include "mainhelpers.h"
 #include "nrutil.h"
 }
 
+#include "groupPermuter.h"
 #include <openbabel/mol.h>
 #include "babelAdapter.h"
 #include <vector>
@@ -1294,7 +1294,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	};
 
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
-	while ( gp->nextGroupPermutation() ) {
+	while ( gp->next() ) {
 
 		for (i = 0; i < m->_size; i++) {
 			realPerm[i] = idxToPos[gp->elementAt(posToIdx[i])];

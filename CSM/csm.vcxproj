@@ -106,7 +106,7 @@ copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClCompile Include="Molecule.cpp" />
     <ClCompile Include="nrutil.c" />
     <ClCompile Include="parseFunctions.c" />
-    <ClCompile Include="permuter.c" />
+    <ClCompile Include="permuter.cpp" />
     <ClCompile Include="poly_solve.c" />
     <ClCompile Include="pythag.c" />
     <ClCompile Include="rpoly.c" />
