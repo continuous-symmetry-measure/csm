@@ -53,7 +53,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\openbabel-files\include;..\openbabel-files\Windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\openbabel-files\include;..\..\openbabel-files\Windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WINVER=0x0501;_WIN32_WINNT 0x0501;NTDDI_VERSION=NTDDI_WINXP ;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -65,19 +65,19 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;openbabel-2.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\openbabel-files\windows\lib\x86\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\openbabel-files\windows\lib\x86\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)..\openbabel-files\Windows\dll\x86\Debug\*.* $(OutDir)
-copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)</Command>
+      <Command>copy $(ProjectDir)..\..\openbabel-files\Windows\dll\x86\Debug\*.* $(OutDir)
+copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\openbabel-files\include;..\openbabel-files\Windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\openbabel-files\include;..\..\openbabel-files\Windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WINVER=0x0501;_WIN32_WINNT 0x0501;NTDDI_VERSION=NTDDI_WINXP ;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
@@ -86,7 +86,7 @@ copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)</Comma
     </ClCompile>
     <Link>
       <AdditionalDependencies>kernel32.lib;openbabel-2.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\openbabel-files\windows\lib\x86\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\openbabel-files\windows\lib\x86\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -94,35 +94,35 @@ copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)</Comma
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(ProjectDir)..\openbabel-files\Windows\dll\x86\Release\*.* $(OutDir)
-copy $(ProjectDir)..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
+      <Command>copy $(ProjectDir)..\..\openbabel-files\Windows\dll\x86\Release\*.* $(OutDir)
+copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="babelAdapter.cpp" />
-    <ClCompile Include="groupPermuter.cpp" />
-    <ClCompile Include="mainRot.cpp" />
-    <ClCompile Include="Molecule.cpp" />
-    <ClCompile Include="nrutil.c" />
-    <ClCompile Include="parseFunctions.c" />
-    <ClCompile Include="permuter.cpp" />
-    <ClCompile Include="poly_solve.c" />
-    <ClCompile Include="pythag.c" />
-    <ClCompile Include="rpoly.c" />
-    <ClCompile Include="tqli.c" />
-    <ClCompile Include="tred2.c" />
+    <ClCompile Include="..\babelAdapter.cpp" />
+    <ClCompile Include="..\groupPermuter.cpp" />
+    <ClCompile Include="..\mainRot.cpp" />
+    <ClCompile Include="..\Molecule.cpp" />
+    <ClCompile Include="..\nrutil.c" />
+    <ClCompile Include="..\parseFunctions.c" />
+    <ClCompile Include="..\permuter.cpp" />
+    <ClCompile Include="..\poly_solve.c" />
+    <ClCompile Include="..\pythag.c" />
+    <ClCompile Include="..\rpoly.c" />
+    <ClCompile Include="..\tqli.c" />
+    <ClCompile Include="..\tred2.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="babelAdapter.h" />
-    <ClInclude Include="groupPermuter.h" />
-    <ClInclude Include="Molecule.h" />
-    <ClInclude Include="nrutil.h" />
-    <ClInclude Include="parseFunctions.h" />
-    <ClInclude Include="permuter.h" />
+    <ClInclude Include="..\babelAdapter.h" />
+    <ClInclude Include="..\groupPermuter.h" />
+    <ClInclude Include="..\Molecule.h" />
+    <ClInclude Include="..\nrutil.h" />
+    <ClInclude Include="..\parseFunctions.h" />
+    <ClInclude Include="..\permuter.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
+    <Text Include="..\ReadMe.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
