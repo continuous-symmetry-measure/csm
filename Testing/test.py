@@ -33,5 +33,5 @@ class CheckCSMOutput(TestCase):
 
 
 if __name__=='__main__':
-    run_test(os.path.join(config.TEST_PATH, 'test2'))
+    run_test(os.path.join(config.TEST_PATH, 'test6'))
 
