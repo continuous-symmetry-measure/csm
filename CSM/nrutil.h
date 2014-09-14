@@ -2,8 +2,10 @@
 #define _NR_UTILS_H_
 
 
+#ifndef SQR
 static double sqrarg;
 #define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
+#endif
 
 /*
 static double dsqrarg;
