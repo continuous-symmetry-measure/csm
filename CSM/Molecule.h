@@ -14,13 +14,6 @@
 #ifndef MOLECULE_H
 #define MOLECULE_H
 
-#define DIM 3
-#define MINDOOUBLE  1e-8
-#define LINE_BUFFER_SIZE 1000  /* maximal length of line of input */
-#define DEPTH_ITERATIONS 200   /* maximal depth to descend to when checking similarity */
-#define TRUE 1
-#define FALSE 0
-
 #include <openbabel/mol.h>
 
 #ifndef SQR

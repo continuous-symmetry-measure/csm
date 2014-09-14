@@ -27,6 +27,11 @@ extern "C" {
 
 using namespace OpenBabel;
 
+const int DIM = 3;
+const double MINDOOUBLE = 1e-8;
+const int LINE_BUFFER_SIZE = 1000;  /* maximal length of line of input */
+const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking similarity */
+
 // ************************************************************
 //       function declarations
 // ************************************************************
