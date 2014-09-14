@@ -33,14 +33,6 @@ const int LINE_BUFFER_SIZE = 1000;  /* maximal length of line of input */
 const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking similarity */
 
 // ************************************************************
-//       function declarations
-// ************************************************************
-void initSimilarity(Molecule *m,int depth);
-void setMarked(Molecule *m,int state);
-int isSimilar(Molecule *m,int a,int b);
-
-
-// ************************************************************
 //       implementation
 // ************************************************************
 
@@ -129,7 +121,8 @@ Molecule::~Molecule()
 /*
  * replace atom symbols with 'XX' - for unknown
  */
-void replaceSymbols(Molecule* m){
+void Molecule::replaceSymbols()
+{
 
 	int i;
 
@@ -137,18 +130,18 @@ void replaceSymbols(Molecule* m){
 	char *sym;
 
     // free old symbols
-    for (i=0;i<m->_size;i++){
-        if (m->_symbol[i]){
-    		free(m->_symbol[i]);
+    for (i=0;i<_size;i++){
+        if (_symbol[i]){
+    		free(_symbol[i]);
         }
 	}
 
-    for (i=0;i<m->_size;i++){
+    for (i=0;i<_size;i++){
     	sym = (char *)malloc(3 * sizeof(char) );
     	sym[0]='X';
     	sym[1]='X';
 		sym[2]='\0';
-		m->_symbol[i] = sym;
+		_symbol[i] = sym;
 	}
 
 }
@@ -185,7 +178,7 @@ Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
     }
 
     if (replaceSym)
-    	replaceSymbols(m);
+    	m->replaceSymbols();
 
     // read connectivity
     int atomNum,neighbour;
@@ -250,7 +243,7 @@ Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
 
     free(buff);
 
-    initSimilarity(m,DEPTH_ITERATIONS);
+    m->initSimilarity(DEPTH_ITERATIONS);
 
     return (m);
 }
@@ -284,7 +277,7 @@ Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
     }
 
     if (replaceSym)
-    	replaceSymbols(m);
+    	m->replaceSymbols();
 
     // read connectivity
     int *neighbours = (int*)malloc(size * sizeof(int));
@@ -312,7 +305,7 @@ Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
 
     free(neighbours);
 
-    initSimilarity(m,DEPTH_ITERATIONS);
+    m->initSimilarity(DEPTH_ITERATIONS);
 
     return (m);
 }
@@ -358,9 +351,10 @@ Molecule* Molecule::createFromOBMol(OBMol &obmol, bool replaceSym, bool useMass)
 		mol->_pos[i][2] = atom->GetZ();
 	}
 
-	if (replaceSym) replaceSymbols(mol);
+	if (replaceSym) 
+		mol->replaceSymbols();
 
-	initSimilarity(mol, DEPTH_ITERATIONS);
+	mol->initSimilarity(DEPTH_ITERATIONS);
 
 	return mol;
 }
@@ -452,7 +446,7 @@ Molecule* Molecule::copy(int* selectedAtoms, int selectedAtomsSize, bool updateS
 	free(newGroups);
 
 	if (updateSimilarity)
-		initSimilarity(dest,DEPTH_ITERATIONS);
+		dest->initSimilarity(DEPTH_ITERATIONS);
 
 	return(dest);
 }
@@ -461,50 +455,50 @@ Molecule* Molecule::copy(int* selectedAtoms, int selectedAtomsSize, bool updateS
  * breaks down atoms into similar groups by symbol and graph structure
  * depth -  is the desired maximal depth to take into account
  */
-void initSimilarity(Molecule *m,int depth){
+void Molecule::initSimilarity(int depth){
 
     int i,j,k,groupNum;
 
     groupNum = 1;
-    setMarked(m,FALSE);
+    setMarked(FALSE);
 
     // break into initial groups by symbol and valancy
-    for (i=0; i<m->_size ; i++){
+    for (i=0; i<_size ; i++){
 
-        if (m->_marked[i])
+        if (_marked[i])
             continue;
 
-        for (j=0; j<m->_size ; j++){
-            if ( (m->_marked[j]) || (m->_valency[i] != m->_valency[j]) || (strcmp(m->_symbol[i],m->_symbol[j])!=0) )
+        for (j=0; j<_size ; j++){
+            if ( (_marked[j]) || (_valency[i] != _valency[j]) || (strcmp(_symbol[i],_symbol[j])!=0) )
                  continue;
 
-             m->_similar[j] = groupNum;
-             m->_marked[j] = TRUE;
+             _similar[j] = groupNum;
+             _marked[j] = TRUE;
         }
         groupNum++;
     }
 
-    int *group = (int*)malloc(m->_size * sizeof(int));     //temporary buffer
-    int *subGroup = (int*)malloc(m->_size * sizeof(int));  //temporary buffer
+    int *group = (int*)malloc(_size * sizeof(int));     //temporary buffer
+    int *subGroup = (int*)malloc(_size * sizeof(int));  //temporary buffer
 
     // iteratively refine the breakdown into groups
     for (k=0; k < depth ; k++){
 
-    	setMarked(m,FALSE); // reset marked
+    	setMarked(FALSE); // reset marked
 
-    	for (i=0; i < m->_size; i++){
+    	for (i=0; i < _size; i++){
 
-	    	if (m->_marked[i])
+	    	if (_marked[i])
 	    		continue;
 
 	    	// mark self as done
-	    	m->_marked[i] = TRUE;
+	    	_marked[i] = TRUE;
 
 		    int len = 0; //group size
 
 	    	// create the items in the group of i
-	    	for(j=0; j < m->_size; j++)
-	    		if ((j!=i) && (m->_similar[j] == m->_similar[i])){
+	    	for(j=0; j < _size; j++)
+	    		if ((j!=i) && (_similar[j] == _similar[i])){
 	    			group[len++] = j;
 	    		}
 
@@ -512,9 +506,9 @@ void initSimilarity(Molecule *m,int depth){
 
 	    	// for each item in the group check if it can be split or not
 	    	for(j=0; j < len; j++){
-	    		if (isSimilar(m,group[j],i))
+	    		if (isSimilar(group[j],i))
 	    			// mark similar item as done
-	    			m->_marked[group[j]] = TRUE;
+	    			_marked[group[j]] = TRUE;
 	    		else
 	    			// add to new subGroup
 	    			subGroup[subLen++] = group[j];
@@ -524,7 +518,7 @@ void initSimilarity(Molecule *m,int depth){
 	    	int updated = FALSE;
 	    	for(j=0; j < subLen; j++){
 	    		updated = TRUE;
-	    		m->_similar[subGroup[j]] = groupNum;
+	    		_similar[subGroup[j]] = groupNum;
 	    	}
 
 	    	if (updated == TRUE)
@@ -532,7 +526,7 @@ void initSimilarity(Molecule *m,int depth){
 		}
     }
 
-    m->_groupNum = groupNum -1;
+    _groupNum = groupNum -1;
 
     free(group);
     free(subGroup);
@@ -541,34 +535,34 @@ void initSimilarity(Molecule *m,int depth){
 /*
  * sets the general use marked array to state (TRUE|FALSE)
  */
-void setMarked(Molecule *m,int state){
+void Molecule::setMarked(int state){
     int i;
-    for (i=0; i<m->_size; i++)
-        m->_marked[i] = state;
+    for (i=0; i<_size; i++)
+        _marked[i] = state;
 }
 
 /*
  * Atom a is similar to Atom b if for each neighbour of i, j has a similar neighbour
  */
-int isSimilar(Molecule *m,int a,int b){
+int Molecule::isSimilar(int a,int b){
 
     int i,j,found = TRUE;
 
 	// alloc and init temporary buffer
-    int *mark = (int*)malloc(m->_size * sizeof(int));
-    for ( i=0;  i<m->_size;  i++ )
+    int *mark = (int*)malloc(_size * sizeof(int));
+    for ( i=0;  i<_size;  i++ )
     	mark[i] = 0;
 
 	// for each of i's neighbours
-	for ( i=0;  i<m->_valency[a];  i++ ){
+	for ( i=0;  i<_valency[a];  i++ ){
 
 		found = FALSE;
 
-		for ( j=0;  j<m->_valency[b];  j++ ){
+		for ( j=0;  j<_valency[b];  j++ ){
 			if (mark[j])
 				continue;
 
-			if (m->_similar[m->_adjacent[a][i]] == m->_similar[m->_adjacent[b][j]]){
+			if (_similar[_adjacent[a][i]] == _similar[_adjacent[b][j]]){
 				found = TRUE;
 				mark[j] = TRUE;
 				break;
@@ -731,9 +725,10 @@ int normalizeMolecule(Molecule *m, bool keepCenter = false){
 /*
  * prints the molecule
  */
-void printMolecule(Molecule *m){
+void Molecule::print()
+{
     int i,j;
-
+	Molecule *m = this; // This was previously a function accepting Molecule m as an argument
     // print molecule
     printf("molecule:\n");
 
@@ -741,7 +736,7 @@ void printMolecule(Molecule *m){
     printf("size = %d\n",m->_size);
 
     // print symbols and positions
-	for (i=0;i<m->_size;i++)
+	for (i=0;i<_size;i++)
         printf("%s %lf %lf %lf\n",m->_symbol[i],m->_pos[i][0],m->_pos[i][1],m->_pos[i][2]);
 
     // print adjacency & valency
@@ -764,7 +759,7 @@ void printMolecule(Molecule *m){
     }
 
     printf("\nsimilar subtree:\n");
-    setMarked(m,FALSE);
+    m->setMarked(FALSE);
    	for (i=0;i<m->_size;i++){
 
         if (m->_marked[i])
@@ -795,8 +790,10 @@ void printMolecule(Molecule *m){
 /*
  * prints the molecule - short version
  */
-void printMoleculeBasic(Molecule *m){
+void Molecule::printBasic()
+{
     int i,j;
+	Molecule *m = this; // This was previously a function accepting Molecule m as an argument
 
     // print size
     printf("%d\n",m->_size);
@@ -818,11 +815,13 @@ void printMoleculeBasic(Molecule *m){
 /*
  * prints only the similar section of the Molecule
  */
-void printMoleculeSimilar(Molecule *m){
+void Molecule::printSimilar()
+{
     int i,j;
+	Molecule *m = this; // This was previously a function accepting Molecule m as an argument
 
     printf("similar subtree:\n");
-    setMarked(m,FALSE);
+    m->setMarked(FALSE);
    	for (i=0;i<m->_size;i++){
 
         if (m->_marked[i])
@@ -853,12 +852,14 @@ void printMoleculeSimilar(Molecule *m){
 /*
  * prints the Molecule with detailed information for debugging
  */
-void printMoleculeDebug(Molecule *m){
+void Molecule::printDebug()
+{
     int i,j;
+	Molecule *m = this; // This was previously a function accepting Molecule m as an argument
 
 	// print similarity
 	printf("Equivalent Groups:\n");
-    setMarked(m,FALSE);
+    m->setMarked(FALSE);
    	for (i=0;i<m->_size;i++){
 
         if (m->_marked[i])
@@ -910,11 +911,13 @@ void printMoleculeDebug(Molecule *m){
 /*
  * for debug purposes ... prints only the similar section of the Molecule
  */
-void printMoleculeDebug2(Molecule *m){
+void Molecule::printDebug2()
+{
     int i,j;
+	Molecule *m = this; // This was previously a function accepting Molecule m as an argument
 
     printf("Breakdown into groups:\n");
-    setMarked(m,FALSE);
+    m->setMarked(FALSE);
    	for (i=0;i<m->_size;i++){
 
         if (m->_marked[i])
