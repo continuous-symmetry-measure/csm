@@ -40,7 +40,7 @@ const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking
 /*
  * allocates memory for the molecule structure
  */
-Molecule::Molecule(int size)
+Molecule::Molecule(int size) : _mass(size, 1.0), _valency(size, 0), _similar(size), _marked(size)
 {
 	int i;
     _size = size;
@@ -54,27 +54,9 @@ Molecule::Molecule(int size)
 	_symbol = (char **)malloc(size * sizeof(char*));
 	// individual strings allocated on reading
    
-    //allocate mass (initially - equal mass)
-    _mass = (double *)malloc(size * sizeof(double));
-	for ( i=0;  i< size ;  i++ ){
-		_mass[i] = 1.0;
-	}
-
     //allocate adjacency
     _adjacent = (int **)malloc(size * sizeof(int*));
 	// individual neighbours allocated on reading
-
-    //allocate valency
-    _valency = (int*)malloc(size * sizeof(int));
-    for ( i=0;  i< size ;  i++ ){
-		_valency[i] = 0;
-	}
-
-    //allocate similarity
-    _similar = (int*)malloc(size * sizeof(int));
-
-    //allocate marked array
-    _marked = (int*)malloc(_size * sizeof(int));
 };
 
 /*
@@ -89,9 +71,6 @@ Molecule::~Molecule()
 		free(_pos[i]);
 	}
 	free(_pos);
-
-	// Free mass
-	free(_mass);
 
 	// free symbols
 	for (i = 0; i<_size; i++){
@@ -108,15 +87,6 @@ Molecule::~Molecule()
 		}
 	}
 	free(_adjacent);
-
-	// free valency
-	free(_valency);
-
-	// free similar
-	free(_similar);
-
-	// free marked
-	free(_marked);
 };
 
 /*
@@ -477,7 +447,7 @@ void Molecule::initSimilarity(int depth)
                  continue;
 
              _similar[j] = groupNum;
-             _marked[j] = TRUE;
+             _marked[j] = true;
         }
         groupNum++;
     }
@@ -496,7 +466,7 @@ void Molecule::initSimilarity(int depth)
 	    		continue;
 
 	    	// mark self as done
-	    	_marked[i] = TRUE;
+	    	_marked[i] = true;
 
 		    int len = 0; //group size
 
@@ -512,20 +482,20 @@ void Molecule::initSimilarity(int depth)
 	    	for(j=0; j < len; j++){
 	    		if (isSimilar(group[j],i))
 	    			// mark similar item as done
-	    			_marked[group[j]] = TRUE;
+	    			_marked[group[j]] = true;
 	    		else
 	    			// add to new subGroup
 	    			subGroup[subLen++] = group[j];
 	    	}
 
 	    	// give subGroup members a new id
-	    	int updated = FALSE;
+	    	bool updated = false;
 	    	for(j=0; j < subLen; j++){
-	    		updated = TRUE;
+	    		updated = true;
 	    		_similar[subGroup[j]] = groupNum;
 	    	}
 
-	    	if (updated == TRUE)
+	    	if (updated)
 	    		groupNum++;
 		}
     }
@@ -537,9 +507,9 @@ void Molecule::initSimilarity(int depth)
 }
 
 /*
- * sets the general use marked array to state (TRUE|FALSE)
+ * sets the general use marked array to state (true or false)
  */
-void Molecule::setMarked(int state)
+void Molecule::setMarked(bool state)
 {
     int i;
     for (i=0; i<_size; i++)
@@ -551,26 +521,23 @@ void Molecule::setMarked(int state)
  */
 int Molecule::isSimilar(int a,int b)
 {
+	int i, j;
+	bool found = true;
 
-    int i,j,found = TRUE;
-
-	// alloc and init temporary buffer
-    int *mark = (int*)malloc(_size * sizeof(int));
-    for ( i=0;  i<_size;  i++ )
-    	mark[i] = 0;
+	auto mark = std::vector<bool>(_size, false);
 
 	// for each of i's neighbours
 	for ( i=0;  i<_valency[a];  i++ ){
 
-		found = FALSE;
+		found = false;
 
 		for ( j=0;  j<_valency[b];  j++ ){
 			if (mark[j])
 				continue;
 
 			if (_similar[_adjacent[a][i]] == _similar[_adjacent[b][j]]){
-				found = TRUE;
-				mark[j] = TRUE;
+				found = true;
+				mark[j] = true;
 				break;
 			}
 
@@ -581,7 +548,6 @@ int Molecule::isSimilar(int a,int b)
 
 	}
 
-	free(mark);
 	return(found);
 }
 
@@ -681,9 +647,9 @@ Molecule* Molecule::stripAtoms(char** removeList, int removeListSize, int update
 
 /*
  * Normalizes the position of atoms of the molecule
- * returns one [TRUE] if successful, zero[FALSE] otherwise
+ * returns true if successful, false otherwise
  */
-int Molecule::normalizeMolecule(bool keepCenter = false){
+bool Molecule::normalizeMolecule(bool keepCenter = false){
 
 	double tmp,x_avg, y_avg, z_avg,norm;
 	int i;
@@ -716,7 +682,7 @@ int Molecule::normalizeMolecule(bool keepCenter = false){
 
 
 	if(norm < MINDOOUBLE)
-		return FALSE;
+		return false;
 
 	for(i=0; i< _size; i++){
 		_pos[i][0] = ((_pos[i][0] - x_avg) / norm);
@@ -726,7 +692,7 @@ int Molecule::normalizeMolecule(bool keepCenter = false){
 
 	_norm = norm;
 
-	return TRUE;
+	return true;
 }
 
 /*
@@ -766,7 +732,7 @@ void Molecule::print()
     }
 
     printf("\nsimilar subtree:\n");
-    m->setMarked(FALSE);
+    m->setMarked(false);
    	for (i=0;i<m->_size;i++){
 
         if (m->_marked[i])
@@ -777,7 +743,7 @@ void Molecule::print()
                  continue;
 
              printf("%d ",j+1);
-             m->_marked[j] = TRUE;
+             m->_marked[j] = true;
         }
         printf("\n");
     }
@@ -828,7 +794,7 @@ void Molecule::printSimilar()
 	Molecule *m = this; // This was previously a function accepting Molecule m as an argument
 
     printf("similar subtree:\n");
-    m->setMarked(FALSE);
+    m->setMarked(false);
    	for (i=0;i<m->_size;i++){
 
         if (m->_marked[i])
@@ -839,7 +805,7 @@ void Molecule::printSimilar()
                  continue;
 
              printf("%d ",j+1);
-             m->_marked[j] = TRUE;
+             m->_marked[j] = true;
         }
         printf("\n");
     }
@@ -877,7 +843,7 @@ void Molecule::printDebug()
                  continue;
 
              printf("%d ",j+1);
-             m->_marked[j] = TRUE;
+             m->_marked[j] = true;
         }
         printf("\n");
     }
@@ -935,7 +901,7 @@ void Molecule::printDebug2()
                  continue;
 
              printf("%d ",j+1);
-             m->_marked[j] = TRUE;
+             m->_marked[j] = true;
         }
         printf("\n");
     }

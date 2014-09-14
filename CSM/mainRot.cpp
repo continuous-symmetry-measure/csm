@@ -26,8 +26,6 @@ extern "C" {
 #define GROUPSIZE_LIMIT 15
 #define GROUPSIZE_FACTOR 1.32e11
 #define APPROX_RUN_PER_SEC 8e4
-#define TRUE 1
-#define FALSE 0
 #define ZERO_IM_PART_MAX (1e-3)
 #define MIN_GROUPS_FOR_OUTLIERS 10
 
@@ -143,29 +141,29 @@ double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double
 double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
 
 // global options
-int ignoreHy = FALSE;
-int removeHy = FALSE;
-int ignoreSym = FALSE;
-int useFormat = FALSE;
-int writeOpenu = FALSE;
+bool ignoreHy = false;
+bool removeHy = false;
+bool ignoreSym = false;
+bool useFormat = false;
+bool writeOpenu = false;
 OperationType type;
 int opOrder;
-int useperm    = FALSE;
-int useDir	   = FALSE;
-int findPerm = FALSE; 
-int useMass    = FALSE;
-int limitRun = TRUE;
+bool useperm = false;
+bool useDir = false;
+bool findPerm = false;
+bool useMass = false;
+bool limitRun = true;
 char *format = NULL;
-int babelBond = FALSE;
-int timeOnly = FALSE;
+bool babelBond = false;
+bool timeOnly = false;
 int sn_max = 4;
-//int anneal = FALSE;
-int detectOutliers = FALSE;
+//int anneal = false;
+bool detectOutliers = false;
 double A = 2;
-int babelTest = FALSE;
-int printNorm = FALSE;
-int printLocal = FALSE;
-bool keepCenter = FALSE;
+bool babelTest = false;
+bool printNorm = false;
+bool printLocal = false;
+bool keepCenter = false;
 
 // file pointers
 FILE* inFile = NULL;
@@ -277,7 +275,7 @@ char *getExtension(char *fname) {
 
 /*
  * Normalizes the position of atoms of the molecule
- * returns one [TRUE] if successful, zero[FALSE] otherwise
+ * returns one [true] if successful, zero[false] otherwise
  */
 void normalize(double **coords, Molecule *m){
 
@@ -472,9 +470,9 @@ void parseInput(int argc, char *argv[]){
 
 	// get commandline flags
 	int i;
-	int nextIsPermFile = FALSE;
-	int nextIsMaxSn = FALSE;
-	int nextIsDirFile = FALSE;
+	int nextIsPermFile = false;
+	int nextIsMaxSn = false;
+	int nextIsDirFile = false;
 	for ( i=4;  i< argc ;  i++ ){
 		if (nextIsPermFile) {
 			char* permfileName = argv[i];
@@ -486,7 +484,7 @@ void parseInput(int argc, char *argv[]){
 				}
 				exit(1);
 			}
-			nextIsPermFile = FALSE;
+			nextIsPermFile = false;
 		} else if (nextIsDirFile) {
 			char* dirfilename = argv[i];
 			if ((dirfile = fopen(dirfilename, "rt")) == NULL){
@@ -497,65 +495,65 @@ void parseInput(int argc, char *argv[]){
 				}
 				exit(1);
 			}
-			nextIsDirFile = FALSE;
+			nextIsDirFile = false;
 		} else if (nextIsMaxSn) { 
 			sn_max = atoi(argv[i]);
-			nextIsMaxSn = FALSE;
+			nextIsMaxSn = false;
 		} else if (strcmp(argv[i],"-sn_max" ) == 0) {
 			if (type != CH) { 
 				printf("This option only applies to chirality\n");
 				exit(1);
 			}
-			nextIsMaxSn = TRUE;	
+			nextIsMaxSn = true;	
 		} else if (strcmp(argv[i],"-ignoreHy" ) == 0 )
-			ignoreHy = TRUE;
+			ignoreHy = true;
 		else if (strcmp(argv[i],"-removeHy" ) == 0 )
-			removeHy = TRUE;
+			removeHy = true;
 
 		else if (strcmp(argv[i],"-ignoreSym" ) == 0 )
-			ignoreSym = TRUE;
+			ignoreSym = true;
 
 	    else if (strncmp(argv[i],"-format", 7 ) == 0 ) {
-		useFormat = TRUE;
+		useFormat = true;
 		format = strdup(argv[i] + 7);
 		} else if (strcmp(argv[i],"-writeOpenu" ) == 0 ) {
-			writeOpenu = TRUE;	
+			writeOpenu = true;	
 		} else if (strcmp(argv[i], "-nolimit") == 0) { 
-			limitRun = FALSE;  
+			limitRun = false;  
 		} else if (strcmp(argv[i], "-useperm") == 0) {
-			useperm = TRUE;
-			nextIsPermFile = TRUE;
+			useperm = true;
+			nextIsPermFile = true;
 		} else if (strcmp(argv[i], "-usedir") == 0) {
-			useDir = TRUE;
-			nextIsDirFile = TRUE;
+			useDir = true;
+			nextIsDirFile = true;
 		} else if (strcmp(argv[i], "-babelbond") == 0) {
-			babelBond = TRUE;
+			babelBond = true;
 		} else if (strcmp(argv[i], "-useMass") == 0) { 
-			useMass = TRUE;					
+			useMass = true;					
 		} else if (strcmp(argv[i], "-timeonly") == 0) {
-			timeOnly = TRUE;
+			timeOnly = true;
 		} else if  (strcmp(argv[i], "-printNorm") == 0) {
-			printNorm = TRUE;
+			printNorm = true;
 		} else if (strcmp(argv[i], "-help") == 0) {
 			usage(argv[0]);
 			exit(0);
 		} else if (strcmp(argv[i], "-findperm") == 0) { 
-			findPerm = TRUE;
+			findPerm = true;
 		} else if (strcmp(argv[i], "-detectOutliers") == 0) {
-			detectOutliers = TRUE;
+			detectOutliers = true;
 		} else if (strcmp(argv[i], "-approx") == 0) {
-			detectOutliers = TRUE;
-			findPerm = TRUE;
+			detectOutliers = true;
+			findPerm = true;
 		} else if (strcmp(argv[i], "-babelTest") == 0) { 
-			babelTest = TRUE;
+			babelTest = true;
 		} else if (strcmp(argv[i], "-printlocal") == 0) { 
-			printLocal = TRUE;
+			printLocal = true;
 		} else if (strcmp(argv[i], "-keepCenter") == 0) { 
-			keepCenter = TRUE;
+			keepCenter = true;
 		}
 	}
 	if (writeOpenu) {
-		useFormat = TRUE;
+		useFormat = true;
 		format = strdup("PDB");		
 	}
 }
@@ -638,9 +636,9 @@ int main(int argc, char *argv[]){
 		char* removeList[] = {"H"," H"};
 		Molecule* n = NULL;
 		if (ignoreHy)
-			n = m->stripAtoms(removeList,2,FALSE);
+			n = m->stripAtoms(removeList,2,false);
 		else //removeHy 
-			n = m->stripAtoms(removeList,2,TRUE);		
+			n = m->stripAtoms(removeList,2,true);		
 	
 		mol.DeleteHydrogens();
 		
@@ -847,7 +845,7 @@ void readPerm(FILE* permfile, int* perm, int size) {
 	int *used = (int *)malloc(sizeof(int) * size);
 	int i = 0;
 	for (i = 0; i < size; i++) {
-		used[i] = FALSE;
+		used[i] = false;
 	}
 	for (i = 0; i < size; i++) {
 		int cur = -1;
@@ -862,7 +860,7 @@ void readPerm(FILE* permfile, int* perm, int size) {
 			fclose(permfile);
 			exit(1);
 		}
-		used[cur - 1] = TRUE;
+		used[cur - 1] = true;
 		perm[i] = cur - 1;
 	}
 	free(used);
@@ -948,8 +946,8 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	int *curPerm = (int *)malloc(sizeof(int) * m->size());
 	double csm, dists;
 
-	int isImproper = (type != CN) ? TRUE : FALSE;
-	int isZeroAngle = (type == CS) ? TRUE : FALSE;
+	int isImproper = (type != CN) ? true : false;
+	int isZeroAngle = (type == CS) ? true : false;
 
 	// initialize identity permutation
 	for (i = 0; i < m->size(); i++) {
@@ -1122,8 +1120,8 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 }
 
 double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, double *dir, OperationType type, double dMin) {
-	int isImproper = (type != CN) ? TRUE : FALSE;
-	int isZeroAngle = (type == CS) ? TRUE : FALSE;
+	int isImproper = (type != CN) ? true : false;
+	int isZeroAngle = (type == CS) ? true : false;
 	int i, j, k, l;
 	int *curPerm = (int *)malloc(sizeof(int) * m->size());
 	double rotaionMatrix[3][3];
@@ -1178,8 +1176,8 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 }
 
 double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type) {
-	int isImproper = (type != CN) ? TRUE : FALSE;
-	int isZeroAngle = (type == CS) ? TRUE : FALSE;
+	int isImproper = (type != CN) ? true : false;
+	int isZeroAngle = (type == CS) ? true : false;
 	int i, j, k, l;
 	int *curPerm = (int *)malloc(sizeof(int) * m->size());
 	double rotaionMatrix[3][3];
@@ -1578,7 +1576,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 	double median;
 	double zero[3] = {0.0,0.0,0.0};
 	std::vector<double *> results;
-	int useOrthogonal = TRUE;
+	int useOrthogonal = true;
 
 	testDir = (double**)malloc(sizeof(double*) * 3);
 	for (i = 0; i < 3; i++) {
@@ -1599,7 +1597,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 	}
 
 	for (i = 0; i < m->groupNum(); i++) { 					
-		outliers[i] = FALSE;
+		outliers[i] = false;
 		groupAverages[i][0] /= 	groupSizes[i];	
 		groupAverages[i][1] /= 	groupSizes[i];	
 		groupAverages[i][2] /= 	groupSizes[i];	
@@ -1726,8 +1724,8 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 }
 
 void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
-	int isImproper = (type != CN) ? TRUE : FALSE;
-	int isZeroAngle = (type == CS) ? TRUE : FALSE;
+	int isImproper = (type != CN) ? true : false;
+	int isZeroAngle = (type == CS) ? true : false;
 	int maxGroupSize = m->getMaxGroupSize();
 	int *group = (int*)malloc(sizeof(int) * maxGroupSize);
 	int *used = (int*)malloc(sizeof(int) * m->size());
@@ -1863,7 +1861,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				}
 
 				// Run until an orbit is complete
-				orbitDone = FALSE;
+				orbitDone = false;
 				orbitStart = row;				
 				orbitSize = 1;	
 				
@@ -1873,7 +1871,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 						//Close the group - we've reached the end							
 						row = col;
 						col = orbitStart;
-						orbitDone = TRUE;
+						orbitDone = true;
 					} else {								
 						// Search for the next orbit element
 						for (k = j + 1; k < tableSize; k++) { 
@@ -1882,7 +1880,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 								if (orbitStart == distances[k].col) { 
 									if (type == SN && orbitSize ==1) { 
 										// we have now closed an orbit of size 2			
-										orbitDone = TRUE;
+										orbitDone = true;
 									} else {	
 										continue;
 									}

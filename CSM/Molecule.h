@@ -27,19 +27,19 @@ private:
 	double** _pos;           // atom positions XYZ
 	char** _symbol;          // atom symbols
 	int** _adjacent;         // represent connectivity
-	int* _valency;           // valency of each atom
-	int* _similar;           // similarity
-	int* _marked;            // for marking atoms - general use
+	std::vector<int> _valency;           // valency of each atom
+	std::vector<int> _similar;           // similarity
+	std::vector<bool> _marked;            // for marking atoms - general use
 	int  _groupNum;          // the number of groups of similarity
 	double _norm;	     // The normalization factor
-	double* _mass;	     // The atomic masses
+	std::vector<double> _mass;	     // The atomic masses
 
 private:
 	Molecule(int size);  // Private constructor forces creation through the factory methods
 
 	void replaceSymbols();
 	void initSimilarity(int depth);
-	void setMarked(int state);
+	void setMarked(bool state);
 	int isSimilar(int a, int b);
 
 public:
@@ -53,7 +53,7 @@ public:
 	int getGroupSize(int num);
 	int getMaxGroupSize();
 	Molecule* stripAtoms(char** removeList, int removeListSize, int updateSimilarity);
-	int normalizeMolecule(bool keepCenter);
+	bool normalizeMolecule(bool keepCenter);
 	void fillAtomicMasses();  // Fill the atomic masses for all the symbols
 
 	void print();
