@@ -112,6 +112,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClCompile Include="..\rpoly.c" />
     <ClCompile Include="..\tqli.c" />
     <ClCompile Include="..\tred2.c" />
+    <ClCompile Include="..\elements.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\babelAdapter.h" />
@@ -120,6 +121,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClInclude Include="..\nrutil.h" />
     <ClInclude Include="..\parseFunctions.h" />
     <ClInclude Include="..\permuter.h" />
+    <ClInclude Include="..\elements.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\ReadMe.txt" />

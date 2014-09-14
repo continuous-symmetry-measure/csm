@@ -22,6 +22,11 @@ extern "C" {
 	#include "parseFunctions.h"
 }
 
+#include <openbabel/mol.h>
+#include "elements.h"
+
+using namespace OpenBabel;
+
 // ************************************************************
 //       function declarations
 // ************************************************************
@@ -306,6 +311,55 @@ Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
 
     return (m);
 }
+
+/**
+* Create a molecule from an OBMol
+*
+* @param obmol The OpenBabel Molecule
+* @param replaceSym Whether to ignore atom names or not
+*/
+Molecule* Molecule::createFromOBMol(OBMol &obmol, bool replaceSym, bool useMass) 
+{
+	int numAtoms = obmol.NumAtoms();
+	int i, j;
+	Molecule *mol = new Molecule(numAtoms);
+
+	for (i = 0; i < numAtoms; i++) {
+		OBAtom* atom = obmol.GetAtom(i + 1);
+		if (atom->GetAtomicNum() <= ELEMENTS.size() && atom->GetAtomicNum() > 0) {
+			mol->_symbol[i] = strdup(ELEMENTS[atom->GetAtomicNum() - 1].c_str());
+		}
+		else {
+			mol->_symbol[i] = strdup(atom->GetType());
+		}
+		if (useMass) {
+			mol->_mass[i] = atom->GetAtomicMass();
+		}
+		mol->_valency[i] = atom->GetValence();
+		mol->_adjacent[i] = (int*)malloc(mol->_valency[i] * sizeof(int));
+		j = 0;
+		for (OBBondIterator itr = atom->BeginBonds(); itr != atom->EndBonds(); itr++) {
+			// Check if it's the first or second atom that is the neighbour			
+			if ((*itr)->GetBeginAtomIdx() == atom->GetIdx()) {
+				mol->_adjacent[i][j] = (*itr)->GetEndAtomIdx() - 1;
+			}
+			else {
+				mol->_adjacent[i][j] = (*itr)->GetBeginAtomIdx() - 1;
+			}
+			j++;
+		}
+		mol->_pos[i][0] = atom->GetX();
+		mol->_pos[i][1] = atom->GetY();
+		mol->_pos[i][2] = atom->GetZ();
+	}
+
+	if (replaceSym) replaceSymbols(mol);
+
+	initSimilarity(mol, DEPTH_ITERATIONS);
+
+	return mol;
+}
+
 
 /*
  * Creates a new Molecule from selected atoms of the source Molecule (src)

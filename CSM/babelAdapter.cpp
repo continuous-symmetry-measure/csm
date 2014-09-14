@@ -14,25 +14,10 @@ using namespace OpenBabel;
 using namespace std;
 
 #include "Molecule.h"
+#include "elements.h"
 
 extern void initSimilarity(Molecule *m,int depth);		
 extern void replaceSymbols(Molecule* m);
-
-const char *(ELEMENT_TABLE[]) = {
-	"H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", 
-	"Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
-	"Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", 
-	"Ga", "Ge", "As", "Se",	"Br","Kr", "Rb", "Sr", "Y", "Zr",
-	"Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
-	"Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd",
-	"Pn", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb",
-	"Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
-	"Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra",	"Ac", "Th",
-	"Pa", "U", "Np", "Pu", "An", "Cn", "Bk", "Cf", "Es","Fm",
-	"Md", "No", "Lr", "Rf", "Ha"
-};
-
-#define N_ELEMS 105
 
 /** 
  * Get the atomic mass of a given element
@@ -41,8 +26,8 @@ const char *(ELEMENT_TABLE[]) = {
  * @return The atomic mass
  */ 
 double getAtomicMass(char *atomName) { 
-	for (int i = 0; i < N_ELEMS; i++) { 
-		if (!strcmp(atomName, ELEMENT_TABLE[i])) { 
+	for (int i = 0; i < ELEMENTS.size(); i++) { 
+		if (!strcmp(atomName, ELEMENTS[i].c_str())) { 
 			OBAtom a;
 			a.SetAtomicNum(i+1);
 			a.SetIsotope(0);
@@ -53,51 +38,6 @@ double getAtomicMass(char *atomName) {
 	exit(1);
 	return 1;
 } 
-
-/** 
- * Create a molecule from an OBMol
- * 
- * @param obmol The OpenBabel Molecule
- * @param replaceSym Whether to ignore atom names or not
- */
-Molecule* babel2Mol(OBMol &obmol, int replaceSym, bool useMass = false) {
-	int numAtoms = obmol.NumAtoms();
-	int i,j;
-	Molecule *mol = new Molecule(numAtoms);
-
-	for (i = 0; i < numAtoms; i++) {		
-		OBAtom* atom = obmol.GetAtom(i + 1);	
-		if (atom->GetAtomicNum() <= N_ELEMS && atom->GetAtomicNum() > 0) {
-			mol->_symbol[i] = strdup(ELEMENT_TABLE[atom->GetAtomicNum() - 1]);		
-		} else {
-			mol->_symbol[i] = strdup(atom->GetType());		
-		}
-		if (useMass) {
-			mol->_mass[i] = atom->GetAtomicMass();
-		}
-		mol->_valency[i] = atom->GetValence();
-		mol->_adjacent[i] = (int*)malloc(mol->_valency[i] * sizeof(int));
-		j = 0;
-		for (OBBondIterator itr = atom->BeginBonds(); itr != atom->EndBonds(); itr++) {
-			// Check if it's the first or second atom that is the neighbour			
-			if ((*itr)->GetBeginAtomIdx() == atom->GetIdx()) {
-				mol->_adjacent[i][j] = (*itr)->GetEndAtomIdx() - 1;	
-			} else {
-				mol->_adjacent[i][j] = (*itr)->GetBeginAtomIdx() - 1;	
-			}
-			j++;
-		}
-		mol->_pos[i][0] = atom->GetX();
-		mol->_pos[i][1] = atom->GetY();
-		mol->_pos[i][2] = atom->GetZ();
-	}
-
-	if (replaceSym) replaceSymbols(mol);
-
-	initSimilarity(mol,DEPTH_ITERATIONS);
-
-	return mol;
-}
 
 /**
  * Updates the coordinates of the OpenBabel Molecule according to the Molecule data

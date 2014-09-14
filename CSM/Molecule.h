@@ -21,7 +21,11 @@
 #define TRUE 1
 #define FALSE 0
 
+#include <openbabel/mol.h>
+
+#ifndef SQR
 #define SQR(x)      ((x) * (x))
+#endif
 
 class Molecule
 {
@@ -38,12 +42,13 @@ public:
     double* _mass;	     // The atomic masses
 
 private:
+	Molecule(int size);  // Private constructor forces creation through the factory methods
 
 public:
-	Molecule(int size);  // Private constructor forces creation through the factory methods
 	~Molecule();
 	static Molecule *create(FILE *in, FILE *err, bool replaceSym);
 	static Molecule *createPDB(FILE *in, FILE *err, bool replaceSym);
+	static Molecule* createFromOBMol(OpenBabel::OBMol &obmol, bool replaceSym, bool useMass = false);
 	Molecule *copy(int *selectedAtoms, int selectedAtomsSize, bool updateSimilarity);
 };
 

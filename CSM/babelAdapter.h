@@ -17,15 +17,6 @@ using namespace OpenBabel;
  */ 
 double getAtomicMass(char *atomName);
 
-/** 
- * Create a molecule from an OBMol
- * 
- * @param obmol The OpenBabel Molecule
- * @param replaceSym Whether to ignore atom names or not
- * @param useMass Whether to use the mass of the atoms
- */
-Molecule* babel2Mol(OBMol &obmol, int reaplaceSym, bool useMass);
-
 /**
  * Updates the coordinates of the OpenBabel Molecule according to the Molecule data
  * 

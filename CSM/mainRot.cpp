@@ -602,7 +602,7 @@ int main(int argc, char *argv[]){
 			} 
 		} else {
 			mol = readMolecule (inFileName, format, babelBond);
-			m = babel2Mol(mol, ignoreSym && !useperm, useMass);	
+			m = Molecule::createFromOBMol(mol, ignoreSym && !useperm, useMass);	
 		}
    	} else {
 		format = getExtension(inFileName);
@@ -619,7 +619,7 @@ int main(int argc, char *argv[]){
 		} else {
 			
 			mol = readMolecule (inFileName, NULL, babelBond);
-			m = babel2Mol(mol, ignoreSym && !useperm, useMass);						
+			m = Molecule::createFromOBMol(mol, ignoreSym && !useperm, useMass);						
 		}
    	}
 
