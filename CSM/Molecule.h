@@ -22,17 +22,17 @@
 
 class Molecule
 {
-public:
-    int _size;
-    double** _pos;           // atom positions XYZ
-    char** _symbol;          // atom symbols
-    int** _adjacent;         // represent connectivity
-    int* _valency;           // valency of each atom
-    int* _similar;           // similarity
-    int* _marked;            // for marking atoms - general use
-    int  _groupNum;          // the number of groups of similarity
-    double _norm;	     // The normalization factor
-    double* _mass;	     // The atomic masses
+private:
+	int _size;
+	double** _pos;           // atom positions XYZ
+	char** _symbol;          // atom symbols
+	int** _adjacent;         // represent connectivity
+	int* _valency;           // valency of each atom
+	int* _similar;           // similarity
+	int* _marked;            // for marking atoms - general use
+	int  _groupNum;          // the number of groups of similarity
+	double _norm;	     // The normalization factor
+	double* _mass;	     // The atomic masses
 
 private:
 	Molecule(int size);  // Private constructor forces creation through the factory methods
@@ -54,6 +54,7 @@ public:
 	int getMaxGroupSize();
 	Molecule* stripAtoms(char** removeList, int removeListSize, int updateSimilarity);
 	int normalizeMolecule(bool keepCenter);
+	void fillAtomicMasses();  // Fill the atomic masses for all the symbols
 
 	void print();
 	void printBasic();
@@ -61,7 +62,21 @@ public:
 	void printDebug();
 	void printDebug2();
 
+	/* Get properties */
+	int groupNum() const { return _groupNum; }
+	int size() const { return _size; }
+	char *symbol(int index) const { return _symbol[index]; }
+	char **symbols() const { return _symbol;  }
+	double norm() const { return _norm; }
+	double mass(int index) const { return _mass[index]; }
+	int similar(int index) const { return _similar[index]; }
+	int adjacent(int i, int j) const { return _adjacent[i][j]; }
+	int valency(int index) const { return _valency[index]; }
 
+	// _pos is exposed as is, because too much code expects a 2D matrix here, and changing it
+	// would require too much modifications.
+	// TODO: Rethink this once we replace nrutil
+	double **pos() const { return _pos; }
 };
 
 #endif

@@ -17,6 +17,7 @@
 #include <ctype.h>  //for ispace
 #include <math.h>   //for sqrt
 #include "Molecule.h"
+#include "babelAdapter.h"
 
 extern "C" {
 	#include "parseFunctions.h"
@@ -942,3 +943,8 @@ void Molecule::printDebug2()
 
 };
 
+void Molecule::fillAtomicMasses()
+{
+	for (int i = 0; i < _size; i++)
+		_mass[i] = getAtomicMass(_symbol[i]);
+}

@@ -225,7 +225,7 @@ double numPermutations(Molecule *m, int operationOrder, OperationType t) {
 	double total = 1.0;
 	if (operationOrder > 2 && t == SN) {	
 		// In this case - we enumerate over groups of 1, 2, N
-		for (i = 1; i <= m->_groupNum; i++) {			
+		for (i = 1; i <= m->groupNum(); i++) {			
 			int groupSize = m->getGroupSize(i);
 			double temp = 0;
 			double fact = factorial(groupSize);
@@ -241,7 +241,7 @@ double numPermutations(Molecule *m, int operationOrder, OperationType t) {
 			total *= (temp);
 		}		
 	} else { 
-		for (i = 1; i <= m->_groupNum; i++) {
+		for (i = 1; i <= m->groupNum(); i++) {
 			int groupSize = m->getGroupSize(i);
 			double temp = 0;
 			double fact = factorial(groupSize);
@@ -288,11 +288,11 @@ void normalize(double **coords, Molecule *m){
 
 	if (!keepCenter) {
 		double mass_sum = 0;
-		for(i=0; i< m->_size; i++){
-			x_avg += coords[i][0] * m->_mass[i];
-			y_avg += coords[i][1] * m->_mass[i];
-			z_avg += coords[i][2] * m->_mass[i];
-			mass_sum += m->_mass[i];
+		for(i=0; i< m->size(); i++){
+			x_avg += coords[i][0] * m->mass(i);
+			y_avg += coords[i][1] * m->mass(i);
+			z_avg += coords[i][2] * m->mass(i);
+			mass_sum += m->mass(i);
 		}
 		x_avg /= (double)(mass_sum);
 		y_avg /= (double)(mass_sum);
@@ -300,18 +300,18 @@ void normalize(double **coords, Molecule *m){
 	}
 
 	norm = 0.0;
-	for(i=0; i< m->_size; i++){
+	for(i=0; i< m->size(); i++){
 		tmp = SQR(coords[i][0]-x_avg) +
 		      SQR(coords[i][1]-y_avg) +
 		      SQR(coords[i][2]-z_avg);
 		norm += tmp;
 	}
 	// normalize to 1 and not molecule size
-	//norm = sqrt(norm / (double)m->_size);
+	//norm = sqrt(norm / (double)m->size());
 	norm = sqrt(norm);
 
 
-	for(i=0; i< m->_size; i++){
+	for(i=0; i< m->size(); i++){
 		coords[i][0] = ((coords[i][0] - x_avg) / norm);
 		coords[i][1] = ((coords[i][1] - y_avg) / norm);
 		coords[i][2] = ((coords[i][2] - z_avg) / norm);
@@ -595,11 +595,10 @@ int main(int argc, char *argv[]){
 		if (strcasecmp(format, CSMFORMAT) == 0) {
 			m = Molecule::create(inFile,stdout,ignoreSym && !useperm);
 			if (m==NULL) exit(1);
-			if (useMass) { 
-				for (int i = 0; i < m->_size; i++) { 
-					m->_mass[i] = getAtomicMass(m->_symbol[i]);
-				}
-			} 
+			if (useMass)
+			{
+				m->fillAtomicMasses();
+			}
 		} else {
 			mol = readMolecule (inFileName, format, babelBond);
 			m = Molecule::createFromOBMol(mol, ignoreSym && !useperm, useMass);	
@@ -611,10 +610,9 @@ int main(int argc, char *argv[]){
 		if (strcasecmp(format, CSMFORMAT) == 0) {
 			m = Molecule::create(inFile,stdout,ignoreSym && !useperm);
 			if (m==NULL) exit(1);
-			if (useMass) { 
-				for (int i = 0; i < m->_size; i++) { 
-					m->_mass[i] = getAtomicMass(m->_symbol[i]);
-				}
+			if (useMass)
+			{
+				m->fillAtomicMasses();
 			}
 		} else {
 			
@@ -677,11 +675,11 @@ int main(int argc, char *argv[]){
 	}
 
 	// allocate memory for outAtoms
-	outAtoms = (double **)malloc(m->_size * sizeof(double*));
-	for (i=0;i<m->_size;i++)
+	outAtoms = (double **)malloc(m->size() * sizeof(double*));
+	for (i=0;i<m->size();i++)
 		outAtoms[i] = (double *)malloc(3 * sizeof(double));
        
-	perm = (int *)malloc(sizeof(int) * m->_size);
+	perm = (int *)malloc(sizeof(int) * m->size());
 
 	//normalize Molecule
 	if (!m->normalizeMolecule(keepCenter)){
@@ -700,7 +698,7 @@ int main(int argc, char *argv[]){
 			printf("Chirality can't be given a permutation, run the specific csm operation instead\n");
 			exit(1);
 		}	
-		readPerm(permfile,perm, m->_size);
+		readPerm(permfile,perm, m->size());
 		runSinglePerm(m, outAtoms, perm, &csm, dir, &dMin, type);
 	} else {
 		if (type != CH) { 
@@ -719,11 +717,11 @@ int main(int argc, char *argv[]){
 			int *chPerm;			
 			double chDir[3] = {0.0, 0.0, 0.0};						
 
-			chOutAtoms = (double **)malloc(m->_size * sizeof(double*));
-			for (i=0;i<m->_size;i++)
+			chOutAtoms = (double **)malloc(m->size() * sizeof(double*));
+			for (i=0;i<m->size();i++)
 				chOutAtoms[i] = (double *)malloc(3 * sizeof(double));
        
-			chPerm = (int *)malloc(sizeof(int) * m->_size);
+			chPerm = (int *)malloc(sizeof(int) * m->size());
 			chMinType = CS;						
 			opOrder = 2;		
 			if (useDir) {
@@ -751,8 +749,8 @@ int main(int argc, char *argv[]){
 						csm = chCsm;
 						dMin = chdMin;
 						memcpy(dir, chDir, sizeof(double)* 3);
-						memcpy(perm, chPerm, sizeof(int) * m->_size);	
-						for (j = 0; j < m->_size; j++) { 	
+						memcpy(perm, chPerm, sizeof(int) * m->size());	
+						for (j = 0; j < m->size(); j++) { 	
 							memcpy(outAtoms[j], chOutAtoms[j], sizeof(double)*3);
 						}
 					}
@@ -760,7 +758,7 @@ int main(int argc, char *argv[]){
 				}
 			}
 			// housekeeping
-			for (i=0;i<m->_size;i++){
+			for (i=0;i<m->size();i++){
 				free(chOutAtoms[i]);
 			}
 			free(chOutAtoms);	
@@ -769,7 +767,7 @@ int main(int argc, char *argv[]){
 	}
 
 	if (printLocal) {	
-		localCSM = (double *)malloc(sizeof(double) * m->_size);
+		localCSM = (double *)malloc(sizeof(double) * m->size());
 		if (type == CH) opOrder = chMinOrder;
 		computeLocalCSM(m,localCSM, perm, dir,  type != CH ? type : chMinType);
 	}
@@ -777,13 +775,13 @@ int main(int argc, char *argv[]){
 	normalize(outAtoms, m);
 
 	// De-normalize
-	for (i = 0; i < m->_size; i++) { 
-		m->_pos[i][0] *= m->_norm;
-		m->_pos[i][1] *= m->_norm;
-		m->_pos[i][2] *= m->_norm;
-		outAtoms[i][0] *= m->_norm;
-		outAtoms[i][1] *= m->_norm;
-		outAtoms[i][2] *= m->_norm;
+	for (i = 0; i < m->size(); i++) { 
+		m->pos()[i][0] *= m->norm();
+		m->pos()[i][1] *= m->norm();
+		m->pos()[i][2] *= m->norm();
+		outAtoms[i][0] *= m->norm();
+		outAtoms[i][1] *= m->norm();
+		outAtoms[i][2] *= m->norm();
 	}	
 
    	if (useFormat) {
@@ -811,13 +809,13 @@ int main(int argc, char *argv[]){
 	}	
 
 	fprintf(outFile, "\n PERMUTATION:\n\n");
-	for (i = 0; i < m->_size; i++) {
+	for (i = 0; i < m->size(); i++) {
 		fprintf(outFile, "%d ", perm[i] + 1);
 	}
 	fprintf(outFile,"\n");
 
 	// housekeeping
-	for (i=0;i<m->_size;i++){
+	for (i=0;i<m->size();i++){
 		free(outAtoms[i]);
 	}
 	free(outAtoms);
@@ -880,9 +878,9 @@ void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos){
 	counter = 0;
 
 	// build idxToPos
-	for ( j=1;  j<= m->_groupNum ;  j++ ){
-		for ( i=0;  i< m->_size ;  i++ ){
-			if (m->_similar[i] == j){
+	for ( j=1;  j<= m->groupNum() ;  j++ ){
+		for ( i=0;  i< m->size() ;  i++ ){
+			if (m->similar(i) == j){
 				idxToPos[counter] = i;
 				counter++;
 			}
@@ -890,7 +888,7 @@ void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos){
 	}
 
 	// build posToIdx
-	for ( i=0;  i< m->_size ;  i++ ){
+	for ( i=0;  i< m->size() ;  i++ ){
 		posToIdx[idxToPos[i]] = i;
 	}
 
@@ -947,14 +945,14 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	double rtr[6], rti[6];
 	double coeffs[7];
 	int i,j;
-	int *curPerm = (int *)malloc(sizeof(int) * m->_size);
+	int *curPerm = (int *)malloc(sizeof(int) * m->size());
 	double csm, dists;
 
 	int isImproper = (type != CN) ? TRUE : FALSE;
 	int isZeroAngle = (type == CS) ? TRUE : FALSE;
 
 	// initialize identity permutation
-	for (i = 0; i < m->_size; i++) {
+	for (i = 0; i < m->size(); i++) {
 		curPerm[i] = i;
 	}
 
@@ -962,15 +960,15 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	for (i = 1; i < opOrder; i++) {			
 		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
 		// The i'th power of the permutation
-		for (j = 0; j < m->_size; j++) {
+		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
 		}
 		if (isImproper && ((i % 2) == 1)) {
-			computeMatrix(m->_pos, curPerm, m->_size, &matrix, -1-cos(angle));	
+			computeMatrix(m->pos(), curPerm, m->size(), &matrix, -1-cos(angle));	
 		} else {
-			computeMatrix(m->_pos, curPerm, m->_size, &matrix, 1-cos(angle));	
+			computeMatrix(m->pos(), curPerm, m->size(), &matrix, 1-cos(angle));	
 		}	  
-		computeVector(m->_pos, curPerm, m->_size, &vec, sin(angle));
+		computeVector(m->pos(), curPerm, m->size(), &vec, sin(angle));
 	}
 	
 	// perhaps actual copying is needed
@@ -1078,7 +1076,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}		
 
 	// initialize identity permutation
-	for (i = 0; i < m->_size; i++) {
+	for (i = 0; i < m->size(); i++) {
 		curPerm[i] = i;
 	}
 
@@ -1089,14 +1087,14 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		if (i != 0) {
 			angle = isZeroAngle ? 0.0 : ((2 * PI * i) / opOrder);
 			dists = 0.0;
-			for (j = 0; j < m->_size; j++) {
+			for (j = 0; j < m->size(); j++) {
 				// i'th power of permutation
 				curPerm[j] = perm[curPerm[j]];	
 			}
-			for (j = 0; j < m->_size; j++) {
-				dists += (m->_pos[j][0] * m->_pos[curPerm[j]][0] + 
-					m->_pos[j][1] * m->_pos[curPerm[j]][1] + 
-					m->_pos[j][2] * m->_pos[curPerm[j]][2]); 
+			for (j = 0; j < m->size(); j++) {
+				dists += (m->pos()[j][0] * m->pos()[curPerm[j]][0] + 
+					m->pos()[j][1] * m->pos()[curPerm[j]][1] + 
+					m->pos()[j][2] * m->pos()[curPerm[j]][2]); 
 			}
 			csm += cos(angle) * dists;
 
@@ -1127,24 +1125,24 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	int isImproper = (type != CN) ? TRUE : FALSE;
 	int isZeroAngle = (type == CS) ? TRUE : FALSE;
 	int i, j, k, l;
-	int *curPerm = (int *)malloc(sizeof(int) * m->_size);
+	int *curPerm = (int *)malloc(sizeof(int) * m->size());
 	double rotaionMatrix[3][3];
 	double tmpMatrix[3][3] = {{0.0, -dir[2], dir[1]}, {dir[2], 0.0, -dir[0]}, {-dir[1], dir[0], 0.0}};
 	double angle;
 	double res = 0.0;
 
-	for (i = 0; i < m->_size; i++) {
+	for (i = 0; i < m->size(); i++) {
 		// initialize with identity operation
 		curPerm[i] = i;
 		for (j = 0; j < 3; j++) {
-			outAtoms[i][j] = m->_pos[i][j];
+			outAtoms[i][j] = m->pos()[i][j];
 		}
 	}
 
 	for (i = 1; i < opOrder; i++) {
 		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
-		for (j = 0; j < m->_size; j++) {
+		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
 		}
 		for (j = 0; j < 3; j++) {
@@ -1156,17 +1154,17 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 			}
 		}
 
-		for (j = 0; j < m->_size; j++) {
+		for (j = 0; j < m->size(); j++) {
 			for (k = 0; k < 3; k++) {
 				for (l = 0; l < 3; l++) {
-					outAtoms[j][k] += rotaionMatrix[k][l] * m->_pos[curPerm[j]][l];
+					outAtoms[j][k] += rotaionMatrix[k][l] * m->pos()[curPerm[j]][l];
 				}
 			}			
 		}
 
 	}
 
-	for (j = 0; j < m->_size; j++) {
+	for (j = 0; j < m->size(); j++) {
 		for (k = 0; k < 3; k++) {
 			outAtoms[j][k] /= opOrder;
 			outAtoms[j][k] *= dMin;
@@ -1183,7 +1181,7 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 	int isImproper = (type != CN) ? TRUE : FALSE;
 	int isZeroAngle = (type == CS) ? TRUE : FALSE;
 	int i, j, k, l;
-	int *curPerm = (int *)malloc(sizeof(int) * m->_size);
+	int *curPerm = (int *)malloc(sizeof(int) * m->size());
 	double rotaionMatrix[3][3];
 	double tmpMatrix[3][3] = {{0.0, -dir[2], dir[1]}, {dir[2], 0.0, -dir[0]}, {-dir[1], dir[0], 0.0}};
 	double angle;
@@ -1192,7 +1190,7 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 	double tempCSM = 0.0;
 
 
-	for (i = 0; i < m->_size; i++) {
+	for (i = 0; i < m->size(); i++) {
 		// initialize with identity operation
 		curPerm[i] = i;
 		localCSM[i] = 0;
@@ -1201,7 +1199,7 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 	for (i = 1; i < opOrder; i++) {
 		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
-		for (j = 0; j < m->_size; j++) {
+		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
 		}
 		for (j = 0; j < 3; j++) {
@@ -1213,22 +1211,22 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 			}
 		}
 
-		for (j = 0; j < m->_size; j++) {
+		for (j = 0; j < m->size(); j++) {
 			double rotated[3] = {0.0,0.0,0.0};
 			for (k = 0; k < 3; k++) {
 				for (l = 0; l < 3; l++) {
-					rotated[k] += rotaionMatrix[k][l] * m->_pos[curPerm[j]][l];
+					rotated[k] += rotaionMatrix[k][l] * m->pos()[curPerm[j]][l];
 				}
 			}			
 			for (k = 0; k < 3; k++) {
-				tempCSM += SQR(rotated[k] - m->_pos[j][k]);
-				localCSM[j] += SQR(rotated[k] - m->_pos[j][k]);
+				tempCSM += SQR(rotated[k] - m->pos()[j][k]);
+				localCSM[j] += SQR(rotated[k] - m->pos()[j][k]);
 			}			
 		}
 
 	}
 
-	for (j = 0; j < m->_size; j++) {
+	for (j = 0; j < m->size(); j++) {
 		localCSM[j] *= 100 / (2 * opOrder);
 	}
 	tempCSM *= 100.0 / (2 * opOrder);	
@@ -1255,16 +1253,16 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	int addGroupsOfTwo;
 
 	// These are the 
-	int *realPerm = (int *)malloc(sizeof(int) * m->_size);
+	int *realPerm = (int *)malloc(sizeof(int) * m->size());
 
 	// allocate memory for index arrays arrays
-	idxToPos = (int*)malloc(m->_size * sizeof(int));
-	posToIdx = (int*)malloc(m->_size * sizeof(int));
+	idxToPos = (int*)malloc(m->size() * sizeof(int));
+	posToIdx = (int*)malloc(m->size() * sizeof(int));
 
 	// and group sizes arrays
-	groupSizes = (int*)malloc(m->_groupNum * sizeof(int*));	
+	groupSizes = (int*)malloc(m->groupNum() * sizeof(int*));	
 
-	for(i=0; i<m->_size; i++)    	
+	for(i=0; i<m->size(); i++)    	
 		// init index arrays
 		initIndexArrays(m,posToIdx,idxToPos);
 
@@ -1272,7 +1270,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	*csm = curCsm = MAXDOUBLE;
 
 	// get group sizes
-	for(i=1; i<= m->_groupNum ; i++){
+	for(i=1; i<= m->groupNum() ; i++){
 		groupSizes[i-1] = m->getGroupSize(i);
 	}
 
@@ -1282,7 +1280,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	} else {
 		addGroupsOfTwo = 0;
 	}
-	gp = new GroupPermuter(m->_groupNum,groupSizes,m->_size,opOrder, addGroupsOfTwo);
+	gp = new GroupPermuter(m->groupNum(),groupSizes,m->size(),opOrder, addGroupsOfTwo);
 	if (!gp){
 		if (writeOpenu) {
 			printf("ERR* Failed to create groupPermuter *ERR\n");
@@ -1295,7 +1293,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
 	while ( gp->next() ) {
 
-		for (i = 0; i < m->_size; i++) {
+		for (i = 0; i < m->size(); i++) {
 			realPerm[i] = idxToPos[gp->elementAt(posToIdx[i])];
 		}			
 		curCsm = calcRefPlane(m, realPerm, curDir, type);		
@@ -1305,7 +1303,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 			*csm = curCsm;
 			dir[0] = curDir[0]; dir[1] = curDir[1]; dir[2] = curDir[2];
 			
-			for (i = 0; i < m->_size; i++) {
+			for (i = 0; i < m->size(); i++) {
 				optimalPerm[i] = realPerm[i];
 			}
 		}				
@@ -1355,7 +1353,7 @@ void findBestPermUsingDir(Molecule* m, double** outAtoms, int* perm, double* csm
  * Finds an approximate permutation which can be used in the analytical computation.
  */
 void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type) {
-	int *temp = (int*)malloc(sizeof(int) * m->_size);
+	int *temp = (int*)malloc(sizeof(int) * m->size());
 	int i = 0;	
 	// The algorithm aims to find the best perm which can then be used for the analytic solution	
 	if ((type == CI) || (type == SN && opOrder == 2)) { 		
@@ -1367,7 +1365,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 	} else { 		
 		double** dirs;
 		int n_dirs;
-		int *bestPerm = (int*)malloc(sizeof(int) * m->_size);	
+		int *bestPerm = (int*)malloc(sizeof(int) * m->size());	
 		double bestDir[3];
 		int maxIters = 50;	
 		*csm = MAXDOUBLE;
@@ -1397,7 +1395,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 				runSinglePerm(m, outAtoms, temp, &dist, tempDir, dMin, type);					
 				if (dist < best) {
 					best = dist;
-					memcpy(bestPerm, temp, sizeof(int) * m->_size);
+					memcpy(bestPerm, temp, sizeof(int) * m->size());
 					memcpy(bestDir, tempDir, sizeof(double) * 3);
 				}	
 				iterNum++;			
@@ -1407,7 +1405,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			// Keep the best solution so far...
 			if (best < *csm) { 
 				*csm = best;
-				memcpy(perm, bestPerm , sizeof(int) * m->_size);
+				memcpy(perm, bestPerm , sizeof(int) * m->size());
 				memcpy(dir, bestDir, sizeof(double) * 3);
 			}		
 			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
@@ -1427,7 +1425,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			
 		// The initial probability is set to be 2 / N 
 		// for a change of 0.0001
-		double initialTemp = 0.0001 * log(1.0 * m->_size/4.0);
+		double initialTemp = 0.0001 * log(1.0 * m->size()/4.0);
 		// printf("IT = %4.2f\n", initialTemp);
 		double alpha = 0.9;
 		int stepsPerPart = 2000;
@@ -1437,9 +1435,9 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		int factor = 1;
 		double flipProb = 0.001;
 
-		int **groups = (int**)malloc(sizeof(int *) * m->_groupNum);
-		int *groupSizes = (int*) malloc(sizeof(int) * m->_groupNum);
-		for (i = 0; i < m->_groupNum; i++ ) {
+		int **groups = (int**)malloc(sizeof(int *) * m->groupNum());
+		int *groupSizes = (int*) malloc(sizeof(int) * m->groupNum());
+		for (i = 0; i < m->groupNum(); i++ ) {
 			groupSizes[i] = getGroupSize(m, i + 1); 
 			groups[i] = (int*)malloc(sizeof(int) * groupSizes[i]);
 			getGroup(m, i + 1, groups[i]);
@@ -1450,16 +1448,16 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 		srand48( time (NULL) );			
 #endif
 		// try to anneal the best permutation
-		memcpy(temp, perm, sizeof(int) * m->_size);
+		memcpy(temp, perm, sizeof(int) * m->size());
 		for (t = initialTemp; t >= 0.0001*initialTemp; t *= alpha) { 
-			for (i = 0; i < stepsPerPart /* * m->_size */; i++) { 
+			for (i = 0; i < stepsPerPart /* * m->size() */; i++) { 
 				// select a node at random
-				int first = rand() % m->_size;
+				int first = rand() % m->size();
 
 				// select another from its similarity group
 				int second = groups
-					[m->_similar[first] - 1]
-					[rand() % groupSizes[m->_similar[first] - 1]];
+					[m->similar(first) - 1]
+					[rand() % groupSizes[m->similar(first) - 1]];
 				
 				int temp1 = first, temp2 = second, firstSize = 1, secondSize = 1;
 				if (first == second) continue;
@@ -1519,7 +1517,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 					if (dist < *csm) { 
 						*csm = dist;
 						printf("Changed to %4.2f\n", *csm);
-						memcpy(perm, temp , sizeof(int) * m->_size);
+						memcpy(perm, temp , sizeof(int) * m->size());
 					}
 					old = dist;
 				} else {
@@ -1553,7 +1551,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 			// printf("At T = %4.2f - csm %4.2f\n", t, *csm);
 		}
 
-		for (i = 0; i < m->_groupNum; i++) {
+		for (i = 0; i < m->groupNum(); i++) {
 			free(groups[i]);
 		}
 		free(groups);
@@ -1572,9 +1570,9 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
  * This is done using least-mean-squares, which provides 3 guesses, times 3 if we try to remove outliers
  */
 void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationType type) {
-	int* groupSizes = (int*)malloc(sizeof(int) * m->_groupNum);
-	double** groupAverages = (double**)malloc(sizeof(double*) * m->_groupNum);
-	int *outliers = (int*)malloc(sizeof(int) * m->_groupNum);
+	int* groupSizes = (int*)malloc(sizeof(int) * m->groupNum());
+	double** groupAverages = (double**)malloc(sizeof(double*) * m->groupNum());
+	int *outliers = (int*)malloc(sizeof(int) * m->groupNum());
 	int i,j;
 	double **testDir;
 	double median;
@@ -1587,20 +1585,20 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 		testDir[i] = (double*)malloc(sizeof(double) * 3);
 	}	
 		
-	for (i = 0; i < m->_groupNum; i++) { 
+	for (i = 0; i < m->groupNum(); i++) { 
 		groupSizes[i] = 0;
 		groupAverages[i] = (double*)malloc(sizeof(double) * 3);
 		groupAverages[i][0] = groupAverages[i][1] = groupAverages[i][2] = 0.0;
 	}
 	
-	for (i = 0; i < m->_size; i++) { 
-		groupSizes[m->_similar[i] - 1]++;
-		groupAverages[m->_similar[i] - 1][0] += m->_pos[i][0];
-		groupAverages[m->_similar[i] - 1][1] += m->_pos[i][1];
-		groupAverages[m->_similar[i] - 1][2] += m->_pos[i][2];
+	for (i = 0; i < m->size(); i++) { 
+		groupSizes[m->similar(i) - 1]++;
+		groupAverages[m->similar(i) - 1][0] += m->pos()[i][0];
+		groupAverages[m->similar(i) - 1][1] += m->pos()[i][1];
+		groupAverages[m->similar(i) - 1][2] += m->pos()[i][2];
 	}
 
-	for (i = 0; i < m->_groupNum; i++) { 					
+	for (i = 0; i < m->groupNum(); i++) { 					
 		outliers[i] = FALSE;
 		groupAverages[i][0] /= 	groupSizes[i];	
 		groupAverages[i][1] /= 	groupSizes[i];	
@@ -1612,16 +1610,16 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 		// Assuming that all orbit center-of-masses are 
 		// found on the plane of reflection - find it			
 		// for some reason - we get a few options
-		planeFit(groupAverages, m->_groupNum, testDir,outliers);		
+		planeFit(groupAverages, m->groupNum(), testDir,outliers);		
 	} else {
 		// For CN and SN with N > 2			
 		// Assuming that all orbit center-of-masses are found on the axis of symmetry - find it			
 		// for some reason - we get a few options
-		lineFit(groupAverages, m->_groupNum, testDir, outliers);		
+		lineFit(groupAverages, m->groupNum(), testDir, outliers);		
 	}	
 
 	// if there are not enough groups for reliable outlier detection - don't invoke it.
-	if (detectOutliers && m->_groupNum >= MIN_GROUPS_FOR_OUTLIERS) {			
+	if (detectOutliers && m->groupNum() >= MIN_GROUPS_FOR_OUTLIERS) {			
 		for (j = 0; j < 3; j++) { 
 			double **tempDir;
 
@@ -1634,8 +1632,8 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 			// 2. Find the median m
 			// 3. for each distance di, if (di / m > A || m / di > A - remove as outlier)
 			// 4. recompute line / plane
-			double* dists = (double *)malloc(m->_groupNum * sizeof(double));				
-			for (i = 0; i < m->_groupNum; i++) {
+			double* dists = (double *)malloc(m->groupNum() * sizeof(double));				
+			for (i = 0; i < m->groupNum(); i++) {
 				if (type == CS) { 
 					dists[i] = fabs(testDir[j][0] * groupAverages[i][0] + 
 						testDir[j][1] * groupAverages[i][1] + 
@@ -1645,16 +1643,16 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 				}
 
 			}
-			median = findMedian(dists, m->_groupNum);
-			for (i = 0; i < m->_groupNum; i++) {
+			median = findMedian(dists, m->groupNum());
+			for (i = 0; i < m->groupNum(); i++) {
 				if (dists[i] / median > A || dists[i] / median > A) {					
 					outliers[i] = true; 
 				} 
 			}
 			if (type == CS) {	
-				planeFit(groupAverages, m->_groupNum, tempDir, outliers);		
+				planeFit(groupAverages, m->groupNum(), tempDir, outliers);		
 			} else {
-				lineFit(groupAverages, m->_groupNum, tempDir, outliers);		
+				lineFit(groupAverages, m->groupNum(), tempDir, outliers);		
 			}
 			for (i = 0; i < 3; i++) { 	
 				results.push_back(tempDir[i]);
@@ -1718,7 +1716,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 		(*dirs)[i] = results[i];
 	}
 
-	for (i = 0; i < m->_groupNum; i++) { 		
+	for (i = 0; i < m->groupNum(); i++) { 		
 		free(groupAverages[i]);
 	}
 	free(outliers);
@@ -1732,12 +1730,12 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	int isZeroAngle = (type == CS) ? TRUE : FALSE;
 	int maxGroupSize = m->getMaxGroupSize();
 	int *group = (int*)malloc(sizeof(int) * maxGroupSize);
-	int *used = (int*)malloc(sizeof(int) * m->_size);
+	int *used = (int*)malloc(sizeof(int) * m->size());
 	int i, j, k, l;
 	double rotaionMatrix[3][3];
 	double tmpMatrix[3][3] = {{0.0, -dir[2], dir[1]}, {dir[2], 0.0, -dir[0]}, {-dir[1], dir[0], 0.0}};
 	double angle;
-	double **rotated = (double**)malloc(sizeof(double*) * m->_size);
+	double **rotated = (double**)malloc(sizeof(double*) * m->size());
 	struct distRecord * distances = (struct distRecord *)malloc(sizeof(struct distRecord) * maxGroupSize * maxGroupSize);
 	int factor = (isImproper ? (-1) : 1);	
 	int tableSize = 0;
@@ -1745,7 +1743,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	int left;
 	angle = isZeroAngle ? 0.0 : (2 * PI / opOrder);
 		
-	for (j = 0; j < m->_size; j++) {
+	for (j = 0; j < m->size(); j++) {
 		rotated[j] = (double *)malloc(sizeof(double) * 3);		
 		rotated[j][0] = rotated[j][1] = rotated[j][2] = 0;
 		perm[j] = -1;		
@@ -1762,22 +1760,22 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	}
 
 	// Run the operation on the current point set
-	for (j = 0; j < m->_size; j++) {
+	for (j = 0; j < m->size(); j++) {
 		for (k = 0; k < 3; k++) {
 			for (l = 0; l < 3; l++) {
-				rotated[j][k] += rotaionMatrix[k][l] * m->_pos[j][l];				
+				rotated[j][k] += rotaionMatrix[k][l] * m->pos()[j][l];				
 			}
 		}
 		//printf("%d (%4.2f, %4.2f, %4.2f) -> (%4.2f, %4.2f, %4.2f)\n", j,
-		//	m->_pos[j][0], m->_pos[j][1], m->_pos[j][2], 
+		//	m->pos()[j][0], m->pos()[j][1], m->pos()[j][2], 
 		//	rotated[j][0], rotated[j][1], rotated[j][2]);
 	}
 
 	// run over the groups
-	for (i = 0; i < m->_groupNum; i++) { 
+	for (i = 0; i < m->groupNum(); i++) { 
 		// Get the group
 		int groupSize = m->getGroup(i + 1,group);		
-		for (j = 0; j < m->_size; j++) { 
+		for (j = 0; j < m->size(); j++) { 
 			used[j] = 0;
 		}
 		
@@ -1790,8 +1788,8 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 					distances[index].distance = 0;
 					for (l = 0; l < 3; l++ ) { 
 						distances[index].distance += 
-							(m->_pos[group[j]][l] - rotated[group[k]][l]) * 
-							(m->_pos[group[j]][l] - rotated[group[k]][l]);
+							(m->pos()[group[j]][l] - rotated[group[k]][l]) * 
+							(m->pos()[group[j]][l] - rotated[group[k]][l]);
 					}		
 					distances[index].distance = sqrt(distances[index].distance);
 			}		
@@ -1908,7 +1906,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 
 	// verify that the orbits are correct?
 	
-	for (j = 0; j < m->_size; j++) { 		
+	for (j = 0; j < m->size(); j++) { 		
 		free(rotated[j]);			
 	}	
 
@@ -2065,32 +2063,32 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 	fprintf(out, "%s: %.4lf\n",opName,fabs(csm));
 	fprintf(out, "SCALING FACTOR: %7lf\n", dMin);
 
-	fprintf(out, "\n INITIAL STRUCTURE COORDINATES\n%i\n",m->_size);
+	fprintf(out, "\n INITIAL STRUCTURE COORDINATES\n%i\n",m->size());
 
-	for(i=0; i<m->_size; i++){
+	for(i=0; i<m->size(); i++){
 		fprintf(out, "%3s%10lf %10lf %10lf\n",
-			m->_symbol[i], m->_pos[i][0], m->_pos[i][1], m->_pos[i][2]);
+			m->symbol(i), m->pos()[i][0], m->pos()[i][1], m->pos()[i][2]);
 	}
 
-	for (i = 0; i < m->_size; i++) {
+	for (i = 0; i < m->size(); i++) {
 		fprintf(out, "%d ", i + 1);
-		for ( j = 0; j < m->_valency[i]; j++ ) {
-			fprintf(out, "%d ", m->_adjacent[i][j] + 1);
+		for ( j = 0; j < m->valency(i); j++ ) {
+			fprintf(out, "%d ", m->adjacent(i,j) + 1);
 		}
 		fprintf(out,"\n");
 	}
 
-	fprintf(out, "\n RESULTING STRUCTURE COORDINATES\n%i\n",m->_size);
+	fprintf(out, "\n RESULTING STRUCTURE COORDINATES\n%i\n",m->size());
 
-	for(i=0; i<m->_size; i++){
+	for(i=0; i<m->size(); i++){
 		fprintf(out, "%3s%10lf %10lf %10lf\n",
-			m->_symbol[i], outAtoms[i][0], outAtoms[i][1], outAtoms[i][2]);
+			m->symbol(i), outAtoms[i][0], outAtoms[i][1], outAtoms[i][2]);
 	}
 
-	for (i = 0; i < m->_size; i++) {
+	for (i = 0; i < m->size(); i++) {
 		fprintf(out, "%d ", i + 1);
-		for ( j = 0; j < m->_valency[i]; j++ ) {
-			fprintf(out, "%d ", m->_adjacent[i][j] + 1);
+		for ( j = 0; j < m->valency(i); j++ ) {
+			fprintf(out, "%d ", m->adjacent(i,j) + 1);
 		}
 		fprintf(out,"\n");
 	}
@@ -2099,18 +2097,18 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 	fprintf(out, "%lf %lf %lf\n", dir[0], dir[1], dir[2]);
 
 	if (printNorm) {
-		printf( "NORMALIZATION FACTOR: %7lf\n", m->_norm);
+		printf( "NORMALIZATION FACTOR: %7lf\n", m->norm());
 		printf( "SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
 		printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
-		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->groupNum());
 	}
 
 	if (printLocal) {
 		double sum = 0;
 		fprintf(out,"\nLocal CSM: \n");	
-		for (i = 0; i < m->_size; i++) {
+		for (i = 0; i < m->size(); i++) {
 			sum += localCSM[i];
-			fprintf(out,"%s %7lf\n", m->_symbol[i], localCSM[i]);
+			fprintf(out,"%s %7lf\n", m->symbol(i), localCSM[i]);
 		}
 		fprintf(out,"\nsum: %7lf\n", sum);
 	}
@@ -2123,7 +2121,7 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 */
 void printPDBATOM(Molecule* m,FILE* f,char** sym,double** pos){
 	int i;
-	for(i=0; i<m->_size; i++){
+	for(i=0; i<m->size(); i++){
 		fprintf(f,"ATOM  %5d %2s                %8.3lf%8.3lf%8.3lf                      %2s\n",
 			i+1,sym[i],pos[i][0],pos[i][1],pos[i][2],sym[i]);
 	}
@@ -2134,12 +2132,12 @@ void printPDBATOM(Molecule* m,FILE* f,char** sym,double** pos){
 */
 void printPDBCONNECT(Molecule* m,FILE* f){
 	int i,j;
-	for(i=0; i<m->_size; i++){
+	for(i=0; i<m->size(); i++){
 		fprintf(f,"CONECT%5d",i +1);
-		for ( j=0;  j< m->_valency[i] ; j++ ){
+		for ( j=0;  j< m->valency(i) ; j++ ){
 			if ((j>0) && (!(j%4)))
 				fprintf(f,"\nCONECT%5d",i +1);
-			fprintf(f,"%5d",m->_adjacent[i][j] +1);
+			fprintf(f,"%5d",m->adjacent(i,j) +1);
 		}
 		fprintf(f,"\n");
 	}
@@ -2154,14 +2152,14 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 	// print PDB file
 	fprintf(out,"MODEL        1\n");
 
-	printPDBATOM(m,out,m->_symbol,m->_pos);
+	printPDBATOM(m,out,m->symbols(),m->pos());
 
 	printPDBCONNECT(m,out);
 
 	fprintf(out,"ENDMDL\n");
 	fprintf(out,"MODEL        2\n");
 
-	printPDBATOM(m,out,m->_symbol,outAtoms);
+	printPDBATOM(m,out,m->symbols(),outAtoms);
 
 	printPDBCONNECT(m,out);
 
@@ -2176,10 +2174,10 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 		printf( "%s: %.4lf\n",opName,fabs(csm));
 
 	if (printNorm) {
-		printf( "NORMALIZATION FACTOR: %7lf\n", m->_norm);
+		printf( "NORMALIZATION FACTOR: %7lf\n", m->norm());
 		printf( "SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
 		printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
-		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->groupNum());
 	}
 
 }
@@ -2196,7 +2194,7 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 
 	fprintf(out, "\n INITIAL STRUCTURE COORDINATES\n");
 
-	updateCoordinates(mol, m->_pos);
+	updateCoordinates(mol, m->pos());
 
 	writeMolecule(mol, format, out, fname);
 
@@ -2217,19 +2215,19 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 		printf( "%s: %.4lf\n",opName,fabs(csm));
 
 	if (printNorm) {
-		printf( "NORMALIZATION FACTOR: %7lf\n", m->_norm);
+		printf( "NORMALIZATION FACTOR: %7lf\n", m->norm());
 		printf( "SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
 		printf( "DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
-		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->_groupNum);
+		printf( "NUMBER OF EQUIVALENCE GROUPS: %d\n", m->groupNum());
 	}
 
 	if (printLocal) {
 		double sum = 0;
 		int i;
 		fprintf(out,"\nLocal CSM: \n");	
-		for (i = 0; i < m->_size; i++) {
+		for (i = 0; i < m->size(); i++) {
 			sum += localCSM[i];
-			fprintf(out,"%s %7lf\n", m->_symbol[i], localCSM[i]);
+			fprintf(out,"%s %7lf\n", m->symbol(i), localCSM[i]);
 		}
 		fprintf(out,"\nsum: %7lf\n", sum);
 	}}
