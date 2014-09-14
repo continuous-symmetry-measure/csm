@@ -226,7 +226,7 @@ double numPermutations(Molecule *m, int operationOrder, OperationType t) {
 	if (operationOrder > 2 && t == SN) {	
 		// In this case - we enumerate over groups of 1, 2, N
 		for (i = 1; i <= m->_groupNum; i++) {			
-			int groupSize = getGroupSize(m, i);
+			int groupSize = m->getGroupSize(i);
 			double temp = 0;
 			double fact = factorial(groupSize);
 			// Enumerate over the number of groups of size two
@@ -242,7 +242,7 @@ double numPermutations(Molecule *m, int operationOrder, OperationType t) {
 		}		
 	} else { 
 		for (i = 1; i <= m->_groupNum; i++) {
-			int groupSize = getGroupSize(m, i);
+			int groupSize = m->getGroupSize(i);
 			double temp = 0;
 			double fact = factorial(groupSize);
 			for (j = 0; j <= (groupSize / operationOrder); j++) {
@@ -640,9 +640,9 @@ int main(int argc, char *argv[]){
 		char* removeList[] = {"H"," H"};
 		Molecule* n = NULL;
 		if (ignoreHy)
-			n = stripAtoms(m,removeList,2,FALSE);
+			n = m->stripAtoms(removeList,2,FALSE);
 		else //removeHy 
-			n = stripAtoms(m,removeList,2,TRUE);		
+			n = m->stripAtoms(removeList,2,TRUE);		
 	
 		mol.DeleteHydrogens();
 		
@@ -684,7 +684,7 @@ int main(int argc, char *argv[]){
 	perm = (int *)malloc(sizeof(int) * m->_size);
 
 	//normalize Molecule
-	if (!normalizeMolecule(m,keepCenter)){
+	if (!m->normalizeMolecule(keepCenter)){
 		if (writeOpenu) {
 			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
 		} else {
@@ -1273,7 +1273,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 
 	// get group sizes
 	for(i=1; i<= m->_groupNum ; i++){
-		groupSizes[i-1] = getGroupSize(m,i);
+		groupSizes[i-1] = m->getGroupSize(i);
 	}
 
 	// create permuter
@@ -1730,7 +1730,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	int isImproper = (type != CN) ? TRUE : FALSE;
 	int isZeroAngle = (type == CS) ? TRUE : FALSE;
-	int maxGroupSize = getMaxGroupSize(m);
+	int maxGroupSize = m->getMaxGroupSize();
 	int *group = (int*)malloc(sizeof(int) * maxGroupSize);
 	int *used = (int*)malloc(sizeof(int) * m->_size);
 	int i, j, k, l;
@@ -1776,7 +1776,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	// run over the groups
 	for (i = 0; i < m->_groupNum; i++) { 
 		// Get the group
-		int groupSize = getGroup(m, i + 1,group);		
+		int groupSize = m->getGroup(i + 1,group);		
 		for (j = 0; j < m->_size; j++) { 
 			used[j] = 0;
 		}

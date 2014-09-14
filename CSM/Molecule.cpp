@@ -315,6 +315,8 @@ Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
 *
 * @param obmol The OpenBabel Molecule
 * @param replaceSym Whether to ignore atom names or not
+*
+* This function was moved from BabelAdapter.cpp
 */
 Molecule* Molecule::createFromOBMol(OBMol &obmol, bool replaceSym, bool useMass) 
 {
@@ -455,7 +457,8 @@ Molecule* Molecule::copy(int* selectedAtoms, int selectedAtomsSize, bool updateS
  * breaks down atoms into similar groups by symbol and graph structure
  * depth -  is the desired maximal depth to take into account
  */
-void Molecule::initSimilarity(int depth){
+void Molecule::initSimilarity(int depth)
+{
 
     int i,j,k,groupNum;
 
@@ -535,7 +538,8 @@ void Molecule::initSimilarity(int depth){
 /*
  * sets the general use marked array to state (TRUE|FALSE)
  */
-void Molecule::setMarked(int state){
+void Molecule::setMarked(int state)
+{
     int i;
     for (i=0; i<_size; i++)
         _marked[i] = state;
@@ -544,7 +548,8 @@ void Molecule::setMarked(int state){
 /*
  * Atom a is similar to Atom b if for each neighbour of i, j has a similar neighbour
  */
-int Molecule::isSimilar(int a,int b){
+int Molecule::isSimilar(int a,int b)
+{
 
     int i,j,found = TRUE;
 
@@ -583,11 +588,12 @@ int Molecule::isSimilar(int a,int b){
  * returns the number of elements in group 'num'
  * if there is no such group returns zero
  */
-int getGroupSize(Molecule *m,int num){
+int Molecule::getGroupSize(int num)
+{
 	int i,j;
 	i = 0;
-	for (j=0; j<m->_size ; j++){
-		if (m->_similar[j] == num){
+	for (j=0; j<_size ; j++){
+		if (_similar[j] == num){
 			i++;
 		}
 	}
@@ -599,11 +605,11 @@ int getGroupSize(Molecule *m,int num){
  * returns the number of elements in that group
  * if there is no such group returns zero (buffer irrelevant)
  */
-int getGroup(Molecule *m,int num,int* buff){
+int Molecule::getGroup(int num,int* buff){
 	int i,j;
 	i = 0;
-	for (j=0; j<m->_size ; j++){
-		if (m->_similar[j] == num){
+	for (j=0; j<_size ; j++){
+		if (_similar[j] == num){
 			buff[i] = j;
 			i++;
 		}
@@ -614,22 +620,22 @@ int getGroup(Molecule *m,int num,int* buff){
 /*
  * retrieves the size of the largest similarity group
  */
-int getMaxGroupSize(Molecule *m){
-
+int Molecule::getMaxGroupSize()
+{
 	int i,max=0;
 
 	// alloc and init counting buffer
-    int *count = (int*)malloc(m->_groupNum * sizeof(int));
-    for ( i=0;  i<m->_groupNum;  i++ )
+    int *count = (int*)malloc(_groupNum * sizeof(int));
+    for ( i=0;  i<_groupNum;  i++ )
     	count[i] = 0;
 
     // count the number of members of each group
-	for ( i=0;  i< m->_size ;  i++ ){
-		count[m->_similar[i] - 1]++;
+	for ( i=0;  i< _size ;  i++ ){
+		count[_similar[i] - 1]++;
 	}
 
 	// get the maximum
-	for ( i=0;  i< m->_groupNum ;  i++ ){
+	for ( i=0;  i< _groupNum ;  i++ ){
 		max = count[i] > max ? count[i] : max;
 	}
 
@@ -641,21 +647,21 @@ int getMaxGroupSize(Molecule *m){
  * Creates a new Molecule from m by removing atoms who's symbol is in the
  * remove list
  */
-Molecule* stripAtoms(Molecule *m, char** removeList, int removeListSize, int updateSimilarity){
-
+Molecule* Molecule::stripAtoms(char** removeList, int removeListSize, int updateSimilarity)
+{
 	Molecule* newM;
 
 	int i, j, count, hits;
 
-    int *selected = (int*)malloc(m->_size * sizeof(int));
+    int *selected = (int*)malloc(_size * sizeof(int));
 
 	// find atoms not in removeList
     count = 0;
 
-	for ( i=0;  i< m->_size ;  i++ ){
+	for ( i=0;  i< _size ;  i++ ){
 		hits = 0;
 		for ( j=0;  j< removeListSize ;  j++ ) {
-			if( strcmp( m->_symbol[i], removeList[j] ) == 0 ) {
+			if( strcmp( _symbol[i], removeList[j] ) == 0 ) {
 				hits++;
 				break;
 			}
@@ -667,7 +673,7 @@ Molecule* stripAtoms(Molecule *m, char** removeList, int removeListSize, int upd
 	}
 
 	// return a new Molecule copy
-	newM = m->copy(selected,count,updateSimilarity);
+	newM = copy(selected,count,updateSimilarity);
 	free(selected);
 	return newM;
 }
@@ -676,7 +682,7 @@ Molecule* stripAtoms(Molecule *m, char** removeList, int removeListSize, int upd
  * Normalizes the position of atoms of the molecule
  * returns one [TRUE] if successful, zero[FALSE] otherwise
  */
-int normalizeMolecule(Molecule *m, bool keepCenter = false){
+int Molecule::normalizeMolecule(bool keepCenter = false){
 
 	double tmp,x_avg, y_avg, z_avg,norm;
 	int i;
@@ -685,11 +691,11 @@ int normalizeMolecule(Molecule *m, bool keepCenter = false){
 
 	if (!keepCenter) {
 		double mass_sum = 0;
-		for(i=0; i< m->_size; i++){
-			x_avg += m->_pos[i][0] * m->_mass[i];
-			y_avg += m->_pos[i][1] * m->_mass[i];
-			z_avg += m->_pos[i][2] * m->_mass[i];
-			mass_sum += m->_mass[i];
+		for(i=0; i< _size; i++){
+			x_avg += _pos[i][0] * _mass[i];
+			y_avg += _pos[i][1] * _mass[i];
+			z_avg += _pos[i][2] * _mass[i];
+			mass_sum += _mass[i];
 		}
 		x_avg /= (double)(mass_sum);
 		y_avg /= (double)(mass_sum);
@@ -697,10 +703,10 @@ int normalizeMolecule(Molecule *m, bool keepCenter = false){
 	}
 
 	norm = 0.0;
-	for(i=0; i< m->_size; i++){
-		tmp = SQR(m->_pos[i][0]-x_avg) +
-		      SQR(m->_pos[i][1]-y_avg) +
-		      SQR(m->_pos[i][2]-z_avg);
+	for(i=0; i< _size; i++){
+		tmp = SQR(_pos[i][0]-x_avg) +
+		      SQR(_pos[i][1]-y_avg) +
+		      SQR(_pos[i][2]-z_avg);
 		norm += tmp;
 	}
 	// normalize to 1 and not molecule size
@@ -711,13 +717,13 @@ int normalizeMolecule(Molecule *m, bool keepCenter = false){
 	if(norm < MINDOOUBLE)
 		return FALSE;
 
-	for(i=0; i< m->_size; i++){
-		m->_pos[i][0] = ((m->_pos[i][0] - x_avg) / norm);
-		m->_pos[i][1] = ((m->_pos[i][1] - y_avg) / norm);
-		m->_pos[i][2] = ((m->_pos[i][2] - z_avg) / norm);
+	for(i=0; i< _size; i++){
+		_pos[i][0] = ((_pos[i][0] - x_avg) / norm);
+		_pos[i][1] = ((_pos[i][1] - y_avg) / norm);
+		_pos[i][2] = ((_pos[i][2] - z_avg) / norm);
 	}
 
-	m->_norm = norm;
+	_norm = norm;
 
 	return TRUE;
 }

@@ -49,6 +49,12 @@ public:
 	static Molecule* createFromOBMol(OpenBabel::OBMol &obmol, bool replaceSym, bool useMass = false);
 	Molecule *copy(int *selectedAtoms, int selectedAtomsSize, bool updateSimilarity);
 
+	int getGroup(int num, int* buff);
+	int getGroupSize(int num);
+	int getMaxGroupSize();
+	Molecule* stripAtoms(char** removeList, int removeListSize, int updateSimilarity);
+	int normalizeMolecule(bool keepCenter);
+
 	void print();
 	void printBasic();
 	void printSimilar();
@@ -58,13 +64,4 @@ public:
 
 };
 
-int getGroup(Molecule *m,int num,int* buff);
-
-int getGroupSize(Molecule *m,int num);
-
-int getMaxGroupSize(Molecule *m);
-
-Molecule* stripAtoms(Molecule *m, char** removeList, int removeListSize, int updateSimilarity);
-
-int normalizeMolecule(Molecule *m, bool keepCenter);
 #endif
