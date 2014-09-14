@@ -5,21 +5,20 @@
  * It includes the algorithm itself, as well as dealing with the program's IO
  */
 
-extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h> //for strcmp,strlen
-
-#include "Molecule.h"
-#include "mainhelpers.h"
-#include "nrutil.h"
-}
-
 #include "groupPermuter.h"
 #include <openbabel/mol.h>
 #include "babelAdapter.h"
 #include <vector>
+#include "Molecule.h"
+
+extern "C" {
+#include "mainhelpers.h"
+#include "nrutil.h"
+}
 
 #define CSMFORMAT "CSM"
 #define MAXDOUBLE  100000000.0
@@ -594,7 +593,7 @@ int main(int argc, char *argv[]){
 	if (useFormat) {
 		// If a specific format is used, read molecule using that format
 		if (strcasecmp(format, CSMFORMAT) == 0) {
-			m = createMolecule(inFile,stdout,ignoreSym && !useperm);
+			m = Molecule::create(inFile,stdout,ignoreSym && !useperm);
 			if (m==NULL) exit(1);
 			if (useMass) { 
 				for (int i = 0; i < m->_size; i++) { 
@@ -610,7 +609,7 @@ int main(int argc, char *argv[]){
 
 		// if the extension is CSM - use csm
 		if (strcasecmp(format, CSMFORMAT) == 0) {
-			m = createMolecule(inFile,stdout,ignoreSym && !useperm);
+			m = Molecule::create(inFile,stdout,ignoreSym && !useperm);
 			if (m==NULL) exit(1);
 			if (useMass) { 
 				for (int i = 0; i < m->_size; i++) { 
@@ -656,7 +655,7 @@ int main(int argc, char *argv[]){
 			}
 			exit(1);
 		}
-		freeMolecule(m);
+		delete m;
 		m = n;
 		// continue as per usual
 	}
@@ -822,7 +821,7 @@ int main(int argc, char *argv[]){
 		free(outAtoms[i]);
 	}
 	free(outAtoms);
-	freeMolecule(m);
+	delete m;
 	free(perm);
 
 	if (printLocal) free(localCSM);

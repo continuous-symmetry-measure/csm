@@ -4,8 +4,8 @@
 // Include Open Babel classes for OBMol and OBConversion
 extern "C" {
 #include <openbabel/mol.h>
-#include "Molecule.h"
 }
+#include "Molecule.h"
 
 using namespace OpenBabel;
 

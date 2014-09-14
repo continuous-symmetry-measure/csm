@@ -11,14 +11,15 @@
  *
  */
 
-extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> //for strcmp,strlen
 #include <ctype.h>  //for ispace
 #include <math.h>   //for sqrt
 #include "Molecule.h"
-#include "parseFunctions.h"
+
+extern "C" {
+	#include "parseFunctions.h"
 }
 
 // ************************************************************
@@ -36,47 +37,83 @@ int isSimilar(Molecule *m,int a,int b);
 /*
  * allocates memory for the molecule structure
  */
-Molecule * allocateMolecule(int size){
-    int i;
-
-    // allocate molecule
-    Molecule *m = (Molecule *)malloc(sizeof(Molecule));
-
-    //set size
-    m->_size = size;
+Molecule::Molecule(int size)
+{
+	int i;
+    _size = size;
 
     //allocate positions
-	m->_pos = (double **)malloc(size * sizeof(double*));
+	_pos = (double **)malloc(size * sizeof(double*));
 	for (i=0;i<size;i++)
-		m->_pos[i] = (double *)malloc(DIM * sizeof(double));
+		_pos[i] = (double *)malloc(DIM * sizeof(double));
 
     //allocate symbols
-	m->_symbol = (char **)malloc(size * sizeof(char*));
+	_symbol = (char **)malloc(size * sizeof(char*));
 	// individual strings allocated on reading
    
     //allocate mass (initially - equal mass)
-    m->_mass = (double *)malloc(size * sizeof(double));
+    _mass = (double *)malloc(size * sizeof(double));
 	for ( i=0;  i< size ;  i++ ){
-		m->_mass[i] = 1.0;
+		_mass[i] = 1.0;
 	}
 
     //allocate adjacency
-    m->_adjacent = (int **)malloc(size * sizeof(int*));
+    _adjacent = (int **)malloc(size * sizeof(int*));
 	// individual neighbours allocated on reading
 
     //allocate valency
-    m->_valency = (int*)malloc(size * sizeof(int));
+    _valency = (int*)malloc(size * sizeof(int));
     for ( i=0;  i< size ;  i++ ){
-		m->_valency[i] = 0;
+		_valency[i] = 0;
 	}
 
     //allocate similarity
-    m->_similar = (int*)malloc(size * sizeof(int));
+    _similar = (int*)malloc(size * sizeof(int));
 
     //allocate marked array
-    m->_marked = (int*)malloc(m->_size * sizeof(int));
+    _marked = (int*)malloc(_size * sizeof(int));
+};
 
-    return m;
+/*
+* free memory of the molecule structure
+*/
+Molecule::~Molecule()
+{
+	int i;
+
+	// free positions
+	for (i = 0; i<_size; i++){
+		free(_pos[i]);
+	}
+	free(_pos);
+
+	// Free mass
+	free(_mass);
+
+	// free symbols
+	for (i = 0; i<_size; i++){
+		if (_symbol[i]){
+			free(_symbol[i]);
+		}
+	}
+	free(_symbol);
+
+	// free adjacency
+	for (i = 0; i<_size; i++){
+		if (_adjacent[i]){
+			free(_adjacent[i]);
+		}
+	}
+	free(_adjacent);
+
+	// free valency
+	free(_valency);
+
+	// free similar
+	free(_similar);
+
+	// free marked
+	free(_marked);
 };
 
 /*
@@ -109,7 +146,7 @@ void replaceSymbols(Molecule* m){
 /*
  * creates a molecule from an input data file
  */
-Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
+Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
 
     int size,i;
 
@@ -122,7 +159,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
 		return NULL;
 
     // allocate molecule
-    Molecule* m = allocateMolecule(size);
+    Molecule* m = new Molecule(size);
 
     // read atoms
     for (i=0; i<size; i++){
@@ -131,7 +168,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
 
         if(fscanf(in,"%lf%lf%lf",&(m->_pos[i][0]),&(m->_pos[i][1]),&(m->_pos[i][2]))!=3){
             printf("Input Error: Failed reading input for atom %d\n",i /* +0 */ +1);
-            freeMolecule(m);
+			delete m;
             return NULL;
         }
 
@@ -154,7 +191,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
         fscanf(in,"%d",&atomNum);
         if (atomNum != i /* +0 */ +1){
             printf("Input Error: Failed reading connectivity for atom %d\n",i /* +0 */ +1);
-            freeMolecule(m);
+            delete m;
             return NULL;
         }
 
@@ -179,7 +216,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
             // read neighbour number
             if( (fscanf(in,"%d",&neighbour) !=1) || (neighbour > /* >= */ size) ) {
                 printf("Input Error: Failed reading connectivity for atom %d\n",i /* +0 */ +1);
-                freeMolecule(m);
+                delete m;
                 return NULL;
             }
 
@@ -211,7 +248,7 @@ Molecule* createMolecule(FILE *in,FILE *err,int replaceSym){
 /*
  * creates a molecule from a PDB input data file
  */
-Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
+Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
 
     int size,i;
 
@@ -221,7 +258,7 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
 		return NULL;
 
     // allocate molecule
-    Molecule* m = allocateMolecule(size);
+    Molecule* m = new Molecule(size);
 
     // read atoms
     for (i=0; i<size; i++){
@@ -230,7 +267,7 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
 
 		if (! readAtomPDB(in,&(m->_symbol[i]),m->_pos[i]) ){
             printf("Input Error: Failed reading input for atom %d\n",i);
-            freeMolecule(m);
+            delete m;
             return NULL;
         }
 
@@ -248,7 +285,7 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
 		if ( (! readConnectivityPDB(in,&valency,neighbours,size,&curAtom) ) ||
 			(curAtom < 0) ){
             printf("Input Error: Failed reading connectivity element number %d\n",i+1);
-            freeMolecule(m);
+            delete m;
             return NULL;
         }
 
@@ -277,26 +314,27 @@ Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym){
  * ! This implies that the selectedAtomsSize is smaller or equal to source size
  *
  */
-Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize, int updateSimilarity ){
+Molecule* Molecule::copy(int* selectedAtoms, int selectedAtomsSize, bool updateSimilarity )
+{
 
 	int i,j,old_i,len;
 
 	// allocate molecule
-    Molecule* dest = allocateMolecule(selectedAtomsSize);
+    Molecule* dest = new Molecule(selectedAtomsSize);
     if (!dest){
     	return NULL; // allocation failed
     }
 
 	//// allocate temporary buffers
 	int *buff = (int*)malloc(dest->_size * sizeof(int));
-	int *inversSelected = (int*)malloc(src->_size * sizeof(int));
-	int *newGroups = (int*)malloc(src->_groupNum * sizeof(int));
+	int *inversSelected = (int*)malloc(_size * sizeof(int));
+	int *newGroups = (int*)malloc(_groupNum * sizeof(int));
 
 	// init inversSelected - is the inverse of selectedAtoms (index->element,element->index)
-	for ( i=0;  i< src->_size ;  i++ ) {
+	for ( i=0;  i< _size ;  i++ ) {
 		inversSelected[i] = -1;	
 	}
-	for (i = 0; i < src->_groupNum; i++) {
+	for (i = 0; i < _groupNum; i++) {
 		newGroups[i] = 0;
 	}
 	for ( i=0;  i< dest->_size ;  i++ )
@@ -311,32 +349,32 @@ Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize,
 
 		// copy pos
 		for (j=0; j<DIM; j++){
-			dest->_pos[i][j] = src->_pos[old_i][j];
+			dest->_pos[i][j] = _pos[old_i][j];
 		}
 		// Copy mass
-		dest->_mass[i] = src->_mass[old_i];
+		dest->_mass[i] = _mass[old_i];
 
 		// copy similar
-		if (newGroups[src->_similar[old_i] - 1] == 0) {
+		if (newGroups[_similar[old_i] - 1] == 0) {
 			dest->_groupNum++;
-			newGroups[src->_similar[old_i] - 1] = dest->_groupNum;
+			newGroups[_similar[old_i] - 1] = dest->_groupNum;
 		}
-		dest->_similar[i] = newGroups[src->_similar[old_i] - 1];
+		dest->_similar[i] = newGroups[_similar[old_i] - 1];
 
 		// copy symbol - allocate the same size as old
-		len = strlen(src->_symbol[old_i]);
+		len = strlen(_symbol[old_i]);
 		dest->_symbol[i] = (char *)malloc((len+1) * sizeof(char) );
-		strcpy(dest->_symbol[i],src->_symbol[old_i]);
+		strcpy(dest->_symbol[i],_symbol[old_i]);
 
 		// update adjacency and valency
 		int pos = -1;
 		int valency = 0;
 
     	// for each item in src adjacency list
-		for ( j=0;  j< src->_valency[old_i] ;  j++ ){
+		for ( j=0;  j< _valency[old_i] ;  j++ ){
 
 			// if item in selectedAtoms add to buffer
-			pos = inversSelected[src->_adjacent[old_i][j]];
+			pos = inversSelected[_adjacent[old_i][j]];
 			if (pos != -1)
 				buff[valency++] = pos;
 		}
@@ -576,7 +614,7 @@ Molecule* stripAtoms(Molecule *m, char** removeList, int removeListSize, int upd
 	}
 
 	// return a new Molecule copy
-	newM = copyMolecule(m,selected,count,updateSimilarity);
+	newM = m->copy(selected,count,updateSimilarity);
 	free(selected);
 	return newM;
 }
@@ -836,47 +874,3 @@ void printMoleculeDebug2(Molecule *m){
 
 };
 
-/*
- * free memory of the molecule structure
- */
-void freeMolecule(Molecule *m){
-    int i;
-
-    // free positions
-    for (i=0;i<m->_size;i++){
-		free(m->_pos[i]);
-	}
-	free(m->_pos);
-
-    // Free mass
-    free(m->_mass);
-
-    // free symbols
-    for (i=0;i<m->_size;i++){
-        if (m->_symbol[i]){
-    		free(m->_symbol[i]);
-        }
-	}
-	free(m->_symbol);
-
-    // free adjacency
-    for (i=0;i<m->_size;i++){
-    	if (m->_adjacent[i]){
-			free(m->_adjacent[i]);
-		}
-	}
-	free(m->_adjacent);
-
-    // free valency
-	free(m->_valency);
-
-    // free similar
-	free(m->_similar);
-
-    // free marked
-	free(m->_marked);
-
-	//free molecule
-	free(m);
-
-};

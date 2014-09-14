@@ -23,7 +23,9 @@
 
 #define SQR(x)      ((x) * (x))
 
-typedef struct MoleculeTag {
+class Molecule
+{
+public:
     int _size;
     double** _pos;           // atom positions XYZ
     char** _symbol;          // atom symbols
@@ -34,13 +36,16 @@ typedef struct MoleculeTag {
     int  _groupNum;          // the number of groups of similarity
     double _norm;	     // The normalization factor
     double* _mass;	     // The atomic masses
-} Molecule;
 
-Molecule* createMolecule(FILE *in,FILE *err,int replaceSym);
+private:
 
-Molecule* createMoleculePDB(FILE *in,FILE *err,int replaceSym);
-
-Molecule* copyMolecule(Molecule *src, int* selectedAtoms, int selectedAtomsSize, int updateSimilarity );
+public:
+	Molecule(int size);  // Private constructor forces creation through the factory methods
+	~Molecule();
+	static Molecule *create(FILE *in, FILE *err, bool replaceSym);
+	static Molecule *createPDB(FILE *in, FILE *err, bool replaceSym);
+	Molecule *copy(int *selectedAtoms, int selectedAtomsSize, bool updateSimilarity);
+};
 
 int getGroup(Molecule *m,int num,int* buff);
 
@@ -61,7 +66,5 @@ void printMoleculeSimilar(Molecule *m);
 void printMoleculeDebug(Molecule *m);
 
 void printMoleculeDebug2(Molecule *m);
-
-void freeMolecule(Molecule *m);
 
 #endif

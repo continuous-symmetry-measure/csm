@@ -13,10 +13,8 @@
 using namespace OpenBabel;
 using namespace std;
 
-extern "C" {
-	#include "Molecule.h"
-}
-extern Molecule * allocateMolecule(int size);
+#include "Molecule.h"
+
 extern void initSimilarity(Molecule *m,int depth);		
 extern void replaceSymbols(Molecule* m);
 
@@ -65,7 +63,7 @@ double getAtomicMass(char *atomName) {
 Molecule* babel2Mol(OBMol &obmol, int replaceSym, bool useMass = false) {
 	int numAtoms = obmol.NumAtoms();
 	int i,j;
-	Molecule *mol = allocateMolecule(numAtoms);
+	Molecule *mol = new Molecule(numAtoms);
 
 	for (i = 0; i < numAtoms; i++) {		
 		OBAtom* atom = obmol.GetAtom(i + 1);	
