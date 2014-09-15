@@ -15,6 +15,10 @@
 #include <vector>
 #include "Molecule.h"
 
+#include <boost/log/trivial.hpp>
+
+void initLogging();
+
 extern "C" {
 #include "mainhelpers.h"
 #include "nrutil.h"
@@ -573,6 +577,10 @@ int main(int argc, char *argv[]){
 	double dir[3] = {0.0, 0.0, 0.0};   // directional cosines
 	int *perm = NULL;	
 	double *localCSM = NULL;		 
+
+	initLogging();
+
+	BOOST_LOG_TRIVIAL(info) << "CSM starting up";
 
 	// init options
 	parseInput(argc,argv);
@@ -2232,4 +2240,6 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 
 
 
-
+void initLogging()
+{
+}
