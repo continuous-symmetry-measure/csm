@@ -965,6 +965,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Permutation is " << permstrm.str();
 	BOOST_LOG_TRIVIAL(debug) << "Direction is " << setprecision(2) << fixed << dir[0] << " " << dir[1] << " " << dir[2];
+	m->printDebug();
 
 	// initialize identity permutation
 	for (i = 0; i < m->size(); i++) {
@@ -985,7 +986,13 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		}	  
 		computeVector(m->pos(), curPerm, m->size(), &vec, sin(angle));
 	}
-	
+
+	BOOST_LOG_TRIVIAL(debug).unsetf(ios_base::fixed);
+	BOOST_LOG_TRIVIAL(debug) << "Computed matrix is:" << setprecision(4);
+	BOOST_LOG_TRIVIAL(debug) << matrix[0][0] << " " << matrix[0][1] << " " << matrix[0][2];
+	BOOST_LOG_TRIVIAL(debug) << matrix[1][0] << " " << matrix[1][1] << " " << matrix[1][2];
+	BOOST_LOG_TRIVIAL(debug) << matrix[2][0] << " " << matrix[2][1] << " " << matrix[2][2];
+
 	// perhaps actual copying is needed
 	for (i = 0; i < 3; i++) {
 		copyVec[i + 1] = vec[i];
@@ -993,6 +1000,12 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 			copyMat[i + 1][j + 1] = matrix[i][j];
 		}
 	}		
+
+	BOOST_LOG_TRIVIAL(debug) << "Copied matrix is:";
+	BOOST_LOG_TRIVIAL(debug) << copyMat[1][1] << " " << copyMat[1][2] << " " << copyMat[1][3];
+	BOOST_LOG_TRIVIAL(debug) << copyMat[2][1] << " " << copyMat[2][2] << " " << copyMat[2][3];
+	BOOST_LOG_TRIVIAL(debug) << copyMat[3][1] << " " << copyMat[3][2] << " " << copyMat[3][3];
+
 
 	// compute the matrix's eigenvalues and eigenvectors.
 	tred2(copyMat, 3, diag, secdiag);
@@ -1007,7 +1020,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		temp[i + 1] = scalar[i] * scalar[i];
 	}
 
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "copyVec: " << copyVec[1] << " " << copyVec[2] << " " << copyVec[3];
+	BOOST_LOG_TRIVIAL(debug) <<  "copyVec: " << copyVec[1] << " " << copyVec[2] << " " << copyVec[3];
 
 	// build the polynomial
 	coeffs[0] = 1.0;	// x^6
@@ -1053,13 +1066,18 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		diag[1] * diag[1] * diag[2] * diag[2] * diag[3] * diag[3]; // 1
 
 	// solve polynomial and find maximum eigenvalue and eigen vec
+	BOOST_LOG_TRIVIAL(debug) << "Coefficients: " << coeffs[0] << ", " << coeffs[1] << ", " << coeffs[2] << ", " << coeffs[3] << ", " << coeffs[4] << ", " << coeffs[5] << ", " << coeffs[6];
 	rpoly(coeffs, 6, rtr, rti);
+
+	BOOST_LOG_TRIVIAL(debug) << "rtr: " << rtr[0] << " " << rtr[1] << " " << rtr[2] << " " << rtr[3] << " " << rtr[4] << " " << rtr[5];
+	BOOST_LOG_TRIVIAL(debug) << "rti: " << rti[0] << " " << rti[1] << " " << rti[2] << " " << rti[3] << " " << rti[4] << " " << rti[5];
 
 	maxval = -MAXDOUBLE;
 	for (i = 0; i < 6; i++) {								
 		if (maxval < rtr[i] && (fabs(rti[i]) < ZERO_IM_PART_MAX)) maxval = rtr[i];		
 	}	
 
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
 	scl = 0.0;
 	if ((isZeroAngle) || (opOrder == 2)) {
 		// If we are in zero angle case, we should pick the direction matching maxval
@@ -1121,7 +1139,6 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	
 	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "csm=" << csm << " maxval=" << maxval << " scl=" << scl;
 	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "dir: " << dir[0] << " " << dir[1] << " " << dir[2];
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
 	csm += (maxval -  scl) / 2;
 	csm = fabs(100 * (1.0 - csm / opOrder));
 	free(curPerm);
@@ -1256,12 +1273,12 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 * permutations that keep the similar atoms within the group ( groupPermuter class )
 * once it finds the optimal permutation , calls the chiralityFunction on the optimal permutation
 */
-void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, 
-			double* dMin, OperationType type){
+void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir,
+	double* dMin, OperationType type){
 
 	int i;
 	double curCsm;
-	double curDir[3];
+	double curDir[3] = { 0, 0, 0 };
 	int *idxToPos, *posToIdx;
 	int * groupSizes;
 	GroupPermuter* gp;
