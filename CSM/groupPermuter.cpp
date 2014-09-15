@@ -11,6 +11,8 @@
 #include "groupPermuter.h"
 #include <assert.h>
 
+#include <boost/log/trivial.hpp>
+
 /*
  * creates a groupPermuter of size totalSize
  * numberOfGroups - number of permutation groups
@@ -77,7 +79,7 @@ void GroupPermuter::copyIndexes()
  */
 bool GroupPermuter::next()
 {
-	//static long numRuns = 0;
+	static long numRuns = 0;
 	int i,j;
 
 	// first permuation is unique, init all permuters
@@ -108,13 +110,13 @@ bool GroupPermuter::next()
 				_permuters[j]->next();
 			}
 			copyIndexes();
-			//numRuns++;
+			numRuns++;
 			return true;
 		}
 	}
 
 	// we failed to advance any of the counters
-	//printf("TotalPerms: %d\n", numRuns);
+	BOOST_LOG_TRIVIAL(debug) << "TotalPerms: " << numRuns;
 	return false;
 
 }

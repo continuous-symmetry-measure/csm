@@ -16,7 +16,10 @@
 #include "Molecule.h"
 
 #include <boost/log/trivial.hpp>
+#include <iomanip>
+#include <sstream>
 
+using namespace std;
 void initLogging();
 
 extern "C" {
@@ -444,7 +447,7 @@ void parseInput(int argc, char *argv[]){
 		type = SN;
 		opOrder = atoi(argv[1] + 1);
 		if (opOrder % 2 != 0) {
-			printf("ERROR - Only Even values of n are allowed\n");
+			BOOST_LOG_TRIVIAL(fatal) << "Only Even values of n are allowed";
 			exit(1);
 		}
 		sprintf(opName, "S%d SYMMETRY",opOrder);	
@@ -452,11 +455,11 @@ void parseInput(int argc, char *argv[]){
 	// try to open infile for reading
 	inFileName = argv[2];
 	if ((inFile = fopen(inFileName, "rt")) == NULL){
-		if (writeOpenu) {
+		if (writeOpenu) 
+		{
 			printf("ERR* Failed to open data file %s *ERR\n", inFileName);
-		} else {
-			printf("Failed to open data file %s\n", inFileName);
 		}
+		BOOST_LOG_TRIVIAL(fatal) << "Failed to open data file " << inFileName;
 		exit(1);
 	}
 
@@ -466,9 +469,8 @@ void parseInput(int argc, char *argv[]){
 	if ((outFile = fopen(outFileName, "w")) == NULL){
 		if (writeOpenu) {
 			printf("ERR* Failed to open output file %s for writing *ERR\n", outFileName);
-		} else {
-			printf("Failed to open output file %s for writing\n", outFileName);
 		}
+		BOOST_LOG_TRIVIAL(fatal) << "Failed to open output file " << outFileName << " for writing";
 		exit(1);
 	}
 
@@ -481,11 +483,11 @@ void parseInput(int argc, char *argv[]){
 		if (nextIsPermFile) {
 			char* permfileName = argv[i];
 			if ((permfile = fopen(permfileName, "rt")) == NULL){
-				if (writeOpenu) {
+				if (writeOpenu) 
+				{
 					printf("ERR* Failed to open perm file %s for reading *ERR\n", permfileName);
-				} else {
-					printf("Failed to open perm file %s for reading\n", permfileName);
-				}
+				} 
+				BOOST_LOG_TRIVIAL(fatal) << "Failed to open perm file " << permfileName << "f or reading";
 				exit(1);
 			}
 			nextIsPermFile = false;
@@ -494,9 +496,8 @@ void parseInput(int argc, char *argv[]){
 			if ((dirfile = fopen(dirfilename, "rt")) == NULL){
 				if (writeOpenu) {
 					printf("ERR* Failed to open dir file %s for reading *ERR\n", dirfilename);
-				} else {
-					printf("Failed to open dir file %s for reading\n", dirfilename);
 				}
+				BOOST_LOG_TRIVIAL(fatal) << "Failed to open dir file " << dirfilename << " for reading";
 				exit(1);
 			}
 			nextIsDirFile = false;
@@ -505,7 +506,7 @@ void parseInput(int argc, char *argv[]){
 			nextIsMaxSn = false;
 		} else if (strcmp(argv[i],"-sn_max" ) == 0) {
 			if (type != CH) { 
-				printf("This option only applies to chirality\n");
+				BOOST_LOG_TRIVIAL(fatal) << "Option -sn_max only applies to chirality";
 				exit(1);
 			}
 			nextIsMaxSn = true;	
@@ -586,7 +587,7 @@ int main(int argc, char *argv[]){
 	parseInput(argc,argv);
 
 	if ((findPerm && useperm) || (findPerm && useDir) || (useDir && useperm)) { 
-		printf("-findperm, -useperm and -usedir are mutually exclusive...\n");
+		BOOST_LOG_TRIVIAL(fatal) << "-findperm, -useperm and -usedir are mutually exclusive";
 		exit(1);
 	} 
 
@@ -633,9 +634,8 @@ int main(int argc, char *argv[]){
 	if (!m){
 		if (writeOpenu) {
 			printf("ERR* Failed to read molecule from data file *ERR\n");
-		} else {
-			printf("Failed to read molecule from data file \n");
 		}
+		BOOST_LOG_TRIVIAL(fatal) << "Failed to read molecule from data file";
 		exit(1);
 	}
 
@@ -654,9 +654,8 @@ int main(int argc, char *argv[]){
 		if (!n){
 			if (writeOpenu) {
 				printf("ERR* Failed while trying to strip unwanted atoms *ERR\n");
-			} else {
-				printf("Failed while trying to strip unwanted atoms \n");
 			}
+			BOOST_LOG_TRIVIAL(fatal) << "Failed while trying to strip unwanted atoms";
 			exit(1);
 		}
 		delete m;
@@ -671,11 +670,11 @@ int main(int argc, char *argv[]){
 				// time is NaN
 				time = MAXDOUBLE;
 			}
-			printf("Going to enumerate over %5.2f permutations\n", totalNumPermutations(m));
-			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", time  );
+			BOOST_LOG_TRIVIAL(info) << "Going to enumerate over " << totalNumPermutations(m) << " permutations";
+			BOOST_LOG_TRIVIAL(info) << "Entire run should take approx. " << std::setprecision(2) << std::fixed << time << " hours on a 2.0Ghz Computer";
 		} else {
-			printf("Going to enumerate over %5.2f permutations\n", 1.0);
-			printf("Entire run should take approx. %5.2f hours on a 2.0Ghz Computer\n", 1.0 / 3600 / APPROX_RUN_PER_SEC );
+			BOOST_LOG_TRIVIAL(info) << "Using 1 permutation";
+			BOOST_LOG_TRIVIAL(info) << "Run should be instantaneous";
 		} 
 		if (timeOnly) { return 0; };
 	}
@@ -691,9 +690,8 @@ int main(int argc, char *argv[]){
 	if (!m->normalizeMolecule(keepCenter)){
 		if (writeOpenu) {
 			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
-		} else {
-			printf("Failed to normalize atom positions: dimension of set of points = zero\n");
 		}
+		BOOST_LOG_TRIVIAL(fatal) << "Failed to normalize atom positions: dimension of set of points = zero";
 		exit(1);
 	}
  
@@ -701,7 +699,7 @@ int main(int argc, char *argv[]){
 
 	if (useperm) {	
 		if (type == CH) {
-			printf("Chirality can't be given a permutation, run the specific csm operation instead\n");
+			BOOST_LOG_TRIVIAL(fatal) << "Chirality can't be given a permutation, run the specific csm operation instead";
 			exit(1);
 		}	
 		readPerm(permfile,perm, m->size());
@@ -861,9 +859,8 @@ void readPerm(FILE* permfile, int* perm, int size) {
 		if (res != 1 || cur < 1 || cur > size || used[cur - 1]) {
 			if (writeOpenu) {
 				printf("ERR* Invalid permutation *ERR\n");
-			} else {
-				printf("Invalid permutation\n");
 			}
+			BOOST_LOG_TRIVIAL(fatal) << "Invalid permutation";
 			free(used);
 			fclose(permfile);
 			exit(1);
@@ -957,6 +954,16 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	int isImproper = (type != CN) ? true : false;
 	int isZeroAngle = (type == CS) ? true : false;
 
+	BOOST_LOG_TRIVIAL(debug) << "calcRefPlane called";
+	stringstream permstrm;
+	for (int i = 0; i < m->size(); i++)
+	{
+		if (i > 0)
+			permstrm << ", ";
+		permstrm << perm[i];
+	}
+	BOOST_LOG_TRIVIAL(debug) << "Permutation is " << permstrm.str();
+
 	// initialize identity permutation
 	for (i = 0; i < m->size(); i++) {
 		curPerm[i] = i;
@@ -998,7 +1005,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		temp[i + 1] = scalar[i] * scalar[i];
 	}
 
-	// DEBUG printf("%.6f %.6f %.6f\n", copyVec[1], copyVec[2], copyVec[3]);
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << copyVec[1] << " " << copyVec[2] << " " << copyVec[3];
 
 	// build the polynomial
 	coeffs[0] = 1.0;	// x^6
@@ -1110,14 +1117,14 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}	
 
 	
-	// DEBUG printf("%.6f %.6f %.6f\n", csm, maxval, scl);
-	// DEBUG printf("dir: %.6f %.6f %.6f\n", dir[0], dir[1], dir[2]);
-	// DEBUG printf("eig: %.6f %.6f %.6f\n",  diag[1], diag[2], diag[3]);
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << csm << " " << maxval << " " << scl;
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << dir[0] << " " << dir[1] << " " << dir[2];
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << diag[1] << " " << diag[2] << " " << diag[3];
 	csm += (maxval -  scl) / 2;
 	csm = fabs(100 * (1.0 - csm / opOrder));
 	free(curPerm);
 
-	//printf("%4.2f %4.2f %4.2f - %4.2f\n", dir[0], dir[1], dir[2], csm);
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
 	
 	free_dmatrix(copyMat, 1, 3, 1, 3);
 	free_dvector(copyVec, 1, 3);
