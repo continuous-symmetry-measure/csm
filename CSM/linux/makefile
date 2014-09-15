@@ -4,8 +4,8 @@ CXX = g++
 
 # the compiler flags
 CFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include/openbabel-2.0 -I../../openbabel-files/os/include -g
-CXXFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include -I../../openbabel-files/os/include/openbabel-2.0 -g -std=c++11
-LFLAGS = -L. -L../../openbabel-files/os/lib -lopenbabel
+CXXFLAGS = -Wall -O3 -DBOOST_ALL_DYN_LINK -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include -I../../openbabel-files/os/include/openbabel-2.0 -g -std=c++11
+LFLAGS = -L. -L../../openbabel-files/os/lib -lopenbabel -lboost_log -lpthread
 
 BIN = .
 
