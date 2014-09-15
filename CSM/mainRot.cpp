@@ -16,6 +16,7 @@
 #include "Molecule.h"
 
 #include <boost/log/trivial.hpp>
+#include <boost/format.hpp>
 #include <iomanip>
 #include <sstream>
 
@@ -963,6 +964,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		permstrm << perm[i];
 	}
 	BOOST_LOG_TRIVIAL(debug) << "Permutation is " << permstrm.str();
+	BOOST_LOG_TRIVIAL(debug) << "Direction is " << setprecision(2) << fixed << dir[0] << " " << dir[1] << " " << dir[2];
 
 	// initialize identity permutation
 	for (i = 0; i < m->size(); i++) {
@@ -1005,7 +1007,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		temp[i + 1] = scalar[i] * scalar[i];
 	}
 
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << copyVec[1] << " " << copyVec[2] << " " << copyVec[3];
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "copyVec: " << copyVec[1] << " " << copyVec[2] << " " << copyVec[3];
 
 	// build the polynomial
 	coeffs[0] = 1.0;	// x^6
@@ -1117,14 +1119,14 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}	
 
 	
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << csm << " " << maxval << " " << scl;
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << dir[0] << " " << dir[1] << " " << dir[2];
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << diag[1] << " " << diag[2] << " " << diag[3];
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "csm=" << csm << " maxval=" << maxval << " scl=" << scl;
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "dir: " << dir[0] << " " << dir[1] << " " << dir[2];
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
 	csm += (maxval -  scl) / 2;
 	csm = fabs(100 * (1.0 - csm / opOrder));
 	free(curPerm);
 
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
+	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
 	
 	free_dmatrix(copyMat, 1, 3, 1, 3);
 	free_dvector(copyVec, 1, 3);
@@ -1297,9 +1299,8 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	if (!gp){
 		if (writeOpenu) {
 			printf("ERR* Failed to create groupPermuter *ERR\n");
-		} else {
-			printf("Failed to create groupPermuter \n");	
-		}	
+		}
+		BOOST_LOG_TRIVIAL(fatal) << "Failed to create groupPermuter";
 		exit(1);
 	};
 
@@ -1327,9 +1328,8 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	if (*csm == MAXDOUBLE){
 		if (writeOpenu) {
 			printf("ERR* Failed to calculate a csm value for %s *ERR\n",opName);
-		} else {
-			printf("Failed to calculate a csm value for %s \n",opName);
 		}
+		BOOST_LOG_TRIVIAL(fatal) << "Failed to calculate a csm value for " << opName;
 		exit(1);
 	}
 
@@ -1366,6 +1366,8 @@ void findBestPermUsingDir(Molecule* m, double** outAtoms, int* perm, double* csm
  * Finds an approximate permutation which can be used in the analytical computation.
  */
 void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type) {
+	BOOST_LOG_TRIVIAL(debug) << "findBestPerm called";
+
 	int *temp = (int*)malloc(sizeof(int) * m->size());
 	int i = 0;	
 	// The algorithm aims to find the best perm which can then be used for the analytic solution	
@@ -1412,7 +1414,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 					memcpy(bestDir, tempDir, sizeof(double) * 3);
 				}	
 				iterNum++;			
-				//printf("Old csm: %6.4f New csm %6.4f\n", old, dist);
+				BOOST_LOG_TRIVIAL(debug) << "Old csm: " << setprecision(4) << fixed << old << ", new csm " << dist;
 			};
 
 			// Keep the best solution so far...
@@ -1421,7 +1423,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 				memcpy(perm, bestPerm , sizeof(int) * m->size());
 				memcpy(dir, bestDir, sizeof(double) * 3);
 			}		
-			printf("Attempt #%d: best csm is %4.2f after %d iterations\n", (i+1), best, iterNum);			
+			BOOST_LOG_TRIVIAL(info) << "Attempt #" << i + 1 << ": best csm is " << setprecision(2) << fixed << best << " after " << iterNum << " iterations";
 		}
 		for (i = 0; i < n_dirs; i++) {
 			free(dirs[i]);
@@ -1755,7 +1757,9 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	int orbitDone, orbitSize, orbitStart;
 	int left;
 	angle = isZeroAngle ? 0.0 : (2 * PI / opOrder);
-		
+
+	BOOST_LOG_TRIVIAL(debug) << "estimatePerm called";
+
 	for (j = 0; j < m->size(); j++) {
 		rotated[j] = (double *)malloc(sizeof(double) * 3);		
 		rotated[j][0] = rotated[j][1] = rotated[j][2] = 0;
@@ -1779,9 +1783,10 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				rotated[j][k] += rotaionMatrix[k][l] * m->pos()[j][l];				
 			}
 		}
-		//printf("%d (%4.2f, %4.2f, %4.2f) -> (%4.2f, %4.2f, %4.2f)\n", j,
-		//	m->pos()[j][0], m->pos()[j][1], m->pos()[j][2], 
-		//	rotated[j][0], rotated[j][1], rotated[j][2]);
+		BOOST_LOG_TRIVIAL(debug) << boost::format("%d (%4.2f, %4.2f, %4.2f) -> (%4.2f, %4.2f, %4.2f)") %
+			j % 
+			m->pos()[j][0] % m->pos()[j][1] % m->pos()[j][2] % 
+			rotated[j][0] % rotated[j][1] % rotated[j][2];
 	}
 
 	// run over the groups
@@ -1813,13 +1818,10 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 		// Sort the distances			
 		qsort(distances, tableSize, sizeof(struct distRecord), distComp);
 	
-		/*	
-		printf("Working on group: ");
-		for (j = 0; j < groupSize; j++) { 
-			printf("%d ", group[j]);
-		}
-		printf("\n");
-		*/
+		stringstream groupstrm;
+		for (j = 0; j < groupSize; j++)
+			groupstrm << group[j] << " ";
+		BOOST_LOG_TRIVIAL(debug) << "Working on group " << groupstrm.str();
 		
 
 		left = groupSize;			
@@ -1830,15 +1832,16 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 			int col = distances[j].col;				
 	
 			// If we have used this item already - skip it.
-			if (perm[row] != -1) continue;							
-			//printf("%d %d -- %f\n", row, col,distances[j].distance);
+			if (perm[row] != -1) 
+				continue;							
+			BOOST_LOG_TRIVIAL(debug) << row << " " << col << " " << distances[j].distance;
 			
 			// If we do not have enought to full groups, set all remaining items to themselves
 			if (left == 1 || (type == CN && !enoughForFullOrbit)) { 							
 				for (k = 0; k < groupSize; k++) { 
 					if (used[group[k]] == 0) { 
 						perm[group[k]] = group[k];						
-						//printf("set %d<->%d\n", group[k], group[k]);
+						BOOST_LOG_TRIVIAL(debug) << "set " << group[k] << "<->" << group[k];
 					}				
 				}				
 				break;
@@ -1849,7 +1852,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				if (perm[row] == -1 && perm[col] == -1)  { 
 					perm[row] = col;
 					perm[col] = row;					
-					//printf("set %d<->%d\n", row, col);
+					BOOST_LOG_TRIVIAL(debug) << "set " << row << "<->" << col;
 					left -= (row == col) ? 1 : 2;
 				}
 			} else {
@@ -1857,8 +1860,8 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				if (perm[row] == -1 && used[col] == 0) {					
 					perm[row] = col;
 					used[col] = 1;				
-					//printf("set %d->%d\n", row, col);
-					left--;						
+					BOOST_LOG_TRIVIAL(debug) << "set " << row << "<->" << col;
+					left--;
 				} else {
 					continue;
 				}
@@ -1870,8 +1873,8 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				if (type == SN && !enoughForFullOrbit) { 
 					perm[col] = row;
 					used[row] = 1;					
-					//printf("set %d->%d\n", col, row);
-					left--;					
+					BOOST_LOG_TRIVIAL(debug) << "set " << row << "->" << col;
+					left--;
 					continue;
 				}
 
@@ -1882,8 +1885,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				
 				while (!orbitDone) {									
 					if (orbitSize == opOrder - 1) { 
-						//printf("Closing orbit...\n");
-						//Close the group - we've reached the end							
+						BOOST_LOG_TRIVIAL(debug) << "Closing orbit";
 						row = col;
 						col = orbitStart;
 						orbitDone = true;
@@ -1909,8 +1911,8 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 					}									
 					perm[row] = col;
 					used[col] = 1;
-					//printf("set %d->%d\n", row, col);	
-					left--;					
+					BOOST_LOG_TRIVIAL(debug) << "set " << row << "->" << col;
+					left--;
 				}
 			}		
 		} 	
