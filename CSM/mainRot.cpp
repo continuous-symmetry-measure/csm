@@ -936,17 +936,17 @@ void computeVector(double **parray, int *perm, int size, double (*vec)[3], doubl
  * Calculate the best axis, and compute the CSM for it, given a pairing of the indices (perm)
  */ 
 double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
-	double **copyMat = dmatrix(1,3,1,3);
-	double *copyVec = dvector(1,3);
-	double *diag = dvector(1,3);
-	double *secdiag = dvector(1,3);
-	double *temp = dvector(1,3);
+	double **copyMat = dmatrix(1, 3, 1, 3);
+	double *copyVec = dvector(1, 3);
+	double *diag = dvector(1, 3);
+	double *secdiag = dvector(1, 3);
+	double *temp = dvector(1, 3);
 
-	double matrix[3][3] = { {0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
-	double vec[3] = {0.0,0.0,0.0};
+	double matrix[3][3] = { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
+	double vec[3] = { 0.0, 0.0, 0.0 };
 	double scalar[3];
 	double maxval, scl, angle;
-	double rtr[6], rti[6];
+	double rtr[6] { 0, 0, 0, 0, 0, 0 }, rti[6] { 0, 0, 0, 0, 0, 0 };
 	double coeffs[7];
 	int i,j;
 	int *curPerm = (int *)malloc(sizeof(int) * m->size());
