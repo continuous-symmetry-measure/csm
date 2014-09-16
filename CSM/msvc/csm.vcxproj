@@ -104,6 +104,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
   <ItemGroup>
     <ClCompile Include="..\babelAdapter.cpp" />
     <ClCompile Include="..\groupPermuter.cpp" />
+    <ClCompile Include="..\logging.cpp" />
     <ClCompile Include="..\mainRot.cpp" />
     <ClCompile Include="..\Molecule.cpp" />
     <ClCompile Include="..\nrutil.c" />
@@ -119,6 +120,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
   <ItemGroup>
     <ClInclude Include="..\babelAdapter.h" />
     <ClInclude Include="..\groupPermuter.h" />
+    <ClInclude Include="..\logging.h" />
     <ClInclude Include="..\Molecule.h" />
     <ClInclude Include="..\nrutil.h" />
     <ClInclude Include="..\parseFunctions.h" />

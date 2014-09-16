@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include "babelAdapter.h"
 
-#include <boost/log/trivial.hpp>
+#include "logging.h"
 
 using namespace OpenBabel;
 using namespace std;
@@ -36,7 +36,8 @@ double getAtomicMass(char *atomName) {
 			return a.GetAtomicMass();
 		}
 	}
-	BOOST_LOG_TRIVIAL(fatal) << "Failed: Unknown atom type " << atomName;
+
+	LOG(fatal) << "Failed: Unknown atom type " << atomName;
 	exit(1);
 	return 1;
 } 
@@ -71,22 +72,22 @@ OBMol readMolecule (char *filename, const char *format, int babelBond) {
 	if (format == NULL) {
 		OBFormat* f = OBConversion::FormatFromExt(filename);
 		if (f == NULL) {	
-			BOOST_LOG_TRIVIAL(fatal) << "Error discovering format from filename " << filename;
+			LOG(fatal) << "Error discovering format from filename " << filename;
 			exit(1);
 		}			
 		if (!conv.SetInFormat(f)) {
-			BOOST_LOG_TRIVIAL(fatal) << "Error setting openbabel format\n";
+			LOG(fatal) << "Error setting openbabel format\n";
 			exit(1);
 		}
 	} else {
 		if (!conv.SetInFormat(format)) {
-			BOOST_LOG_TRIVIAL(fatal) << "Error setting input format to " << format;
+			LOG(fatal) << "Error setting input format to " << format;
 			exit(1);
 		}
 	}
 	if (!babelBond) conv.SetOptions("b", OBConversion::INOPTIONS);
 	if (!conv.ReadFile(&mol, filename)) {
-		BOOST_LOG_TRIVIAL(fatal) << "Error reading file " << filename << " using OpenBabel";
+		LOG(fatal) << "Error reading file " << filename << " using OpenBabel";
 		exit(1);		
 	}		
 	return mol;
@@ -106,21 +107,21 @@ void writeMolecule(OBMol& mol, const char *format, FILE* file, char *filename) {
 	if (format == NULL) {
 		OBFormat* f = OBConversion::FormatFromExt(filename);
 		if (f != NULL) {	
-			BOOST_LOG_TRIVIAL(fatal) << "Error discovering format from filename " << filename;
+			LOG(fatal) << "Error discovering format from filename " << filename;
 			exit(1);
 		}
 		if (!conv.SetOutFormat(f)) {
-			BOOST_LOG_TRIVIAL(fatal) << "Error setting openbabel format";
+			LOG(fatal) << "Error setting openbabel format";
 			exit(1);
 		}		
 	} else {
 		if (!conv.SetOutFormat(format)) {
-			BOOST_LOG_TRIVIAL(fatal) << "Error setting output format to " << format;
+			LOG(fatal) << "Error setting output format to " << format;
 			exit(1);
 		}
 	}
 	if (!conv.Write(&mol, &os)) {
-		BOOST_LOG_TRIVIAL(fatal) << "Error writing data file using OpenBabel";
+		LOG(fatal) << "Error writing data file using OpenBabel";
 		exit(1);
 	}
 	fprintf(file,"%s\n",os.str().c_str());

@@ -15,13 +15,12 @@
 #include <vector>
 #include "Molecule.h"
 
-#include <boost/log/trivial.hpp>
+#include "logging.h"
 #include <boost/format.hpp>
 #include <iomanip>
 #include <sstream>
 
 using namespace std;
-void initLogging();
 
 extern "C" {
 #include "mainhelpers.h"
@@ -172,6 +171,7 @@ bool babelTest = false;
 bool printNorm = false;
 bool printLocal = false;
 bool keepCenter = false;
+bool debug = false;
 
 // file pointers
 FILE* inFile = NULL;
@@ -210,6 +210,7 @@ void usage(char *op) {
 	printf("-printlocal		- Print the local CSM (csm for each atom) in the output file\n");
 	printf("-approx			- Equivalent to -detectOutliers -findperm together\n");
 	printf("-keepCenter		- Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass\n");
+	printf("-debug			- Enable debug printings");
 	printf("-help - print this help file\n");
 }
 
@@ -448,7 +449,7 @@ void parseInput(int argc, char *argv[]){
 		type = SN;
 		opOrder = atoi(argv[1] + 1);
 		if (opOrder % 2 != 0) {
-			BOOST_LOG_TRIVIAL(fatal) << "Only Even values of n are allowed";
+			LOG(fatal) << "Only Even values of n are allowed";
 			exit(1);
 		}
 		sprintf(opName, "S%d SYMMETRY",opOrder);	
@@ -460,7 +461,7 @@ void parseInput(int argc, char *argv[]){
 		{
 			printf("ERR* Failed to open data file %s *ERR\n", inFileName);
 		}
-		BOOST_LOG_TRIVIAL(fatal) << "Failed to open data file " << inFileName;
+		LOG(fatal) << "Failed to open data file " << inFileName;
 		exit(1);
 	}
 
@@ -471,7 +472,7 @@ void parseInput(int argc, char *argv[]){
 		if (writeOpenu) {
 			printf("ERR* Failed to open output file %s for writing *ERR\n", outFileName);
 		}
-		BOOST_LOG_TRIVIAL(fatal) << "Failed to open output file " << outFileName << " for writing";
+		LOG(fatal) << "Failed to open output file " << outFileName << " for writing";
 		exit(1);
 	}
 
@@ -488,7 +489,7 @@ void parseInput(int argc, char *argv[]){
 				{
 					printf("ERR* Failed to open perm file %s for reading *ERR\n", permfileName);
 				} 
-				BOOST_LOG_TRIVIAL(fatal) << "Failed to open perm file " << permfileName << "f or reading";
+				LOG(fatal) << "Failed to open perm file " << permfileName << "f or reading";
 				exit(1);
 			}
 			nextIsPermFile = false;
@@ -498,7 +499,7 @@ void parseInput(int argc, char *argv[]){
 				if (writeOpenu) {
 					printf("ERR* Failed to open dir file %s for reading *ERR\n", dirfilename);
 				}
-				BOOST_LOG_TRIVIAL(fatal) << "Failed to open dir file " << dirfilename << " for reading";
+				LOG(fatal) << "Failed to open dir file " << dirfilename << " for reading";
 				exit(1);
 			}
 			nextIsDirFile = false;
@@ -507,7 +508,7 @@ void parseInput(int argc, char *argv[]){
 			nextIsMaxSn = false;
 		} else if (strcmp(argv[i],"-sn_max" ) == 0) {
 			if (type != CH) { 
-				BOOST_LOG_TRIVIAL(fatal) << "Option -sn_max only applies to chirality";
+				LOG(fatal) << "Option -sn_max only applies to chirality";
 				exit(1);
 			}
 			nextIsMaxSn = true;	
@@ -556,6 +557,8 @@ void parseInput(int argc, char *argv[]){
 			printLocal = true;
 		} else if (strcmp(argv[i], "-keepCenter") == 0) { 
 			keepCenter = true;
+		} else if (strcmp(argv[i], "-debug") == 0) {
+			debug = true;
 		}
 	}
 	if (writeOpenu) {
@@ -580,15 +583,16 @@ int main(int argc, char *argv[]){
 	int *perm = NULL;	
 	double *localCSM = NULL;		 
 
-	initLogging();
+	init_logging();
 
-	BOOST_LOG_TRIVIAL(info) << "CSM starting up";
+	LOG(info) << "CSM starting up";
 
 	// init options
 	parseInput(argc,argv);
+	set_debug_logging(debug);
 
 	if ((findPerm && useperm) || (findPerm && useDir) || (useDir && useperm)) { 
-		BOOST_LOG_TRIVIAL(fatal) << "-findperm, -useperm and -usedir are mutually exclusive";
+		LOG(fatal) << "-findperm, -useperm and -usedir are mutually exclusive";
 		exit(1);
 	} 
 
@@ -636,7 +640,7 @@ int main(int argc, char *argv[]){
 		if (writeOpenu) {
 			printf("ERR* Failed to read molecule from data file *ERR\n");
 		}
-		BOOST_LOG_TRIVIAL(fatal) << "Failed to read molecule from data file";
+		LOG(fatal) << "Failed to read molecule from data file";
 		exit(1);
 	}
 
@@ -656,7 +660,7 @@ int main(int argc, char *argv[]){
 			if (writeOpenu) {
 				printf("ERR* Failed while trying to strip unwanted atoms *ERR\n");
 			}
-			BOOST_LOG_TRIVIAL(fatal) << "Failed while trying to strip unwanted atoms";
+			LOG(fatal) << "Failed while trying to strip unwanted atoms";
 			exit(1);
 		}
 		delete m;
@@ -671,11 +675,11 @@ int main(int argc, char *argv[]){
 				// time is NaN
 				time = MAXDOUBLE;
 			}
-			BOOST_LOG_TRIVIAL(info) << "Going to enumerate over " << totalNumPermutations(m) << " permutations";
-			BOOST_LOG_TRIVIAL(info) << "Entire run should take approx. " << std::setprecision(2) << std::fixed << time << " hours on a 2.0Ghz Computer";
+			LOG(info) << "Going to enumerate over " << totalNumPermutations(m) << " permutations";
+			LOG(info) << "Entire run should take approx. " << std::setprecision(2) << std::fixed << time << " hours on a 2.0Ghz Computer";
 		} else {
-			BOOST_LOG_TRIVIAL(info) << "Using 1 permutation";
-			BOOST_LOG_TRIVIAL(info) << "Run should be instantaneous";
+			LOG(info) << "Using 1 permutation";
+			LOG(info) << "Run should be instantaneous";
 		} 
 		if (timeOnly) { return 0; };
 	}
@@ -692,7 +696,7 @@ int main(int argc, char *argv[]){
 		if (writeOpenu) {
 			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
 		}
-		BOOST_LOG_TRIVIAL(fatal) << "Failed to normalize atom positions: dimension of set of points = zero";
+		LOG(fatal) << "Failed to normalize atom positions: dimension of set of points = zero";
 		exit(1);
 	}
  
@@ -700,7 +704,7 @@ int main(int argc, char *argv[]){
 
 	if (useperm) {	
 		if (type == CH) {
-			BOOST_LOG_TRIVIAL(fatal) << "Chirality can't be given a permutation, run the specific csm operation instead";
+			LOG(fatal) << "Chirality can't be given a permutation, run the specific csm operation instead";
 			exit(1);
 		}	
 		readPerm(permfile,perm, m->size());
@@ -861,7 +865,7 @@ void readPerm(FILE* permfile, int* perm, int size) {
 			if (writeOpenu) {
 				printf("ERR* Invalid permutation *ERR\n");
 			}
-			BOOST_LOG_TRIVIAL(fatal) << "Invalid permutation";
+			LOG(fatal) << "Invalid permutation";
 			free(used);
 			fclose(permfile);
 			exit(1);
@@ -955,7 +959,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	int isImproper = (type != CN) ? true : false;
 	int isZeroAngle = (type == CS) ? true : false;
 
-	BOOST_LOG_TRIVIAL(debug) << "calcRefPlane called";
+	LOG(debug) << "calcRefPlane called";
 	stringstream permstrm;
 	for (int i = 0; i < m->size(); i++)
 	{
@@ -963,9 +967,8 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 			permstrm << ", ";
 		permstrm << perm[i];
 	}
-	BOOST_LOG_TRIVIAL(debug) << "Permutation is " << permstrm.str();
-	BOOST_LOG_TRIVIAL(debug) << "Direction is " << setprecision(2) << fixed << dir[0] << " " << dir[1] << " " << dir[2];
-	m->printDebug();
+	LOG(debug) << "Permutation is " << permstrm.str();
+	LOG(debug) << "Direction is " << setprecision(2) << fixed << dir[0] << " " << dir[1] << " " << dir[2];
 
 	// initialize identity permutation
 	for (i = 0; i < m->size(); i++) {
@@ -987,11 +990,11 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		computeVector(m->pos(), curPerm, m->size(), &vec, sin(angle));
 	}
 
-	BOOST_LOG_TRIVIAL(debug).unsetf(ios_base::fixed);
-	BOOST_LOG_TRIVIAL(debug) << "Computed matrix is:" << setprecision(4);
-	BOOST_LOG_TRIVIAL(debug) << matrix[0][0] << " " << matrix[0][1] << " " << matrix[0][2];
-	BOOST_LOG_TRIVIAL(debug) << matrix[1][0] << " " << matrix[1][1] << " " << matrix[1][2];
-	BOOST_LOG_TRIVIAL(debug) << matrix[2][0] << " " << matrix[2][1] << " " << matrix[2][2];
+	LOG(debug).unsetf(ios_base::fixed);
+	LOG(debug) << "Computed matrix is:" << setprecision(4);
+	LOG(debug) << matrix[0][0] << " " << matrix[0][1] << " " << matrix[0][2];
+	LOG(debug) << matrix[1][0] << " " << matrix[1][1] << " " << matrix[1][2];
+	LOG(debug) << matrix[2][0] << " " << matrix[2][1] << " " << matrix[2][2];
 
 	// perhaps actual copying is needed
 	for (i = 0; i < 3; i++) {
@@ -1001,10 +1004,10 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		}
 	}		
 
-	BOOST_LOG_TRIVIAL(debug) << "Copied matrix is:";
-	BOOST_LOG_TRIVIAL(debug) << copyMat[1][1] << " " << copyMat[1][2] << " " << copyMat[1][3];
-	BOOST_LOG_TRIVIAL(debug) << copyMat[2][1] << " " << copyMat[2][2] << " " << copyMat[2][3];
-	BOOST_LOG_TRIVIAL(debug) << copyMat[3][1] << " " << copyMat[3][2] << " " << copyMat[3][3];
+	LOG(debug) << "Copied matrix is:";
+	LOG(debug) << copyMat[1][1] << " " << copyMat[1][2] << " " << copyMat[1][3];
+	LOG(debug) << copyMat[2][1] << " " << copyMat[2][2] << " " << copyMat[2][3];
+	LOG(debug) << copyMat[3][1] << " " << copyMat[3][2] << " " << copyMat[3][3];
 
 
 	// compute the matrix's eigenvalues and eigenvectors.
@@ -1020,7 +1023,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		temp[i + 1] = scalar[i] * scalar[i];
 	}
 
-	BOOST_LOG_TRIVIAL(debug) <<  "copyVec: " << copyVec[1] << " " << copyVec[2] << " " << copyVec[3];
+	LOG(debug) <<  "copyVec: " << copyVec[1] << " " << copyVec[2] << " " << copyVec[3];
 
 	// build the polynomial
 	coeffs[0] = 1.0;	// x^6
@@ -1066,18 +1069,18 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 		diag[1] * diag[1] * diag[2] * diag[2] * diag[3] * diag[3]; // 1
 
 	// solve polynomial and find maximum eigenvalue and eigen vec
-	BOOST_LOG_TRIVIAL(debug) << "Coefficients: " << coeffs[0] << ", " << coeffs[1] << ", " << coeffs[2] << ", " << coeffs[3] << ", " << coeffs[4] << ", " << coeffs[5] << ", " << coeffs[6];
+	LOG(debug) << "Coefficients: " << coeffs[0] << ", " << coeffs[1] << ", " << coeffs[2] << ", " << coeffs[3] << ", " << coeffs[4] << ", " << coeffs[5] << ", " << coeffs[6];
 	rpoly(coeffs, 6, rtr, rti);
 
-	BOOST_LOG_TRIVIAL(debug) << "rtr: " << rtr[0] << " " << rtr[1] << " " << rtr[2] << " " << rtr[3] << " " << rtr[4] << " " << rtr[5];
-	BOOST_LOG_TRIVIAL(debug) << "rti: " << rti[0] << " " << rti[1] << " " << rti[2] << " " << rti[3] << " " << rti[4] << " " << rti[5];
+	LOG(debug) << "rtr: " << rtr[0] << " " << rtr[1] << " " << rtr[2] << " " << rtr[3] << " " << rtr[4] << " " << rtr[5];
+	LOG(debug) << "rti: " << rti[0] << " " << rti[1] << " " << rti[2] << " " << rti[3] << " " << rti[4] << " " << rti[5];
 
 	maxval = -MAXDOUBLE;
 	for (i = 0; i < 6; i++) {								
 		if (maxval < rtr[i] && (fabs(rti[i]) < ZERO_IM_PART_MAX)) maxval = rtr[i];		
 	}	
 
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
+	LOG(debug) << setprecision(6) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
 	scl = 0.0;
 	if ((isZeroAngle) || (opOrder == 2)) {
 		// If we are in zero angle case, we should pick the direction matching maxval
@@ -1137,13 +1140,13 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}	
 
 	
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "csm=" << csm << " maxval=" << maxval << " scl=" << scl;
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "dir: " << dir[0] << " " << dir[1] << " " << dir[2];
+	LOG(debug) << setprecision(6) << fixed << "csm=" << csm << " maxval=" << maxval << " scl=" << scl;
+	LOG(debug) << setprecision(6) << fixed << "dir: " << dir[0] << " " << dir[1] << " " << dir[2];
 	csm += (maxval -  scl) / 2;
 	csm = fabs(100 * (1.0 - csm / opOrder));
 	free(curPerm);
 
-	BOOST_LOG_TRIVIAL(debug) << setprecision(6) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
+	LOG(debug) << setprecision(6) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
 	
 	free_dmatrix(copyMat, 1, 3, 1, 3);
 	free_dvector(copyVec, 1, 3);
@@ -1317,7 +1320,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 		if (writeOpenu) {
 			printf("ERR* Failed to create groupPermuter *ERR\n");
 		}
-		BOOST_LOG_TRIVIAL(fatal) << "Failed to create groupPermuter";
+		LOG(fatal) << "Failed to create groupPermuter";
 		exit(1);
 	};
 
@@ -1346,7 +1349,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 		if (writeOpenu) {
 			printf("ERR* Failed to calculate a csm value for %s *ERR\n",opName);
 		}
-		BOOST_LOG_TRIVIAL(fatal) << "Failed to calculate a csm value for " << opName;
+		LOG(fatal) << "Failed to calculate a csm value for " << opName;
 		exit(1);
 	}
 
@@ -1383,7 +1386,7 @@ void findBestPermUsingDir(Molecule* m, double** outAtoms, int* perm, double* csm
  * Finds an approximate permutation which can be used in the analytical computation.
  */
 void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type) {
-	BOOST_LOG_TRIVIAL(debug) << "findBestPerm called";
+	LOG(debug) << "findBestPerm called";
 
 	int *temp = (int*)malloc(sizeof(int) * m->size());
 	int i = 0;	
@@ -1431,7 +1434,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 					memcpy(bestDir, tempDir, sizeof(double) * 3);
 				}	
 				iterNum++;			
-				BOOST_LOG_TRIVIAL(debug) << "Old csm: " << setprecision(4) << fixed << old << ", new csm " << dist;
+				LOG(debug) << "Old csm: " << setprecision(4) << fixed << old << ", new csm " << dist;
 			};
 
 			// Keep the best solution so far...
@@ -1440,7 +1443,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 				memcpy(perm, bestPerm , sizeof(int) * m->size());
 				memcpy(dir, bestDir, sizeof(double) * 3);
 			}		
-			BOOST_LOG_TRIVIAL(info) << "Attempt #" << i + 1 << ": best csm is " << setprecision(2) << fixed << best << " after " << iterNum << " iterations";
+			LOG(info) << "Attempt #" << i + 1 << ": best csm is " << setprecision(2) << fixed << best << " after " << iterNum << " iterations";
 		}
 		for (i = 0; i < n_dirs; i++) {
 			free(dirs[i]);
@@ -1775,7 +1778,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	int left;
 	angle = isZeroAngle ? 0.0 : (2 * PI / opOrder);
 
-	BOOST_LOG_TRIVIAL(debug) << "estimatePerm called";
+	LOG(debug) << "estimatePerm called";
 
 	for (j = 0; j < m->size(); j++) {
 		rotated[j] = (double *)malloc(sizeof(double) * 3);		
@@ -1800,7 +1803,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				rotated[j][k] += rotaionMatrix[k][l] * m->pos()[j][l];				
 			}
 		}
-		BOOST_LOG_TRIVIAL(debug) << boost::format("%d (%4.2f, %4.2f, %4.2f) -> (%4.2f, %4.2f, %4.2f)") %
+		LOG(debug) << boost::format("%d (%4.2f, %4.2f, %4.2f) -> (%4.2f, %4.2f, %4.2f)") %
 			j % 
 			m->pos()[j][0] % m->pos()[j][1] % m->pos()[j][2] % 
 			rotated[j][0] % rotated[j][1] % rotated[j][2];
@@ -1838,7 +1841,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 		stringstream groupstrm;
 		for (j = 0; j < groupSize; j++)
 			groupstrm << group[j] << " ";
-		BOOST_LOG_TRIVIAL(debug) << "Working on group " << groupstrm.str();
+		LOG(debug) << "Working on group " << groupstrm.str();
 		
 
 		left = groupSize;			
@@ -1851,14 +1854,14 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 			// If we have used this item already - skip it.
 			if (perm[row] != -1) 
 				continue;							
-			BOOST_LOG_TRIVIAL(debug) << row << " " << col << " " << distances[j].distance;
+			LOG(debug) << row << " " << col << " " << distances[j].distance;
 			
 			// If we do not have enought to full groups, set all remaining items to themselves
 			if (left == 1 || (type == CN && !enoughForFullOrbit)) { 							
 				for (k = 0; k < groupSize; k++) { 
 					if (used[group[k]] == 0) { 
 						perm[group[k]] = group[k];						
-						BOOST_LOG_TRIVIAL(debug) << "set " << group[k] << "<->" << group[k];
+						LOG(debug) << "set " << group[k] << "<->" << group[k];
 					}				
 				}				
 				break;
@@ -1869,7 +1872,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				if (perm[row] == -1 && perm[col] == -1)  { 
 					perm[row] = col;
 					perm[col] = row;					
-					BOOST_LOG_TRIVIAL(debug) << "set " << row << "<->" << col;
+					LOG(debug) << "set " << row << "<->" << col;
 					left -= (row == col) ? 1 : 2;
 				}
 			} else {
@@ -1877,7 +1880,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				if (perm[row] == -1 && used[col] == 0) {					
 					perm[row] = col;
 					used[col] = 1;				
-					BOOST_LOG_TRIVIAL(debug) << "set " << row << "<->" << col;
+					LOG(debug) << "set " << row << "<->" << col;
 					left--;
 				} else {
 					continue;
@@ -1890,7 +1893,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				if (type == SN && !enoughForFullOrbit) { 
 					perm[col] = row;
 					used[row] = 1;					
-					BOOST_LOG_TRIVIAL(debug) << "set " << row << "->" << col;
+					LOG(debug) << "set " << row << "->" << col;
 					left--;
 					continue;
 				}
@@ -1902,7 +1905,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				
 				while (!orbitDone) {									
 					if (orbitSize == opOrder - 1) { 
-						BOOST_LOG_TRIVIAL(debug) << "Closing orbit";
+						LOG(debug) << "Closing orbit";
 						row = col;
 						col = orbitStart;
 						orbitDone = true;
@@ -1928,7 +1931,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 					}									
 					perm[row] = col;
 					used[col] = 1;
-					BOOST_LOG_TRIVIAL(debug) << "set " << row << "->" << col;
+					LOG(debug) << "set " << row << "->" << col;
 					left--;
 				}
 			}		
@@ -2264,8 +2267,3 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 		fprintf(out,"\nsum: %7lf\n", sum);
 	}}
 
-
-
-void initLogging()
-{
-}

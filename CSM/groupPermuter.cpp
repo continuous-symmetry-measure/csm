@@ -11,7 +11,7 @@
 #include "groupPermuter.h"
 #include <assert.h>
 
-#include <boost/log/trivial.hpp>
+#include "logging.h"
 
 /*
  * creates a groupPermuter of size totalSize
@@ -116,7 +116,7 @@ bool GroupPermuter::next()
 	}
 
 	// we failed to advance any of the counters
-	BOOST_LOG_TRIVIAL(debug) << "TotalPerms: " << numRuns;
+	LOG(debug) << "TotalPerms: " << numRuns;
 	return false;
 
 }

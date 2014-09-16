@@ -25,7 +25,7 @@ extern "C" {
 
 #include <openbabel/mol.h>
 #include "elements.h"
-#include <boost/log/trivial.hpp>
+#include "logging.h"
 
 using namespace OpenBabel;
 
@@ -127,7 +127,7 @@ Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
 
     // read size
     if (fscanf(in,"%d",&size)!=1){
-		BOOST_LOG_TRIVIAL(error) << "Input Error: Number of atoms not supplied";
+		LOG(error) << "Input Error: Number of atoms not supplied";
         return NULL;
     }
     if (size == 0)
@@ -142,7 +142,7 @@ Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
         m->_symbol[i] = readString(in); // allocates space for symbol
 
         if(fscanf(in,"%lf%lf%lf",&(m->_pos[i][0]),&(m->_pos[i][1]),&(m->_pos[i][2]))!=3){
-			BOOST_LOG_TRIVIAL(error) << "Input Error: Failed reading input for atom " << i+1;
+			LOG(error) << "Input Error: Failed reading input for atom " << i+1;
 			delete m;
             return NULL;
         }
@@ -165,7 +165,7 @@ Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
         // read and check atom number
         fscanf(in,"%d",&atomNum);
         if (atomNum != i /* +0 */ +1){
-			BOOST_LOG_TRIVIAL(error) << "Input Error: Failed reading connectivity for atom " << i + 1;
+			LOG(error) << "Input Error: Failed reading connectivity for atom " << i + 1;
             delete m;
             return NULL;
         }
@@ -190,7 +190,7 @@ Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
 
             // read neighbour number
             if( (fscanf(in,"%d",&neighbour) !=1) || (neighbour > /* >= */ size) ) {
-				BOOST_LOG_TRIVIAL(error) << "Input Error: Failed reading connectivity for atom " << i+1;
+				LOG(error) << "Input Error: Failed reading connectivity for atom " << i+1;
                 delete m;
                 return NULL;
             }
@@ -241,7 +241,7 @@ Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
 		// note: readAtom allocates space for symbol
 
 		if (! readAtomPDB(in,&(m->_symbol[i]),m->_pos[i]) ){
-			BOOST_LOG_TRIVIAL(error) << "Input Error: Failed reading input for atom " << i;
+			LOG(error) << "Input Error: Failed reading input for atom " << i;
             delete m;
             return NULL;
         }
@@ -259,7 +259,7 @@ Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
 
 		if ( (! readConnectivityPDB(in,&valency,neighbours,size,&curAtom) ) ||
 			(curAtom < 0) ){
-			BOOST_LOG_TRIVIAL(error) << "Input Error: Failed reading connectivity element number " << i+1;
+			LOG(error) << "Input Error: Failed reading connectivity element number " << i+1;
             delete m;
             return NULL;
         }
