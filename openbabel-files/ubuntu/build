@@ -5,14 +5,6 @@ BUILD_DIR=$OPENBABEL_DIR/build
 INSTALL_DIR=`pwd`
 
 if [ ! -d "$OPENBABEL_DIR" ]; then
-    while true; do
-        read -p "OpenBabel cannot be found. Clone git repository? " yn
-        case $yn in
-    	    [Yy]* ) break;;
-    	    [Nn]* ) echo "Stopping right here"; exit;;
-            * ) echo Please answer Yes or No
-       esac
-    done
     echo Cloning the OpenBabel repository
     git clone git://github.com/openbabel/openbabel.git $OPENBABEL_DIR
 fi
