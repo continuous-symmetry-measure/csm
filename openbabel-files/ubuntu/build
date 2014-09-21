@@ -22,7 +22,7 @@ echo Installing OpenBabel
 make install
 # Taken from here: http://stackoverflow.com/a/4479619/871910
 profile_file="$HOME/.bashrc"
-if ! grep -q $INSTALL_DIR "${profile_file}" ; then
+if ! grep -q $INSTALL_DIR ${profile_file} ; then
     echo Setting the .bashrc file
     cat << EOT >> ${profile_file}
 
