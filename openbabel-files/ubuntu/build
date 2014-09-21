@@ -20,4 +20,15 @@ echo Compiling OpenBabel
 make -j4
 echo Installing OpenBabel
 make install
+# Taken from here: http://stackoverflow.com/a/4479619/871910
+profile_file="$HOME/.bashrc"
+if ! grep -q $INSTALL_DIR "${profile_file}" ; then
+    echo Setting the .bashrc file
+    cat << EOT >> ${profile_file}
+
+# Set up the CSM OpenBabel libraries
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$INSTALL_DIR/lib
+EOT
+fi
 echo Done.
+
