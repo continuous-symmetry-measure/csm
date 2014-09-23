@@ -5,14 +5,6 @@ BUILD_DIR=$OPENBABEL_DIR/build
 INSTALL_DIR=`pwd`
 
 if [ ! -d "$OPENBABEL_DIR" ]; then
-    while true; do
-        read -p "OpenBabel cannot be found. Clone git repository? " yn
-        case $yn in
-    	    [Yy]* ) break;;
-    	    [Nn]* ) echo "Stopping right here"; exit;;
-            * ) echo Please answer Yes or No
-       esac
-    done
     echo Cloning the OpenBabel repository
     git clone git://github.com/openbabel/openbabel.git $OPENBABEL_DIR
 fi
@@ -28,4 +20,15 @@ echo Compiling OpenBabel
 make -j4
 echo Installing OpenBabel
 make install
+# Taken from here: http://stackoverflow.com/a/4479619/871910
+profile_file="$HOME/.bashrc"
+if ! grep -q $INSTALL_DIR ${profile_file} ; then
+    echo Setting the .bashrc file
+    cat << EOT >> ${profile_file}
+
+# Set up the CSM OpenBabel libraries
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$INSTALL_DIR/lib
+EOT
+fi
 echo Done.
+
