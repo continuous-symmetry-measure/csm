@@ -113,14 +113,15 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClCompile Include="..\poly_solve.c" />
     <ClCompile Include="..\pythag.c" />
     <ClCompile Include="..\rpoly.c" />
-    <ClCompile Include="..\tqli.c" />
-    <ClCompile Include="..\tred2.c" />
     <ClCompile Include="..\elements.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\babelAdapter.h" />
+    <ClInclude Include="..\dmatrix.h" />
+    <ClInclude Include="..\dvector.h" />
     <ClInclude Include="..\groupPermuter.h" />
     <ClInclude Include="..\logging.h" />
+    <ClInclude Include="..\math_utils.h" />
     <ClInclude Include="..\Molecule.h" />
     <ClInclude Include="..\nrutil.h" />
     <ClInclude Include="..\parseFunctions.h" />

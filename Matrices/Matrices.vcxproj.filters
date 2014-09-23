@@ -26,5 +26,11 @@
     <ClInclude Include="nrutil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dvector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dmatrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

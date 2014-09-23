@@ -82,6 +82,8 @@
     <ClCompile Include="nrutil.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dmatrix.h" />
+    <ClInclude Include="dvector.h" />
     <ClInclude Include="nrutil.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

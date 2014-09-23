@@ -27,6 +27,9 @@ extern "C" {
 #include "nrutil.h"
 }
 
+#include "dvector.h"
+#include "dmatrix.h"
+
 #define CSMFORMAT "CSM"
 #define MAXDOUBLE  100000000.0
 #define MINDOUBLE  1e-8
@@ -120,14 +123,12 @@ int distComp(const void *pd1, const void* pd2) {
 
 extern "C" {
 
-// from tqli.c - nrbook
-double tqli(double d[], double e[], int n, double **z);
-// from tred2.c - nrbook
-void tred2(double **a, int n, double d[], double e[]);
 // from rpoly.c Jenkins-Traub Polynomial Solver
 int rpoly(double *op, int degree, double *zeror, double *zeroi);
 
 }
+
+#include "math_utils.h"
 
 // function declarations
 void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out, double* localCSM);
@@ -940,11 +941,11 @@ void computeVector(double **parray, int *perm, int size, double (*vec)[3], doubl
  * Calculate the best axis, and compute the CSM for it, given a pairing of the indices (perm)
  */ 
 double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
-	double **copyMat = dmatrix(1, 3, 1, 3);
-	double *copyVec = dvector(1, 3);
-	double *diag = dvector(1, 3);
-	double *secdiag = dvector(1, 3);
-	double *temp = dvector(1, 3);
+	csm_utils::dmatrix copyMat(1, 3, 1, 3);
+	csm_utils::dvector copyVec(1, 3);
+	csm_utils::dvector diag(1, 3);
+	csm_utils::dvector secdiag(1, 3);
+	csm_utils::dvector temp(1, 3);
 
 	double matrix[3][3] = { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
 	double vec[3] = { 0.0, 0.0, 0.0 };
@@ -1148,11 +1149,6 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	LOG(debug) << setprecision(6) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
 	
-	free_dmatrix(copyMat, 1, 3, 1, 3);
-	free_dvector(copyVec, 1, 3);
-	free_dvector(diag, 1, 3);
-	free_dvector(secdiag, 1, 3);
-	free_dvector(temp,1,3);
 	return csm;
 }
 
@@ -1955,9 +1951,9 @@ void lineFit(double **points, int nPoints, double **dirs, int *outliers) {
 	double A[3] = {0,0,0};	
 	double matrix[3][3] = { {0,0,0}, {0,0,0}, {0,0,0}};
 
-	double **copyMat = dmatrix(1,3,1,3);	
-	double *diag = dvector(1,3);
-	double *secdiag = dvector(1,3);	
+	csm_utils::dmatrix copyMat(1,3,1,3);	
+	csm_utils::dvector diag(1,3);
+	csm_utils::dvector secdiag(1,3);	
 	int realNum = 0;
 
 	double norm;
@@ -2014,19 +2010,15 @@ void lineFit(double **points, int nPoints, double **dirs, int *outliers) {
 		dirs[i][2] /= norm;
 
 	}	
-
-	free_dmatrix(copyMat, 1, 3, 1, 3);	
-	free_dvector(diag, 1, 3);
-	free_dvector(secdiag, 1, 3);	
 }
 void planeFit(double **points, int nPoints, double **dirs, int* outliers) {
 	// taken from http://www.mapleprimes.com/forum/linear-regression-in-3d
 	double A[3] = {0,0,0};	
 	double matrix[3][3] = { {0,0,0}, {0,0,0}, {0,0,0}};
 
-	double **copyMat = dmatrix(1,3,1,3);	
-	double *diag = dvector(1,3);
-	double *secdiag = dvector(1,3);	
+	csm_utils::dmatrix copyMat(1, 3, 1, 3);
+	csm_utils::dvector diag(1, 3);
+	csm_utils::dvector secdiag(1, 3);
 
 	double norm;
 	int i,j,k;
@@ -2081,10 +2073,6 @@ void planeFit(double **points, int nPoints, double **dirs, int* outliers) {
 		dirs[i][2] /= norm;
 
 	}	
-
-	free_dmatrix(copyMat, 1, 3, 1, 3);	
-	free_dvector(diag, 1, 3);
-	free_dvector(secdiag, 1, 3);	
 }
 
 
