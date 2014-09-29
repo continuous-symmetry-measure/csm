@@ -137,7 +137,5 @@ void tred2(MAT &a, int n, VEC& d, VEC &e)
 }
 
 
-// from rpoly.c Jenkins-Traub Polynomial Solver
-int rpoly(double *op, int degree, double *zeror, double *zeroi);
 
 #endif

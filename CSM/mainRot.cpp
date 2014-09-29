@@ -20,6 +20,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include "math_wrappers.h"
+
 using namespace std;
 
 extern "C" {
@@ -119,13 +121,6 @@ int distComp(const void *pd1, const void* pd2) {
 		return -1;
 	}
 	return 0;
-}
-
-extern "C" {
-
-// from rpoly.c Jenkins-Traub Polynomial Solver
-int rpoly(double *op, int degree, double *zeror, double *zeroi);
-
 }
 
 #include "math_utils.h"
@@ -951,8 +946,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	double vec[3] = { 0.0, 0.0, 0.0 };
 	double scalar[3];
 	double maxval, scl, angle;
-	double rtr[6] { 0, 0, 0, 0, 0, 0 }, rti[6] { 0, 0, 0, 0, 0, 0 };
-	double coeffs[7];
+	std::vector<double> coeffs(7);
 	int i,j;
 	int *curPerm = (int *)malloc(sizeof(int) * m->size());
 	double csm, dists;
@@ -1071,14 +1065,15 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	// solve polynomial and find maximum eigenvalue and eigen vec
 	LOG(debug) << "Coefficients: " << coeffs[0] << ", " << coeffs[1] << ", " << coeffs[2] << ", " << coeffs[3] << ", " << coeffs[4] << ", " << coeffs[5] << ", " << coeffs[6];
-	rpoly(coeffs, 6, rtr, rti);
+	auto roots = FindPolyRoots(coeffs);
+	// rpoly(coeffs, 6, rtr, rti);
 
-	LOG(debug) << "rtr: " << rtr[0] << " " << rtr[1] << " " << rtr[2] << " " << rtr[3] << " " << rtr[4] << " " << rtr[5];
-	LOG(debug) << "rti: " << rti[0] << " " << rti[1] << " " << rti[2] << " " << rti[3] << " " << rti[4] << " " << rti[5];
+	LOG(debug) << "rtr: " << roots[0] << " " << roots[1] << " " << roots[2] << " " << roots[3] << " " << roots[4] << " " << roots[5];
 
 	maxval = -MAXDOUBLE;
 	for (i = 0; i < 6; i++) {								
-		if (maxval < rtr[i] && (fabs(rti[i]) < ZERO_IM_PART_MAX)) maxval = rtr[i];		
+		if (maxval < roots[i].real() && (fabs(roots[i].imag()) < ZERO_IM_PART_MAX)) 
+			maxval = roots[i].real();		
 	}	
 
 	LOG(debug) << setprecision(6) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];

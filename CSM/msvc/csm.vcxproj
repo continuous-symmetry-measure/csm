@@ -106,6 +106,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClCompile Include="..\groupPermuter.cpp" />
     <ClCompile Include="..\logging.cpp" />
     <ClCompile Include="..\mainRot.cpp" />
+    <ClCompile Include="..\math_wrappers.cpp" />
     <ClCompile Include="..\Molecule.cpp" />
     <ClCompile Include="..\nrutil.c" />
     <ClCompile Include="..\parseFunctions.c" />
@@ -122,11 +123,13 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClInclude Include="..\groupPermuter.h" />
     <ClInclude Include="..\logging.h" />
     <ClInclude Include="..\math_utils.h" />
+    <ClInclude Include="..\math_wrappers.h" />
     <ClInclude Include="..\Molecule.h" />
     <ClInclude Include="..\nrutil.h" />
     <ClInclude Include="..\parseFunctions.h" />
     <ClInclude Include="..\permuter.h" />
     <ClInclude Include="..\elements.h" />
+    <ClInclude Include="Header.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\ReadMe.txt" />
