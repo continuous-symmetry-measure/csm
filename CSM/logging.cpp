@@ -24,6 +24,8 @@ void init_logging()
 		keywords::filter = trivial::severity >= trivial::severity_level::error);
 	add_console_log(std::cout, keywords::format = "%Message%");
 	add_file_log("csm.log",
+		keywords::open_mode = std::ios_base::app,
+		keywords::auto_flush = true,
 		keywords::format = "[%TimeStamp%]  [%Severity%]: %Message%");
 
 	set_debug_logging(false);
