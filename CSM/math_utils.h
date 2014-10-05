@@ -5,6 +5,8 @@
 #ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
+#if 0
+
 extern "C"
 {
 #include "nrutil.h"
@@ -14,7 +16,7 @@ double pythag(double a, double b);
 // from tqli.c - nrbook
 template <typename VEC, typename MAT>
 double tqli(VEC& d, VEC& e, int n, MAT& z)
-{
+{sdsadas
 	static double temp;
 	int m, l, iter, i, k;
 	double s, r, p, g, f, dd, c, b;
@@ -137,5 +139,6 @@ void tred2(MAT &a, int n, VEC& d, VEC &e)
 }
 
 
+#endif
 
 #endif

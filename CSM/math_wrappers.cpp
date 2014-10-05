@@ -6,10 +6,11 @@
 
 #include <vector>
 #include <complex>
-#include "math_utils.h"
 #include "logging.h"
 #include "dmatrix.h"
 #include "dvector.h"
+#include <Eigen/Dense>
+#include <Eigen/Eigenvalues>
 
 // from rpoly.c Jenkins-Traub Polynomial Solver
 extern "C" {
@@ -41,7 +42,8 @@ std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coeff
 	return roots;
 }
 
-std::vector<EigenResult> GetEigens(const double matrix[3][3])
+/*
+std::vector<EigenResult> GetEigensOld(const double matrix[3][3])
 {
 	csm_utils::dmatrix tmatrix(1, 3, 1, 3);
 	for (int i = 0; i < 3; i++)
@@ -60,6 +62,33 @@ std::vector<EigenResult> GetEigens(const double matrix[3][3])
 		for (int j = 0; j < 3; j++)
 			results[i].vector[j] = tmatrix[j+1][i+1];
 	}
+
+	return results;
+} */
+
+std::vector<EigenResult> GetEigens(const double matrix[3][3])
+{
+	Eigen::Matrix3d m;
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+			m(i, j) = matrix[i][j];
+
+	Eigen::EigenSolver<Eigen::Matrix3d> solver(m, true);
+	std::vector<EigenResult> results(3);
+	for (int i = 0; i < 3; i++)
+	{
+		results[i].value = solver.eigenvalues()[i].real();
+		results[i].vector.resize(3);
+		for (int j = 0; j < 3; j++)
+			results[i].vector[j] = solver.eigenvectors().col(i)[j].real();
+	}
+
+	/*auto test = GetEigensOld(matrix);
+	for (int i = 0; i < 3; i++)
+	{
+		LOG(debug) << "New EV" << i << ": " << results[i].value << " (" << results[i].vector[0] << ", " << results[i].vector[1] << ", " << results[i].vector[2] << ")";
+		LOG(debug) << "Old EV" << i << ": " << test[i].value << " (" << test[i].vector[0] << ", " << test[i].vector[1] << ", " << test[i].vector[2] << ")" << std::endl;
+	} */
 
 	return results;
 }

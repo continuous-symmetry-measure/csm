@@ -17,7 +17,7 @@ BIN = .
 #OBJ4 = invhelpers.o 
 #OBJ5 = csm2pdb.o parseFunctions.o Molecule.o
 
-OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o elements.o logging.o mainRot.o rpoly.o nrutil.o pythag.o babelAdapter.o math_wrappers.o
+OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o elements.o logging.o mainRot.o rpoly.o babelAdapter.o math_wrappers.o
 
 #OBJCSM2D = Molecule.o parseFunctions.o permuter.o groupPermuter.o main2d.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
 
