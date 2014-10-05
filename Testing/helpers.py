@@ -93,10 +93,13 @@ def parse_output(lines):
     result['symmetry'] = lines[0]
     result['scaling'] = lines[1]
     result['direction'] = ()
+    result['permutation'] = ()
     for i in range(len(lines)):
         line = lines[i]
         if line=='DIRECTIONAL COSINES:':
             result['direction'] = parse_vector(lines[i+1])
+        if line=='PERMUTATION:':
+            result['permutation'] = parse_vector(lines[i+1])
     return result
 
 
@@ -118,10 +121,12 @@ def compare_files(file1, file2):
         return False
     if output1['scaling']!=output2['scaling']:
         return False
-    if not same_vector(output1['direction'], output2['direction']):
-        opposite = tuple([-x for x in output1['direction']])
-        if not same_vector(opposite, output2['direction']):
-            return False
+    if not same_vector(output1['permutation'], output2['permutation']):
+        return False
+    #if not same_vector(output1['direction'], output2['direction']):
+    #    opposite = tuple([-x for x in output1['direction']])
+    #    if not same_vector(opposite, output2['direction']):
+    #        return False
 
     return True
 
