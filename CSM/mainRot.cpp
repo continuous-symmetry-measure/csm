@@ -26,7 +26,6 @@ using namespace std;
 
 extern "C" {
 #include "mainhelpers.h"
-#include "nrutil.h"
 }
 
 #include "dvector.h"
@@ -122,8 +121,6 @@ int distComp(const void *pd1, const void* pd2) {
 	}
 	return 0;
 }
-
-#include "math_utils.h"
 
 // function declarations
 void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out, double* localCSM);
