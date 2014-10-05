@@ -1,5 +1,7 @@
 /*
  * Implementation of the math wrapper routines
+ *
+ * Written by Itay Zandbank
  */
 
 #include "math_wrappers.h"
@@ -17,12 +19,21 @@ extern "C" {
 	int rpoly(double *op, int degree, double *zeror, double *zeroi);
 }
 
+/*
+ * Find the roots of a polynomial specified by coefficients.
+ * coefficients[0] is the coefficient of the highest degree, coefficients[1] of the second
+ * highest and so on.
+ *
+ * This function delegates the calculations to rpoly.c
+ */
 std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coefficients)
 {
-	// First version, using rpoly
+	// Prepare all the rpoly arguments
+	// Allocate all the necessary memory manually, and copy the coefficients, since rpoly
+	// might change them - who knows.
 	int highest_degree = coefficients.size() - 1;
-	double *zeror = new double[highest_degree];
-	double *zeroi = new double[highest_degree];
+	double *zeror = new double[highest_degree];  // Not using std::vector<double>.data() because it just seems wrong
+	double *zeroi = new double[highest_degree];  // although it is quite acceptable http://stackoverflow.com/questions/18759692/stdvector-write-directly-to-the-internal-array
 	double *coeffs = new double[highest_degree + 1];
 
 	for (int i = 0; i < highest_degree + 1; i++)
@@ -42,29 +53,14 @@ std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coeff
 	return roots;
 }
 
+
 /*
-std::vector<EigenResult> GetEigensOld(const double matrix[3][3])
-{
-	csm_utils::dmatrix tmatrix(1, 3, 1, 3);
-	for (int i = 0; i < 3; i++)
-		for (int j = 0; j < 3; j++)
-			tmatrix[i+1][j+1] = matrix[i][j];
-	csm_utils::dvector diag(1, 3), secdiag(1, 3);
-
-	tred2(tmatrix, 3, diag, secdiag);
-	tqli(diag, secdiag, 3, tmatrix);
-
-	std::vector<EigenResult> results(3);
-	for (int i = 0; i < 3; i++)
-	{
-		results[i].value = diag[i+1];
-		results[i].vector.resize(3);
-		for (int j = 0; j < 3; j++)
-			results[i].vector[j] = tmatrix[j+1][i+1];
-	}
-
-	return results;
-} */
+ * Return the eigenvectors and eigenvalues of a 3x3 matrix.
+ *
+ * CSM only uses 3x3 matrices, so there was no point in supporting other matrix sizes.
+ *
+ * This is a thin wrapper around Eigen's EigenSolver.
+ */
 
 std::vector<EigenResult> GetEigens(const double matrix[3][3])
 {
@@ -82,13 +78,6 @@ std::vector<EigenResult> GetEigens(const double matrix[3][3])
 		for (int j = 0; j < 3; j++)
 			results[i].vector[j] = solver.eigenvectors().col(i)[j].real();
 	}
-
-	/*auto test = GetEigensOld(matrix);
-	for (int i = 0; i < 3; i++)
-	{
-		LOG(debug) << "New EV" << i << ": " << results[i].value << " (" << results[i].vector[0] << ", " << results[i].vector[1] << ", " << results[i].vector[2] << ")";
-		LOG(debug) << "Old EV" << i << ": " << test[i].value << " (" << test[i].vector[0] << ", " << test[i].vector[1] << ", " << test[i].vector[2] << ")" << std::endl;
-	} */
 
 	return results;
 }

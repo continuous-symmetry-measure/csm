@@ -9,6 +9,7 @@
  *  - similarity: d-similar atoms have the same symbol and same structure
  *                of children and grandchildren up to a depth of d
  *
+ * Converted to C++ by Itay Zandbank
  */
 
 #include <stdio.h>
@@ -19,10 +20,7 @@
 #include "Molecule.h"
 #include "babelAdapter.h"
 
-extern "C" {
-	#include "parseFunctions.h"
-}
-
+#include "parseFunctions.h"
 #include <openbabel/mol.h>
 #include "elements.h"
 #include "logging.h"

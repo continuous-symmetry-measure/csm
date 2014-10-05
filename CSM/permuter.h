@@ -27,7 +27,7 @@ private:
 		std::vector<int> _cycle;
 
 		/* C++ Conversion Note: Cycle wasn't converted into an actual C++ object because the code is a bit messy,
-		* Cycle and Permuter logic are intertwined. Since this class is private and is just an implementation detail,
+		* Cycle and Permuter logic is intertwined. Since this class is private and is just an implementation detail,
 		* I decided reorganizing it wasn't worth the trouble.
 		*/
 	};

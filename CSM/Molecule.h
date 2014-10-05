@@ -9,6 +9,7 @@
  *  - similarity: d-similar atoms have the same symbol and same structure
  *                of children and grandchildren up to a depth of d
  *
+ * Converted to C++ by Itay Zandbank
  */
 
 #ifndef MOLECULE_H

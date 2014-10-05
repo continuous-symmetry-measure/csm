@@ -5,6 +5,7 @@
  * the permutations generated are limited to those containing
  * cycles with length that is a divisor of the operation order
  *
+ * Converted to C++ by Itay Zandbank
  */
 
 #include <math.h>
