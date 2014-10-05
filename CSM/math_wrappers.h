@@ -13,4 +13,11 @@
 /* Returns the root of the polynomial passed in coefficients. */
 std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coefficients);
 
+struct EigenResult
+{
+	std::vector<double> vector;
+	double value;
+};
+std::vector<EigenResult> GetEigens(const double matrix[3][3]);
+
 #endif

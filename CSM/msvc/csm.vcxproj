@@ -129,7 +129,6 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClInclude Include="..\parseFunctions.h" />
     <ClInclude Include="..\permuter.h" />
     <ClInclude Include="..\elements.h" />
-    <ClInclude Include="Header.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\ReadMe.txt" />

@@ -937,9 +937,7 @@ void computeVector(double **parray, int *perm, int size, double (*vec)[3], doubl
  */ 
 double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	csm_utils::dmatrix copyMat(1, 3, 1, 3);
-	csm_utils::dvector copyVec(1, 3);
 	csm_utils::dvector diag(1, 3);
-	csm_utils::dvector secdiag(1, 3);
 	csm_utils::dvector temp(1, 3);
 
 	double matrix[3][3] = { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
@@ -991,34 +989,19 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	LOG(debug) << matrix[1][0] << " " << matrix[1][1] << " " << matrix[1][2];
 	LOG(debug) << matrix[2][0] << " " << matrix[2][1] << " " << matrix[2][2];
 
-	// perhaps actual copying is needed
-	for (i = 0; i < 3; i++) {
-		copyVec[i + 1] = vec[i];
-		for (j = 0; j < 3; j++) {
-			copyMat[i + 1][j + 1] = matrix[i][j];
-		}
-	}		
-
-	LOG(debug) << "Copied matrix is:";
-	LOG(debug) << copyMat[1][1] << " " << copyMat[1][2] << " " << copyMat[1][3];
-	LOG(debug) << copyMat[2][1] << " " << copyMat[2][2] << " " << copyMat[2][3];
-	LOG(debug) << copyMat[3][1] << " " << copyMat[3][2] << " " << copyMat[3][3];
-
-
-	// compute the matrix's eigenvalues and eigenvectors.
-	tred2(copyMat, 3, diag, secdiag);
-	tqli(diag, secdiag, 3, copyMat);
+	auto eigens = GetEigens(matrix);
 
 	// compute square of scalar multiplications of eigen vectors with b
 	for (i = 0; i < 3; i++) {
 		scalar[i] = 0.0;
-		for (j = 0; j < 3; j++) {				
-			scalar[i] += copyVec[j + 1] * copyMat[j+1][i+1];
+		for (j = 0; j < 3; j++) {
+			scalar[i] += vec[j] * eigens[i].vector[j]; // copyVec[j + 1] * copyMat[j+1][i+1];
+			copyMat[j + 1][i + 1] = eigens[i].vector[j];
 		}
 		temp[i + 1] = scalar[i] * scalar[i];
 	}
-
-	LOG(debug) <<  "copyVec: " << copyVec[1] << " " << copyVec[2] << " " << copyVec[3];
+	for (i = 0; i < 3; i++)
+		diag[i + 1] = eigens[i].value;
 
 	// build the polynomial
 	coeffs[0] = 1.0;	// x^6
@@ -1103,7 +1086,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 					dir[i - 1] += scalar[j - 1] / (diag[j] - maxval) * copyMat[i][j];			
 				}
 			}		
-			scl += dir[i - 1] * copyVec[i];
+			scl += dir[i - 1] * vec[i - 1];
 		}						
 	}		
 
@@ -1946,9 +1929,6 @@ void lineFit(double **points, int nPoints, double **dirs, int *outliers) {
 	double A[3] = {0,0,0};	
 	double matrix[3][3] = { {0,0,0}, {0,0,0}, {0,0,0}};
 
-	csm_utils::dmatrix copyMat(1,3,1,3);	
-	csm_utils::dvector diag(1,3);
-	csm_utils::dvector secdiag(1,3);	
 	int realNum = 0;
 
 	double norm;
@@ -1978,23 +1958,12 @@ void lineFit(double **points, int nPoints, double **dirs, int *outliers) {
 		}
 	}
 
-	// perhaps actual copying is needed
-	for (i = 0; i < 3; i++) {		
-		for (j = 0; j < 3; j++) {
-			copyMat[i + 1][j + 1] = matrix[i][j];
-		}
-	}		
-
-	// compute the matrix's eigenvalues and eigenvectors.
-	// In the end - diag is eigenvals
-	// cols of matrix are eigen vecs
-	tred2(copyMat, 3, diag, secdiag);
-	tqli(diag, secdiag, 3, copyMat);
+	auto eigens = GetEigens(matrix);
 
 	// We just try the three lines?...	
 	for (i = 0; i < 3; i++) {		
 		for (j = 0; j < 3; j++) {
-			dirs[i][j] = copyMat[j + 1][i + 1];
+			dirs[i][j] = eigens[i].vector[j]; // copyMat[j + 1][i + 1];
 		}
 	}
 
@@ -2010,10 +1979,6 @@ void planeFit(double **points, int nPoints, double **dirs, int* outliers) {
 	// taken from http://www.mapleprimes.com/forum/linear-regression-in-3d
 	double A[3] = {0,0,0};	
 	double matrix[3][3] = { {0,0,0}, {0,0,0}, {0,0,0}};
-
-	csm_utils::dmatrix copyMat(1, 3, 1, 3);
-	csm_utils::dvector diag(1, 3);
-	csm_utils::dvector secdiag(1, 3);
 
 	double norm;
 	int i,j,k;
@@ -2042,23 +2007,13 @@ void planeFit(double **points, int nPoints, double **dirs, int* outliers) {
 		}
 	}
 
-	// perhaps actual copying is needed
-	for (i = 0; i < 3; i++) {		
-		for (j = 0; j < 3; j++) {
-			copyMat[i + 1][j + 1] = matrix[i][j];
-		}
-	}		
-
 	// compute the matrix's eigenvalues and eigenvectors.
-	// In the end - diag is eigenvals
-	// cols of matrix are eigen vecs
-	tred2(copyMat, 3, diag, secdiag);
-	tqli(diag, secdiag, 3, copyMat);
+	auto eigens = GetEigens(matrix);
 
 	// We just try the three planes...	
 	for (i = 0; i < 3; i++) {		
 		for (j = 0; j < 3; j++) {
-			dirs[i][j] = copyMat[j + 1][i + 1];
+			dirs[i][j] = eigens[i].vector[j]; // copyMat[j + 1][i + 1];
 		}		
 	}	
 	for (i = 0; i < 3; i++) { 
