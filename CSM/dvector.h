@@ -24,12 +24,6 @@ namespace csm_utils
 	private:
 		std::vector<double> _vec;
 		int _lowerBound, _upperBound;
-		double *_adjustedBuf;  // _adjustedBuf[index] translates to the right cell in the vector
-
-		void adjustBuf()
-		{
-			_adjustedBuf = _vec.data() - _lowerBound;
-		}
 
 	public:
 		dvector(int lowerBound, int upperBound)
@@ -37,23 +31,13 @@ namespace csm_utils
 			_lowerBound = lowerBound;
 			_upperBound = upperBound;
 			_vec = std::vector<double>(upperBound - lowerBound + 1);
-			adjustBuf();
-		}
-
-		dvector(const dvector &other)
-		{
-			// Explicit copy constructor because adjustedBuf can't be copied as is
-			_lowerBound = other._lowerBound;
-			_upperBound = other._upperBound;
-			_vec = other._vec;
-			adjustBuf();
 		}
 
 		double &operator[](int index)
 		{
 			// Use _adjustedBuf and not _vec[index-_lowerBound] because the second is a lot slower
 			// on some compilers, and CSM has no known bugs in accessing dvectors.
-			return _adjustedBuf[index];
+			return _vec[index - _lowerBound];
 		}
 	};
 
