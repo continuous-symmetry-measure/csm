@@ -41,6 +41,8 @@ namespace csm_utils
 			_rows = std::vector<dvector>();
 			for (int i = _rowLowerBound; i <= _rowUpperBound; i++)
 				_rows.push_back(dvector(_colLowerBound, _colUpperBound));
+
+			adjustRows();
 		}
 
 		dmatrix(const dmatrix& other)
