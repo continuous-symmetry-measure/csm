@@ -1,29 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="CSM" Language="1033" Version="1.0.0.0" Manufacturer="" UpgradeCode="e2b70a8c-bebb-4c08-9c12-c9508062414f">
-		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+	<Product Id="DAF4BD80-1853-4F1A-A5EE-6A580F818F3F" Name="CSM" Language="1033" Version="2.0.0" Manufacturer="Hebrew University, Jerusalem" UpgradeCode="e2b70a8c-bebb-4c08-9c12-c9508062414f">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Description="CMS" />
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of CSM is already installed." />
-		<MediaTemplate />
+    <Media Id="1" Cabinet="csm.cab" EmbedCab="yes"/>
 
-		<Feature Id="ProductFeature" Title="Setup" Level="1">
+		<Feature Id="ProductFeature" Title="CSM" Description="The Continous Symmetry Measure Program" Level="1" ConfigurableDirectory="APPLICATIONFOLDER">
 			<ComponentGroupRef Id="ProductComponents" />
 		</Feature>
+
+    <Property Id="ApplicationFolderName" Value="HUJI\CSM" />
+    <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+    <UIRef Id="WixUI_Advanced"/>
 	</Product>
 
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
-				<Directory Id="INSTALLFOLDER" Name="CSM" />
-			</Directory>
+        <Directory Id="huji" Name="HUJI">
+          <Directory Id="APPLICATIONFOLDER" Name="CSM" />
+        </Directory>
+      </Directory>
 		</Directory>
 	</Fragment>
 
 	<Fragment>
-		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-			<Component Id="ProductComponent">
-				<!-- TODO: Insert files, registry keys, and other resources here. -->
-			</Component>
+		<ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
+			<Component Id="MainExecutable" Guid="525FDE76-515F-4073-B065-52E9125B0F69">
+        <File Id="csm_exe" Name="csm.exe" Source="$(var.csm.TargetPath)" KeyPath="yes"/>
+        <Environment Id="PATH" Name="PATH" Value="[APPLICATIONFOLDER]" Permanent="no" Part="last" Action="set" System="yes" />
+      </Component>
+      <Component Id="OpenBabelDLLs" Guid="0B86B103-0621-4A92-A9EF-D95FF3B63D87">
+        <File Id="openbabel_dll" Name="openbabel-2.dll" Source="$(var.csm.TargetDir)\openbabel-2.dll" KeyPath="yes"/>
+        <File Id="freetype6_dll" Name="freetype6.dll" Source="$(var.csm.TargetDir)\freetype6.dll"/>
+        <File Id="iconv_dll" Name="iconv.dll" Source="$(var.csm.TargetDir)\iconv.dll"/>
+        <File Id="libcairo_dll" Name="libcairo-2.dll" Source="$(var.csm.TargetDir)\libcairo-2.dll"/>
+        <File Id="libexpat_dll" Name="libexpat-1.dll" Source="$(var.csm.TargetDir)\libexpat-1.dll"/>
+        <File Id="libfontconfig_dll" Name="libfontconfig-1.dll" Source="$(var.csm.TargetDir)\libfontconfig-1.dll"/>
+        <File Id="libinchi_dll" Name="libinchi.dll" Source="$(var.csm.TargetDir)\libinchi.dll"/>
+        <File Id="libpng14_14_dll" Name="libpng14-14.dll" Source="$(var.csm.TargetDir)\libpng14-14.dll"/>
+        <File Id="libxml2_dll" Name="libxml2.dll" Source="$(var.csm.TargetDir)\libxml2.dll"/>
+        <File Id="xdr_0_dll" Name="xdr-0.dll" Source="$(var.csm.TargetDir)\xdr-0.dll"/>
+        <File Id="zlib1_dll" Name="zlib1.dll" Source="$(var.csm.TargetDir)\zlib1.dll"/>
+      </Component>
+      <Component Id="OpenBabelFormats" Guid="AAC81689-DCFA-4679-9EBA-C6EED05D25E2">
+        <File Id="formats_cairo_obf" Name="formats_cairo.obf" Source="$(var.csm.TargetDir)\formats_cairo.obf"/>
+        <File Id="formats_common_obf" Name="formats_common.obf" Source="$(var.csm.TargetDir)\formats_common.obf"/>
+        <File Id="formats_misc_obf" Name="formats_misc.obf" Source="$(var.csm.TargetDir)\formats_misc.obf"/>
+        
+        <File Id="formats_utility_obf" Name="formats_utility.obf" Source="$(var.csm.TargetDir)\formats_utility.obf"/>
+      </Component>
+      <Component Id="OpenBabelPlugins" Guid="67BB00CA-01DE-4CAB-BA4B-10A61534D9EC">
+        <File Id="plugin_charges_obf" Name="plugin_charges.obf" Source="$(var.csm.TargetDir)\plugin_charges.obf"/>
+        <File Id="plugin_descriptors_obf" Name="plugin_descriptors.obf" Source="$(var.csm.TargetDir)\plugin_descriptors.obf"/>
+        <File Id="plugin_finderprints_obf" Name="plugin_fingerprints.obf" Source="$(var.csm.TargetDir)\plugin_fingerprints.obf"/>
+        <File Id="plugin_forcefields_obf" Name="plugin_forcefields.obf" Source="$(var.csm.TargetDir)\plugin_forcefields.obf"/>
+        <File Id="plugin_ops_obf" Name="plugin_ops.obf" Source="$(var.csm.TargetDir)\plugin_ops.obf"/>
+      </Component>
 		</ComponentGroup>
 	</Fragment>
 </Wix>
