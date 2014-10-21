@@ -164,7 +164,7 @@ bool babelTest = false;
 bool printNorm = false;
 bool printLocal = false;
 bool keepCenter = false;
-bool debug = false;
+std::string logFile = "";
 
 // file pointers
 FILE* inFile = NULL;
@@ -203,7 +203,7 @@ void usage(char *op) {
 	printf("-printlocal		- Print the local CSM (csm for each atom) in the output file\n");
 	printf("-approx			- Equivalent to -detectOutliers -findperm together\n");
 	printf("-keepCenter		- Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass\n");
-	printf("-debug			- Enable debug printings");
+	printf("-log [logfile]	- Write a detailed log to logfile");
 	printf("-help - print this help file\n");
 }
 
@@ -550,8 +550,14 @@ void parseInput(int argc, char *argv[]){
 			printLocal = true;
 		} else if (strcmp(argv[i], "-keepCenter") == 0) { 
 			keepCenter = true;
-		} else if (strcmp(argv[i], "-debug") == 0) {
-			debug = true;
+		} else if (strcmp(argv[i], "-log") == 0) {
+			logFile = argv[i + 1];
+			if (i + 1 == argc)
+			{
+				LOG(fatal) << "The -log option must be followed by a filename";
+				exit(1);
+			}
+			i++;  // Skip the next argument
 		}
 	}
 	if (writeOpenu) {
@@ -582,7 +588,8 @@ int main(int argc, char *argv[]){
 
 	// init options
 	parseInput(argc,argv);
-	set_debug_logging(debug);
+	if (logFile != "")
+		set_file_logging(logFile);
 
 	if ((findPerm && useperm) || (findPerm && useDir) || (useDir && useperm)) { 
 		LOG(fatal) << "-findperm, -useperm and -usedir are mutually exclusive";

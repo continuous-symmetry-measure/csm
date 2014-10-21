@@ -15,6 +15,14 @@
 
 using namespace boost::log;
 
+static void set_debug_logging(bool enable)
+{
+	if (enable)
+		core::get()->set_filter(trivial::severity >= trivial::severity_level::trace);
+	else
+		core::get()->set_filter(trivial::severity >= trivial::severity_level::info);
+}
+
 void init_logging()
 {
 	add_common_attributes();
@@ -23,18 +31,15 @@ void init_logging()
 		keywords::format = "[%TimeStamp%]  [%Severity%]: %Message%",
 		keywords::filter = trivial::severity >= trivial::severity_level::error);
 	add_console_log(std::cout, keywords::format = "%Message%");
-	add_file_log("csm.log",
-		keywords::open_mode = std::ios_base::app,
-		keywords::auto_flush = true,
-		keywords::format = "[%TimeStamp%]  [%Severity%]: %Message%");
 
 	set_debug_logging(false);
 }
 
-void set_debug_logging(bool enable)
+void set_file_logging(std::string path)
 {
-	if (enable)
-		core::get()->set_filter(trivial::severity >= trivial::severity_level::trace);
-	else
-		core::get()->set_filter(trivial::severity >= trivial::severity_level::info);
+	add_file_log(path,
+		keywords::open_mode = std::ios_base::app,
+		keywords::auto_flush = true,
+		keywords::format = "[%TimeStamp%]  [%Severity%]: %Message%");
+	set_debug_logging(true);
 }

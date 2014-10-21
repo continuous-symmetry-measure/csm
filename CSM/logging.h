@@ -14,6 +14,6 @@
 #define LOG(sev) BOOST_LOG_TRIVIAL(sev)
 
 void init_logging();  // Initialize the logging subsystem
-void set_debug_logging(bool enabled);  // Enable or disable debug logging
+void set_file_logging(std::string path);
 
 #endif

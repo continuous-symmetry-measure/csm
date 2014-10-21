@@ -52,6 +52,7 @@ Molecule::Molecule(int size) : _mass(size, 1.0), _valency(size, 0), _similar(siz
     //allocate symbols
 	_symbol = (char **)malloc(size * sizeof(char*));
 	// individual strings allocated on reading
+
    
     //allocate adjacency
     _adjacent = (int **)malloc(size * sizeof(int*));
