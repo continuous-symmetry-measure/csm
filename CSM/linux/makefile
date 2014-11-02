@@ -10,17 +10,9 @@ LFLAGS = -L. -L../../openbabel-files/os/lib -lopenbabel -lboost_log -lboost_log_
 BIN = .
 
 # object files for executables
-#LIBOBJ = Molecule.o parseFunctions.o permuter.o groupPermuter.o main.o babelAdapter.o
-#OBJ1 = c2helpers.o 
-#OBJ2 = mirhelpers.o  
-#OBJ3 = chiralhelpers.o rpoly.o nrutil.o
-#OBJ4 = invhelpers.o 
-#OBJ5 = csm2pdb.o parseFunctions.o Molecule.o
-
-OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o elements.o logging.o mainRot.o rpoly.o babelAdapter.o math_wrappers.o
-
-#OBJCSM2D = Molecule.o parseFunctions.o permuter.o groupPermuter.o main2d.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
-
+OBJCSM = Molecule.o parseFunctions.o permuter.o groupPermuter.o elements.o \
+	 logging.o mainRot.o rpoly.o babelAdapter.o math_wrappers.o \
+         drand48.o math_utils.o calculations.o options.o PrintOuts.o
 
 
 
