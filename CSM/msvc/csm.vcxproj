@@ -108,6 +108,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClCompile Include="..\groupPermuter.cpp" />
     <ClCompile Include="..\logging.cpp" />
     <ClCompile Include="..\mainRot.cpp" />
+    <ClCompile Include="..\math_utils.cpp" />
     <ClCompile Include="..\math_wrappers.cpp" />
     <ClCompile Include="..\Molecule.cpp" />
     <ClCompile Include="..\options.cpp" />
@@ -124,6 +125,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClInclude Include="..\dvector.h" />
     <ClInclude Include="..\groupPermuter.h" />
     <ClInclude Include="..\logging.h" />
+    <ClInclude Include="..\math_utils.h" />
     <ClInclude Include="..\math_wrappers.h" />
     <ClInclude Include="..\Molecule.h" />
     <ClInclude Include="..\options.h" />
