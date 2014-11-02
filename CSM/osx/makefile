@@ -3,32 +3,17 @@ CC = gcc
 CXX = g++
 
 # the compiler flags
-CFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include/openbabel-2.0 -I../../openbabel-files/os/include -g
-CXXFLAGS = -Wall -O3 -DBOOST_ALL_DYN_LINK -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include -I../../openbabel-files/os/include/openbabel-2.0 -g -std=c++11
-LFLAGS = -L. -L../../openbabel-files/os/lib -lopenbabel -lboost_log -lpthread
+CFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include/openbabel-2.0 -I../../openbabel-files/os/include -g -I/usr/local/include
+CXXFLAGS = -Wall -O3 -DBOOST_ALL_DYN_LINK -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include -I../../openbabel-files/os/include/openbabel-2.0 -I../../include -I/usr/local/include -g -std=c++11
+LFLAGS = -L. -L../../openbabel-files/os/lib -L/usr/local/lib -lopenbabel -lboost_log-mt -lboost_log_setup-mt -lboost_thread-mt -lboost_system-mt -lpthread
 
 BIN = .
 
-# object files for executables
-#LIBOBJ = Molecule.o parseFunctions.o permuter.o groupPermuter.o main.o babelAdapter.o
-#OBJ1 = c2helpers.o 
-#OBJ2 = mirhelpers.o  
-#OBJ3 = chiralhelpers.o rpoly.o nrutil.o
-#OBJ4 = invhelpers.o 
-#OBJ5 = csm2pdb.o parseFunctions.o Molecule.o
+OBJCSM = Molecule.o parseFunctions.o permuter.o groupPermuter.o elements.o logging.o \
+         mainRot.o rpoly.o babelAdapter.o math_wrappers.o \
+         drand48.o math_utils.o calculations.o options.o PrintOuts.o
 
-OBJCSM =  Molecule.o parseFunctions.o permuter.o groupPermuter.o logging.o elements.o mainRot.o rpoly.o tqli.o tred2.o nrutil.o pythag.o babelAdapter.o
-
-#OBJCSM2D = Molecule.o parseFunctions.o permuter.o groupPermuter.o main2d.o rpoly.o tqli.o tred2.o nrutil.o c2helpers.o pythag.o babelAdapter.o
-
-
-
-
-# the first target. All executables will be made when 'make' is
-# invoked with no target
-#all: libcsm.a c2 mir chiral inv csm csm2pdb csm2d
 all: csm 
-#csm2pdb
 
 # general rule how to compile a source file and produce an object file
 vpath %.cpp ../
