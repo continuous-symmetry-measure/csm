@@ -7,6 +7,9 @@
 
 #include "options.h"
 #include "logging.h"
+#include <cstring>
+
+using namespace std;
 
 namespace csm_options
 {
