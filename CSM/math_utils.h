@@ -8,7 +8,7 @@
 #ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
-#include "molecule.h"
+#include "Molecule.h"
 
 void normalize(double **coords, Molecule *m);
 double Magnitude(double *Point1, double *Point2);

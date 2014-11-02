@@ -10,7 +10,7 @@
 #define CALCULATIONS_H
 
 #include "options.h"
-#include "molecule.h"
+#include "Molecule.h"
 
 #define MAXDOUBLE  100000000.0
 #define MINDOUBLE  1e-8
