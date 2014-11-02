@@ -119,7 +119,6 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClInclude Include="..\dvector.h" />
     <ClInclude Include="..\groupPermuter.h" />
     <ClInclude Include="..\logging.h" />
-    <ClInclude Include="..\mainhelpers.h" />
     <ClInclude Include="..\math_wrappers.h" />
     <ClInclude Include="..\Molecule.h" />
     <ClInclude Include="..\parseFunctions.h" />

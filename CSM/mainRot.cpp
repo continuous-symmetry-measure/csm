@@ -24,10 +24,6 @@
 
 using namespace std;
 
-extern "C" {
-#include "mainhelpers.h"
-}
-
 #include "dvector.h"
 #include "dmatrix.h"
 
@@ -386,7 +382,7 @@ double findMedian(double arr[], int n)
 		/* Swap low item (now in position middle) into position (low+1) */
 		ELEM_SWAP(arr[middle], arr[low+1]) ;
 
-		/* Nibble from each end towards middle, swapping items when stuck */
+		/* Nibble from each end towards middle, swapM_PIng items when stuck */
 		ll = low + 1;
 		hh = high;
 		for (;;) {
@@ -974,7 +970,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	// compute matrices according to current perm and its powers (the identity does not contribute anyway)
 	for (i = 1; i < opOrder; i++) {			
-		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
+		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / opOrder);
 		// The i'th power of the permutation
 		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
@@ -1104,7 +1100,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	for (i = 0; i < opOrder; i++) {		
 		// This can be more efficient - save results of matrix computation
 		if (i != 0) {
-			angle = isZeroAngle ? 0.0 : ((2 * PI * i) / opOrder);
+			angle = isZeroAngle ? 0.0 : ((2 * M_PI * i) / opOrder);
 			dists = 0.0;
 			for (j = 0; j < m->size(); j++) {
 				// i'th power of permutation
@@ -1153,7 +1149,7 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	}
 
 	for (i = 1; i < opOrder; i++) {
-		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
+		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
 		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
@@ -1210,7 +1206,7 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 	}
 
 	for (i = 1; i < opOrder; i++) {
-		angle = isZeroAngle ? 0.0 : (2 * PI * i / opOrder);
+		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
 		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
@@ -1754,7 +1750,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	int tableSize = 0;
 	int orbitDone, orbitSize, orbitStart;
 	int left;
-	angle = isZeroAngle ? 0.0 : (2 * PI / opOrder);
+	angle = isZeroAngle ? 0.0 : (2 * M_PI / opOrder);
 
 	LOG(debug) << "estimatePerm called";
 
