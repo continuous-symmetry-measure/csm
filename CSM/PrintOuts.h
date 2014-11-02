@@ -12,12 +12,6 @@
 #include "babelAdapter.h"
 #include <string>
 
-extern char opName[100];
-extern bool printNorm;
-extern bool printLocal;
-extern bool writeOpenu;
-extern std::string format;
-
 void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out, double* localCSM);
 void printPDBATOM(Molecule* m, FILE* f, char** sym, double** pos);
 void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out);

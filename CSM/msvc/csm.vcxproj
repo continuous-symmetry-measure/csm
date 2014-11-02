@@ -103,11 +103,13 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\babelAdapter.cpp" />
+    <ClCompile Include="..\calculations.cpp" />
     <ClCompile Include="..\groupPermuter.cpp" />
     <ClCompile Include="..\logging.cpp" />
     <ClCompile Include="..\mainRot.cpp" />
     <ClCompile Include="..\math_wrappers.cpp" />
     <ClCompile Include="..\Molecule.cpp" />
+    <ClCompile Include="..\options.cpp" />
     <ClCompile Include="..\parseFunctions.cpp" />
     <ClCompile Include="..\permuter.cpp" />
     <ClCompile Include="..\PrintOuts.cpp" />
@@ -122,10 +124,12 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClInclude Include="..\logging.h" />
     <ClInclude Include="..\math_wrappers.h" />
     <ClInclude Include="..\Molecule.h" />
+    <ClInclude Include="..\options.h" />
     <ClInclude Include="..\parseFunctions.h" />
     <ClInclude Include="..\permuter.h" />
     <ClInclude Include="..\elements.h" />
     <ClInclude Include="..\PrintOuts.h" />
+    <ClInclude Include="..\calculations.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

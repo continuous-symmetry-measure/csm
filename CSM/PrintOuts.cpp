@@ -10,12 +10,9 @@
 #include <stdio.h>
 #include "Molecule.h"
 #include <string>
+#include "options.h"
 
-char opName[100];
-bool printNorm = false;
-bool printLocal = false;
-bool writeOpenu = false;
-std::string format;
+using namespace csm_options;
 
 /*
 * prints the Molecule position, outcome position, csm, dMin and directional cosines to output file
