@@ -110,6 +110,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClCompile Include="..\Molecule.cpp" />
     <ClCompile Include="..\parseFunctions.cpp" />
     <ClCompile Include="..\permuter.cpp" />
+    <ClCompile Include="..\PrintOuts.cpp" />
     <ClCompile Include="..\rpoly.c" />
     <ClCompile Include="..\elements.cpp" />
   </ItemGroup>
@@ -124,6 +125,7 @@ copy $(ProjectDir)..\..\openbabel-files\Windows\external\x86\*.dll $(OutDir)
     <ClInclude Include="..\parseFunctions.h" />
     <ClInclude Include="..\permuter.h" />
     <ClInclude Include="..\elements.h" />
+    <ClInclude Include="..\PrintOuts.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

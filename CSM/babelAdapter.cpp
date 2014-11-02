@@ -66,10 +66,10 @@ void updateCoordinates(OBMol& obmol, double **outAtoms) {
  * @param babelBond Should the convertor let openbabel choose bonding
  * @return The OBMol read from the file
  */
-OBMol readMolecule (char *filename, const char *format, int babelBond) {
+OBMol readMolecule (char *filename, const std::string format, int babelBond) {
 	OBMol mol;
 	OBConversion conv;		
-	if (format == NULL) {
+	if (format == "") {
 		OBFormat* f = OBConversion::FormatFromExt(filename);
 		if (f == NULL) {	
 			LOG(fatal) << "Error discovering format from filename " << filename;
@@ -80,7 +80,7 @@ OBMol readMolecule (char *filename, const char *format, int babelBond) {
 			exit(1);
 		}
 	} else {
-		if (!conv.SetInFormat(format)) {
+		if (!conv.SetInFormat(format.c_str())) {
 			LOG(fatal) << "Error setting input format to " << format;
 			exit(1);
 		}
@@ -101,10 +101,10 @@ OBMol readMolecule (char *filename, const char *format, int babelBond) {
  * @param file The file to write output to
  * @param filename The file's name (for extension-finding purpose)
  */
-void writeMolecule(OBMol& mol, const char *format, FILE* file, char *filename) {
+void writeMolecule(OBMol& mol, const std::string format, FILE* file, char *filename) {
 	ostringstream os;
 	OBConversion conv;
-	if (format == NULL) {
+	if (format == "") {
 		OBFormat* f = OBConversion::FormatFromExt(filename);
 		if (f != NULL) {	
 			LOG(fatal) << "Error discovering format from filename " << filename;
@@ -115,7 +115,7 @@ void writeMolecule(OBMol& mol, const char *format, FILE* file, char *filename) {
 			exit(1);
 		}		
 	} else {
-		if (!conv.SetOutFormat(format)) {
+		if (!conv.SetOutFormat(format.c_str())) {
 			LOG(fatal) << "Error setting output format to " << format;
 			exit(1);
 		}
