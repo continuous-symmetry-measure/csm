@@ -6,7 +6,7 @@ INSTALL_DIR=`pwd`
 
 if [ ! -d "$OPENBABEL_DIR" ]; then
     echo Cloning the OpenBabel repository
-    git clone git://github.com/openbabel/openbabel.git $OPENBABEL_DIR
+    git clone https://github.com/openbabel/openbabel.git $OPENBABEL_DIR
 fi
 
 if [ ! -d $BUILD_DIR ]; then
