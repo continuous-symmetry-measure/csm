@@ -29,6 +29,7 @@ if ! grep -q $INSTALL_DIR ${profile_file} ; then
 # Set up the CSM OpenBabel libraries
 export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$INSTALL_DIR/lib
 EOT
+	echo LD_LIBRARY_PATH was updated. Please run 'source ~/.bashrc'
 fi
 echo Done.
 
