@@ -2,7 +2,7 @@
 #
 # Installs boost after getting it
 
-if [[ -z $SUDO_COMMAND]]; then
+if [[ -z $SUDO_COMMAND ]]; then
     echo Please run the script with sudo
     exit 1;
 fi;
