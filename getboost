@@ -5,20 +5,11 @@
 #
 set -e
 
-if [-z $SUDO_COMMAND]
-    echo "Please run the script with sudo"
-    exit 1
-fi
-
-mkdir boost
+mkdir -p boost
 cd boost
 wget https://sourceforge.net/projects/boost/files/boost/1.57.0/boost_1_57_0.tar.gz
 tar xvfz boost_1_57_0.tar.gz
 cd boost_1_57_0
 ./bootstrap.sh --prefix=/usr/local
-./b2 --install=all
 
-echo /usr/local/lib > /etc/ld.so.conf.d/boost.conf
-ldconfig
-
-echo Boost successfully installed
+echo Boost has been retrieved. Please run sudo ./installboost to install it.
