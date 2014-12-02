@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# Installs boost after getting it
+
+if [[ -z $SUDO_COMMAND ]]; then
+    echo Please run the script with sudo
+    exit 1;
+fi;
+
+cd boost/boost_1_57_0
+./b2 install --with=all
+echo /usr/local/lib > /etc/ld.so.conf.d/boost.conf
+ldconfig
+
+echo Boost has been installed
+

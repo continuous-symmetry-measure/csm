@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Download and install boost. 
+# Run with sudo, as installation requires elevated privileges
+#
+set -e
+
+mkdir -p boost
+cd boost
+wget https://sourceforge.net/projects/boost/files/boost/1.57.0/boost_1_57_0.tar.gz
+tar xvfz boost_1_57_0.tar.gz
+cd boost_1_57_0
+./bootstrap.sh --prefix=/usr/local
+
+echo Boost has been retrieved. Please run sudo ./installboost to install it.
