@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="DAF4BD80-1853-4F1A-A5EE-6A580F818F3F" Name="CSM" Language="1033" Version="2.0.1" Manufacturer="The Professor Avnir Group, Hebrew University, Jerusalem" UpgradeCode="e2b70a8c-bebb-4c08-9c12-c9508062414f">
+	<Product Id="DAF4BD80-1853-4F1A-A5EE-6A580F818F3F" Name="CSM" Language="1033" Version="2.0" Manufacturer="The Professor Avnir Group, Hebrew University, Jerusalem" UpgradeCode="e2b70a8c-bebb-4c08-9c12-c9508062414f">
 		<Package InstallerVersion="450" Compressed="yes" InstallScope="perMachine" Description="CMS"/>
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of CSM is already installed." />
