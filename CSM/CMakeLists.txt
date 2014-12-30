@@ -6,6 +6,7 @@ set (BASE_DIR ${PROJECT_SOURCE_DIR}/../)
 set (OPENBABEL_DIR ${BASE_DIR}/openbabel-files/os)
 include_directories(${BASE_DIR}/include)
 include_directories(${OPENBABEL_DIR}/include/openbabel-2.0)
+link_directories(${OPENBABEL_DIR}/lib)
 
 # Boost
 find_package(Boost 1.54 REQUIRED log log_setup system thread filesystem date_time)
@@ -22,4 +23,4 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_ORDER2_PERMUTER")
 add_executable(csm Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
 	logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
 	options.cpp PrintOuts.cpp)
-target_link_libraries(csm ${OPENBABEL_DIR}/lib/libopenbabel.dylib ${Boost_LIBRARIES} pthread)
+target_link_libraries(csm openbabel ${Boost_LIBRARIES} pthread)
