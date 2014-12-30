@@ -18,9 +18,12 @@ SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # CSM Specific flags
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_ORDER2_PERMUTER")
+if(UNIX)
+	set (EXTRA_LIBS ${EXTRA_LIBS} pthread)
+endif()
 
 # Executable
 add_executable(csm Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
 	logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
 	options.cpp PrintOuts.cpp)
-target_link_libraries(csm openbabel ${Boost_LIBRARIES} pthread)
+target_link_libraries(csm openbabel ${Boost_LIBRARIES} ${EXTRA_LIBS})
