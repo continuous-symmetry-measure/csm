@@ -8,7 +8,7 @@ if( NOT CMAKE_BUILD_TYPE )
        "Choose the type of build, options are: None Debug Release RelWithDebInfo
 MinSizeRel."
        FORCE )
-  message("No build type requested, feaulting to Release")
+  message("No build type requested, defaulting to Release")
 endif()
 
 
