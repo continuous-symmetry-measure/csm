@@ -8,6 +8,11 @@ Get the repository and read docs/compilation instructions.odt for instructions o
 ## Contact ##
 With any questions or comments, please contact hadassah.elgavi@mail.huji.ac.il
 
+## Releae History ##
+2.0.1 - Using CMake to compile CSM on multiple platforms
+2.0 - The first open-source CSM version
+1.0 - Closed-source CSM version
+
 ## License ##
 This project is provided under the 3-clause BSD license:
 
