@@ -3,9 +3,9 @@ CC = gcc
 CXX = g++
 
 # the compiler flags
-CFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include/openbabel-2.0 -I../../openbabel-files/os/include -g -I/usr/local/include
-CXXFLAGS = -Wall -O3 -DBOOST_ALL_DYN_LINK -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include -I../../openbabel-files/os/include/openbabel-2.0 -I../../include -I/usr/local/include -g -std=c++11
-LFLAGS = -L. -L../../openbabel-files/os/lib -L/usr/local/lib -lopenbabel -lboost_log-mt -lboost_log_setup-mt -lboost_thread-mt -lboost_system-mt -lpthread
+CFLAGS = -Wall -O3 -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include/openbabel-2.0 -I../../openbabel-files/unix/include -g -I/usr/local/include
+CXXFLAGS = -Wall -O3 -DBOOST_ALL_DYN_LINK -DUSE_ORDER2_PERMUTER -I../../openbabel-files/include -I../../openbabel-files/unix/include/openbabel-2.0 -I../../include -I/usr/local/include -g -std=c++11
+LFLAGS = -L. -L../../openbabel-files/unix/lib -L/usr/local/lib -lopenbabel -lboost_log-mt -lboost_log_setup-mt -lboost_thread-mt -lboost_system-mt -lpthread
 
 BIN = .
 

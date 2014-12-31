@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 set (BASE_DIR ${PROJECT_SOURCE_DIR}/../)
 
 # Open Babel
-set (OPENBABEL_DIR ${BASE_DIR}/openbabel-files/os)
+set (OPENBABEL_DIR ${BASE_DIR}/openbabel-files/unix)
 include_directories(${BASE_DIR}/include)
 include_directories(${OPENBABEL_DIR}/include/openbabel-2.0)
 link_directories(${OPENBABEL_DIR}/lib)
