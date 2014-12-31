@@ -2,6 +2,16 @@ project(csm)
 cmake_minimum_required(VERSION 2.8)
 set (BASE_DIR ${PROJECT_SOURCE_DIR}/../)
 
+# Default build type is Release (taken from here: http://www.cmake.org/pipermail/cmake/2008-March/020347.html)
+if( NOT CMAKE_BUILD_TYPE )
+  set( CMAKE_BUILD_TYPE Release CACHE STRING
+       "Choose the type of build, options are: None Debug Release RelWithDebInfo
+MinSizeRel."
+       FORCE )
+  message("No build type requested, feaulting to Release")
+endif()
+
+
 # Open Babel
 set (OpenBabel_DIR ${BASE_DIR}/openbabel-files)
 if(UNIX)
