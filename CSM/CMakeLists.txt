@@ -3,18 +3,18 @@ cmake_minimum_required(VERSION 2.8)
 set (BASE_DIR ${PROJECT_SOURCE_DIR}/../)
 
 # Open Babel
-set (OPENBABEL_DIR ${BASE_DIR}/openbabel-files)
+set (OpenBabel_DIR ${BASE_DIR}/openbabel-files)
 if(UNIX)
-    set (OPENBABEL_PLATFORM_DIR ${OPENBABEL_DIR}/unix)
-    include_directories(${OPENBABEL_PLATFORM_DIR}/include/openbabel-2.0)
-    link_directories(${OPENBABEL_PLATFORM_DIR}/lib)
+    set (OpenBabel_PLATFORM_DIR ${OpenBabel_DIR}/unix)
+    include_directories(${OpenBabel_PLATFORM_DIR}/include/openbabel-2.0)
+    find_library(OpenBabel_LIBS NAMES openbabel HINTS ${OpenBabel_PLATFORM_DIR}/lib)
 else()
-    set (OPENBABEL_PLATFORM_DIR ${OPENBABEL_DIR}/Windows)
-    include_directories(${OPENBABEL_PLATFORM_DIR}/include/)
-    link_directories(${OPENBABEL_PLATFORM_DIR}/lib)
+    set (OpenBabel_PLATFORM_DIR ${OpenBabel_DIR}/Windows)
+    include_directories(${OpenBabel_PLATFORM_DIR}/include/)
+    find_library(OpenBabel_LIBS NAMES openbabel-2 HINTS ${OpenBabel_PLATFORM_DIR}/lib/x86/Release)
 endif()
      
-include_directories(${OPENBABEL_DIR}/include)
+include_directories(${OpenBabel_DIR}/include)
 
 # Eigen
 include_directories(${BASE_DIR}/include)
@@ -22,7 +22,8 @@ include_directories(${BASE_DIR}/include)
 # Boost
 find_package(Boost 1.54 REQUIRED log log_setup system thread filesystem date_time)
 include_directories(${Boost_INCLUDE_DIRS})
-add_definitions(-DBOOST_LOG_DYN_LINK)
+add_definitions(-DBOOST_ALL_DYN_LINK)
+add_definitions(-DBOOST_CHRONO_HEADER_ONLY) # See here http://stackoverflow.com/a/13824645/871910
 
 # C++11
 if(UNIX)
@@ -39,4 +40,4 @@ endif()
 add_executable(csm Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
 	logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
 	options.cpp PrintOuts.cpp)
-target_link_libraries(csm openbabel ${Boost_LIBRARIES} ${EXTRA_LIBS})
+target_link_libraries(csm ${OpenBabel_LIBS} ${Boost_LIBRARIES} ${EXTRA_LIBS})
