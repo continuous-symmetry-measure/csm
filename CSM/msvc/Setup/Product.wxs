@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="DAF4BD80-1853-4F1A-A5EE-6A580F818F3F" Name="CSM" Language="1033" Version="2.0" Manufacturer="The Professor Avnir Group, Hebrew University, Jerusalem" UpgradeCode="e2b70a8c-bebb-4c08-9c12-c9508062414f">
+		<Package InstallerVersion="450" Compressed="yes" InstallScope="perMachine" Description="CMS"/>
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of CSM is already installed." />
+    <Media Id="1" Cabinet="csm.cab" EmbedCab="yes"/>
+
+		<Feature Id="ProductFeature" Title="CSM" Description="The Continous Symmetry Measure Program" Level="1" ConfigurableDirectory="APPLICATIONFOLDER">
+			<ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="OpenBabelDataComponents" />
+		</Feature>
+
+    <Feature Id="vcredist" Title="Visual C++ Runtime" AllowAdvertise="no" Display="hidden">
+      <MergeRef Id="vcredist"/>
+    </Feature>
+
+    <Property Id="ApplicationFolderName" Value="HUJI\CSM" />
+    <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+    <UIRef Id="WixUI_Advanced"/>
+
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+    <WixVariable Id="WixUIBannerBMP" Value="csm.bmp"/>
+    <WixVariable Id="WixUIDialogBMP" Value="csm.bmp"/>
+    <?define SourceDataDir = "..\..\..\openbabel-files\data" ?>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+      <Merge Id="vcredist" SourceFile="Microsoft_VC120_CRT_x86.msm" DiskId="1" Language="0"/>
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="huji" Name="HUJI">
+          <Directory Id="APPLICATIONFOLDER" Name="CSM">
+            <Directory Id="DATADIR" Name="Data"/>
+          </Directory>
+        </Directory>
+      </Directory>
+		</Directory>
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="ProductComponents" Directory="APPLICATIONFOLDER">
+			<Component Id="MainExecutable" Guid="525FDE76-515F-4073-B065-52E9125B0F69">
+        <File Id="csm_exe" Name="csm.exe" Source="$(var.csm.TargetPath)" KeyPath="yes"/>
+        <Environment Id="envPATH" Name="PATH" Value="[APPLICATIONFOLDER]" Permanent="no" Part="last" Action="set" System="yes" />
+      </Component>
+      <Component Id="OpenBabelDLLs" Guid="0B86B103-0621-4A92-A9EF-D95FF3B63D87">
+        <File Id="openbabel_dll" Name="openbabel-2.dll" Source="$(var.csm.TargetDir)\openbabel-2.dll" KeyPath="yes"/>
+        <File Id="freetype6_dll" Name="freetype6.dll" Source="$(var.csm.TargetDir)\freetype6.dll"/>
+        <File Id="iconv_dll" Name="iconv.dll" Source="$(var.csm.TargetDir)\iconv.dll"/>
+        <File Id="libcairo_dll" Name="libcairo-2.dll" Source="$(var.csm.TargetDir)\libcairo-2.dll"/>
+        <File Id="libexpat_dll" Name="libexpat-1.dll" Source="$(var.csm.TargetDir)\libexpat-1.dll"/>
+        <File Id="libfontconfig_dll" Name="libfontconfig-1.dll" Source="$(var.csm.TargetDir)\libfontconfig-1.dll"/>
+        <File Id="libinchi_dll" Name="libinchi.dll" Source="$(var.csm.TargetDir)\libinchi.dll"/>
+        <File Id="libpng14_14_dll" Name="libpng14-14.dll" Source="$(var.csm.TargetDir)\libpng14-14.dll"/>
+        <File Id="libxml2_dll" Name="libxml2.dll" Source="$(var.csm.TargetDir)\libxml2.dll"/>
+        <File Id="xdr_0_dll" Name="xdr-0.dll" Source="$(var.csm.TargetDir)\xdr-0.dll"/>
+        <File Id="zlib1_dll" Name="zlib1.dll" Source="$(var.csm.TargetDir)\zlib1.dll"/>
+      </Component>
+      <Component Id="OpenBabelFormats" Guid="AAC81689-DCFA-4679-9EBA-C6EED05D25E2">
+        <File Id="formats_cairo_obf" Name="formats_cairo.obf" Source="$(var.csm.TargetDir)\formats_cairo.obf"/>
+        <File Id="formats_common_obf" Name="formats_common.obf" Source="$(var.csm.TargetDir)\formats_common.obf"/>
+        <File Id="formats_misc_obf" Name="formats_misc.obf" Source="$(var.csm.TargetDir)\formats_misc.obf"/>
+        
+        <File Id="formats_utility_obf" Name="formats_utility.obf" Source="$(var.csm.TargetDir)\formats_utility.obf"/>
+      </Component>
+      <Component Id="OpenBabelPlugins" Guid="67BB00CA-01DE-4CAB-BA4B-10A61534D9EC">
+        <File Id="plugin_charges_obf" Name="plugin_charges.obf" Source="$(var.csm.TargetDir)\plugin_charges.obf"/>
+        <File Id="plugin_descriptors_obf" Name="plugin_descriptors.obf" Source="$(var.csm.TargetDir)\plugin_descriptors.obf"/>
+        <File Id="plugin_finderprints_obf" Name="plugin_fingerprints.obf" Source="$(var.csm.TargetDir)\plugin_fingerprints.obf"/>
+        <File Id="plugin_forcefields_obf" Name="plugin_forcefields.obf" Source="$(var.csm.TargetDir)\plugin_forcefields.obf"/>
+        <File Id="plugin_ops_obf" Name="plugin_ops.obf" Source="$(var.csm.TargetDir)\plugin_ops.obf"/>
+      </Component>
+		</ComponentGroup>
+	</Fragment>
+
+    <Fragment>
+        <DirectoryRef Id="APPLICATIONFOLDER">
+            <Directory Id="dir52E364716F1ECE1689A671D7ABD4CAA5" Name="data">
+                <Component Id="OpenBabelDataPath" Guid="40EC2E45-9468-423F-89A6-77AFED48053F">
+                    <Environment Id="envBABEL_DATADIR" Name="BABEL_DATADIR" Value="[DATADIR]" Permanent="no" Part="all" Action="set" System="yes" />
+                    <CreateFolder/>
+                </Component>
+                <Component Id="cmp7016A5B4CC0DC72CF58824B4F70B63E5" Guid="0559F561-0DBB-427F-B480-EA3EF1D0421A">
+                    <File Id="fil63FEBDC64F1DE13D0720E252416C1218" KeyPath="yes" Source="$(var.SourceDataDir)\aromatic.h" />
+                </Component>
+                <Component Id="cmp6A3F14366F2982D6464F17C0066D24FB" Guid="7A3C64BE-33D2-4C2B-92F2-9CC3AFBF8348">
+                    <File Id="fil09395F20A8E3BE31E6E5D262F5D1BCBC" KeyPath="yes" Source="$(var.SourceDataDir)\aromatic.txt" />
+                </Component>
+                <Component Id="cmp7303F7F916FCCD219C8BA20BA28D1995" Guid="0F386B77-66B2-4FCC-8E42-B69775694BF0">
+                    <File Id="fil543FC503DCF6D3F37F8CBB2DAD280749" KeyPath="yes" Source="$(var.SourceDataDir)\atomization-energies.txt" />
+                </Component>
+                <Component Id="cmpC80767A4B5985F0B28B884B8BFF6E7AD" Guid="6AA7B467-51F0-448D-BCB6-BCB99EB6ECD0">
+                    <File Id="filA38562DDFAD73C9AD456FDE094FC6D0D" KeyPath="yes" Source="$(var.SourceDataDir)\atomtyp.h" />
+                </Component>
+                <Component Id="cmp30C757A8B400784D0BB3A2360E004F75" Guid="F079FA34-42AE-45DF-AA6C-01F98BFB804D">
+                    <File Id="fil7A42C88FADEBEAC0D0A023737DA88275" KeyPath="yes" Source="$(var.SourceDataDir)\atomtyp.txt" />
+                </Component>
+                <Component Id="cmpFF803B61D756F3408F8A8396C5800EF4" Guid="A7B178D9-4311-472B-BDEC-5148F6D2DED7">
+                    <File Id="fil88F58E437B3DFCE476F1B7D87B53D4C8" KeyPath="yes" Source="$(var.SourceDataDir)\babel_povray3.inc" />
+                </Component>
+                <Component Id="cmpDDC77073952881B8C276A55DCE21B106" Guid="7B387134-97C5-4D13-BCA6-F00F6BDB8ECC">
+                    <File Id="fil4F4E527C73E67E6EB95362032657DAD5" KeyPath="yes" Source="$(var.SourceDataDir)\bin2hex.pl" />
+                </Component>
+                <Component Id="cmp322A64A1EE82DCE4BAC6EA4654469F1C" Guid="9B0AF7FF-4B2D-43B7-AB2B-F36176A141B8">
+                    <File Id="filFFA01FF4A2B4CF2E7EBCAA0B9E50B555" KeyPath="yes" Source="$(var.SourceDataDir)\bondtyp.h" />
+                </Component>
+                <Component Id="cmpA2DE9FFF24E75AA61EA34941AFEE2227" Guid="3093331B-3D3A-46E2-8715-21BDBA55630F">
+                    <File Id="fil112BD8FB2C23D03E9C0A7D08EBBED671" KeyPath="yes" Source="$(var.SourceDataDir)\bondtyp.txt" />
+                </Component>
+                <Component Id="cmp461D70B7576ED7411F0E1C91521A373D" Guid="9AD8DBB0-5E4A-43DD-B69E-DD5CE9E7BF46">
+                    <File Id="fil3627FDCBAE16C6386BAA58E5D83A54A8" KeyPath="yes" Source="$(var.SourceDataDir)\chemdrawcdx.h" />
+                </Component>
+                <Component Id="cmp4106980DB58C7E84AE3C49F88F78BB93" Guid="C11B36FB-9881-46DA-A547-273504218D81">
+                    <File Id="fil18A9AFFFE11482962DEB871A33F902F6" KeyPath="yes" Source="$(var.SourceDataDir)\CMakeLists.txt" />
+                </Component>
+                <Component Id="cmp5165D968F9B08B6D7B9FEED09DC9384D" Guid="43AEFDAF-FA0A-499B-AC8D-89B89DB40255">
+                    <File Id="fil14FF2B935C64CE369AACC1A0810B7AB4" KeyPath="yes" Source="$(var.SourceDataDir)\data.wxs" />
+                </Component>
+                <Component Id="cmp8240B4FC8756B35FE58A6D1750FDD3C0" Guid="7CCC24FB-76D5-4C64-BE79-CDBDCE1DE649">
+                    <File Id="fil187D7A53F8396C886153DB9734783770" KeyPath="yes" Source="$(var.SourceDataDir)\element.h" />
+                </Component>
+                <Component Id="cmp06274038F767E9285A58235720572444" Guid="E64E2636-01FA-4307-B0EA-E4679836968F">
+                    <File Id="filD95ED69D63A6AB9CA16403784D4A443B" KeyPath="yes" Source="$(var.SourceDataDir)\element.txt" />
+                </Component>
+                <Component Id="cmp3CA456BCF8CA19FDDECD7B2D9640E87F" Guid="74F6C08E-362A-41EA-8FC7-A59D603BE4E4">
+                    <File Id="filDA59D4B0CE9F46CC971FF0FB419B6E76" KeyPath="yes" Source="$(var.SourceDataDir)\eqeqIonizations.txt" />
+                </Component>
+                <Component Id="cmp0E0AD0CA85BFCA6C081087C38ABC24D9" Guid="A77364A1-656C-473B-B8B3-DC0B49CE1C60">
+                    <File Id="fil2D014D0A822570F3070FAC9A83EEC1A2" KeyPath="yes" Source="$(var.SourceDataDir)\fragments.txt" />
+                </Component>
+                <Component Id="cmp4195F5C903D4157850F03345A7C74046" Guid="EE81DE20-E8D0-4128-85F3-338379F8982F">
+                    <File Id="fil795E5EED1CA13146A980EFACBFC05EBD" KeyPath="yes" Source="$(var.SourceDataDir)\gaff.dat" />
+                </Component>
+                <Component Id="cmp50B6ABBE2579A1D1ACDBB9B0BCDB94FC" Guid="BAC83FF0-BEF1-4790-98FC-5937FA82239E">
+                    <File Id="fil8386E33D31ABD21B2D83B4C2F123BAB3" KeyPath="yes" Source="$(var.SourceDataDir)\gaff.prm" />
+                </Component>
+                <Component Id="cmp312C4FD434FBC09468940E372A2AC7A3" Guid="F58BE49D-59FC-4840-870E-97B63CBF5CC8">
+                    <File Id="fil4566323CD5576EEF90D12873F9641C36" KeyPath="yes" Source="$(var.SourceDataDir)\genheaders.sh" />
+                </Component>
+                <Component Id="cmpFE54840BD87709DE6A4F6A04D28B6377" Guid="10139BF3-799D-45B8-8CEA-EBB8773046A6">
+                    <File Id="filC58157967C559B298DF22816317BC355" KeyPath="yes" Source="$(var.SourceDataDir)\ghemical.prm" />
+                </Component>
+                <Component Id="cmpDA67621F4039575745B384A1FAA169AF" Guid="8072F17B-9DD3-4574-85FE-295019E729DA">
+                    <File Id="filAEF3B95C17220F2FE74B8E66061883E0" KeyPath="yes" Source="$(var.SourceDataDir)\isotope-small.txt" />
+                </Component>
+                <Component Id="cmp0D8BA33CC49A839F97921DEAAA0CCA08" Guid="AFF2724D-18E9-4404-941F-953D99AFBA33">
+                    <File Id="fil0E18BDAB1C11C0FFDA8EDB2ED83B1CB3" KeyPath="yes" Source="$(var.SourceDataDir)\isotope.h" />
+                </Component>
+                <Component Id="cmp86D5DE1EF98DFF8625208962486B24A5" Guid="8BCA0D38-835B-4C04-AEAA-4275FC8A2B0D">
+                    <File Id="fil62078748D82168F9437E30BBC1AB055C" KeyPath="yes" Source="$(var.SourceDataDir)\isotope.txt" />
+                </Component>
+                <Component Id="cmp2022B9415684F79FDA3A739B4D12C9AE" Guid="735AFBAE-C6B1-44DE-A916-3B3035E9D5F6">
+                    <File Id="fil92CF341E2199F05C1FF53C043A094191" KeyPath="yes" Source="$(var.SourceDataDir)\logp.txt" />
+                </Component>
+                <Component Id="cmp9C01B72D9BFCDC8BB9A0425963DAA9B7" Guid="0A62C655-4853-48A2-A1B3-CBF360E7DFE9">
+                    <File Id="fil3AFA589E4AA3EE228C672665C48B9ED4" KeyPath="yes" Source="$(var.SourceDataDir)\MACCS.txt" />
+                </Component>
+                <Component Id="cmpF6FC41300068F842E854AA9CF1E62DE4" Guid="07DC9C96-220D-4BBD-A861-25D7157C5A0A">
+                    <File Id="filB18BC0FB5A2EC1830DD496DBAF30582F" KeyPath="yes" Source="$(var.SourceDataDir)\mm2.prm" />
+                </Component>
+                <Component Id="cmp696A6E3FB1FE8FBCD4F25F47081C4F34" Guid="E49FF823-C28A-4AA2-BFF0-8638F5E2D2D3">
+                    <File Id="fil97703A57B00B2D2ADE66D030973334CC" KeyPath="yes" Source="$(var.SourceDataDir)\mmff94.ff" />
+                </Component>
+                <Component Id="cmpB72460EEBFBE084E131C247271B921D8" Guid="027987E4-5CC6-4A2A-8964-CE29FADED6EE">
+                    <File Id="filE0BE0C86A8E016C08C2D8DA17D63E81C" KeyPath="yes" Source="$(var.SourceDataDir)\mmff94s.ff" />
+                </Component>
+                <Component Id="cmpF99ACB9F85B8784779DCA3CAF7DC6A5B" Guid="98ED695B-3008-4D39-A65F-E8DDF207FFAF">
+                    <File Id="fil19BFD87403A2F43920EC034187EFFFC1" KeyPath="yes" Source="$(var.SourceDataDir)\mmffang.par" />
+                </Component>
+                <Component Id="cmpA8928B404F78EB9E42E2E1EF935B7BDB" Guid="83A74C8D-FC10-4798-97BE-A963EB0B6E14">
+                    <File Id="fil06912BC0614AC52CB2F6FE40CD061CA4" KeyPath="yes" Source="$(var.SourceDataDir)\mmffbndk.par" />
+                </Component>
+                <Component Id="cmpF02B26AE416E7FB6799ABDEB4102A8B4" Guid="8D4F9D5B-F2E1-408D-AEAA-0F7E7E652866">
+                    <File Id="fil770870679295A272977FC36BF7DAD8E8" KeyPath="yes" Source="$(var.SourceDataDir)\mmffbond.par" />
+                </Component>
+                <Component Id="cmp0196E21401BC7543F3640521A7360F18" Guid="300A3A9C-AB91-4B64-93BF-E6487F592D5F">
+                    <File Id="fil35631F6814667A4F99BE16247CC0A2D0" KeyPath="yes" Source="$(var.SourceDataDir)\mmffchg.par" />
+                </Component>
+                <Component Id="cmp40E2D7A4D8B12024469D715B810FDDA6" Guid="DB31ED85-70B0-49EA-930E-7A291CDC20BD">
+                    <File Id="fil6311B851C594424CD7D17AD5BDC78FA0" KeyPath="yes" Source="$(var.SourceDataDir)\mmffdef.par" />
+                </Component>
+                <Component Id="cmpA5B9D1C71AFE6D2C5DFC01E96B0C6361" Guid="E12A2762-25C4-41D0-80D3-854709439130">
+                    <File Id="fil4FC92DC4C2FF1F3B5BFEEA641B0B159B" KeyPath="yes" Source="$(var.SourceDataDir)\mmffdfsb.par" />
+                </Component>
+                <Component Id="cmpF78DAE87D8A0361A32944489E457B512" Guid="AC9E7F3D-EF88-4FB1-933A-7768A43A92E5">
+                    <File Id="filC5AA71C8DBC7B4308ABD3F814773F57C" KeyPath="yes" Source="$(var.SourceDataDir)\mmffoop.par" />
+                </Component>
+                <Component Id="cmp2D54BB53967EF647654B4C48870222B4" Guid="8A917F9F-EA26-4A65-A8B4-5533C0CD4AE9">
+                    <File Id="fil852C29F431D92702D8FAAF7DB34A196A" KeyPath="yes" Source="$(var.SourceDataDir)\mmffpbci.par" />
+                </Component>
+                <Component Id="cmp4D378FA833818DA02B7568E9C35FEDCD" Guid="64F8F07A-3461-4BE1-BA9E-A1310427B28F">
+                    <File Id="fil2B7A96F79053E4B05193B4F6D20EB763" KeyPath="yes" Source="$(var.SourceDataDir)\mmffprop.par" />
+                </Component>
+                <Component Id="cmp99C724E425C8EAF2D0C20EE5117914C8" Guid="EBEB21E7-75BD-4946-A48B-8408B01AF343">
+                    <File Id="filC9E5E6FCF0C4653847B5689C49974AD3" KeyPath="yes" Source="$(var.SourceDataDir)\mmffstbn.par" />
+                </Component>
+                <Component Id="cmp1AE32679FD5DC3254D67CF729CDEEEB2" Guid="BE710663-2DAF-4121-BC3B-8EA80064E491">
+                    <File Id="filB91296A324B6E161EDFF317ACF0C90F4" KeyPath="yes" Source="$(var.SourceDataDir)\mmffs_oop.par" />
+                </Component>
+                <Component Id="cmp0978C2814D13A269361E0BB794592447" Guid="99497E5F-2CF6-4F41-A91B-21B6C3CA9B43">
+                    <File Id="filD8B409EC4E74BBA476738A0EAE0B95A1" KeyPath="yes" Source="$(var.SourceDataDir)\mmffs_tor.par" />
+                </Component>
+                <Component Id="cmpD34C954DF7B511E660672D34B37BDC7D" Guid="62E8D82F-BBA8-437A-9B66-564AD8EAED9D">
+                    <File Id="fil96F309B7EAA1226693E075AC77EEEE6A" KeyPath="yes" Source="$(var.SourceDataDir)\mmfftor.par" />
+                </Component>
+                <Component Id="cmp3390E95C1959D49888FBD3BE5B4D5B70" Guid="EA1066AD-BDB3-4A0C-A4E7-F161EC431E9B">
+                    <File Id="filF749FFC1C84B28155C336350702C1D9C" KeyPath="yes" Source="$(var.SourceDataDir)\mmffvdw.par" />
+                </Component>
+                <Component Id="cmp4FE5AA40C4A5F660AFD7582F65C78BF5" Guid="1FCBD3F0-1D69-47E9-8D9B-AF17D25907BB">
+                    <File Id="fil3A3C56429D5837950801837EBC860325" KeyPath="yes" Source="$(var.SourceDataDir)\mpC.txt" />
+                </Component>
+                <Component Id="cmp522BD41475686A1EB5C122A4654D5639" Guid="563D391A-F295-44D1-8499-0B56804AD308">
+                    <File Id="fil4221DA8FAF4748085A4F66B8FC3B856E" KeyPath="yes" Source="$(var.SourceDataDir)\mr.txt" />
+                </Component>
+                <Component Id="cmp9C2F66706299E26540B77C2B3A01DAAA" Guid="05CD234A-0A77-4B7E-866E-6C5CD067BBFA">
+                    <File Id="fil84CB70AA33721283E3A363BF50E947C9" KeyPath="yes" Source="$(var.SourceDataDir)\patterns.txt" />
+                </Component>
+                <Component Id="cmp842D9B962A8A47B369B21AADF0B65E98" Guid="51488186-ECAE-43D0-8C43-1EB556371261">
+                    <File Id="fil743ABC41F310B0AA7EB99130888B7D6D" KeyPath="yes" Source="$(var.SourceDataDir)\patty.rules" />
+                </Component>
+                <Component Id="cmp75C7858779ACBA93EDA5C9A88AFE8CB7" Guid="B7633C57-45D4-4DF6-93D8-8AAA55BB8608">
+                    <File Id="fil1086D9181E98656448275B4B9F9A6B67" KeyPath="yes" Source="$(var.SourceDataDir)\phmodel.txt" />
+                </Component>
+                <Component Id="cmpE69CDD95273E6342C9667EACA9CEF0C0" Guid="E76DF3FC-DC63-432C-8ECE-B2E40A4CAC90">
+                    <File Id="filABFE2AC112625A9EE20169B8D604B71A" KeyPath="yes" Source="$(var.SourceDataDir)\phmodeldata.h" />
+                </Component>
+                <Component Id="cmp61E68B44F4E349B3DAC27BF17CB3625B" Guid="FBB7281F-F1B5-41C3-BA33-224CD7D09BF1">
+                    <File Id="fil917A022638DABC4FB9630DF83FB1B878" KeyPath="yes" Source="$(var.SourceDataDir)\plugindefines.txt" />
+                </Component>
+                <Component Id="cmpFE46A3646CBEA6DF4E177A4003A82648" Guid="92B39CF4-AA08-4146-83EB-F84338CFCED6">
+                    <File Id="filDC4DE543AC124DC10F298E8C77DCC077" KeyPath="yes" Source="$(var.SourceDataDir)\psa.txt" />
+                </Component>
+                <Component Id="cmp996F142DFF92C11A3B67DC2461C46D48" Guid="B6E89BDF-8610-44A0-8FC4-7FE19C8F24F8">
+                    <File Id="filF01494B084E3D2E0E2E2297F7D7234AF" KeyPath="yes" Source="$(var.SourceDataDir)\qeq.txt" />
+                </Component>
+                <Component Id="cmp0ECE64708F1AEF8FB45A06EC06F840CA" Guid="D2C72440-1B52-4B67-A13F-B705A47C7D75">
+                    <File Id="filDA27807770DD1F63BAB34B13080DF048" KeyPath="yes" Source="$(var.SourceDataDir)\resdata.h" />
+                </Component>
+                <Component Id="cmpCDD22F00D0AE173D1211067BF0096116" Guid="AB6EB3EC-0DD5-4FDC-9925-599272B24DA9">
+                    <File Id="fil89E36EF9C57121FC6262650A9A048A59" KeyPath="yes" Source="$(var.SourceDataDir)\resdata.txt" />
+                </Component>
+                <Component Id="cmpB84EEBE3E7A43BAB69C5A582B5B22AA4" Guid="0C9106D8-90BA-43CE-826F-FE38BAEF3DBC">
+                    <File Id="fil991C206C4EAE433A8F91521902A0369C" KeyPath="yes" Source="$(var.SourceDataDir)\ringtyp.txt" />
+                </Component>
+                <Component Id="cmp57BC3829738E2D1510F321C7AF875152" Guid="F9D7664C-0716-4B3A-9D4F-DC35098BBA8C">
+                    <File Id="filFDC6119D4A4589B416FFD6DBAD61431B" KeyPath="yes" Source="$(var.SourceDataDir)\SMARTS_InteLigand.txt" />
+                </Component>
+                <Component Id="cmp33C7FE55002CBF15797F8167402369E9" Guid="1438BE5E-6D20-4F33-AA9F-536BD2D4D4B3">
+                    <File Id="filCA13BE1D81C23068DFBB5656BE80BE27" KeyPath="yes" Source="$(var.SourceDataDir)\space-groups.txt" />
+                </Component>
+                <Component Id="cmpC858ADA664DDA66839EDE12C4BF05CBA" Guid="79B188B4-8BCD-43AD-8CBC-A08E3821D73D">
+                    <File Id="filC93F0850E06A87F09881ED91B9352B9E" KeyPath="yes" Source="$(var.SourceDataDir)\space-groups.xsl" />
+                </Component>
+                <Component Id="cmpACC53A587DD8790E97D175A1D88817A8" Guid="527A2EA0-4725-480F-9681-72929D09CB36">
+                    <File Id="filDB45D7172874972F61A931F11D412142" KeyPath="yes" Source="$(var.SourceDataDir)\splash.png" />
+                </Component>
+                <Component Id="cmpDC8A90CC196505D1D8D7F4F36D18EC6D" Guid="C35EB472-E35E-4B5D-A3A1-721F79BE8D38">
+                    <File Id="fil045D65308AD01F64400200131BD884A9" KeyPath="yes" Source="$(var.SourceDataDir)\superatom.txt" />
+                </Component>
+                <Component Id="cmp10630D27AA90BA822293F04681CB5A53" Guid="3E8017AA-E809-4ACD-A980-EB1049475FEE">
+                    <File Id="fil9A77949385A46BCCF147A9DBDA87002C" KeyPath="yes" Source="$(var.SourceDataDir)\svgformat.script" />
+                </Component>
+                <Component Id="cmp85D4AE71937103FF434902E9580CE207" Guid="D2DBAEA2-C6E7-450A-934A-64A70ADAEE52">
+                    <File Id="filEDFCFC4DD670F0F2CE003FE636B5C6A0" KeyPath="yes" Source="$(var.SourceDataDir)\templates.sdf" />
+                </Component>
+                <Component Id="cmpEDB8DA513F19A9283FDA8D2BF22D73FB" Guid="7A570E74-56BC-4DE5-86F2-F8003DADCA18">
+                    <File Id="fil134B131383230DF4ABD9434347196034" KeyPath="yes" Source="$(var.SourceDataDir)\torlib.h" />
+                </Component>
+                <Component Id="cmpA582D06FB9330E28D979946C9372E689" Guid="819B48F3-1E07-489E-8115-01E6F979EF90">
+                    <File Id="filDFFDEFB55B03E27803D7D55E9AE57C11" KeyPath="yes" Source="$(var.SourceDataDir)\torlib.txt" />
+                </Component>
+                <Component Id="cmp80108997F58CD9435CA4136EC9D367ED" Guid="049BD4C3-150B-4930-B41B-BECE9F8A3A30">
+                    <File Id="filCC21830655F432F3B31BDEC93F547B59" KeyPath="yes" Source="$(var.SourceDataDir)\types.h" />
+                </Component>
+                <Component Id="cmpCE0E1493FFACCDD10B6EB8AF2B01031A" Guid="5A8807F8-FEB2-4D97-8392-6187FE22152E">
+                    <File Id="filF413504F1C339EB8EDD6CDCAEFD4DAC0" KeyPath="yes" Source="$(var.SourceDataDir)\types.txt" />
+                </Component>
+                <Component Id="cmpA60C01A5C33AC0CFA41F29DDFC8479B5" Guid="4A3B3910-34B7-4B8E-9FAE-BF3D99AD55B3">
+                    <File Id="filDFCC0EDF93327E689993908B4A1E2FEE" KeyPath="yes" Source="$(var.SourceDataDir)\UFF.prm" />
+                </Component>
+            </Directory>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="OpenBabelDataComponents">
+            <ComponentRef Id="OpenBabelDataPath"/>
+            <ComponentRef Id="cmp7016A5B4CC0DC72CF58824B4F70B63E5" />
+            <ComponentRef Id="cmp6A3F14366F2982D6464F17C0066D24FB" />
+            <ComponentRef Id="cmp7303F7F916FCCD219C8BA20BA28D1995" />
+            <ComponentRef Id="cmpC80767A4B5985F0B28B884B8BFF6E7AD" />
+            <ComponentRef Id="cmp30C757A8B400784D0BB3A2360E004F75" />
+            <ComponentRef Id="cmpFF803B61D756F3408F8A8396C5800EF4" />
+            <ComponentRef Id="cmpDDC77073952881B8C276A55DCE21B106" />
+            <ComponentRef Id="cmp322A64A1EE82DCE4BAC6EA4654469F1C" />
+            <ComponentRef Id="cmpA2DE9FFF24E75AA61EA34941AFEE2227" />
+            <ComponentRef Id="cmp461D70B7576ED7411F0E1C91521A373D" />
+            <ComponentRef Id="cmp4106980DB58C7E84AE3C49F88F78BB93" />
+            <ComponentRef Id="cmp5165D968F9B08B6D7B9FEED09DC9384D" />
+            <ComponentRef Id="cmp8240B4FC8756B35FE58A6D1750FDD3C0" />
+            <ComponentRef Id="cmp06274038F767E9285A58235720572444" />
+            <ComponentRef Id="cmp3CA456BCF8CA19FDDECD7B2D9640E87F" />
+            <ComponentRef Id="cmp0E0AD0CA85BFCA6C081087C38ABC24D9" />
+            <ComponentRef Id="cmp4195F5C903D4157850F03345A7C74046" />
+            <ComponentRef Id="cmp50B6ABBE2579A1D1ACDBB9B0BCDB94FC" />
+            <ComponentRef Id="cmp312C4FD434FBC09468940E372A2AC7A3" />
+            <ComponentRef Id="cmpFE54840BD87709DE6A4F6A04D28B6377" />
+            <ComponentRef Id="cmpDA67621F4039575745B384A1FAA169AF" />
+            <ComponentRef Id="cmp0D8BA33CC49A839F97921DEAAA0CCA08" />
+            <ComponentRef Id="cmp86D5DE1EF98DFF8625208962486B24A5" />
+            <ComponentRef Id="cmp2022B9415684F79FDA3A739B4D12C9AE" />
+            <ComponentRef Id="cmp9C01B72D9BFCDC8BB9A0425963DAA9B7" />
+            <ComponentRef Id="cmpF6FC41300068F842E854AA9CF1E62DE4" />
+            <ComponentRef Id="cmp696A6E3FB1FE8FBCD4F25F47081C4F34" />
+            <ComponentRef Id="cmpB72460EEBFBE084E131C247271B921D8" />
+            <ComponentRef Id="cmpF99ACB9F85B8784779DCA3CAF7DC6A5B" />
+            <ComponentRef Id="cmpA8928B404F78EB9E42E2E1EF935B7BDB" />
+            <ComponentRef Id="cmpF02B26AE416E7FB6799ABDEB4102A8B4" />
+            <ComponentRef Id="cmp0196E21401BC7543F3640521A7360F18" />
+            <ComponentRef Id="cmp40E2D7A4D8B12024469D715B810FDDA6" />
+            <ComponentRef Id="cmpA5B9D1C71AFE6D2C5DFC01E96B0C6361" />
+            <ComponentRef Id="cmpF78DAE87D8A0361A32944489E457B512" />
+            <ComponentRef Id="cmp2D54BB53967EF647654B4C48870222B4" />
+            <ComponentRef Id="cmp4D378FA833818DA02B7568E9C35FEDCD" />
+            <ComponentRef Id="cmp99C724E425C8EAF2D0C20EE5117914C8" />
+            <ComponentRef Id="cmp1AE32679FD5DC3254D67CF729CDEEEB2" />
+            <ComponentRef Id="cmp0978C2814D13A269361E0BB794592447" />
+            <ComponentRef Id="cmpD34C954DF7B511E660672D34B37BDC7D" />
+            <ComponentRef Id="cmp3390E95C1959D49888FBD3BE5B4D5B70" />
+            <ComponentRef Id="cmp4FE5AA40C4A5F660AFD7582F65C78BF5" />
+            <ComponentRef Id="cmp522BD41475686A1EB5C122A4654D5639" />
+            <ComponentRef Id="cmp9C2F66706299E26540B77C2B3A01DAAA" />
+            <ComponentRef Id="cmp842D9B962A8A47B369B21AADF0B65E98" />
+            <ComponentRef Id="cmp75C7858779ACBA93EDA5C9A88AFE8CB7" />
+            <ComponentRef Id="cmpE69CDD95273E6342C9667EACA9CEF0C0" />
+            <ComponentRef Id="cmp61E68B44F4E349B3DAC27BF17CB3625B" />
+            <ComponentRef Id="cmpFE46A3646CBEA6DF4E177A4003A82648" />
+            <ComponentRef Id="cmp996F142DFF92C11A3B67DC2461C46D48" />
+            <ComponentRef Id="cmp0ECE64708F1AEF8FB45A06EC06F840CA" />
+            <ComponentRef Id="cmpCDD22F00D0AE173D1211067BF0096116" />
+            <ComponentRef Id="cmpB84EEBE3E7A43BAB69C5A582B5B22AA4" />
+            <ComponentRef Id="cmp57BC3829738E2D1510F321C7AF875152" />
+            <ComponentRef Id="cmp33C7FE55002CBF15797F8167402369E9" />
+            <ComponentRef Id="cmpC858ADA664DDA66839EDE12C4BF05CBA" />
+            <ComponentRef Id="cmpACC53A587DD8790E97D175A1D88817A8" />
+            <ComponentRef Id="cmpDC8A90CC196505D1D8D7F4F36D18EC6D" />
+            <ComponentRef Id="cmp10630D27AA90BA822293F04681CB5A53" />
+            <ComponentRef Id="cmp85D4AE71937103FF434902E9580CE207" />
+            <ComponentRef Id="cmpEDB8DA513F19A9283FDA8D2BF22D73FB" />
+            <ComponentRef Id="cmpA582D06FB9330E28D979946C9372E689" />
+            <ComponentRef Id="cmp80108997F58CD9435CA4136EC9D367ED" />
+            <ComponentRef Id="cmpCE0E1493FFACCDD10B6EB8AF2B01031A" />
+            <ComponentRef Id="cmpA60C01A5C33AC0CFA41F29DDFC8479B5" />
+        </ComponentGroup>
+    </Fragment>
+
+</Wix>
