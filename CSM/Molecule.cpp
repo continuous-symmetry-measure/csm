@@ -436,6 +436,8 @@ void Molecule::initSimilarity(int depth)
     groupNum = 1;
     setMarked(FALSE);
 
+	LOG(debug) << "Breaking molecule into similarity groups";
+
     // break into initial groups by symbol and valancy
     for (i=0; i<_size ; i++){
 
@@ -456,50 +458,60 @@ void Molecule::initSimilarity(int depth)
     int *subGroup = (int*)malloc(_size * sizeof(int));  //temporary buffer
 
     // iteratively refine the breakdown into groups
-    for (k=0; k < depth ; k++){
+	// In a previous version we had 'depth' iterations, this version breaks into subgroups at an infinite depth -
+	// as long as there's something to break, it is broken
+	bool dividedGroup;
+	int numIters = 0;
+	do
+	{
+		numIters++;
+		dividedGroup = false;
+		setMarked(FALSE); // reset marked
 
-    	setMarked(FALSE); // reset marked
+		for (i = 0; i < _size; i++){
 
-    	for (i=0; i < _size; i++){
+			if (_marked[i])
+				continue;
 
-	    	if (_marked[i])
-	    		continue;
+			// mark self as done
+			_marked[i] = true;
 
-	    	// mark self as done
-	    	_marked[i] = true;
+			int len = 0; //group size
 
-		    int len = 0; //group size
+			// create the items in the group of i
+			for (j = 0; j < _size; j++)
+				if ((j != i) && (_similar[j] == _similar[i])){
+					group[len++] = j;
+				}
 
-	    	// create the items in the group of i
-	    	for(j=0; j < _size; j++)
-	    		if ((j!=i) && (_similar[j] == _similar[i])){
-	    			group[len++] = j;
-	    		}
+			int subLen = 0; //newGroup size
 
-    		int subLen = 0; //newGroup size
+			// for each item in the group check if it can be split or not
+			for (j = 0; j < len; j++){
+				if (isSimilar(group[j], i))
+					// mark similar item as done
+					_marked[group[j]] = true;
+				else
+					// add to new subGroup
+					subGroup[subLen++] = group[j];
+			}
 
-	    	// for each item in the group check if it can be split or not
-	    	for(j=0; j < len; j++){
-	    		if (isSimilar(group[j],i))
-	    			// mark similar item as done
-	    			_marked[group[j]] = true;
-	    		else
-	    			// add to new subGroup
-	    			subGroup[subLen++] = group[j];
-	    	}
+			// give subGroup members a new id
+			bool updated = false;
+			for (j = 0; j < subLen; j++){
+				updated = true;
+				_similar[subGroup[j]] = groupNum;
+			}
 
-	    	// give subGroup members a new id
-	    	bool updated = false;
-	    	for(j=0; j < subLen; j++){
-	    		updated = true;
-	    		_similar[subGroup[j]] = groupNum;
-	    	}
-
-	    	if (updated)
-	    		groupNum++;
+			if (updated)
+			{
+				groupNum++;
+				dividedGroup = true;
+			}
 		}
-    }
+	} while (dividedGroup);
 
+	LOG(debug) << "Broken into groups with " << numIters << " iterations.";
     _groupNum = groupNum -1;
 
     free(group);
