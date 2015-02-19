@@ -30,7 +30,6 @@ private:
 	int** _adjacent;         // represent connectivity
 	std::vector<int> _valency;           // valency of each atom
 	std::vector<int> _similar;           // similarity
-	std::vector<bool> _marked;            // for marking atoms - general use
 	int  _groupNum;          // the number of groups of similarity
 	double _norm;	     // The normalization factor
 	std::vector<double> _mass;	     // The atomic masses
@@ -40,7 +39,6 @@ private:
 
 	void replaceSymbols();
 	void initSimilarity(int depth);
-	void setMarked(bool state);
 	int isSimilar(int a, int b);
 
 public:

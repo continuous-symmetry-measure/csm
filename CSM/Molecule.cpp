@@ -26,6 +26,7 @@
 #include "logging.h"
 
 using namespace OpenBabel;
+using namespace std;
 
 const int DIM = 3;
 const double MINDOOUBLE = 1e-8;
@@ -39,7 +40,7 @@ const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking
 /*
  * allocates memory for the molecule structure
  */
-Molecule::Molecule(int size) : _mass(size, 1.0), _valency(size, 0), _similar(size), _marked(size)
+Molecule::Molecule(int size) : _mass(size, 1.0), _valency(size, 0), _similar(size)
 {
 	int i;
     _size = size;
@@ -431,25 +432,25 @@ Molecule* Molecule::copy(int* selectedAtoms, int selectedAtomsSize, bool updateS
 void Molecule::initSimilarity(int depth)
 {
 
-    int i,j,k,groupNum;
+    int i,j,groupNum;
 
     groupNum = 1;
-    setMarked(FALSE);
+	vector<bool> marked(_size, false);
 
 	LOG(debug) << "Breaking molecule into similarity groups";
 
     // break into initial groups by symbol and valancy
     for (i=0; i<_size ; i++){
 
-        if (_marked[i])
+        if (marked[i])
             continue;
 
         for (j=0; j<_size ; j++){
-            if ( (_marked[j]) || (_valency[i] != _valency[j]) || (strcmp(_symbol[i],_symbol[j])!=0) )
+            if ( (marked[j]) || (_valency[i] != _valency[j]) || (strcmp(_symbol[i],_symbol[j])!=0) )
                  continue;
 
              _similar[j] = groupNum;
-             _marked[j] = true;
+             marked[j] = true;
         }
         groupNum++;
     }
@@ -466,15 +467,15 @@ void Molecule::initSimilarity(int depth)
 	{
 		numIters++;
 		dividedGroup = false;
-		setMarked(FALSE); // reset marked
+		marked.assign(_size, false);
 
 		for (i = 0; i < _size; i++){
 
-			if (_marked[i])
+			if (marked[i])
 				continue;
 
 			// mark self as done
-			_marked[i] = true;
+			marked[i] = true;
 
 			int len = 0; //group size
 
@@ -490,7 +491,7 @@ void Molecule::initSimilarity(int depth)
 			for (j = 0; j < len; j++){
 				if (isSimilar(group[j], i))
 					// mark similar item as done
-					_marked[group[j]] = true;
+					marked[group[j]] = true;
 				else
 					// add to new subGroup
 					subGroup[subLen++] = group[j];
@@ -516,16 +517,6 @@ void Molecule::initSimilarity(int depth)
 
     free(group);
     free(subGroup);
-}
-
-/*
- * sets the general use marked array to state (true or false)
- */
-void Molecule::setMarked(bool state)
-{
-    int i;
-    for (i=0; i<_size; i++)
-        _marked[i] = state;
 }
 
 /*
@@ -744,18 +735,18 @@ void Molecule::print()
     }
 
     printf("\nsimilar subtree:\n");
-    m->setMarked(false);
+	vector<bool> marked(_size, false);
    	for (i=0;i<m->_size;i++){
 
-        if (m->_marked[i])
+        if (marked[i])
             continue;
 
         for (j=0; j<m->_size ; j++){
-            if ( (m->_marked[j]) || (m->_similar[i] != m->_similar[j]) )
+            if ( marked[j] || _similar[i] != _similar[j] )
                  continue;
 
              printf("%d ",j+1);
-             m->_marked[j] = true;
+             marked[j] = true;
         }
         printf("\n");
     }
@@ -806,18 +797,18 @@ void Molecule::printSimilar()
 	Molecule *m = this; // This was previously a function accepting Molecule m as an argument
 
     printf("similar subtree:\n");
-    m->setMarked(false);
-   	for (i=0;i<m->_size;i++){
+	vector<bool> marked(_size, false);
+	for (i = 0; i<m->_size; i++){
 
-        if (m->_marked[i])
+        if (marked[i])
             continue;
 
         for (j=0; j<m->_size ; j++){
-            if ( (m->_marked[j]) || (m->_similar[i] != m->_similar[j]) )
+            if ( marked[j] || m->_similar[i] != m->_similar[j] )
                  continue;
 
              printf("%d ",j+1);
-             m->_marked[j] = true;
+             marked[j] = true;
         }
         printf("\n");
     }
@@ -844,18 +835,18 @@ void Molecule::printDebug()
 
 	// print similarity
 	printf("Equivalent Groups:\n");
-    m->setMarked(FALSE);
-   	for (i=0;i<m->_size;i++){
+	vector<bool> marked(_size, false);
+	for (i = 0; i<m->_size; i++){
 
-        if (m->_marked[i])
+        if (marked[i])
             continue;
 
         for (j=0; j<m->_size ; j++){
-            if ( (m->_marked[j]) || (m->_similar[i] != m->_similar[j]) )
+            if ( (marked[j]) || (m->_similar[i] != m->_similar[j]) )
                  continue;
 
              printf("%d ",j+1);
-             m->_marked[j] = true;
+             marked[j] = true;
         }
         printf("\n");
     }
@@ -902,18 +893,18 @@ void Molecule::printDebug2()
 	Molecule *m = this; // This was previously a function accepting Molecule m as an argument
 
     printf("Breakdown into groups:\n");
-    m->setMarked(FALSE);
-   	for (i=0;i<m->_size;i++){
+	vector<bool> marked(_size, false);
+	for (i = 0; i<m->_size; i++){
 
-        if (m->_marked[i])
+        if (marked[i])
             continue;
 
         for (j=0; j<m->_size ; j++){
-            if ( (m->_marked[j]) || (m->_similar[i] != m->_similar[j]) )
+            if ( marked[j] || m->_similar[i] != m->_similar[j] )
                  continue;
 
              printf("%d ",j+1);
-             m->_marked[j] = true;
+             marked[j] = true;
         }
         printf("\n");
     }
