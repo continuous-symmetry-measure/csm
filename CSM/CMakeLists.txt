@@ -50,7 +50,15 @@ if(UNIX)
 endif()
 
 # Executable
-add_executable(csm Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
-	logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
-	options.cpp PrintOuts.cpp)
-target_link_libraries(csm ${OpenBabel_LIBS} ${Boost_LIBRARIES} ${EXTRA_LIBS})
+#add_executable(csm Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
+#	logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
+#	options.cpp PrintOuts.cpp)
+#target_link_libraries(csm ${OpenBabel_LIBS} ${Boost_LIBRARIES} ${EXTRA_LIBS})
+
+# Library
+add_library(csm STATIC
+		Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
+		logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
+		options.cpp PrintOuts.cpp
+		csmlib.cpp)
+		
