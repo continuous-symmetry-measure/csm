@@ -1,5 +1,6 @@
 project(csm)
 cmake_minimum_required(VERSION 2.8)
+
 set (BASE_DIR ${PROJECT_SOURCE_DIR}/../)
 
 # Default build type is Release (taken from here: http://www.cmake.org/pipermail/cmake/2008-March/020347.html)
@@ -49,16 +50,20 @@ if(UNIX)
 	set (EXTRA_LIBS ${EXTRA_LIBS} pthread)
 endif()
 
-# Executable
-#add_executable(csm Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
-#	logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
-#	options.cpp PrintOuts.cpp)
-#target_link_libraries(csm ${OpenBabel_LIBS} ${Boost_LIBRARIES} ${EXTRA_LIBS})
+set(SOURCES
+	Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
+	logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
+	options.cpp PrintOuts.cpp csmlib.cpp
+	babelAdapter.h calculations.h csmlib.h dmatrix.h drand48.h dvector.h elements.h
+	groupPermuter.h logging.h math_utils.h math_wrappers.h Molecule.h options.h
+	parseFunctions.h permuter.h PrintOuts.h
+	)
 
 # Library
-add_library(csm STATIC
-		Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
-		logging.cpp mainRot.cpp rpoly.c babelAdapter.cpp math_wrappers.cpp drand48.cpp math_utils.cpp calculations.cpp 
-		options.cpp PrintOuts.cpp
-		csmlib.cpp)
-		
+add_library(csm STATIC ${SOURCES})
+set_target_properties(csm PROPERTIES LINKER_LANGUAGE CXX)
+
+# Executable
+#add_executable(csm ${SOURCES})
+#target_link_libraries(csm ${OpenBabel_LIBS} ${Boost_LIBRARIES} ${EXTRA_LIBS})
+#set_target_properties(csm PROPERTIES LINKER_LANGUAGE CXX)
