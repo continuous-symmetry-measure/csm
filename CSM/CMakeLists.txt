@@ -41,6 +41,9 @@ add_definitions(-DBOOST_CHRONO_HEADER_ONLY) # See here http://stackoverflow.com/
 # C++11
 if(UNIX)
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    if(APPLE) # Additional C++ 11 flag
+        SET (CMAKE_CXX_FLAGS " ${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    endif()
 endif()
 
 # CSM Specific flags
