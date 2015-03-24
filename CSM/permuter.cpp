@@ -283,7 +283,7 @@ void Permuter::reset()
 	_firstPermutation = true;
 	for (i = 0; i < _numCycles; i++) {
 		freeCycle(_cycles[i]);
-		_cycles[i] = nullptr;
+		_cycles[i] = NULL;
 	}
 	_numCycles = 0;
 	for (i = 0; i < _size; i++) {

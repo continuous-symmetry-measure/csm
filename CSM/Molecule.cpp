@@ -527,7 +527,7 @@ int Molecule::isSimilar(int a,int b)
 	int i, j;
 	bool found = true;
 
-	auto mark = std::vector<bool>(_size, false);
+	std::vector<bool> mark(_size, false);
 
 	// for each of i's neighbours
 	for ( i=0;  i<_valency[a];  i++ ){
