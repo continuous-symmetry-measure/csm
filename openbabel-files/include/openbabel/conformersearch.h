@@ -2,7 +2,6 @@
 conformersearch.h - Conformer searching using genetic algorithm.
 
 Copyright (C) 2010 Tim Vandermeersch
-Some portions Copyright (C) 2012 Materials Design, Inc.
 
 This file is part of the Open Babel project.
 For more information, see <http://openbabel.org/>
@@ -28,7 +27,6 @@ namespace OpenBabel {
 
   typedef std::vector<int> RotorKey;
   typedef std::vector<RotorKey> RotorKeys;
-  typedef std::map<std::vector<int>,double> mapRotorEnergy;
 
   ///@addtogroup conformer Conformer Searching
   ///@{
@@ -61,7 +59,6 @@ namespace OpenBabel {
        * @return True if the conformer passes the filter.
        */
       virtual bool IsGood(const OBMol &mol, const RotorKey &key, double *coords) = 0;
-      virtual ~OBConformerFilter() = 0;
   };
 
   /**
@@ -112,13 +109,10 @@ namespace OpenBabel {
   class OBAPI OBStericConformerFilter : public OBConformerFilter
   {
     public:
-      OBStericConformerFilter ();
-      OBStericConformerFilter (double cutoff, double vdw_factor = 0.5, bool check_hydrogens = true);
+      OBStericConformerFilter(double cutoff) : m_cutoff(cutoff) {}
       bool IsGood(const OBMol &mol, const RotorKey &key, double *coords);
     private:
-      double m_cutoff; //!< Internal cutoff (used as a squared distance)
-      double m_vdw_factor;		//!< Factor applied to Van der Waals distance check
-      bool m_check_hydrogens;		//!< Check hydrOgens if true 
+      double m_cutoff;
   };
 
   //////////////////////////////////////////////////////////
@@ -164,7 +158,6 @@ namespace OpenBabel {
        */
       virtual double Score(OBMol &mol, unsigned int index, const RotorKeys &keys,
           const std::vector<double*> &conformers) = 0;
-      virtual ~OBConformerScore() = 0;
   };
 
   /**
@@ -192,65 +185,12 @@ namespace OpenBabel {
   class OBAPI OBEnergyConformerScore : public OBConformerScore
   {
     public:
-      OBEnergyConformerScore () {
-	energy_map.clear ();
-	energy_ncompute = 0;
-	energy_nrequest = 0;
-      }
-      long unsigned int GetNbEnergyCompute () {return energy_ncompute;}
-      long unsigned int GetNbEnergyRequest () {return energy_nrequest;}
       Preferred GetPreferred() { return LowScore; }
       Convergence GetConvergence() { return Lowest; }
       double Score(OBMol &mol, unsigned int index, const RotorKeys &keys,
           const std::vector<double*> &conformers);
-    private:
-      mapRotorEnergy energy_map;
-      long unsigned int energy_ncompute;
-      long unsigned int energy_nrequest;
-  };
-  
-  /**
-   * @class OBMinimizingEnergyConformerScore conformersearch.h <openbabel/conformersearch.h>
-   * @brief A lowest energy conformer scoring class (after minimization)
-   * @since 2.4
-   */
-  class OBAPI OBMinimizingEnergyConformerScore : public OBConformerScore
-  {
-    public:
-      OBMinimizingEnergyConformerScore () {
-	energy_map.clear ();
-	energy_ncompute = 0;
-	energy_nrequest = 0;
-      }
-      long unsigned int GetNbEnergyCompute () {return energy_ncompute;}
-      long unsigned int GetNbEnergyRequest () {return energy_nrequest;}
-      Preferred GetPreferred() { return LowScore; }
-      Convergence GetConvergence() { return Lowest; }
-      double Score(OBMol &mol, unsigned int index, const RotorKeys &keys,
-          const std::vector<double*> &conformers);
-    private:
-      mapRotorEnergy energy_map;
-      long unsigned int energy_ncompute;
-      long unsigned int energy_nrequest;
   };
 
-  /**
-   * @class OBMinimizingRMSDConformerScore conformersearch.h <openbabel/conformersearch.h>
-   * @brief An RMSD conformer scoring class, after a short minimization
-   *
-   * This scores conformers by the RMSD between the conformer and the closest, to produce a
-   * diverse set of conformers, but after minimization. This ensures each conformer is
-   * "reasonable" and avoids steric clashes.
-   * @since 2.4
-   */
-  class OBAPI OBMinimizingRMSDConformerScore : public OBConformerScore
-  {
-    public:
-      Preferred GetPreferred() { return HighScore; }
-      Convergence GetConvergence() { return Average; }
-      double Score(OBMol &mol, unsigned int index, const RotorKeys &keys,
-          const std::vector<double*> &conformers);
-  };
 
   //////////////////////////////////////////////////////////
   //
@@ -346,58 +286,6 @@ namespace OpenBabel {
       }
 
       void GetConformers(OBMol &mol);
-
-      /* @brief Set an output stream for logging. If NULL pointer is provided, logging is disabled. */
-      void SetLogStream  (std::ostream *sptr) {m_logstream = sptr;}
-
-      /*************************************************/
-      /* Methods related to fitness sharing parameters */
-      
-      /* @brief Set the use of fitness sharing ON (default) or OFF*/
-      void SetSharing (bool value = true)  {use_sharing = value;}
-      
-      /* @brief Get the targeted number of niches, for dynamic niche sharing */
-      int GetNbNiches () {return nb_niches;}
-      
-      /* @brief Set the targeted number of niches, for dynamic niche sharing */
-      void SetNbNiches (int value) {nb_niches = value;}
-      
-      /* @brief Get niches radius, for dynamic niche sharing.*/
-      int GetNicheRadius () {return niche_radius;}
-      
-      /* @brief Set niches radius, for dynamic niche sharing.*/
-      void SetNicheRadius (int value) {niche_radius = value;}
-      
-      /* @brief Get the alpha sharing parameter */
-      double GetAlphaSharing () {return alpha_share;}
-      
-      /* @brief Set the alpha sharing parameter */
-      void SetAlphaSharing (double value) {alpha_share = value;}
-      
-      /* @brief Get the sigma sharing parameter */
-      double GetSigmaSharing () {return sigma_share;}
-      
-      /* @brief Set the sigma sharing parameter */
-      void SetSigmaSharing (double value) {sigma_share = value;}
-      
-      /* @brief Get the (uniform) crossover probability */
-      double GetCrossoverProbability () {return p_crossover;}
-      
-      /* @brief Set the (uniform) crossover probability */
-      void SetCrossoverProbability (double value) {p_crossover = value;}
-      
-      /* @brief Get the niche mating probability, for dynamic niche sharing */
-      double GetNicheMating () {return niche_mating;}
-      
-      /* @brief Set the (uniform) crossover probability */
-      void SetNicheMating (double value) {niche_mating = value;}
-      
-      /* @brief Set the local optimization rate */
-      void SetLocalOptRate (int value) {local_opt_rate = value;}
-      
-      /* @brief Get the local optimization rate*/
-      int  SetLocalOptRate() {return local_opt_rate;}
-    
     private:
       /**
        * Create the next generation.
@@ -416,38 +304,11 @@ namespace OpenBabel {
        */
       bool IsGood(const RotorKey &key);
 
-      //! @brief Genetic similarity measure, i.e. "distance" between two rotor keys.
-      int key_distance (const RotorKey &key1, const RotorKey &key2);      
-      //! @brief Make a local search on the best individual
-      int local_opt ();
-      //! @brief Produces one or two offsprings
-      int reproduce (RotorKey &key1, RotorKey &key2);
-      //! @brief Score, sort the current population, compute shared fitness values (and niches)
-      int score_population ();
-      //! @brief Compute shared fitness values for a given population
-      int share_fitness ();
-      //! @brief Perform one generation with fitness sharing
-      double sharing_generation ();
-
       unsigned int m_numConformers; //!< The desired number of conformers. This is also the population size.
       int m_numChildren; //!< The number of children generated each generation
       int m_mutability; //!< The mutability for generating the next generation
       int m_convergence; //!< Number of generations that remain unchanged before quiting
-      
-      std::vector<double> vscores;                    //!< Current population score vector
-      std::vector<double> vshared_fitnes;             //!< Current population shared fitness vector
-      std::vector<std::vector <int> > dynamic_niches; //!< The dynamically found niches
-      std::vector<int> niche_map;                     //!< Procide the sharing niche index, given the key inddex
-      
-      OBRandom unique_generator; //!< A unique random number generator for the whole algo
-      bool use_sharing;		//!< Wether to use sharing or not.
-      double alpha_share;	//!< The alpha parameter in sharing function
-      int sigma_share;		//!< The sigma parameter in sharing function
-      int nb_niches;		//!< The number of dynamic niches to be found
-      int niche_radius;		//!< A pre-determined niche radius, for dynamic niche sharing.
-      double p_crossover;	//!< Crossover probability
-      double niche_mating;	//!< Probability of forcing the second parent in the first parent
-      int local_opt_rate;       //!< Perform a random local optimization every local_opt_rate generations. Disabled if set to 
+
       OBBitVec      m_fixedBonds; //!< Bonds that are fixed
       OBMol         m_mol; //!< The molecule with starting coordinates
       OBRotorList   m_rotorList; //!< The OBRotorList for the molecule
@@ -456,7 +317,7 @@ namespace OpenBabel {
       OBConformerFilter *m_filter;
       OBConformerScore  *m_score;
 
-      std::ostream *m_logstream;	//!< A pointer to a log stream (NULL means no loogging)
+
   };
 
   /**

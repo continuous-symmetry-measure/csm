@@ -163,13 +163,13 @@ Permuter::Permuter(int size, int groupSize, int addGroupsOfTwo) : _used(size), _
 	// The cycles can only be of length 1 or operation order. 
 	//findDivisors(p);
 	if (addGroupsOfTwo && groupSize > 2) {
-		_divisors = { 2, _operationOrder };
-		//_divisors[0] = 2;
-		//_divisors[1] = _operationOrder;
+		_divisors.resize(2);
+		_divisors[0] = 2;
+		_divisors[1] = _operationOrder;
 		_numDivisors = 2;
 	} else {
-		_divisors = { _operationOrder };
-		//_divisors[0] = _operationOrder;
+		_divisors.resize(1);
+		_divisors[0] = _operationOrder;
 		_numDivisors = 1;
 	}
 
