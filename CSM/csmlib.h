@@ -12,10 +12,15 @@
 #define CSMLIB_H
 
 // Cython works much better with a C interface, use it
+
+#ifdef __cplusplus
 extern "C"
 {
+#endif
 	// Runs the entire CSM application
 	int RunCSM(int argc, char *argv[]);
 	int SayHello();
+#ifdef __cplusplus
 }
+#endif
 #endif
