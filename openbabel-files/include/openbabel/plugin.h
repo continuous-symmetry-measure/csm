@@ -20,7 +20,6 @@ General Public License for more details.
 #define OB_PLUGIN_H
 
 #include <openbabel/babelconfig.h>
-#include <openbabel/dlhandler.h>
 #include <string>
 #include <iostream>
 #include <vector>
@@ -132,12 +131,6 @@ protected:
     static PluginMapType m;
     return m;
   }
-
-  ///Keep a record if all plugins have been loaded
-  static int AllPluginsLoaded;
-
-  ///Load all plugins (formats, fingerprints, forcefields etc.)
-  static void LoadAllPlugins();
 
   ///Returns the map of a particular plugin type, e.g. GetMapType("fingerprints")
   static PluginMapType& GetTypeMap(const char* PluginID);
@@ -374,7 +367,6 @@ public:
   OBAPI EXTERN className instanceName;
 
   // formats
-  OB_STATIC_PLUGIN(ABINITFormat, theABINITFormat)
   OB_STATIC_PLUGIN(AcesOutputFormat, theAcesOutputFormat)
   OB_STATIC_PLUGIN(AcesInputFormat, theAcesInputFormat)
   OB_STATIC_PLUGIN(ACRFormat, theACRFormat)
@@ -389,11 +381,10 @@ public:
   OB_STATIC_PLUGIN(CacaoFormat, theCacaoFormat)
   OB_STATIC_PLUGIN(CacheFormat, theCacheFormat)
   OB_STATIC_PLUGIN(CARFormat, theCARFormat)
-  OB_STATIC_PLUGIN(CASTEPFormat, theCASTEPFormat)
   OB_STATIC_PLUGIN(CCCFormat, theCCCFormat)
   OB_STATIC_PLUGIN(CHEM3D1Format, theCHEM3D1Format)
   OB_STATIC_PLUGIN(CHEM3D2Format, theCHEM3D2Format)
-  OB_STATIC_PLUGIN(ChemDrawBinaryXFormat, theChemDrawBinaryXFormat)
+  OB_STATIC_PLUGIN(ChemDrawBinaryFormat, theChemDrawBinaryFormat)
   OB_STATIC_PLUGIN(ChemDrawFormat, theChemDrawFormat)
   OB_STATIC_PLUGIN(ChemKinFormat, theChemKinFormat)
   OB_STATIC_PLUGIN(CHTFormat, theCHTFormat)
@@ -422,13 +413,11 @@ public:
   OB_STATIC_PLUGIN(GaussianZMatrixInputFormat, theGaussianZMatrixInputFormat)
   OB_STATIC_PLUGIN(GenBankFormat, theGenBankFormat)
   OB_STATIC_PLUGIN(GhemicalFormat, theGhemicalFormat)
-  OB_STATIC_PLUGIN(GROFormat, theGROFormat)
   OB_STATIC_PLUGIN(GROMOS96Format, theGROMOS96Format)
   OB_STATIC_PLUGIN(GULPFormat, theGULPFormat)
   OB_STATIC_PLUGIN(HINFormat, theHINFormat)
   OB_STATIC_PLUGIN(JaguarOutputFormat, theJaguarOutputFormat)
   OB_STATIC_PLUGIN(JaguarInputFormat, theJaguarInputFormat)
-  OB_STATIC_PLUGIN(LMPDATFormat, theLMPDATFormat)
   OB_STATIC_PLUGIN(MCDLFormat, theMCDLFormat)
   OB_STATIC_PLUGIN(MOLFormat, theMOLFormat)
   OB_STATIC_PLUGIN(SDFormat, theSDFormat)
@@ -483,7 +472,6 @@ public:
   OB_STATIC_PLUGIN(VASPFormat, theVASPFormat)
   OB_STATIC_PLUGIN(ViewMolFormat, theViewMolFormat)
   OB_STATIC_PLUGIN(XEDFormat, theXEDFormat)
-  OB_STATIC_PLUGIN(XSFFormat, theXSFFormat)
   OB_STATIC_PLUGIN(XYZFormat, theXYZFormat)
   OB_STATIC_PLUGIN(YOBFormat, theYOBFormat)
   OB_STATIC_PLUGIN(ZINDOFormat, theZINDOFormat)
@@ -540,10 +528,7 @@ public:
   // operations
   OB_STATIC_PLUGIN(OpAddInIndex, theOpAddInIndex)
   OB_STATIC_PLUGIN(OpAddPolarH, theOpAddPolarH)
-  OB_STATIC_PLUGIN(OpAddNonPolarH, theOpAddNonPolarH)
   OB_STATIC_PLUGIN(OpCanonical, theOpCanonical)
-  OB_STATIC_PLUGIN(OpDelPolarH, theOpDelPolarH)
-  OB_STATIC_PLUGIN(OpDelNonPolarH, theOpDelNonPolarH)
   OB_STATIC_PLUGIN(OpFillUC, theOpFillUC)
   OB_STATIC_PLUGIN(OpEnergy, theOpEnergy)
   OB_STATIC_PLUGIN(OpMinimize, theOpMinimize)

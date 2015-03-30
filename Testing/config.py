@@ -4,7 +4,7 @@ Mainly folder paths
 """
 
 # Path for csm or CSM.EXE
-CSM_PATH = '../bin/csm'
+CSM_PATH = r'D:\Chelem\CSM\CSM\msvc\release\csm.exe'
 
 # Path for all the test subfolders
 TEST_PATH = r'../test_cases'

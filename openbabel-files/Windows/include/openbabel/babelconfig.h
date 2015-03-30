@@ -1,17 +1,17 @@
 /* src/config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Where the data files are located */
-#define BABEL_DATADIR "C:/Developments/openbabel-dev/src/windows-vc2008/install/share/openbabel"
+#define BABEL_DATADIR "D:/Developments/openbabel-2.3.2/windows-vc2010/install/share/openbabel"
 
 /* The version of Open Babel */
-#define BABEL_VERSION "2.3.90"
+#define BABEL_VERSION "2.3.2"
 
 /* Version check macro
    Can be used like #if (OB_VERSION >= OB_VERSION_CHECK(2, 2, 99)) */
 #define OB_VERSION_CHECK(major, minor, patch) ((major<<16)|(minor<<8)|(patch))
 
 /* OB_VERSION is (major << 16) + (minor << 8) + patch */
-#define OB_VERSION OB_VERSION_CHECK(2, 3, 90)
+#define OB_VERSION OB_VERSION_CHECK(2, 3, 2)
 
 /* The file extension used for shared modules */
 #define MODULE_EXTENSION ".obf"
@@ -109,8 +109,6 @@
 
  #include <crtdbg.h>
 
-#include <algorithm>
-
  #ifdef _DEBUG
  #define DEBUG_NEW new(_NORMAL_BLOCK, THIS_FILE, __LINE__)
  #else
@@ -133,7 +131,7 @@
 #define HAVE_CLOCK_T 1
 
 /* have symbol rint */
-#define HAVE_RINT 1
+/* #undef HAVE_RINT */
 
 /* have symbol snprintf */
 /* #undef HAVE_SNPRINTF */
