@@ -10,9 +10,13 @@ using namespace std;
 
 extern int main(int argc, char *argv[]); // Defined in mainRot.cpp
 
-int RunCSM(int argc, char *argv[])
+int RunCSM(const vector<string> args)
 {
-	return main(argc, argv);
+	vector<char *> argv;
+	for (vector<string>::const_iterator it = args.begin(); it != args.end(); it++)
+		argv.push_back((char *)it->c_str());
+
+	return main((int)argv.size(), &argv[0]);
 }
 
 int SayHello()

@@ -1,7 +1,7 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 
-# Wrapper of the cplusplus library
+# CPP_wrapper of the cplusplus library
 
 cdef extern from "interface.h":
     void HelloWorld()

@@ -39,9 +39,10 @@ include_directories(${OpenBabel_DIR}/include)
 include_directories(${BASE_DIR}/include)
 
 # Boost
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.54 REQUIRED log log_setup system thread filesystem date_time)
 include_directories(${Boost_INCLUDE_DIRS})
-add_definitions(-DBOOST_ALL_DYN_LINK)
+# add_definitions(-DBOOST_ALL_DYN_LINK)
 add_definitions(-DBOOST_CHRONO_HEADER_ONLY) # See here http://stackoverflow.com/a/13824645/871910
 
 # CSM Specific flags
