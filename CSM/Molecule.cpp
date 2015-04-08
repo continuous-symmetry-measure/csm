@@ -30,7 +30,6 @@ using namespace std;
 
 const int DIM = 3;
 const double MINDOOUBLE = 1e-8;
-const int LINE_BUFFER_SIZE = 1000;  /* maximal length of line of input */
 const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking similarity */
 
 // ************************************************************
@@ -40,7 +39,7 @@ const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking
 /*
  * allocates memory for the molecule structure
  */
-Molecule::Molecule(int size) : _mass(size, 1.0), _valency(size, 0), _similar(size)
+Molecule::Molecule(int size) : _valency(size, 0), _similar(size), _mass(size, 1.0)
 {
 	int i;
     _size = size;

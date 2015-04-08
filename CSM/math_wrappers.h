@@ -16,7 +16,7 @@
 #include <complex>
 
 /* Returns the root of the polynomial passed in coefficients. */
-std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coefficients);
+std::vector<std::complex<double> > FindPolyRoots(const std::vector<double>& coefficients);
 
 /*
  * An eigenvalue, eigenvector pair.

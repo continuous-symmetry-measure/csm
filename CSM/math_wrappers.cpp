@@ -26,7 +26,7 @@ extern "C" {
  *
  * This function delegates the calculations to rpoly.c
  */
-std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coefficients)
+std::vector<std::complex<double> > FindPolyRoots(const std::vector<double>& coefficients)
 {
 	// Prepare all the rpoly arguments
 	// Allocate all the necessary memory manually, and copy the coefficients, since rpoly
@@ -43,7 +43,7 @@ std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coeff
 		
 	delete[] coeffs;
 
-	std::vector<std::complex<double>> roots;
+	std::vector<std::complex<double> > roots;
 	for (int i = 0; i < highest_degree; i++)
 		roots.push_back(std::complex<double>(zeror[i], zeroi[i]));
 

@@ -161,7 +161,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	LOG(debug) << matrix[1][0] << " " << matrix[1][1] << " " << matrix[1][2];
 	LOG(debug) << matrix[2][0] << " " << matrix[2][1] << " " << matrix[2][2];
 
-	auto eigens = GetEigens(matrix);
+	vector<EigenResult> eigens = GetEigens(matrix);
 
 	// compute square of scalar multiplications of eigen vectors with b
 	for (i = 0; i < 3; i++) {
@@ -220,7 +220,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	// solve polynomial and find maximum eigenvalue and eigen vec
 	LOG(debug) << "Coefficients: " << coeffs[0] << ", " << coeffs[1] << ", " << coeffs[2] << ", " << coeffs[3] << ", " << coeffs[4] << ", " << coeffs[5] << ", " << coeffs[6];
-	auto roots = FindPolyRoots(coeffs);
+	vector<complex<double> > roots = FindPolyRoots(coeffs);
 	// rpoly(coeffs, 6, rtr, rti);
 
 	LOG(debug) << "rtr: " << roots[0] << " " << roots[1] << " " << roots[2] << " " << roots[3] << " " << roots[4] << " " << roots[5];
@@ -369,7 +369,6 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 	double rotaionMatrix[3][3];
 	double tmpMatrix[3][3] = { { 0.0, -dir[2], dir[1] }, { dir[2], 0.0, -dir[0] }, { -dir[1], dir[0], 0.0 } };
 	double angle;
-	double res = 0.0;
 
 	double tempCSM = 0.0;
 
@@ -1153,7 +1152,7 @@ void lineFit(double **points, int nPoints, double **dirs, int *outliers) {
 		}
 	}
 
-	auto eigens = GetEigens(matrix);
+	vector<EigenResult> eigens = GetEigens(matrix);
 
 	// We just try the three lines?...	
 	for (i = 0; i < 3; i++) {
@@ -1203,7 +1202,7 @@ void planeFit(double **points, int nPoints, double **dirs, int* outliers) {
 	}
 
 	// compute the matrix's eigenvalues and eigenvectors.
-	auto eigens = GetEigens(matrix);
+	vector<EigenResult> eigens = GetEigens(matrix);
 
 	// We just try the three planes...	
 	for (i = 0; i < 3; i++) {
