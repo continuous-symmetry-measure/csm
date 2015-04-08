@@ -8,6 +8,7 @@
 #include "options.h"
 #include "logging.h"
 #include <cstring>
+#include <stdio.h>
 
 using namespace std;
 
