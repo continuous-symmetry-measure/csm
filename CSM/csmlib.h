@@ -11,6 +11,9 @@
 #ifndef CSMLIB_H
 #define CSMLIB_H
 
+#include <vector>
+#include <string>
+
 // Cython works much better with a C interface, use it
 
 #ifdef __cplusplus
@@ -18,7 +21,7 @@ extern "C"
 {
 #endif
 	// Runs the entire CSM application
-	int RunCSM(int argc, char *argv[]);
+	int RunCSM(const std::vector<std::string> args);
 	int SayHello();
 #ifdef __cplusplus
 }

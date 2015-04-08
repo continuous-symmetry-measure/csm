@@ -1,7 +1,7 @@
 __author__ = 'zmbq'
 
+import sys
 cimport library
-
 
 def HelloWorld():
     library.HelloWorld()
