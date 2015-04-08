@@ -67,6 +67,9 @@ set(SOURCES
 # Library
 add_library(csmlib STATIC ${SOURCES} csmlib.cpp csmlib.h)
 set_target_properties(csmlib PROPERTIES LINKER_LANGUAGE CXX)
+if(UNIX)
+  target_compile_options(csmlib PRIVATE -fPIC)
+endif()
 
 # Executable
 add_executable(csm ${SOURCES})
