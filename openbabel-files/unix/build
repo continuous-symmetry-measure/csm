@@ -4,12 +4,23 @@ OPENBABEL_DIR=$BASE_DIR/src
 BUILD_DIR=$OPENBABEL_DIR/build
 INSTALL_DIR=`pwd`
 
+if [[ "$OSTYPE"=="darwin"* ]]; then
+	BABEL_VERSION=2.9.0
+else
+	BABEL_VERSION=2.3.2
+fi
+
 if [ ! -d "$OPENBABEL_DIR" ]; then
-    echo Getting OpenBabel 2.3.2
-    wget http://downloads.sourceforge.net/project/openbabel/openbabel/2.3.2/openbabel-2.3.2.tar.gz
-    tar xvf openbabel-2.3.2.tar.gz
-    rm openbabel-2.3.2.tar.gz
-    mv openbabel-2.3.2 $OPENBABEL_DIR
+	if [[ "$BABEL_VERSION" == "2.9.0" ]]; then
+		echo Cloning the OpenBabel repository
+		git clone https://github.com/openbabel/openbabel.git $OPENBABEL_DIR
+	else
+	    echo Getting OpenBabel $BABEL_VERSION
+	    wget http://downloads.sourceforge.net/project/openbabel/openbabel/$BABEL_VERSION/openbabel-$BABEL_VERSION.tar.gz
+	    tar xvf openbabel-$BABEL_VERSION.tar.gz
+	    rm openbabel-$BABEL_VERSION.tar.gz
+	    mv openbabel-$BABEL_VERSION $OPENBABEL_DIR
+	fi
 fi
 
 if [ ! -d $BUILD_DIR ]; then
@@ -18,8 +29,7 @@ fi
 
 cd $BUILD_DIR
 echo Running CMAKE
-export MACOSX_DEPLOYMENT_TARGET=10.8   # For OS X Mavericks and above
-cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DOB_MODULE_PATH=$INSTALL_DIR/lib/openbabel/2.3.2
+cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DOB_MODULE_PATH=$INSTALL_DIR/lib/openbabel/$BABEL_VERSION
 echo Compiling OpenBabel
 make -j4
 echo Installing OpenBabel
