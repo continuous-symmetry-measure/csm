@@ -1,5 +1,5 @@
 project(csm)
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 2.8)
 
 set (BASE_DIR ${PROJECT_SOURCE_DIR}/../)
 
