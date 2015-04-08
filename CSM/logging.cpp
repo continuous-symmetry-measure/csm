@@ -6,26 +6,6 @@
 
 #include "logging.h"
 
-#ifdef __APPLE__
-
-#include <iostream>
-#include <string>
-using namespace std;
-
-ofstream null_output;
-
-void set_file_logging(std::string path)
-{
-    // No file logging
-}
-
-void init_logging()
-{
-    null_output.open("/dev/null");
-}
-
-#else
-
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
@@ -63,5 +43,3 @@ void set_file_logging(std::string path)
 		keywords::format = "[%TimeStamp%]  [%Severity%]: %Message%");
 	set_debug_logging(true);
 }
-
-#endif
