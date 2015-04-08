@@ -50,6 +50,9 @@ set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_ORDER2_PERMUTER")
 if(UNIX)
 	set (EXTRA_LIBS ${EXTRA_LIBS} pthread)
 endif()
+if(APPLE)
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+endif()
 
 set(SOURCES
 	Molecule.cpp parseFunctions.cpp permuter.cpp groupPermuter.cpp elements.cpp 
