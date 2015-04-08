@@ -11,9 +11,7 @@ setup(
             ["cpluspluslib.pyx"],
             language='c++',
             include_dirs=['../cpluspluslib'],
-            library_dirs=['../cpluspluslib/x64/debug'],
+            library_dirs=['../cpluspluslib/cmake'],
             libraries=['cpluspluslib'],
-            extra_compile_args=["/Zi", "/Od"],
-            extra_link_args=["/debug"],
         )])
 )
