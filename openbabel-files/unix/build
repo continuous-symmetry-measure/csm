@@ -18,6 +18,7 @@ fi
 
 cd $BUILD_DIR
 echo Running CMAKE
+export MACOSX_DEPLOYMENT_TARGET=10.8   # For OS X Mavericks and above
 cmake .. -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DOB_MODULE_PATH=$INSTALL_DIR/lib/openbabel/2.3.2
 echo Compiling OpenBabel
 make -j4
