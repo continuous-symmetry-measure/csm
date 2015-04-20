@@ -44,10 +44,15 @@ void csm_options::usage(const std::string op)
 	printf("-help - print this help file\n");
 }
 
-csm_options::csm_options() { }
+csm_options::csm_options() 
+{ 
+	init_defaults();
+}
 
 csm_options::csm_options(int argc, char *argv[])
 {
+	init_defaults();
+
 	char innerOpName[100];
 	// check number of arguments
 	if (argc < 4){
@@ -223,4 +228,10 @@ csm_options::csm_options(int argc, char *argv[])
 		useFormat = true;
 		format = "PDB";
 	}
+}
+
+void csm_options::init_defaults()
+{
+	A = 2.0;
+	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
 }

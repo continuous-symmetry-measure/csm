@@ -59,6 +59,7 @@ struct csm_options
 
 private:
 	void usage(const std::string op);
+	void init_defaults();
 };
 
 extern csm_options options;
