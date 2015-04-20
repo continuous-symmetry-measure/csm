@@ -8,8 +8,6 @@
 #include "math_utils.h"
 #include "options.h"
 
-using namespace csm_options;
-
 /*
 * Normalizes the position of atoms of the molecule
 * returns one [true] if successful, zero[false] otherwise
@@ -22,7 +20,7 @@ void normalize(double **coords, Molecule *m)
 
 	x_avg = y_avg = z_avg = 0.0;
 
-	if (!keepCenter) {
+	if (!options.keepCenter) {
 		double mass_sum = 0;
 		for (i = 0; i< m->size(); i++){
 			x_avg += coords[i][0] * m->mass(i);

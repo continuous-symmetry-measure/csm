@@ -10,51 +10,57 @@
 
 #include <string>
 
-namespace csm_options
+typedef enum {
+	CN,
+	SN,
+	CS,
+	CI,
+	CH
+} OperationType;
+
+struct csm_options
 {
-	typedef enum {
-		CN,
-		SN,
-		CS,
-		CI,
-		CH
-	} OperationType;
+	std::string opName;
+	bool printNorm;
+	bool printLocal;
+	bool writeOpenu;
+	std::string format;
 
-	extern char opName[100];
-	extern bool printNorm;
-	extern bool printLocal;
-	extern bool writeOpenu;
-	extern std::string format;
-
-	extern bool ignoreHy;
-	extern bool removeHy;
-	extern bool ignoreSym;
-	extern bool useFormat;
-	extern OperationType type;
-	extern int opOrder;
-	extern bool useperm;
-	extern bool useDir;
-	extern bool findPerm;
-	extern bool useMass;
-	extern bool limitRun;
-	extern bool babelBond;
-	extern bool timeOnly;
-	extern int sn_max;
-	extern bool detectOutliers;
-	extern double A;
-	extern bool babelTest;
-	extern bool keepCenter;
-	extern std::string logFile;
+	bool ignoreHy;
+	bool removeHy;
+	bool ignoreSym;
+	bool useFormat;
+	OperationType type;
+	int opOrder;
+	bool useperm;
+	bool useDir;
+	bool findPerm;
+	bool useMass;
+	bool limitRun;
+	bool babelBond;
+	bool timeOnly;
+	int sn_max;
+	bool detectOutliers;
+	double A;
+	bool babelTest;
+	bool keepCenter;
+	std::string logFile;
 
 	// file pointers
-	extern FILE* inFile;
-	extern FILE* outFile;
-	extern FILE* permfile;
-	extern FILE* dirfile;
-	extern char *inFileName;
-	extern char *outFileName;
+	FILE* inFile;
+	FILE* outFile;
+	FILE* permfile;
+	FILE* dirfile;
+	std::string inFileName;
+	std::string outFileName;
 
+	csm_options();
+	csm_options(int argc, char *argv[]);
+
+private:
 	void usage(const std::string op);
-	void parseInput(int argc, char *argv[]);
-}
+};
+
+extern csm_options options;
+
 #endif

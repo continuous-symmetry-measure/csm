@@ -10,13 +10,13 @@ using namespace std;
 
 extern int main(int argc, char *argv[]); // Defined in mainRot.cpp
 
-int RunCSM(const vector<string> args)
+int RunCSM(csm_options options)
 {
-	vector<char *> argv;
-	for (vector<string>::const_iterator it = args.begin(); it != args.end(); it++)
-		argv.push_back((char *)it->c_str());
+	cout << "RunCSM called with options" << endl;
+	cout << "usePerm is " << options.useperm << endl;
+	cout << "Output filename is " << options.outFileName;
 
-	return main((int)argv.size(), &argv[0]);
+	return 1;
 }
 
 int SayHello()

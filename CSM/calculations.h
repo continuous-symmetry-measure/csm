@@ -20,16 +20,16 @@
 #define ZERO_IM_PART_MAX (1e-3)
 #define MIN_GROUPS_FOR_OUTLIERS 10
 
-void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, csm_options::OperationType type);
-void runSinglePerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, csm_options::OperationType type);
-void findBestPerm(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, csm_options::OperationType type);
-void findBestPermUsingDir(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, csm_options::OperationType type);
-void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, csm_options::OperationType type);
-void estimatePerm(Molecule* m, int *perm, double *dir, csm_options::OperationType type);
+void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
+void runSinglePerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type);
+void findBestPerm(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
+void findBestPermUsingDir(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
+void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationType type);
+void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type);
 void lineFit(double **points, int nPoints, double **dirs, int* outlies);
 void planeFit(double **points, int nPoints, double **dirs, int *outliers);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
-double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, csm_options::OperationType type, double dMin);
-double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, csm_options::OperationType type);
+double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
+double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
 
 #endif

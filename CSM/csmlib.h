@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <string>
+#include "options.h"
 
 // Cython works much better with a C interface, use it
 
@@ -21,7 +22,8 @@ extern "C"
 {
 #endif
 	// Runs the entire CSM application
-	int RunCSM(const std::vector<std::string> args);
+	// int RunCSM(const std::vector<std::string> args);
+	int RunCSM(csm_options options);
 	int SayHello();
 #ifdef __cplusplus
 }

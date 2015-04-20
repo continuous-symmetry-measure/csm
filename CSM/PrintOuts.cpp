@@ -12,8 +12,6 @@
 #include <string>
 #include "options.h"
 
-using namespace csm_options;
-
 /*
 * prints the Molecule position, outcome position, csm, dMin and directional cosines to output file
 */
@@ -21,8 +19,8 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 {
 
 	int i, j;
-	printf("%s: %.6lf\n", opName, fabs(csm));
-	fprintf(out, "%s: %.4lf\n", opName, fabs(csm));
+	printf("%s: %.6lf\n", options.opName.c_str(), fabs(csm));
+	fprintf(out, "%s: %.4lf\n", options.opName.c_str(), fabs(csm));
 	fprintf(out, "SCALING FACTOR: %7lf\n", dMin);
 
 	fprintf(out, "\n INITIAL STRUCTURE COORDINATES\n%i\n", m->size());
@@ -58,14 +56,14 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 	fprintf(out, "\n DIRECTIONAL COSINES:\n\n");
 	fprintf(out, "%lf %lf %lf\n", dir[0], dir[1], dir[2]);
 
-	if (printNorm) {
+	if (options.printNorm) {
 		printf("NORMALIZATION FACTOR: %7lf\n", m->norm());
 		printf("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
 		printf("DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
 		printf("NUMBER OF EQUIVALENCE GROUPS: %d\n", m->groupNum());
 	}
 
-	if (printLocal) {
+	if (options.printLocal) {
 		double sum = 0;
 		fprintf(out, "\nLocal CSM: \n");
 		for (i = 0; i < m->size(); i++) {
@@ -132,12 +130,12 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 	// print results to screen
 
 
-	if (writeOpenu)
+	if (options.writeOpenu)
 		printf("SV* %.4lf *SV\n", fabs(csm));
 	else
-		printf("%s: %.4lf\n", opName, fabs(csm));
+		printf("%s: %.4lf\n", options.opName.c_str(), fabs(csm));
 
-	if (printNorm) {
+	if (options.printNorm) {
 		printf("NORMALIZATION FACTOR: %7lf\n", m->norm());
 		printf("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
 		printf("DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
@@ -149,10 +147,10 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 /*
 * prints in PDB format the Molecule position, outcome position, csm, dMin and directional cosines to output file
 */
-void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, char *fname, double* localCSM) 
+void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, const char *fname, double* localCSM) 
 {
 
-	fprintf(out, "%s: %.4lf\n", opName, fabs(csm));
+	fprintf(out, "%s: %.4lf\n", options.opName.c_str(), fabs(csm));
 	fprintf(out, "SCALING FACTOR: %7lf\n", dMin);
 
 	// TODO - should we print the centered molecule, or the original one (and, accordingly, the symmetric struct)
@@ -161,32 +159,32 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 
 	updateCoordinates(mol, m->pos());
 
-	writeMolecule(mol, format, out, fname);
+	writeMolecule(mol, options.format, out, fname);
 
 	updateCoordinates(mol, outAtoms);
 
 	fprintf(out, "\n RESULTING STRUCTURE COORDINATES\n");
 
-	writeMolecule(mol, format, out, fname);
+	writeMolecule(mol, options.format, out, fname);
 
 	// print results to screen
 
 	fprintf(out, "\n DIRECTIONAL COSINES:\n\n");
 	fprintf(out, "%lf %lf %lf\n", dir[0], dir[1], dir[2]);
 
-	if (writeOpenu)
+	if (options.writeOpenu)
 		printf("SV* %.4lf *SV\n", fabs(csm));
 	else
-		printf("%s: %.4lf\n", opName, fabs(csm));
+		printf("%s: %.4lf\n", options.opName.c_str(), fabs(csm));
 
-	if (printNorm) {
+	if (options.printNorm) {
 		printf("NORMALIZATION FACTOR: %7lf\n", m->norm());
 		printf("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
 		printf("DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
 		printf("NUMBER OF EQUIVALENCE GROUPS: %d\n", m->groupNum());
 	}
 
-	if (printLocal) {
+	if (options.printLocal) {
 		double sum = 0;
 		int i;
 		fprintf(out, "\nLocal CSM: \n");

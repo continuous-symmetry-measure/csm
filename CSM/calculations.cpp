@@ -21,7 +21,6 @@
 #include "math_utils.h"
 #include "logging.h"
 
-using namespace csm_options;
 using namespace std;
 
 struct distRecord {
@@ -140,8 +139,8 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}
 
 	// compute matrices according to current perm and its powers (the identity does not contribute anyway)
-	for (i = 1; i < opOrder; i++) {
-		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / opOrder);
+	for (i = 1; i < options.opOrder; i++) {
+		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / options.opOrder);
 		// The i'th power of the permutation
 		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
@@ -233,7 +232,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	LOG(debug) << setprecision(6) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
 	scl = 0.0;
-	if ((isZeroAngle) || (opOrder == 2)) {
+	if ((isZeroAngle) || (options.opOrder == 2)) {
 		// If we are in zero angle case, we should pick the direction matching maxval
 		double minDist = MAXDOUBLE;
 		int minarg = 0;
@@ -271,10 +270,10 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 
 	// compute CSM	
 	csm = 0.0;
-	for (i = 0; i < opOrder; i++) {
+	for (i = 0; i < options.opOrder; i++) {
 		// This can be more efficient - save results of matrix computation
 		if (i != 0) {
-			angle = isZeroAngle ? 0.0 : ((2 * M_PI * i) / opOrder);
+			angle = isZeroAngle ? 0.0 : ((2 * M_PI * i) / options.opOrder);
 			dists = 0.0;
 			for (j = 0; j < m->size(); j++) {
 				// i'th power of permutation
@@ -297,7 +296,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	LOG(debug) << setprecision(6) << fixed << "csm=" << csm << " maxval=" << maxval << " scl=" << scl;
 	LOG(debug) << setprecision(6) << fixed << "dir: " << dir[0] << " " << dir[1] << " " << dir[2];
 	csm += (maxval - scl) / 2;
-	csm = fabs(100 * (1.0 - csm / opOrder));
+	csm = fabs(100 * (1.0 - csm / options.opOrder));
 	free(curPerm);
 
 	LOG(debug) << setprecision(6) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
@@ -323,8 +322,8 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 		}
 	}
 
-	for (i = 1; i < opOrder; i++) {
-		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / opOrder);
+	for (i = 1; i < options.opOrder; i++) {
+		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / options.opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
 		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
@@ -350,7 +349,7 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 
 	for (j = 0; j < m->size(); j++) {
 		for (k = 0; k < 3; k++) {
-			outAtoms[j][k] /= opOrder;
+			outAtoms[j][k] /= options.opOrder;
 			outAtoms[j][k] *= dMin;
 			res += SQR(outAtoms[j][k]);
 		}
@@ -379,8 +378,8 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 		localCSM[i] = 0;
 	}
 
-	for (i = 1; i < opOrder; i++) {
-		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / opOrder);
+	for (i = 1; i < options.opOrder; i++) {
+		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / options.opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
 		for (j = 0; j < m->size(); j++) {
 			curPerm[j] = perm[curPerm[j]];
@@ -410,9 +409,9 @@ double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, Op
 	}
 
 	for (j = 0; j < m->size(); j++) {
-		localCSM[j] *= 100 / (2 * opOrder);
+		localCSM[j] *= 100 / (2 * options.opOrder);
 	}
-	tempCSM *= 100.0 / (2 * opOrder);
+	tempCSM *= 100.0 / (2 * options.opOrder);
 
 	return tempCSM;
 }
@@ -458,15 +457,15 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	}
 
 	// create permuter
-	if (type == SN && opOrder > 2) {
+	if (type == SN && options.opOrder > 2) {
 		addGroupsOfTwo = 1;
 	}
 	else {
 		addGroupsOfTwo = 0;
 	}
-	gp = new GroupPermuter(m->groupNum(), groupSizes, m->size(), opOrder, addGroupsOfTwo);
+	gp = new GroupPermuter(m->groupNum(), groupSizes, m->size(), options.opOrder, addGroupsOfTwo);
 	if (!gp){
-		if (writeOpenu) {
+		if (options.writeOpenu) {
 			printf("ERR* Failed to create groupPermuter *ERR\n");
 		}
 		LOG(fatal) << "Failed to create groupPermuter";
@@ -495,15 +494,15 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	// failed to find value for any permutation
 
 	if (*csm == MAXDOUBLE){
-		if (writeOpenu) {
-			printf("ERR* Failed to calculate a csm value for %s *ERR\n", opName);
+		if (options.writeOpenu) {
+			printf("ERR* Failed to calculate a csm value for %s *ERR\n", options.opName.c_str());
 		}
-		LOG(fatal) << "Failed to calculate a csm value for " << opName;
+		LOG(fatal) << "Failed to calculate a csm value for " << options.opName;
 		exit(1);
 	}
 
 	// which is DMIN?
-	*dMin = (1.0 - (*csm / 100 * opOrder / (opOrder - 1)));
+	*dMin = (1.0 - (*csm / 100 * options.opOrder / (options.opOrder - 1)));
 	createSymmetricStructure(m, outAtoms, optimalPerm, dir, type, *dMin);
 
 
@@ -522,7 +521,7 @@ void runSinglePerm(Molecule* m, double** outAtoms, int *perm, double* csm, doubl
 	*csm = calcRefPlane(m, perm, dir, type);
 
 	// which is DMIN?
-	*dMin = (1.0 - (*csm / 100 * opOrder / (opOrder - 1)));
+	*dMin = (1.0 - (*csm / 100 * options.opOrder / (options.opOrder - 1)));
 	createSymmetricStructure(m, outAtoms, perm, dir, type, *dMin);
 }
 
@@ -540,7 +539,7 @@ void findBestPerm(Molecule* m, double** outAtoms, int* perm, double* csm, double
 	int *temp = (int*)malloc(sizeof(int) * m->size());
 	int i = 0;
 	// The algorithm aims to find the best perm which can then be used for the analytic solution	
-	if ((type == CI) || (type == SN && opOrder == 2)) {
+	if ((type == CI) || (type == SN && options.opOrder == 2)) {
 		// For inversion - simply find for each orbit the best matching - the closest after the operation.	
 		// Do nothing - no need to find axis. yay.
 		dir[0] = 1.0; dir[1] = 0.0; dir[2] = 0.0;
@@ -813,7 +812,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 	}
 
 	// if there are not enough groups for reliable outlier detection - don't invoke it.
-	if (detectOutliers && m->groupNum() >= MIN_GROUPS_FOR_OUTLIERS) {
+	if (options.detectOutliers && m->groupNum() >= MIN_GROUPS_FOR_OUTLIERS) {
 		for (j = 0; j < 3; j++) {
 			double **tempDir;
 
@@ -840,7 +839,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 			}
 			median = findMedian(dists, m->groupNum());
 			for (i = 0; i < m->groupNum(); i++) {
-				if (dists[i] / median > A || dists[i] / median > A) {
+				if (dists[i] / median > options.A || dists[i] / median > options.A) {
 					outliers[i] = true;
 				}
 			}
@@ -940,7 +939,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 	int tableSize = 0;
 	int orbitDone, orbitSize, orbitStart;
 	int left;
-	angle = isZeroAngle ? 0.0 : (2 * M_PI / opOrder);
+	angle = isZeroAngle ? 0.0 : (2 * M_PI / options.opOrder);
 
 	LOG(debug) << "estimatePerm called";
 
@@ -1011,7 +1010,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 		left = groupSize;
 		// Go over the sorted group, and set the permutation
 		for (j = 0; j < tableSize && left > 0; j++) {
-			int enoughForFullOrbit = left >= opOrder;
+			int enoughForFullOrbit = left >= options.opOrder;
 			int row = distances[j].row;
 			int col = distances[j].col;
 
@@ -1030,7 +1029,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				}
 				break;
 			}
-			if (opOrder == 2) {
+			if (options.opOrder == 2) {
 				// Special treatment - only size 1 and two orbits are allowed 
 				// If both elements are not yet set, use the element.			
 				if (perm[row] == -1 && perm[col] == -1)  {
@@ -1070,7 +1069,7 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				orbitSize = 1;
 
 				while (!orbitDone) {
-					if (orbitSize == opOrder - 1) {
+					if (orbitSize == options.opOrder - 1) {
 						LOG(debug) << "Closing orbit";
 						row = col;
 						col = orbitStart;

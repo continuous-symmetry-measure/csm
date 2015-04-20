@@ -26,7 +26,6 @@
 #include "math_utils.h"
 
 using namespace std;
-using namespace csm_options;
 
 #include "dvector.h"
 #include "dmatrix.h"
@@ -37,9 +36,12 @@ using namespace csm_options;
 
 #define CSMFORMAT "CSM"
 
+csm_options options;
+
 void readPerm(FILE* permfile, int* perm, int size);
 void readDir(FILE* dirFile, double* dir);
 
+int mainWithOptions(); // Runs the main code after the options have been set
 
 /*
  * reutnrs n!
@@ -90,20 +92,20 @@ double numPermutations(Molecule *m, int operationOrder, OperationType t) {
 }
 
 double totalNumPermutations(Molecule *m) {
-	if (type != CH) { 
-		return numPermutations(m, opOrder, type);	
+	if (options.type != CH) {
+		return numPermutations(m, options.opOrder, options.type);
 	} else {
 		// CS
 		int i;
 		double numPerms = numPermutations(m, 2, SN);
-		for (i = 2; i <= sn_max; i+=2) {
+		for (i = 2; i <= options.sn_max; i += 2) {
 			numPerms += numPermutations(m, i, SN);
 		}	
 		return numPerms;		
 	}
 }
 
-char *getExtension(char *fname) {
+const char *getExtension(const char *fname) {
 	return strrchr(fname,'.') + 1;
 }
 
@@ -115,24 +117,29 @@ char *getExtension(char *fname) {
 * main funciton - check valid parameters, parse molecule and call chirality Operation
 */
 int main(int argc, char *argv[]){
-
-	int i;
-	double csm, dMin;
-	double **outAtoms;                 // output atom coordinates
-	double dir[3] = {0.0, 0.0, 0.0};   // directional cosines
-	int *perm = NULL;	
-	double *localCSM = NULL;		 
-
 	init_logging();
 
 	LOG(info) << "CSM starting up";
 
 	// init options
-	parseInput(argc,argv);
-	if (logFile != "")
-		set_file_logging(logFile);
+	options = csm_options(argc, argv);
+	int rc = mainWithOptions();
+	return rc;
+}
 
-	if ((findPerm && useperm) || (findPerm && useDir) || (useDir && useperm)) { 
+int mainWithOptions()
+{
+	int i;
+	double csm, dMin;
+	double **outAtoms;                 // output atom coordinates
+	double dir[3] = { 0.0, 0.0, 0.0 };   // directional cosines
+	int *perm = NULL;
+	double *localCSM = NULL;
+
+	if (options.logFile != "")
+		set_file_logging(options.logFile);
+
+	if ((options.findPerm && options.useperm) || (options.findPerm && options.useDir) || (options.useDir && options.useperm)) {
 		LOG(fatal) << "-findperm, -useperm and -usedir are mutually exclusive";
 		exit(1);
 	} 
@@ -143,43 +150,43 @@ int main(int argc, char *argv[]){
 	OperationType chMinType = CS;
 	int chMinOrder = 2;
 	
-	if (useFormat) {
+	if (options.useFormat) {
 		// If a specific format is used, read molecule using that format
-		if (boost::iequals(format, CSMFORMAT)) // Case-insensitive comparison
+		if (boost::iequals(options.format, CSMFORMAT)) // Case-insensitive comparison
 		{
-			m = Molecule::create(inFile,stdout,ignoreSym && !useperm);
+			m = Molecule::create(options.inFile, stdout, options.ignoreSym && !options.useperm);
 			if (m==NULL) exit(1);
-			if (useMass)
+			if (options.useMass)
 			{
 				m->fillAtomicMasses();
 			}
 		} else {
-			mol = readMolecule (inFileName, format, babelBond);
-			m = Molecule::createFromOBMol(mol, ignoreSym && !useperm, useMass);	
+			mol = readMolecule(options.inFileName.c_str(), options.format, options.babelBond);
+			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
 		}
    	} else {
-		format = getExtension(inFileName);
+		options.format = getExtension(options.inFileName.c_str());
 
 		// if the extension is CSM - use csm
-		if (boost::iequals(format, CSMFORMAT)) {
-			m = Molecule::create(inFile,stdout,ignoreSym && !useperm);
+		if (boost::iequals(options.format, CSMFORMAT)) {
+			m = Molecule::create(options.inFile, stdout, options.ignoreSym && !options.useperm);
 			if (m==NULL) exit(1);
-			if (useMass)
+			if (options.useMass)
 			{
 				m->fillAtomicMasses();
 			}
 		} else {
 			
-			mol = readMolecule (inFileName, "", babelBond);
-			m = Molecule::createFromOBMol(mol, ignoreSym && !useperm, useMass);						
+			mol = readMolecule(options.inFileName.c_str(), "", options.babelBond);
+			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
 		}
    	}
 
-	if (babelTest) // Mol is ok - return 0
+	if (options.babelTest) // Mol is ok - return 0
 		return 0;
 
 	if (!m){
-		if (writeOpenu) {
+		if (options.writeOpenu) {
 			printf("ERR* Failed to read molecule from data file *ERR\n");
 		}
 		LOG(fatal) << "Failed to read molecule from data file";
@@ -187,10 +194,10 @@ int main(int argc, char *argv[]){
 	}
 
 	// strip unwanted atoms if needbe
-	if ((ignoreHy || removeHy) && !useperm){
+	if ((options.ignoreHy || options.removeHy) && !options.useperm){
 		char* removeList[] = {"H"," H"};
 		Molecule* n = NULL;
-		if (ignoreHy)
+		if (options.ignoreHy)
 			n = m->stripAtoms(removeList,2,false);
 		else //removeHy 
 			n = m->stripAtoms(removeList,2,true);		
@@ -199,7 +206,7 @@ int main(int argc, char *argv[]){
 		
 	
 		if (!n){
-			if (writeOpenu) {
+			if (options.writeOpenu) {
 				printf("ERR* Failed while trying to strip unwanted atoms *ERR\n");
 			}
 			LOG(fatal) << "Failed while trying to strip unwanted atoms";
@@ -210,8 +217,8 @@ int main(int argc, char *argv[]){
 		// continue as per usual
 	}
 
-	if (!findPerm) {
-		if (!useperm && !useDir) {
+	if (!options.findPerm) {
+		if (!options.useperm && !options.useDir) {
 			double time = 1.0*totalNumPermutations(m) / 3600 / APPROX_RUN_PER_SEC;
 			if (time != time) {
 				// time is NaN
@@ -223,7 +230,7 @@ int main(int argc, char *argv[]){
 			LOG(info) << "Using 1 permutation";
 			LOG(info) << "Run should be instantaneous";
 		} 
-		if (timeOnly) { return 0; };
+		if (options.timeOnly) { return 0; };
 	}
 
 	// allocate memory for outAtoms
@@ -234,32 +241,33 @@ int main(int argc, char *argv[]){
 	perm = (int *)malloc(sizeof(int) * m->size());
 
 	//normalize Molecule
-	if (!m->normalizeMolecule(keepCenter)){
-		if (writeOpenu) {
+	if (!m->normalizeMolecule(options.keepCenter)){
+		if (options.writeOpenu) {
 			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
 		}
 		LOG(fatal) << "Failed to normalize atom positions: dimension of set of points = zero";
 		exit(1);
 	}
  
-	if (useDir) readDir(dirfile,dir);
+	if (options.useDir) readDir(options.dirfile, dir);
 
-	if (useperm) {	
-		if (type == CH) {
+	if (options.useperm) {
+		if (options.type == CH) {
 			LOG(fatal) << "Chirality can't be given a permutation, run the specific csm operation instead";
 			exit(1);
 		}	
-		readPerm(permfile,perm, m->size());
-		runSinglePerm(m, outAtoms, perm, &csm, dir, &dMin, type);
+		readPerm(options.permfile, perm, m->size());
+		runSinglePerm(m, outAtoms, perm, &csm, dir, &dMin, options.type);
 	} else {
-		if (type != CH) { 
+		if (options.type != CH) {
 			// perform operation
-			if (useDir) {
-				findBestPermUsingDir(m, outAtoms, perm, &csm, dir, &dMin, type);				
-			} else if (findPerm) { 
-				findBestPerm(m, outAtoms, perm, &csm, dir, &dMin, type);				
+			if (options.useDir) {
+				findBestPermUsingDir(m, outAtoms, perm, &csm, dir, &dMin, options.type);
+			}
+			else if (options.findPerm) {
+				findBestPerm(m, outAtoms, perm, &csm, dir, &dMin, options.type);
 			} else {
-				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, type);			
+				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, options.type);
 			}
 		} else {
 			// chirality support 
@@ -274,21 +282,23 @@ int main(int argc, char *argv[]){
        
 			chPerm = (int *)malloc(sizeof(int) * m->size());
 			chMinType = CS;						
-			opOrder = 2;		
-			if (useDir) {
+			options.opOrder = 2;
+			if (options.useDir) {
 				findBestPermUsingDir(m, outAtoms, perm, &csm, dir, &dMin, CS);				
-			} else if (findPerm) { 
+			}
+			else if (options.findPerm) {
 				findBestPerm(m, outAtoms, perm, &csm, dir, &dMin, CS);				
 			} else { 
 				csmOperation(m, outAtoms, perm, &csm, dir, &dMin, CS);			
 			}
 
 			if (csm > MINDOUBLE) {							
-				for (i = 2; i <= sn_max; i+=2) {				
-					opOrder = i;
-					if (useDir) {
+				for (i = 2; i <= options.sn_max; i += 2) {
+					options.opOrder = i;
+					if (options.useDir) {
 						findBestPermUsingDir(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
-					} else if (findPerm) { 
+					}
+					else if (options.findPerm) {
 						findBestPerm(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
 					} else {
 						csmOperation(m, chOutAtoms, chPerm, &chCsm, chDir, &chdMin, SN);
@@ -296,7 +306,7 @@ int main(int argc, char *argv[]){
 					if (chCsm < csm) {
 						int j;
 						chMinType = SN;
-						chMinOrder = opOrder;
+						chMinOrder = options.opOrder;
 						csm = chCsm;
 						dMin = chdMin;
 						memcpy(dir, chDir, sizeof(double)* 3);
@@ -317,10 +327,11 @@ int main(int argc, char *argv[]){
 		}		
 	}
 
-	if (printLocal) {	
+	if (options.printLocal) {
 		localCSM = (double *)malloc(sizeof(double) * m->size());
-		if (type == CH) opOrder = chMinOrder;
-		computeLocalCSM(m,localCSM, perm, dir,  type != CH ? type : chMinType);
+		if (options.type == CH) 
+			options.opOrder = chMinOrder;
+		computeLocalCSM(m, localCSM, perm, dir, options.type != CH ? options.type : chMinType);
 	}
 
 	normalize(outAtoms, m);
@@ -335,36 +346,36 @@ int main(int argc, char *argv[]){
 		outAtoms[i][2] *= m->norm();
 	}	
 
-   	if (useFormat) {
+	if (options.useFormat) {
 		// If a specific format is used, read molecule using that format
-		if (boost::iequals(format, CSMFORMAT)) // Case insensitive comparison 
+		if (boost::iequals(options.format, CSMFORMAT)) // Case insensitive comparison 
 		{
-			printOutput(m, outAtoms, csm, dir, dMin, outFile, localCSM);
+			printOutput(m, outAtoms, csm, dir, dMin, options.outFile, localCSM);
 		} else {
-			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, outFile, outFileName, localCSM);
+			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, options.outFile, options.outFileName.c_str(), localCSM);
 		}
 	} else {
 		// if the extension is CSM - use csm
-		if (strcasecmp(getExtension(inFileName), CSMFORMAT) == 0) {
-			printOutput(m, outAtoms, csm, dir, dMin, outFile, localCSM);
+		if (strcasecmp(getExtension(options.inFileName.c_str()), CSMFORMAT) == 0) {
+			printOutput(m, outAtoms, csm, dir, dMin, options.outFile, localCSM);
 		} else {
-			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, outFile, outFileName, localCSM);
+			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, options.outFile, options.outFileName.c_str(), localCSM);
 		}
 	}
 
-	if (type == CH) {
+	if (options.type == CH) {
 		if (chMinType == CS) { 		
-			fprintf(outFile, "\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n");
+			fprintf(options.outFile, "\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n");
 		} else { 
-			fprintf(outFile, "\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n", chMinOrder);
+			fprintf(options.outFile, "\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n", chMinOrder);
 		}
 	}	
 
-	fprintf(outFile, "\n PERMUTATION:\n\n");
+	fprintf(options.outFile, "\n PERMUTATION:\n\n");
 	for (i = 0; i < m->size(); i++) {
-		fprintf(outFile, "%d ", perm[i] + 1);
+		fprintf(options.outFile, "%d ", perm[i] + 1);
 	}
-	fprintf(outFile,"\n");
+	fprintf(options.outFile, "\n");
 
 	// housekeeping
 	for (i=0;i<m->size();i++){
@@ -374,16 +385,16 @@ int main(int argc, char *argv[]){
 	delete m;
 	free(perm);
 
-	if (printLocal) free(localCSM);
+	if (options.printLocal) free(localCSM);
 
-	fclose(inFile);
-	fclose(outFile);
+	fclose(options.inFile);
+	fclose(options.outFile);
 
-	if (permfile != NULL)
-		fclose(permfile);
+	if (options.permfile != NULL)
+		fclose(options.permfile);
 
-	if (dirfile != NULL) 
-		fclose(dirfile);
+	if (options.dirfile != NULL)
+		fclose(options.dirfile);
 
 	return 0;
 }
@@ -405,7 +416,7 @@ void readPerm(FILE* permfile, int* perm, int size) {
 		int cur = -1;
 		int res = fscanf(permfile,"%d", &cur);
 		if (res != 1 || cur < 1 || cur > size || used[cur - 1]) {
-			if (writeOpenu) {
+			if (options.writeOpenu) {
 				printf("ERR* Invalid permutation *ERR\n");
 			}
 			LOG(fatal) << "Invalid permutation";

@@ -66,7 +66,7 @@ void updateCoordinates(OBMol& obmol, double **outAtoms) {
  * @param babelBond Should the convertor let openbabel choose bonding
  * @return The OBMol read from the file
  */
-OBMol readMolecule (char *filename, const std::string format, int babelBond) {
+OBMol readMolecule (const char *filename, const std::string format, int babelBond) {
 	OBMol mol;
 	OBConversion conv;		
 	if (format == "") {
@@ -101,7 +101,7 @@ OBMol readMolecule (char *filename, const std::string format, int babelBond) {
  * @param file The file to write output to
  * @param filename The file's name (for extension-finding purpose)
  */
-void writeMolecule(OBMol& mol, const std::string format, FILE* file, char *filename) {
+void writeMolecule(OBMol& mol, const std::string format, FILE* file, const char *filename) {
 	ostringstream os;
 	OBConversion conv;
 	if (format == "") {
