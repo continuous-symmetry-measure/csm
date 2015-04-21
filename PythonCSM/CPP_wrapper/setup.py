@@ -18,11 +18,11 @@ if sys.platform == 'win32':
     libraries = ['openbabel-2', 'csmlib']
 elif sys.platform in ['linux', 'linux2']:
     library_dirs = ['../../openbabel-files/unix/lib', '../../CSM/cmake']
-    libraries = ['openbabel', 'csmlib', 'boost_log-mt', 'boost_log_setup-mt', 'boost_system-mt', 'boost_thread-mt', 'boost_filesystem-mt', 'boost_date_time-mt', 'pthread'],
+    libraries = ['openbabel', 'csmlib', 'boost_log', 'boost_log_setup', 'boost_system', 'boost_thread', 'boost_filesystem', 'boost_date_time', 'pthread']
     extra_compile_args = ['-fPIC']
 elif sys.platform == 'darwin':
     library_dirs = ['../../openbabel-files/unix/lib', '../../CSM/cmake']
-    libraries = ['openbabel', 'csmlib', 'boost_log', 'boost_log_setup', 'boost_system', 'boost_thread', 'boost_filesystem', 'boost_date_time', 'pthread'],
+    libraries = ['openbabel', 'csmlib', 'boost_log-mt', 'boost_log_setup-mt', 'boost_system-mt', 'boost_thread-mt', 'boost_filesystem-mt', 'boost_date_time-mt', 'pthread']
 
 print("library_dirs=", library_dirs)
 print("libraries=", libraries)
