@@ -1,9 +1,10 @@
 from libcpp.string cimport string
+from libcpp cimport bool
 
 cdef extern from "options.h":
     cdef cppclass csm_options:
         csm_options()
-       	string opName;
+        string opName;
         bool printNorm;
         bool printLocal;
         bool writeOpenu;
@@ -13,6 +14,8 @@ cdef extern from "options.h":
         bool removeHy;
         bool ignoreSym;
         bool useFormat;
+
+        #TODO: Add the OperationType enum
         #OperationType type;
         int opOrder;
         bool useperm;
@@ -29,10 +32,11 @@ cdef extern from "options.h":
         bool keepCenter;
         string logFile;
 
-        int inFile;
-        int outFile;
-        int permfile;
-        int dirfile;
+        # TODO: Add file descriptors
+        #int inFile;
+        #int outFile;
+        #int permfile;
+        #int dirfile;
 
         string inFileName;
         string outFileName;

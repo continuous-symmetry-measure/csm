@@ -22,9 +22,7 @@ def create_parser():
     parser.add_argument('--ignoreSym', action='store_true', default=False,
                         help='Ignore all atomic symbols, performing a purely geometric operation')
 
-    # TODO: add possible format options
-    # TODO: "--formatXXX" of "--format XXX" ???
-    parser.add_argument('--format', choices=('XXX', 'ABC'), help='Use a specific input/output format')
+    parser.add_argument('--format', help='Use a specific input/output format')
     parser.add_argument('--writeOpenu', action='store_true', default=False,
                         help='Write output in open university format')
     parser.add_argument('--nolimit', action='store_true', default=False,
@@ -74,6 +72,9 @@ def process_arguments(parse_res):
         's6': ('SN', 6, "S6 SYMMETRY"),
         's8': ('SN', 8, "S8 SYMMETRY")
     }
+
+    result['input'] = parse_res.input
+    result['output'] = parse_res.output
 
     result['type'] = op_names[parse_res.type][0]
     result['opOrder'] = op_names[parse_res.type][1]
