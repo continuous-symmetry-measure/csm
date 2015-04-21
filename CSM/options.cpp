@@ -234,4 +234,5 @@ void csm_options::init_defaults()
 {
 	A = 2.0;
 	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
+	inFile = outFile = dirfile = permfile = NULL;
 }
