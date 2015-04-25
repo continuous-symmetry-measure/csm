@@ -1,0 +1,29 @@
+#!/bin/bash
+BASE_DIR=`pwd`
+OPENBABEL_DIR=$BASE_DIR/src
+BUILD_DIR=$OPENBABEL_DIR/build
+INSTALL_DIR=`pwd`
+
+unamestr=`uname`
+if [[ "$unamestr" == 'Darwin' ]]; then
+	echo Using the Bleeding-Edge OpenBabel
+	BABEL_VERSION=2.3.9
+else
+	echo Using OpenBabel 2.3.2
+	BABEL_VERSION=2.3.2
+fi
+
+LIBRARY_DIR=$INSTALL_DIR/lib
+INCLUDE_DIR=$INSTALL_DIR/include/openbabel-2.0
+
+PACKAGE_DIR=$INSTALL_DIR/python
+if [ ! -d $PACKAGE_DIR ]; then
+    mkdir $PACKAGE_DIR
+fi
+cd $PACKAGE_DIR
+
+wget https://pypi.python.org/packages/source/o/openbabel/openbabel-1.8.2.tar.gz
+tar -xzvf openbabel-1.8.2.tar.gz
+cd openbabel-1.8.2
+python setup.py build_ext -I$INCLUDE_DIR -L$LIBRARY_DIR
+python setup.py install
