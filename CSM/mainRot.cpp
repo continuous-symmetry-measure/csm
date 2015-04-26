@@ -116,19 +116,20 @@ const char *getExtension(const char *fname) {
 /*
 * main funciton - check valid parameters, parse molecule and call chirality Operation
 */
-int main(int argc, char *argv[]){
-	init_logging();
-
-	LOG(info) << "CSM starting up";
-
-	// init options
+int main(int argc, char *argv[])
+{
+	cout << "argc: " << argc << endl;
 	options = csm_options(argc, argv);
+
 	int rc = mainWithOptions();
 	return rc;
 }
 
 int mainWithOptions()
 {
+	init_logging();
+	LOG(info) << "CSM starting up";
+
 	int i;
 	double csm, dMin;
 	double **outAtoms;                 // output atom coordinates
@@ -136,8 +137,8 @@ int mainWithOptions()
 	int *perm = NULL;
 	double *localCSM = NULL;
 
-	if (options.logFile != "")
-		set_file_logging(options.logFile);
+	if (options.logFileName != "")
+		set_file_logging(options.logFileName);
 
 	if ((options.findPerm && options.useperm) || (options.findPerm && options.useDir) || (options.useDir && options.useperm)) {
 		LOG(fatal) << "-findperm, -useperm and -usedir are mutually exclusive";

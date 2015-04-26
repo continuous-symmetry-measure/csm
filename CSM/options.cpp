@@ -215,7 +215,7 @@ csm_options::csm_options(int argc, char *argv[])
 			keepCenter = true;
 		}
 		else if (strcmp(argv[i], "-log") == 0) {
-			logFile = argv[i + 1];
+			logFileName = argv[i + 1];
 			if (i + 1 == argc)
 			{
 				LOG(fatal) << "The -log option must be followed by a filename";
@@ -232,7 +232,6 @@ csm_options::csm_options(int argc, char *argv[])
 
 void csm_options::init_defaults()
 {
-	A = 2.0;
 	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
 	inFile = outFile = dirfile = permfile = NULL;
 }

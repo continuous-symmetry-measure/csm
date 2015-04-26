@@ -1,9 +1,10 @@
 from libcpp.string cimport string
 from libcpp cimport bool
 
-cdef extern from "options.h":
-    cdef cppclass csm_options:
-        csm_options()
+cdef extern from "csmlib.h":
+    cdef cppclass python_cpp_bridge:
+        python_cpp_bridge()
+        string opType;
         string opName;
         bool printNorm;
         bool printLocal;
@@ -15,8 +16,6 @@ cdef extern from "options.h":
         bool ignoreSym;
         bool useFormat;
 
-        #TODO: Add the OperationType enum
-        #OperationType type;
         int opOrder;
         bool useperm;
         bool useDir;
@@ -30,18 +29,14 @@ cdef extern from "options.h":
         double A;
         bool babelTest;
         bool keepCenter;
-        string logFile;
+        string logFilename;
 
-        # TODO: Add file descriptors
-        #int inFile;
-        #int outFile;
-        #int permfile;
-        #int dirfile;
+        string inFilename;
+        string outFilename;
 
-        string inFileName;
-        string outFileName;
+        int fdIn, fdOut, fdPerm, fdDir;
 
 cdef extern from "csmlib.h":
     int SayHello();
-    int RunCSM(csm_options options);
+    int RunCSM(python_cpp_bridge options);
 

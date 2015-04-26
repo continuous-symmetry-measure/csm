@@ -17,13 +17,47 @@
 
 // Cython works much better with a C interface, use it
 
+struct python_cpp_bridge
+{
+	std::string opType;
+	std::string opName;
+	int opOrder;
+
+	bool printNorm;
+	bool printLocal;
+	bool writeOpenu;
+	std::string format;
+
+	bool ignoreHy;
+	bool removeHy;
+	bool ignoreSym;
+	bool findPerm;
+	bool useMass;
+	bool limitRun;
+	bool babelBond;
+	bool timeOnly;
+	int sn_max;
+	bool detectOutliers;
+	bool babelTest;
+	bool keepCenter;
+	std::string logFilename;
+	std::string inFilename;
+	std::string outFilename;
+
+	// File descriptors - -1 means no file
+	int fdIn, fdOut, fdPerm, fdDir;
+
+	python_cpp_bridge();
+};
+
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 	// Runs the entire CSM application
 	// int RunCSM(const std::vector<std::string> args);
-	int RunCSM(csm_options options);
+	int RunCSM(python_cpp_bridge options);
 	int SayHello();
 #ifdef __cplusplus
 }

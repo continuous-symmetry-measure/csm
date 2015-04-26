@@ -62,8 +62,26 @@ def get_test_args(test_dir, output_path):
     # Now return the modified arguments
     return [config.CSM_PATH, mode, input_path, output_path] + input_args_list[2:]
 
+def get_python_test_args(test_dir, output_path):
+    input_args = get_first_line(os.path.join(test_dir, 'args.txt'))
+    input_args_list = input_args.split(' ')
+    mode = input_args_list[0]
+    input_file = input_args_list[1]
+    input_path = os.path.join(test_dir, input_file)
+
+    # The Python CSM requires options to start with '--', while the test cases start with '-'
+    for i in range(2,len(input_args_list)):
+        if input_args_list[i][0]!='-':
+            raise ValueError("Unexpected argument, options should be preceeded by a -")
+        input_args_list[i] = '-' + input_args_list[i]  # Prepend another -
+
+    return ['python', config.PYTHON_CSM_PATH, mode, input_path, output_path] + input_args_list[2:]
+
 def run_csm(test_dir, output_path):
-    args = get_test_args(test_dir, output_path)
+    if config.RUN_PYTHON:
+        args = get_python_test_args(test_dir, output_path)
+    else:
+        args = get_test_args(test_dir, output_path)
     print('Executing %s...' % args)
     with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as ps:
         output = ps.stdout.readlines()

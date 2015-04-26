@@ -33,7 +33,6 @@ def create_parser():
     parser.add_argument('--findperm', action='store_true', default=False, help='Attempt to search for a permutation')
     parser.add_argument('--detectOutliers', action='store_true', default=False,
                         help="Use statistical methods to try and improve --findperm's results")
-    parser.add_argument('--anneal', action='store_true', default=False, help='Try to anneal the result')
     parser.add_argument('--babelbond', action='store_true', default=False, help='Let OpenBabel compute bonding')
     parser.add_argument('--useMass', action='store_true', default=False,
                         help='Use the atomic masses to define center of mass')
@@ -98,7 +97,6 @@ def process_arguments(parse_res):
     if parse_res.useperm:
         try:
             result['permfile'] = open(parse_res.useperm, 'r')
-            result['useperm'] = True
         except IOError:
             raise ValueError("Failed to open perm file " + parse_res.useperm + " for reading")
 
@@ -106,7 +104,6 @@ def process_arguments(parse_res):
     if parse_res.usedir:
         try:
             result['dirfile'] = open(parse_res.usedir, 'r')
-            result['usedir'] = True
         except IOError:
             raise ValueError("Failed to open dir file " + parse_res.useperm + " for reading")
 
@@ -118,10 +115,10 @@ def process_arguments(parse_res):
     result['ignoreHy'] = parse_res.ignoreHy
     result['removeHy'] = parse_res.removeHy
     result['ignoreSym'] = parse_res.ignoreSym
-    # TODO: format - space - ???
+
     if parse_res.format:
-        result['useFormat'] = True
         result['format'] = parse_res.format
+
     result['writeOpenu'] = parse_res.writeOpenu
     result['limitRun'] = not parse_res.nolimit
     result['babelBond'] = parse_res.babelbond
@@ -137,15 +134,9 @@ def process_arguments(parse_res):
     result['printLocal'] = parse_res.printLocal
     result['keepCenter'] = parse_res.keepCenter
     if parse_res.writeOpenu:
-        result['useFormat'] = True
         result['format'] = "PDB"
-    # TODO: log file is string but the other files are file objects - ???
     if parse_res.log:
         result['logFile'] = parse_res.log
-    # TODO: A - ???
-    result['A'] = 2.0
-    # TODO: anneal - ?
-    result['anneal'] = parse_res.anneal
 
     return result
 

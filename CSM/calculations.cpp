@@ -771,6 +771,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 	double zero[3] = { 0.0, 0.0, 0.0 };
 	std::vector<double *> results;
 	int useOrthogonal = true;
+	const double A = 2.0; // What is this? This was previously in the options but was always set to 2.
 
 	testDir = (double**)malloc(sizeof(double*) * 3);
 	for (i = 0; i < 3; i++) {
@@ -839,7 +840,7 @@ void findSymmetryDirection(Molecule *m, double  ***dirs, int *n_dirs, OperationT
 			}
 			median = findMedian(dists, m->groupNum());
 			for (i = 0; i < m->groupNum(); i++) {
-				if (dists[i] / median > options.A || dists[i] / median > options.A) {
+				if (dists[i] / median > A || dists[i] / median > A) { // TODO: What is this? Why is this checked twice?
 					outliers[i] = true;
 				}
 			}

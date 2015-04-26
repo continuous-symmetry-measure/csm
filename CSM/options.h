@@ -41,10 +41,9 @@ struct csm_options
 	bool timeOnly;
 	int sn_max;
 	bool detectOutliers;
-	double A;
 	bool babelTest;
 	bool keepCenter;
-	std::string logFile;
+	std::string logFileName;
 
 	// file pointers
 	FILE* inFile;

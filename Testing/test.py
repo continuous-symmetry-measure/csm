@@ -30,8 +30,3 @@ class CheckCSMOutput(TestCase):
     def test_7(self):
         self.one_test('test7')
 
-
-
-if __name__=='__main__':
-    run_test(os.path.join(config.TEST_PATH, 'test6'))
-

@@ -9,7 +9,6 @@ from arguments import process_arguments, create_parser
 if __name__=='__main__':
     parser = create_parser()
     result = parser.parse_args() # Parse sys.args
-    arg_dict = process_arguments(result)
+    args = process_arguments(result)
 
-    csm.RunCSM(arg_dict)
-    args = {'useperm': True, }
+    csm.RunCSM(args)
