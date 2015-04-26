@@ -96,7 +96,7 @@ csm_options::csm_options(int argc, char *argv[])
 	if ((inFile = fopen(inFileName.c_str(), "rt")) == NULL){
 		if (writeOpenu)
 		{
-			printf("ERR* Failed to open data file %s *ERR\n", inFileName);
+			printf("ERR* Failed to open data file %s *ERR\n", inFileName.c_str());
 		}
 		LOG(fatal) << "Failed to open data file " << inFileName;
 		exit(1);
@@ -107,7 +107,7 @@ csm_options::csm_options(int argc, char *argv[])
 	outFileName = argv[3];
 	if ((outFile = fopen(outFileName.c_str(), "w")) == NULL){
 		if (writeOpenu) {
-			printf("ERR* Failed to open output file %s for writing *ERR\n", outFileName);
+			printf("ERR* Failed to open output file %s for writing *ERR\n", outFileName.c_str());
 		}
 		LOG(fatal) << "Failed to open output file " << outFileName << " for writing";
 		exit(1);
