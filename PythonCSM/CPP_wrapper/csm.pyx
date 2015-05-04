@@ -7,6 +7,7 @@ def SayHello():
     return csmlib.SayHello()
 
 def cs(s):
+    """ Converts a Python string to a C++ string """
     return s.encode('UTF8')
 
 def RunCSM(args):
