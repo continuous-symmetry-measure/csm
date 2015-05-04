@@ -5,7 +5,6 @@
 
 #include "csmlib.h"
 #include <iostream>
-#include <cstdio>
 
 using namespace std;
 
@@ -25,7 +24,7 @@ FILE *convert_to_file(int fd, const char *mode, bool *flag=NULL)
 {
 	FILE *f = NULL;
 	if (fd != -1)
-		f = _fdopen(fd, mode);
+		f = fdopen(fd, mode);  // This causes a warning on Windows, but is required on Linux since _fdopen is nowhere to be found
 
 	if (flag != NULL)
 		*flag = f != NULL;
