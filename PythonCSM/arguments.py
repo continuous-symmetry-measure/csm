@@ -51,6 +51,44 @@ def create_parser():
     return parser
 
 
+def check_arguments(processed):
+    if processed['sn_max'] and processed['type'] != 'CH':
+        raise ValueError("Option -sn_max only applies to chirality")
+    if ('findPerm' in processed and 'permfile' in processed) or ('findPerm' in processed and 'dirfile' in processed) \
+            or ('dirfile' in processed and 'permfile' in processed):
+        raise ValueError("-findperm, -useperm and -usedir are mutually exclusive")
+    if 'permfile' in processed and processed['type'] == 'CH':
+        raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
+
+
+def open_files(parse_res, result):
+    # try to open the input file for reading
+    try:
+        result['inFile'] = open(parse_res.input, 'r')
+    except IOError:
+        raise ValueError("Failed to open data file " + parse_res.input)
+
+    # try to open the output file for writing
+    try:
+        result['outFile'] = open(parse_res.output, 'w')
+    except IOError:
+        raise ValueError("Failed to open output file " + parse_res.input + " for writing")
+
+    # try to open the permfile for reading (if exists)
+    if parse_res.useperm:
+        try:
+            result['permfile'] = open(parse_res.useperm, 'r')
+        except IOError:
+            raise ValueError("Failed to open perm file " + parse_res.useperm + " for reading")
+
+    # try to open the dirfile for reading (if exists)
+    if parse_res.usedir:
+        try:
+            result['dirfile'] = open(parse_res.usedir, 'r')
+        except IOError:
+            raise ValueError("Failed to open dir file " + parse_res.useperm + " for reading")
+
+
 def process_arguments(parse_res):
 
     result = {}
@@ -72,52 +110,23 @@ def process_arguments(parse_res):
         's8': ('SN', 8, "S8 SYMMETRY")
     }
 
-    result['input'] = parse_res.input
-    result['output'] = parse_res.output
-
     result['type'] = op_names[parse_res.type][0]
     result['opOrder'] = op_names[parse_res.type][1]
     result['opName'] = op_names[parse_res.type][2]
 
-    # try to open the input file for reading
-    try:
-        result['inFile'] = open(parse_res.input, 'r')
-        result['inFileName'] = parse_res.input
-    except IOError:
-        raise ValueError("Failed to open data file " + parse_res.input)
+    #TODO: remove duplicates
+    result['input'] = parse_res.input
+    result['inFileName'] = parse_res.input
+    result['output'] = parse_res.output
+    result['outFileName'] = parse_res.output
 
-    # try to open the output file for writing
-    try:
-        result['outFile'] = open(parse_res.output, 'w')
-        result['outFileName'] = parse_res.output
-    except IOError:
-        raise ValueError("Failed to open output file " + parse_res.input + " for writing")
-
-    # try to open the permfile for reading (if exists)
-    if parse_res.useperm:
-        try:
-            result['permfile'] = open(parse_res.useperm, 'r')
-        except IOError:
-            raise ValueError("Failed to open perm file " + parse_res.useperm + " for reading")
-
-    # try to open the dirfile for reading (if exists)
-    if parse_res.usedir:
-        try:
-            result['dirfile'] = open(parse_res.usedir, 'r')
-        except IOError:
-            raise ValueError("Failed to open dir file " + parse_res.useperm + " for reading")
-
-    if parse_res.sn_max:
-        if result['type'] != 'CH':
-            raise ValueError("Option -sn_max only applies to chirality")
-        result['sn_max'] = parse_res.sn_max
+    result['sn_max'] = parse_res.sn_max
 
     result['ignoreHy'] = parse_res.ignoreHy
     result['removeHy'] = parse_res.removeHy
     result['ignoreSym'] = parse_res.ignoreSym
 
-    if parse_res.format:
-        result['format'] = parse_res.format
+    result['format'] = parse_res.format
 
     result['writeOpenu'] = parse_res.writeOpenu
     result['limitRun'] = not parse_res.nolimit
@@ -135,9 +144,10 @@ def process_arguments(parse_res):
     result['keepCenter'] = parse_res.keepCenter
     if parse_res.writeOpenu:
         result['format'] = "PDB"
-    if parse_res.log:
-        result['logFile'] = parse_res.log
+    result['logFile'] = parse_res.log
 
+    open_files(parse_res, result)
+    check_arguments(result)
     return result
 
 if __name__ == '__main__':
@@ -154,49 +164,3 @@ if __name__ == '__main__':
 
     print('Processed results (type, opOrder, opName): ')
     print(processed)
-
-    print('\n\n')
-
-    print(result.type)
-    print(result.input)
-    print(result.output)
-    print("Ignore Hydrogen: ", result.ignoreHy)
-    print("Remove Hydrogen: ", result.removeHy)
-    print("Ignore Symbols: ", result.ignoreSym)
-    if result.format:
-        print("Format: ", result.format)
-    else:
-        print ("No format specified")
-    print("Write Openu: ", result.writeOpenu)
-    print("No limit: ", result.nolimit)
-    if result.useperm:
-        print("Use permutation: ", result.useperm)
-    else:
-        print("No permutation specified")
-    if result.usedir:
-        print("Use as a starting axis: ", result.usedir)
-    else:
-        print("No starting axis specified")
-    print("Find permutation: ", result.findperm)
-    print("Detect outliers: ", result.detectOutliers)
-    print("Anneal the result: ", result.anneal)
-    print("OpenBabel bonding: ", result.babelbond)
-    print("Use atomic masses: ", result.useMass)
-    print("Time only: ", result.timeOnly)
-    print("Babel test: ", result.babelTest)
-    if result.sn_max:
-        print("Maximal sn: %d" % result.sn_max)
-    else:
-        print("No maximal sn specified")
-    print("Print normalization factor: ", result.printNorm)
-    print("Print local: ", result.printLocal)
-    print("Approx: ", result.approx)
-    print("Keep center: ", result.keepCenter)
-    if result.log:
-        print("Log: ", result.log)
-    else:
-        print("No log file specified")
-
-
-    # Parsed arguments are in 'parser'
-    print("\n\nHello from arguments.py")
