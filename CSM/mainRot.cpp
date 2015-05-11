@@ -250,7 +250,12 @@ int mainWithOptions()
 		exit(1);
 	}
  
-	if (options.useDir) readDir(options.dirfile, dir);
+	if (options.useDir)
+	{
+		dir[0] = options.dir[0];
+		dir[1] = options.dir[1];
+		dir[2] = options.dir[2];
+	}
 
 	if (options.useperm) {
 		if (options.type == CH) {
@@ -393,9 +398,6 @@ int mainWithOptions()
 
 	if (options.permfile != NULL)
 		fclose(options.permfile);
-
-	if (options.dirfile != NULL)
-		fclose(options.dirfile);
 
 	return 0;
 }

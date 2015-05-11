@@ -71,10 +71,15 @@ def get_python_test_args(test_dir, output_path):
 
     # The Python CSM requires options to start with '--', while the test cases start with '-'
     for i in range(2,len(input_args_list)):
-        if input_args_list[i][0]!='-':
-            raise ValueError("Unexpected argument, options should be preceeded by a -")
-        input_args_list[i] = '-' + input_args_list[i]  # Prepend another -
+        if input_args_list[i][0] == '-':
+            if input_args_list[i][1]!='-':
+                input_args_list[i] = '-' + input_args_list[i]  # Prepend another -
+        else:
+            # This can be a filename, we need to add the path.
+            if input_args_list[i-1] in ('--useperm', '--usedir', '--log'):
+                input_args_list[i] = os.path.join(test_dir, input_args_list[i])
 
+    # TODO: Add the path for dirfile, permfile and log
     return ['python', config.PYTHON_CSM_PATH, mode, input_path, output_path] + input_args_list[2:]
 
 def run_csm(test_dir, output_path):

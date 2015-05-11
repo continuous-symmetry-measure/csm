@@ -30,3 +30,9 @@ class CheckCSMOutput(TestCase):
     def test_7(self):
         self.one_test('test7')
 
+    def test_direction(self):
+        self.one_test('test_direction')
+
+    def test_permutation(self):
+        self.one_test('test_permutation')
+

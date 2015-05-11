@@ -2,6 +2,7 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
+from input_output.readers import read_dir_file
 
 __author__ = 'zmbq'
 
@@ -54,7 +55,7 @@ def create_parser():
 def check_arguments(processed):
     if processed['sn_max'] and processed['type'] != 'CH':
         raise ValueError("Option -sn_max only applies to chirality")
-    if ('findPerm' in processed and 'permFile' in processed) or ('findPerm' in processed and 'dirFile' in processed) \
+    if (processed['findPerm'] and 'permFile' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
             or ('dirFile' in processed and 'permFile' in processed):
         raise ValueError("-findperm, -useperm and -usedir are mutually exclusive")
     if 'permFile' in processed and processed['type'] == 'CH':
@@ -84,9 +85,13 @@ def open_files(parse_res, result):
     # try to open the dirFile for reading (if exists)
     if parse_res.usedir:
         try:
-            result['dirFile'] = open(parse_res.usedir, 'r')
+            with open(parse_res.usedir, 'r') as dirfile:
+                dir = read_dir_file(dirfile)
+                result['dir'] = dir
         except IOError:
-            raise ValueError("Failed to open dir file " + parse_res.useperm + " for reading")
+            raise ValueError("Failed to open dir file " + parse_res.usedir + " for reading")
+        except (ValueError, IndexError):
+            raise ValueError("Can't read legal direction from file " + parse_res.usedir)
 
 
 def process_arguments(parse_res):

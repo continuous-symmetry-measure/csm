@@ -51,8 +51,11 @@ def RunCSM(args):
 
     if 'permFile' in args:
         options.fdPerm = args['permFile'].fileno()
-    if 'dirFile' in args:
-        options.fdDir = args['dirFile'].fileno()
+
+    if 'dir' in args:
+        options.dir = args['dir']
+    else:
+        options.dir = []
 
     print("Calling C++ from Python")
     result = csmlib.RunCSM(options)

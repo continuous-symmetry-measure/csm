@@ -1,5 +1,6 @@
 from libcpp.string cimport string
 from libcpp cimport bool
+from libcpp.vector cimport vector
 
 cdef extern from "csmlib.h":
     cdef cppclass python_cpp_bridge:
@@ -34,7 +35,9 @@ cdef extern from "csmlib.h":
         string inFilename;
         string outFilename;
 
-        int fdIn, fdOut, fdPerm, fdDir;
+        int fdIn, fdOut, fdPerm;
+
+        vector[double] dir;
 
 cdef extern from "csmlib.h":
     int SayHello();

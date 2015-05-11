@@ -132,6 +132,7 @@ csm_options::csm_options(int argc, char *argv[])
 			nextIsPermFile = false;
 		}
 		else if (nextIsDirFile) {
+			/*
 			char* dirfilename = argv[i];
 			if ((dirfile = fopen(dirfilename, "rt")) == NULL){
 				if (writeOpenu) {
@@ -140,7 +141,7 @@ csm_options::csm_options(int argc, char *argv[])
 				LOG(fatal) << "Failed to open dir file " << dirfilename << " for reading";
 				exit(1);
 			}
-			nextIsDirFile = false;
+			nextIsDirFile = false; */
 		}
 		else if (nextIsMaxSn) {
 			sn_max = atoi(argv[i]);
@@ -233,5 +234,6 @@ csm_options::csm_options(int argc, char *argv[])
 void csm_options::init_defaults()
 {
 	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
-	inFile = outFile = dirfile = permfile = NULL;
+	inFile = outFile = permfile = NULL;
+	dir.clear();
 }
