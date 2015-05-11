@@ -2,7 +2,7 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
-from input_output.readers import read_dir_file, read_perm_file
+from input_output.readers import read_dir_file, read_perm_file, read_csm_file
 
 __author__ = 'zmbq'
 
@@ -70,7 +70,10 @@ def check_arguments(processed):
 def open_files(parse_res, result):
     # try to open the input file for reading
     try:
-        result['inFile'] = open(parse_res.input, 'r')
+        with open(parse_res.input, 'r') as infile:
+            # TODO: Read non CSM files, too
+            atoms = read_csm_file(infile, result)
+            result['molecule'] = atoms
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
 

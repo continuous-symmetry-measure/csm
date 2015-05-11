@@ -11,6 +11,8 @@
 #ifndef CSMLIB_H
 #define CSMLIB_H
 
+#define PYTHON_VERSION
+
 #ifndef PYTHON_VERSION
 #error PYTHON_VERSION must be defined with csmlib is to be used
 #endif

@@ -43,7 +43,7 @@ cdef extern from "csmlib.h":
         string inFilename;
         string outFilename;
 
-        int fdIn, fdOut;
+        int fdOut;
 
         vector[double] dir;
         vector[int] perm;

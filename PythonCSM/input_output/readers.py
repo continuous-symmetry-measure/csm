@@ -1,7 +1,6 @@
-from input_output.molecule import Atom
-
 __author__ = 'YAEL'
 
+from input_output.molecule import Atom
 
 def read_csm_file(f, args_dict):
     """

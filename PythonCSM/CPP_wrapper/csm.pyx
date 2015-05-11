@@ -57,7 +57,6 @@ def RunCSM(args):
         options.logFilename = cs(args['logFileName'])
 
     options.inFilename = cs(args['inFileName'])
-    options.fdIn = args['inFile'].fileno()
 
     options.outFilename = cs(args['outFileName'])
     options.fdOut = args['outFile'].fileno()
