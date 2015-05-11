@@ -1,12 +1,11 @@
-__author__ = 'YAEL'
+from input_output.molecule import Atom
 
+__author__ = 'YAEL'
 
 def read_csm_file(f):
     """
     :param f: CSM file (the file object, not the file name)
-    :return: (atoms, connectivity)
-    atoms - A list of atom values: (symbol, (x,y,z))
-    connectivity - A list: [[atom1 connectivity] [atom2 connectivity] ...] Connectivity lists may be empty
+    :return: A list of Atoms
     """
 
     try:
