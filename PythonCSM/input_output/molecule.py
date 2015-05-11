@@ -23,8 +23,10 @@ def _fillAtomicMasses():
         atom.SetAtomicNum(atomicNumber)
         atom.SetIsotope(0)
         masses[element] = atom.GetAtomicMass()
+    return masses
 
 AtomicMasses = _fillAtomicMasses()
+
 
 class Atom:
     def __init__(self, symbol, pos):
@@ -44,4 +46,8 @@ class Atom:
     @property
     def symbol(self):
         return self._symbol
+
+    def __str__(self):
+        return "Symbol: " + self._symbol + "\tPos: " + str(self._pos) + "\tAdjacent: " + str(self.adjacent)
+
 

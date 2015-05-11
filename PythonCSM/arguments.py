@@ -121,10 +121,7 @@ def process_arguments(parse_res):
     result['opOrder'] = op_names[parse_res.type][1]
     result['opName'] = op_names[parse_res.type][2]
 
-    #TODO: remove duplicates
-    result['input'] = parse_res.input
     result['inFileName'] = parse_res.input
-    result['output'] = parse_res.output
     result['outFileName'] = parse_res.output
 
     result['sn_max'] = parse_res.sn_max

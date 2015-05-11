@@ -2,7 +2,8 @@ from input_output.molecule import Atom
 
 __author__ = 'YAEL'
 
-def read_csm_file(f):
+
+def read_csm_file(f, arguments_dict):
     """
     :param f: CSM file (the file object, not the file name)
     :return: A list of Atoms
@@ -15,7 +16,6 @@ def read_csm_file(f):
 
     if size > 0:
         atoms = []
-        connectivity = []
     else:
         return None
 
@@ -48,9 +48,9 @@ def read_csm_file(f):
                 raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
             neighbours.append(neighbour)
 
-        connectivity.append(neighbours)
+        atoms[i].adjacent = neighbours
 
-    return atoms, connectivity
+    return atoms
 
 
 def read_dir_file(f):
@@ -92,6 +92,11 @@ def read_perm_file(f):
 
 if __name__ == '__main__':
     print("Testing the file reading functions")
-    file = open("../../test_cases/ALA.csm", "r")
-    print(read_perm_file(file))
-    file.close()
+    try:
+        file = open("../../test_cases/ALA.csm", "r")
+        result = read_csm_file(file)
+        for a in result:
+            print(a)
+        file.close()
+    except IOError:
+        print("no file")
