@@ -25,9 +25,7 @@
 #include "elements.h"
 #include "logging.h"
 
-#ifdef PYTHON_VERSION
 #include "csmlib.h"
-#endif
 
 using namespace OpenBabel;
 using namespace std;
@@ -121,7 +119,6 @@ void Molecule::replaceSymbols()
 
 }
 
-#ifdef PYTHON_VERSION
 /*
  * Creates a molecule from the python supplied atoms
  */
@@ -138,6 +135,9 @@ Molecule* Molecule::createFromPython(const vector<python_atom> &atoms)
 		for (int j = 0; j < valency; j++)
 			m->_adjacent[i][j] = atoms[i].adjacent[j];
 
+		for (int j = 0; j < 3; j++)
+			m->_pos[i][j] = atoms[i].pos[j];
+
 		m->_mass[i] = atoms[i].mass;
 	}
 
@@ -145,7 +145,6 @@ Molecule* Molecule::createFromPython(const vector<python_atom> &atoms)
 
 	return m;
 }
-#endif
 
 /*
  * creates a molecule from an input data file

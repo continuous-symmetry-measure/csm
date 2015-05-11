@@ -10,7 +10,7 @@ def cs(s):
     """ Converts a Python string to a C++ string """
     return s.encode('UTF8')
 
-cdef fill_molecule(csmlib.python_cpp_bridge options, args):
+cdef fill_molecule(csmlib.python_cpp_bridge &options, args):
     cdef vector[csmlib.python_atom] atoms
     cdef csmlib.python_atom bridge_atom
 

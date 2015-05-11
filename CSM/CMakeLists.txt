@@ -72,6 +72,7 @@ if(UNIX)
 endif()
 
 # Executable
-add_executable(csm ${SOURCES})
-target_link_libraries(csm ${OpenBabel_LIBS} ${Boost_LIBRARIES} ${EXTRA_LIBS})
-set_target_properties(csm PROPERTIES LINKER_LANGUAGE CXX)
+# csm.exe can no longer work as it relies on Python for reading all the files.
+#add_executable(csm ${SOURCES})
+#target_link_libraries(csm ${OpenBabel_LIBS} ${Boost_LIBRARIES} ${EXTRA_LIBS})
+#set_target_properties(csm PROPERTIES LINKER_LANGUAGE CXX)

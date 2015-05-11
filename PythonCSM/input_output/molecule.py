@@ -20,7 +20,7 @@ class Atom:
         if useMass and symbol != 'XX':
             self._mass = GetAtomicMass(symbol)
         else:
-            self._mass = 0.0
+            self._mass = 1.0
 
     @property
     def mass(self):

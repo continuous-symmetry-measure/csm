@@ -15,10 +15,7 @@
 #ifndef MOLECULE_H
 #define MOLECULE_H
 
-#ifdef PYTHON_VERSION
 #include "csmlib.h"
-#endif
-
 #include <openbabel/mol.h>
 
 #ifndef SQR
@@ -50,10 +47,7 @@ public:
 	~Molecule();
 	static Molecule *create(FILE *in, FILE *err, bool replaceSym);
 	static Molecule* createFromOBMol(OpenBabel::OBMol &obmol, bool replaceSym, bool useMass = false);
-
-#ifdef PYTHON_VERSION
 	static Molecule* createFromPython(const std::vector<python_atom> &atoms);
-#endif
 
 public:
 	int getGroup(int num, int* buff);
