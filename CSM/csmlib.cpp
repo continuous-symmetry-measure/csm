@@ -22,6 +22,7 @@ python_cpp_bridge::python_cpp_bridge()
 
 FILE *convert_to_file(int fd, const char *mode, bool *flag=NULL)
 {
+#pragma warning (disable: 4996)
 	FILE *f = NULL;
 	if (fd != -1)
 		f = fdopen(fd, mode);  // This causes a warning on Windows, but is required on Linux since _fdopen is nowhere to be found
