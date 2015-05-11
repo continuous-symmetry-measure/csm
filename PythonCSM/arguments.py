@@ -54,10 +54,10 @@ def create_parser():
 def check_arguments(processed):
     if processed['sn_max'] and processed['type'] != 'CH':
         raise ValueError("Option -sn_max only applies to chirality")
-    if ('findPerm' in processed and 'permfile' in processed) or ('findPerm' in processed and 'dirfile' in processed) \
-            or ('dirfile' in processed and 'permfile' in processed):
+    if ('findPerm' in processed and 'permFile' in processed) or ('findPerm' in processed and 'dirFile' in processed) \
+            or ('dirFile' in processed and 'permFile' in processed):
         raise ValueError("-findperm, -useperm and -usedir are mutually exclusive")
-    if 'permfile' in processed and processed['type'] == 'CH':
+    if 'permFile' in processed and processed['type'] == 'CH':
         raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
 
 
@@ -74,17 +74,17 @@ def open_files(parse_res, result):
     except IOError:
         raise ValueError("Failed to open output file " + parse_res.input + " for writing")
 
-    # try to open the permfile for reading (if exists)
+    # try to open the permFile for reading (if exists)
     if parse_res.useperm:
         try:
-            result['permfile'] = open(parse_res.useperm, 'r')
+            result['permFile'] = open(parse_res.useperm, 'r')
         except IOError:
             raise ValueError("Failed to open perm file " + parse_res.useperm + " for reading")
 
-    # try to open the dirfile for reading (if exists)
+    # try to open the dirFile for reading (if exists)
     if parse_res.usedir:
         try:
-            result['dirfile'] = open(parse_res.usedir, 'r')
+            result['dirFile'] = open(parse_res.usedir, 'r')
         except IOError:
             raise ValueError("Failed to open dir file " + parse_res.useperm + " for reading")
 
@@ -144,7 +144,7 @@ def process_arguments(parse_res):
     result['keepCenter'] = parse_res.keepCenter
     if parse_res.writeOpenu:
         result['format'] = "PDB"
-    result['logFile'] = parse_res.log
+    result['logFileName'] = parse_res.log
 
     open_files(parse_res, result)
     check_arguments(result)
@@ -155,7 +155,7 @@ if __name__ == '__main__':
     parser = create_parser()
 
     args = ['--help']
-    args = ['c2', 'abc.xyz', 'abc.output', '--useperm', 'permfile.dat']
+    args = ['c2', 'abc.xyz', 'abc.output', '--useperm', 'permFile.dat']
     args = ['ci', 'testFiles/input.xyz', 'testFiles/output.txt', '--ignoreHy', '--removeHy', '--log', 'log.txt']
 
     result = parser.parse_args(args)  # Call the parse

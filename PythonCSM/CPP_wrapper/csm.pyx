@@ -21,7 +21,7 @@ def RunCSM(args):
     options.printLocal = args['printLocal']
     options.writeOpenu = args['writeOpenu']
 
-    if 'format' in args:
+    if args['format']:
         options.format = cs(args['format'])
 
     options.ignoreHy = args['ignoreHy']
@@ -33,7 +33,7 @@ def RunCSM(args):
     options.limitRun = args['limitRun']
     options.babelBond = args['babelBond']
     options.timeOnly = args['timeOnly']
-    if 'sn_max' in args:
+    if args['sn_max']:
         options.sn_max = args['sn_max']
 
     options.detectOutliers = args['detectOutliers']
@@ -42,8 +42,6 @@ def RunCSM(args):
 
     if 'logFile' in args:
         options.logFilename = cs(args['logFile'])
-        print('Passing logfile %s' % args['logFile'])
-
 
     options.inFilename = cs(args['inFileName'])
     options.fdIn = args['inFile'].fileno()
