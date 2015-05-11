@@ -49,8 +49,10 @@ def RunCSM(args):
     options.outFilename = cs(args['outFileName'])
     options.fdOut = args['outFile'].fileno()
 
-    if 'permFile' in args:
-        options.fdPerm = args['permFile'].fileno()
+    if 'perm' in args:
+        options.perm = args['perm']
+    else:
+        options.perm = []
 
     if 'dir' in args:
         options.dir = args['dir']

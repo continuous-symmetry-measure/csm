@@ -120,6 +120,7 @@ csm_options::csm_options(int argc, char *argv[])
 	int nextIsDirFile = false;
 	for (i = 4; i< argc; i++){
 		if (nextIsPermFile) {
+			/*
 			char* permfileName = argv[i];
 			if ((permfile = fopen(permfileName, "rt")) == NULL){
 				if (writeOpenu)
@@ -130,6 +131,7 @@ csm_options::csm_options(int argc, char *argv[])
 				exit(1);
 			}
 			nextIsPermFile = false;
+			*/
 		}
 		else if (nextIsDirFile) {
 			/*
@@ -234,6 +236,7 @@ csm_options::csm_options(int argc, char *argv[])
 void csm_options::init_defaults()
 {
 	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
-	inFile = outFile = permfile = NULL;
+	inFile = outFile = NULL;
 	dir.clear();
+	perm.clear();
 }

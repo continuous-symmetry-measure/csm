@@ -2,7 +2,7 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
-from input_output.readers import read_dir_file
+from input_output.readers import read_dir_file, read_perm_file
 
 __author__ = 'zmbq'
 
@@ -78,7 +78,9 @@ def open_files(parse_res, result):
     # try to open the permFile for reading (if exists)
     if parse_res.useperm:
         try:
-            result['permFile'] = open(parse_res.useperm, 'r')
+            with open(parse_res.useperm, 'r') as permfile:
+                perm = read_perm_file(permfile)
+                result['perm'] = perm
         except IOError:
             raise ValueError("Failed to open perm file " + parse_res.useperm + " for reading")
 

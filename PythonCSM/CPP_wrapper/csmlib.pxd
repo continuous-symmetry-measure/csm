@@ -35,9 +35,10 @@ cdef extern from "csmlib.h":
         string inFilename;
         string outFilename;
 
-        int fdIn, fdOut, fdPerm;
+        int fdIn, fdOut;
 
         vector[double] dir;
+        vector[int] perm;
 
 cdef extern from "csmlib.h":
     int SayHello();

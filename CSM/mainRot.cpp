@@ -258,11 +258,9 @@ int mainWithOptions()
 	}
 
 	if (options.useperm) {
-		if (options.type == CH) {
-			LOG(fatal) << "Chirality can't be given a permutation, run the specific csm operation instead";
-			exit(1);
-		}	
-		readPerm(options.permfile, perm, m->size());
+		for (int i = 0; i<options.perm.size(); i++){
+			perm[i] = options.perm[i];
+		}
 		runSinglePerm(m, outAtoms, perm, &csm, dir, &dMin, options.type);
 	} else {
 		if (options.type != CH) {
@@ -396,40 +394,6 @@ int mainWithOptions()
 	fclose(options.inFile);
 	fclose(options.outFile);
 
-	if (options.permfile != NULL)
-		fclose(options.permfile);
-
 	return 0;
-}
-
-void readDir(FILE* dirfile, double* dir) { 
-	fscanf(dirfile, "%lf%lf%lf", &dir[0], &dir[1], &dir[2]);
-}
-
-/**
- * Read a permutation from a file - simply a list separated by spaces.
- */
-void readPerm(FILE* permfile, int* perm, int size) {
-	int *used = (int *)malloc(sizeof(int) * size);
-	int i = 0;
-	for (i = 0; i < size; i++) {
-		used[i] = false;
-	}
-	for (i = 0; i < size; i++) {
-		int cur = -1;
-		int res = fscanf(permfile,"%d", &cur);
-		if (res != 1 || cur < 1 || cur > size || used[cur - 1]) {
-			if (options.writeOpenu) {
-				printf("ERR* Invalid permutation *ERR\n");
-			}
-			LOG(fatal) << "Invalid permutation";
-			free(used);
-			fclose(permfile);
-			exit(1);
-		}
-		used[cur - 1] = true;
-		perm[i] = cur - 1;
-	}
-	free(used);
 }
 
