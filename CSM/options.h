@@ -19,6 +19,8 @@ typedef enum {
 	CH
 } OperationType;
 
+class Molecule;  // Forward reference
+
 struct csm_options
 {
 	std::string opName;
@@ -47,13 +49,14 @@ struct csm_options
 	std::string logFileName;
 
 	// file pointers
-	FILE* inFile;
 	FILE* outFile;
 	std::string inFileName;
 	std::string outFileName;
 
 	std::vector<double> dir;
 	std::vector<int> perm;
+
+	Molecule *molecule;  // The molecule to be used
 
 	csm_options();
 	csm_options(int argc, char *argv[]);

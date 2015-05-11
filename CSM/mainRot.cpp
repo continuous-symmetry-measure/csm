@@ -146,11 +146,11 @@ int mainWithOptions()
 	} 
 
 	// try to read molecule from infile
-	Molecule* m;
-	OBMol mol; 
+	Molecule* m = options.molecule;
+	OBMol mol;  // This is now an empty object that's used for printing only.
 	OperationType chMinType = CS;
 	int chMinOrder = 2;
-	
+	/*
 	if (options.useFormat) {
 		// If a specific format is used, read molecule using that format
 		if (boost::iequals(options.format, CSMFORMAT)) // Case-insensitive comparison
@@ -181,7 +181,7 @@ int mainWithOptions()
 			mol = readMolecule(options.inFileName.c_str(), "", options.babelBond);
 			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
 		}
-   	}
+   	} */
 
 	if (options.babelTest) // Mol is ok - return 0
 		return 0;
@@ -391,7 +391,6 @@ int mainWithOptions()
 
 	if (options.printLocal) free(localCSM);
 
-	fclose(options.inFile);
 	fclose(options.outFile);
 
 	return 0;

@@ -1,6 +1,6 @@
 """ The Python wrapper of csmlib """
 
-import sys
+from libcpp.vector cimport vector
 cimport csmlib
 
 def SayHello():
@@ -9,6 +9,19 @@ def SayHello():
 def cs(s):
     """ Converts a Python string to a C++ string """
     return s.encode('UTF8')
+
+cdef fill_molecule(csmlib.python_cpp_bridge options, args):
+    cdef vector[csmlib.python_atom] atoms
+    cdef csmlib.python_atom bridge_atom
+
+    for atom in args['molecule']:
+        bridge_atom.symbol = cs(atom.symbol)
+        bridge_atom.adjacent = atom.adjacent
+        bridge_atom.pos = atom.pos
+        bridge_atom.mass = atom.mass
+        atoms.push_back(bridge_atom)
+
+    options.molecule = atoms
 
 def RunCSM(args):
     cdef csmlib.python_cpp_bridge options
@@ -58,6 +71,8 @@ def RunCSM(args):
         options.dir = args['dir']
     else:
         options.dir = []
+
+    fill_molecule(options, args)
 
     print("Calling C++ from Python")
     result = csmlib.RunCSM(options)
