@@ -40,8 +40,8 @@ def RunCSM(args):
     options.babelTest = args['babelTest']
     options.keepCenter = args['keepCenter']
 
-    if 'logFile' in args:
-        options.logFilename = cs(args['logFile'])
+    if args['logFileName']:
+        options.logFilename = cs(args['logFileName'])
 
     options.inFilename = cs(args['inFileName'])
     options.fdIn = args['inFile'].fileno()
