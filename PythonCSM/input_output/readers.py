@@ -22,7 +22,9 @@ def read_csm_file(f):
     for i in range(size):
         line = f.readline().split()
         try:
-            atom = (line[0], (float(line[1]), float(line[2]), float(line[3])))
+            symbol = line[0]
+            position = (float(line[1]), float(line[2]), float(line[3]))
+            atom = Atom(symbol, position)
         except (ValueError, IndexError):
             raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
         atoms.append(atom)
