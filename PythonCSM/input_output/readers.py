@@ -59,10 +59,7 @@ def read_dir_file(f):
     :return: (x,y,z) of the symmetry axis
     """
     line = f.readline().split()
-    try:
-        result = (float(line[0]), float(line[1]), float(line[2]))
-    except (ValueError, IndexError):
-        pass
+    result = (float(line[0]), float(line[1]), float(line[2]))
     return result
 
 

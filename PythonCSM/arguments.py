@@ -2,6 +2,7 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
+from input_output.readers import read_dir_file
 
 __author__ = 'zmbq'
 
@@ -84,9 +85,13 @@ def open_files(parse_res, result):
     # try to open the dirFile for reading (if exists)
     if parse_res.usedir:
         try:
-            result['dirFile'] = open(parse_res.usedir, 'r')
+            with open(parse_res.usedir, 'r') as dirfile:
+                dir = read_dir_file(dirfile)
+                result['dir'] = dir
         except IOError:
-            raise ValueError("Failed to open dir file " + parse_res.useperm + " for reading")
+            raise ValueError("Failed to open dir file " + parse_res.usedir + " for reading")
+        except (ValueError, IndexError):
+            raise ValueError("Can't read legal direction from file " + parse_res.usedir)
 
 
 def process_arguments(parse_res):
