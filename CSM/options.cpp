@@ -92,7 +92,7 @@ csm_options::csm_options(int argc, char *argv[])
 	opName = innerOpName;
 
 	// try to open infile for reading
-	inFileName = argv[2];
+	/*inFileName = argv[2];
 	if ((inFile = fopen(inFileName.c_str(), "rt")) == NULL){
 		if (writeOpenu)
 		{
@@ -100,7 +100,7 @@ csm_options::csm_options(int argc, char *argv[])
 		}
 		LOG(fatal) << "Failed to open data file " << inFileName;
 		exit(1);
-	}
+	} */
 
 
 	// try to open outfile for writing
@@ -236,7 +236,8 @@ csm_options::csm_options(int argc, char *argv[])
 void csm_options::init_defaults()
 {
 	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
-	inFile = outFile = NULL;
+	outFile = NULL;
 	dir.clear();
 	perm.clear();
+	molecule = NULL;
 }

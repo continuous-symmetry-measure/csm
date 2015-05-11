@@ -11,11 +11,26 @@
 #ifndef CSMLIB_H
 #define CSMLIB_H
 
+#ifndef PYTHON_VERSION
+#error PYTHON_VERSION must be defined with csmlib is to be used
+#endif
+
 #include <vector>
 #include <string>
 #include "options.h"
 
-// Cython works much better with a C interface, use it
+
+// A representation of one atom in Python
+struct python_atom
+{
+	std::string symbol;
+	std::vector<int> adjacent;
+	std::vector<double> pos;
+	double mass;
+
+	python_atom() : mass(0.0)
+	{ }
+};
 
 struct python_cpp_bridge
 {
@@ -45,13 +60,16 @@ struct python_cpp_bridge
 	std::string outFilename;
 
 	// File descriptors - -1 means no file
-	int fdIn, fdOut;
+	int fdOut;
 
 	// Direction Axis
 	std::vector<double> dir;
 
 	//Permutation
 	std::vector<int> perm;
+
+	// Molecule
+	std::vector<python_atom> molecule;
 
 	python_cpp_bridge();
 };

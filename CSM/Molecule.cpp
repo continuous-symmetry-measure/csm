@@ -25,6 +25,10 @@
 #include "elements.h"
 #include "logging.h"
 
+#ifdef PYTHON_VERSION
+#include "csmlib.h"
+#endif
+
 using namespace OpenBabel;
 using namespace std;
 
@@ -39,7 +43,7 @@ const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking
 /*
  * allocates memory for the molecule structure
  */
-Molecule::Molecule(int size) : _valency(size, 0), _similar(size), _mass(size, 1.0)
+Molecule::Molecule(size_t size) : _valency(size, 0), _similar(size), _mass(size, 1.0)
 {
 	int i;
     _size = size;
@@ -116,6 +120,32 @@ void Molecule::replaceSymbols()
 	}
 
 }
+
+#ifdef PYTHON_VERSION
+/*
+ * Creates a molecule from the python supplied atoms
+ */
+Molecule* Molecule::createFromPython(const vector<python_atom> &atoms)
+{
+	Molecule *m = new Molecule(atoms.size());
+	for (int i = 0; i < atoms.size(); i++)
+	{
+		m->_symbol[i] = strdup(atoms[i].symbol.c_str());
+		int valency = atoms[i].adjacent.size();
+		m->_valency[i] = valency;
+		m->_adjacent[i] = (int*)malloc(valency * sizeof(int));
+
+		for (int j = 0; j < valency; j++)
+			m->_adjacent[i][j] = atoms[i].adjacent[j];
+
+		m->_mass[i] = atoms[i].mass;
+	}
+
+	m->initSimilarity(DEPTH_ITERATIONS);
+
+	return m;
+}
+#endif
 
 /*
  * creates a molecule from an input data file
@@ -213,68 +243,6 @@ Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
     }
 
     free(buff);
-
-    m->initSimilarity(DEPTH_ITERATIONS);
-
-    return (m);
-}
-
-/*
- * creates a molecule from a PDB input data file
- */
-Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
-
-    int size,i;
-
-    // read size
-    size = countAtomsPDB(in);
-    if (size == 0)
-		return NULL;
-
-    // allocate molecule
-    Molecule* m = new Molecule(size);
-
-    // read atoms
-    for (i=0; i<size; i++){
-
-		// note: readAtom allocates space for symbol
-
-		if (! readAtomPDB(in,&(m->_symbol[i]),m->_pos[i]) ){
-			LOG(error) << "Input Error: Failed reading input for atom " << i;
-            delete m;
-            return NULL;
-        }
-
-    }
-
-    if (replaceSym)
-    	m->replaceSymbols();
-
-    // read connectivity
-    int *neighbours = (int*)malloc(size * sizeof(int));
-    int valency,curAtom;
-
-    for (i=0; i<size; i++){
-
-		if ( (! readConnectivityPDB(in,&valency,neighbours,size,&curAtom) ) ||
-			(curAtom < 0) ){
-			LOG(error) << "Input Error: Failed reading connectivity element number " << i+1;
-            delete m;
-            return NULL;
-        }
-
-        m->_valency[curAtom] = valency;
-
-        // allocate memory for neighbours and copy
-        m->_adjacent[curAtom] = (int*)malloc(valency * sizeof(int));
-
-        int j;
-        for (j=0; j<valency; j++)
-        	m->_adjacent[curAtom][j] = neighbours[j];
-
-    }
-
-    free(neighbours);
 
     m->initSimilarity(DEPTH_ITERATIONS);
 
