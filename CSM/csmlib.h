@@ -45,10 +45,13 @@ struct python_cpp_bridge
 	std::string outFilename;
 
 	// File descriptors - -1 means no file
-	int fdIn, fdOut, fdPerm;
+	int fdIn, fdOut;
 
 	// Direction Axis
 	std::vector<double> dir;
+
+	//Permutation
+	std::vector<int> perm;
 
 	python_cpp_bridge();
 };

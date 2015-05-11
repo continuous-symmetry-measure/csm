@@ -49,11 +49,11 @@ struct csm_options
 	// file pointers
 	FILE* inFile;
 	FILE* outFile;
-	FILE* permfile;
 	std::string inFileName;
 	std::string outFileName;
 
 	std::vector<double> dir;
+	std::vector<int> perm;
 
 	csm_options();
 	csm_options(int argc, char *argv[]);

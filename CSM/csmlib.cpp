@@ -18,7 +18,7 @@ python_cpp_bridge::python_cpp_bridge()
 {
 	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
 	sn_max = 8;
-	fdIn = fdOut = fdPerm = -1;  // -1 means no file
+	fdIn = fdOut = -1;  // -1 means no file
 }
 
 FILE *convert_to_file(int fd, const char *mode, bool *flag=NULL)
@@ -76,10 +76,12 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 
 	options.inFile = convert_to_file(bridge.fdIn, "r");
 	options.outFile = convert_to_file(bridge.fdOut, "w");
-	options.permfile = convert_to_file(bridge.fdPerm, "r", &options.useperm);
-
+	
 	options.dir = bridge.dir;
 	options.useDir = bridge.dir.size() == 3;
+
+	options.perm = bridge.perm;
+	options.useperm = bridge.perm.size() > 0;
 
 	return options;
 }

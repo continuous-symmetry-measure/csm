@@ -40,8 +40,8 @@ def RunCSM(args):
     options.babelTest = args['babelTest']
     options.keepCenter = args['keepCenter']
 
-    if 'logFile' in args:
-        options.logFilename = cs(args['logFile'])
+    if args['logFileName']:
+        options.logFilename = cs(args['logFileName'])
 
     options.inFilename = cs(args['inFileName'])
     options.fdIn = args['inFile'].fileno()
@@ -49,8 +49,10 @@ def RunCSM(args):
     options.outFilename = cs(args['outFileName'])
     options.fdOut = args['outFile'].fileno()
 
-    if 'permFile' in args:
-        options.fdPerm = args['permFile'].fileno()
+    if 'perm' in args:
+        options.perm = args['perm']
+    else:
+        options.perm = []
 
     if 'dir' in args:
         options.dir = args['dir']
