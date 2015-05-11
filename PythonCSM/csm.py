@@ -3,8 +3,8 @@ Performs some tests on the CSM C++ wrapper
 """
 __author__ = 'zmbq'
 
-from CPP_wrapper import csm
 from arguments import process_arguments, create_parser
+from CPP_wrapper import csm
 
 if __name__=='__main__':
     parser = create_parser()
