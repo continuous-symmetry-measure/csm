@@ -54,7 +54,7 @@ def create_parser():
 def check_arguments(processed):
     if processed['sn_max'] and processed['type'] != 'CH':
         raise ValueError("Option -sn_max only applies to chirality")
-    if ('findPerm' in processed and 'permFile' in processed) or ('findPerm' in processed and 'dirFile' in processed) \
+    if (processed['findPerm'] and 'permFile' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
             or ('dirFile' in processed and 'permFile' in processed):
         raise ValueError("-findperm, -useperm and -usedir are mutually exclusive")
     if 'permFile' in processed and processed['type'] == 'CH':
