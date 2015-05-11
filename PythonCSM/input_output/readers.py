@@ -3,7 +3,7 @@ from input_output.molecule import Atom
 __author__ = 'YAEL'
 
 
-def read_csm_file(f, arguments_dict):
+def read_csm_file(f, args_dict):
     """
     :param f: CSM file (the file object, not the file name)
     :return: A list of Atoms
@@ -22,9 +22,12 @@ def read_csm_file(f, arguments_dict):
     for i in range(size):
         line = f.readline().split()
         try:
-            symbol = line[0]
+            if args_dict["ignoreSym"]:
+                symbol = "XX"
+            else:
+                symbol = line[0]
             position = (float(line[1]), float(line[2]), float(line[3]))
-            atom = Atom(symbol, position)
+            atom = Atom(symbol, position, args_dict["useMass"])
         except (ValueError, IndexError):
             raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
         atoms.append(atom)
@@ -94,7 +97,7 @@ if __name__ == '__main__':
     print("Testing the file reading functions")
     try:
         file = open("../../test_cases/ALA.csm", "r")
-        result = read_csm_file(file)
+        result = read_csm_file(file, {"ignoreSym": False, "useMass": True})
         for a in result:
             print(a)
         file.close()

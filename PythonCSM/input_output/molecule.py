@@ -1,39 +1,26 @@
 from collections import namedtuple
-from openbabel import OBAtom
+from openbabel import OBAtom, OBElementTable
 
 __author__ = 'zmbq'
 
-_elements = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne",
-             "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
-             "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
-             "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr",
-             "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
-             "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd",
-             "Pn", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb",
-             "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
-             "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th",
-             "Pa", "U", "Np", "Pu", "An", "Cn", "Bk", "Cf", "Es", "Fm",
-             "Md", "No", "Lr", "Rf", "Ha"]
+_tbl = OBElementTable()
 
-def _fillAtomicMasses():
-    masses = {}
-    atomicNumber = 1
-    for element in _elements:
-        atom = OBAtom()
-        atom.SetAtomicNum(atomicNumber)
-        atom.SetIsotope(0)
-        masses[element] = atom.GetAtomicMass()
-    return masses
-
-AtomicMasses = _fillAtomicMasses()
-
+def GetAtomicMass(symbol):
+    atomicNum = _tbl.GetAtomicNum(symbol)
+    atom = OBAtom()
+    atom.SetAtomicNum(atomicNum)
+    atom.SetIsotope(0)
+    return atom.GetAtomicMass()
 
 class Atom:
-    def __init__(self, symbol, pos):
+    def __init__(self, symbol, pos, useMass=True):
         self._symbol = symbol
         self.adjacent = []
         self._pos = pos
-        self._mass = AtomicMasses[symbol]
+        if useMass and symbol != 'XX':
+            self._mass = GetAtomicMass(symbol)
+        else:
+            self._mass = 0.0
 
     @property
     def mass(self):
@@ -48,6 +35,4 @@ class Atom:
         return self._symbol
 
     def __str__(self):
-        return "Symbol: " + self._symbol + "\tPos: " + str(self._pos) + "\tAdjacent: " + str(self.adjacent)
-
-
+        return "Symbol: %s\tPos: %s\tAdjacent: %s" % (self.symbol, self.pos, self.adjacent)

@@ -61,6 +61,11 @@ def check_arguments(processed):
     if 'permFile' in processed and processed['type'] == 'CH':
         raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
 
+    #In C++ code ignoreSym is used only when usePerm is false
+    if processed["ignoreSym"] and "perm" in processed:
+        raise ValueError("-useperm ignores the -ignoreSym option, can't use them together")
+
+
 
 def open_files(parse_res, result):
     # try to open the input file for reading
@@ -120,7 +125,6 @@ def process_arguments(parse_res):
     result['type'] = op_names[parse_res.type][0]
     result['opOrder'] = op_names[parse_res.type][1]
     result['opName'] = op_names[parse_res.type][2]
-
     result['inFileName'] = parse_res.input
     result['outFileName'] = parse_res.output
 
