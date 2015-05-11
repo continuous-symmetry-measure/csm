@@ -27,19 +27,15 @@ def _fillAtomicMasses():
 AtomicMasses = _fillAtomicMasses()
 
 class Atom:
-    def __init__(self, symbol, adjacent, pos):
+    def __init__(self, symbol, pos):
         self._symbol = symbol
-        self._adjacent = adjacent
+        self.adjacent = []
         self._pos = pos
         self._mass = AtomicMasses[symbol]
 
     @property
     def mass(self):
         return self._mass
-
-    @property
-    def adjacent(self):
-        return self._adjacent
 
     @property
     def pos(self):
