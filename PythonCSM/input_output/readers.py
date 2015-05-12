@@ -1,12 +1,11 @@
 __author__ = 'YAEL'
 
+from input_output.molecule import Atom
 
-def read_csm_file(f):
+def read_csm_file(f, args_dict):
     """
     :param f: CSM file (the file object, not the file name)
-    :return: (atoms, connectivity)
-    atoms - A list of atom values: (symbol, (x,y,z))
-    connectivity - A list: [[atom1 connectivity] [atom2 connectivity] ...] Connectivity lists may be empty
+    :return: A list of Atoms
     """
 
     try:
@@ -16,14 +15,18 @@ def read_csm_file(f):
 
     if size > 0:
         atoms = []
-        connectivity = []
     else:
         return None
 
     for i in range(size):
         line = f.readline().split()
         try:
-            atom = (line[0], (float(line[1]), float(line[2]), float(line[3])))
+            if args_dict["ignoreSym"]:
+                symbol = "XX"
+            else:
+                symbol = line[0]
+            position = (float(line[1]), float(line[2]), float(line[3]))
+            atom = Atom(symbol, position, args_dict["useMass"])
         except (ValueError, IndexError):
             raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
         atoms.append(atom)
@@ -47,9 +50,9 @@ def read_csm_file(f):
                 raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
             neighbours.append(neighbour)
 
-        connectivity.append(neighbours)
+        atoms[i].adjacent = neighbours
 
-    return atoms, connectivity
+    return atoms
 
 
 def read_dir_file(f):
@@ -59,10 +62,7 @@ def read_dir_file(f):
     :return: (x,y,z) of the symmetry axis
     """
     line = f.readline().split()
-    try:
-        result = (float(line[0]), float(line[1]), float(line[2]))
-    except (ValueError, IndexError):
-        pass
+    result = (float(line[0]), float(line[1]), float(line[2]))
     return result
 
 
@@ -94,6 +94,11 @@ def read_perm_file(f):
 
 if __name__ == '__main__':
     print("Testing the file reading functions")
-    file = open("../../test_cases/ALA.csm", "r")
-    print(read_perm_file(file))
-    file.close()
+    try:
+        file = open("../../test_cases/ALA.csm", "r")
+        result = read_csm_file(file, {"ignoreSym": False, "useMass": True})
+        for a in result:
+            print(a)
+        file.close()
+    except IOError:
+        print("no file")

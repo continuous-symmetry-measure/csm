@@ -15,6 +15,7 @@
 #ifndef MOLECULE_H
 #define MOLECULE_H
 
+#include "csmlib.h"
 #include <openbabel/mol.h>
 
 #ifndef SQR
@@ -35,19 +36,20 @@ private:
 	std::vector<double> _mass;	     // The atomic masses
 
 private:
-	Molecule(int size);  // Private constructor forces creation through the factory methods
+	Molecule(size_t size);  // Private constructor forces creation through the factory methods
 
 	void replaceSymbols();
 	void initSimilarity(int depth);
 	int isSimilar(int a, int b);
+	Molecule* copy(int* selectedAtoms, int selectedAtomsSize, bool updateSimilarity);
 
 public:
 	~Molecule();
 	static Molecule *create(FILE *in, FILE *err, bool replaceSym);
-	static Molecule *createPDB(FILE *in, FILE *err, bool replaceSym);
 	static Molecule* createFromOBMol(OpenBabel::OBMol &obmol, bool replaceSym, bool useMass = false);
-	Molecule *copy(int *selectedAtoms, int selectedAtomsSize, bool updateSimilarity);
+	static Molecule* createFromPython(const std::vector<python_atom> &atoms);
 
+public:
 	int getGroup(int num, int* buff);
 	int getGroupSize(int num);
 	int getMaxGroupSize();

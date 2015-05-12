@@ -1,5 +1,14 @@
 from libcpp.string cimport string
 from libcpp cimport bool
+from libcpp.vector cimport vector
+
+cdef extern from "csmlib.h":
+    cdef cppclass python_atom:
+        python_atom();
+        string symbol;
+        vector[int] adjacent;
+        vector[double] pos;
+        double mass;
 
 cdef extern from "csmlib.h":
     cdef cppclass python_cpp_bridge:
@@ -34,7 +43,11 @@ cdef extern from "csmlib.h":
         string inFilename;
         string outFilename;
 
-        int fdIn, fdOut, fdPerm, fdDir;
+        int fdOut;
+
+        vector[double] dir;
+        vector[int] perm;
+        vector[python_atom] molecule;
 
 cdef extern from "csmlib.h":
     int SayHello();

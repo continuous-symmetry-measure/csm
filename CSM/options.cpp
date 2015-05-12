@@ -92,7 +92,7 @@ csm_options::csm_options(int argc, char *argv[])
 	opName = innerOpName;
 
 	// try to open infile for reading
-	inFileName = argv[2];
+	/*inFileName = argv[2];
 	if ((inFile = fopen(inFileName.c_str(), "rt")) == NULL){
 		if (writeOpenu)
 		{
@@ -100,7 +100,7 @@ csm_options::csm_options(int argc, char *argv[])
 		}
 		LOG(fatal) << "Failed to open data file " << inFileName;
 		exit(1);
-	}
+	} */
 
 
 	// try to open outfile for writing
@@ -120,6 +120,7 @@ csm_options::csm_options(int argc, char *argv[])
 	int nextIsDirFile = false;
 	for (i = 4; i< argc; i++){
 		if (nextIsPermFile) {
+			/*
 			char* permfileName = argv[i];
 			if ((permfile = fopen(permfileName, "rt")) == NULL){
 				if (writeOpenu)
@@ -130,8 +131,10 @@ csm_options::csm_options(int argc, char *argv[])
 				exit(1);
 			}
 			nextIsPermFile = false;
+			*/
 		}
 		else if (nextIsDirFile) {
+			/*
 			char* dirfilename = argv[i];
 			if ((dirfile = fopen(dirfilename, "rt")) == NULL){
 				if (writeOpenu) {
@@ -140,7 +143,7 @@ csm_options::csm_options(int argc, char *argv[])
 				LOG(fatal) << "Failed to open dir file " << dirfilename << " for reading";
 				exit(1);
 			}
-			nextIsDirFile = false;
+			nextIsDirFile = false; */
 		}
 		else if (nextIsMaxSn) {
 			sn_max = atoi(argv[i]);
@@ -233,5 +236,8 @@ csm_options::csm_options(int argc, char *argv[])
 void csm_options::init_defaults()
 {
 	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
-	inFile = outFile = dirfile = permfile = NULL;
+	outFile = NULL;
+	dir.clear();
+	perm.clear();
+	molecule = NULL;
 }

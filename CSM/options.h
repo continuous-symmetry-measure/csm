@@ -9,6 +9,7 @@
 #define OPTIONS_H
 
 #include <string>
+#include <vector>
 
 typedef enum {
 	CN,
@@ -17,6 +18,8 @@ typedef enum {
 	CI,
 	CH
 } OperationType;
+
+class Molecule;  // Forward reference
 
 struct csm_options
 {
@@ -46,12 +49,14 @@ struct csm_options
 	std::string logFileName;
 
 	// file pointers
-	FILE* inFile;
 	FILE* outFile;
-	FILE* permfile;
-	FILE* dirfile;
 	std::string inFileName;
 	std::string outFileName;
+
+	std::vector<double> dir;
+	std::vector<int> perm;
+
+	Molecule *molecule;  // The molecule to be used
 
 	csm_options();
 	csm_options(int argc, char *argv[]);
