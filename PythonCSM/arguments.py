@@ -76,7 +76,7 @@ def open_files(parse_res, result):
         else:
             mol = open_non_csm_file(result)
             atoms = read_ob_mol(mol, result)
-            result['molecule'] = atoms
+        result['molecule'] = atoms
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
 
