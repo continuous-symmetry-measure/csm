@@ -49,7 +49,8 @@ def read_ob_mol(obmol, args_dict):
 		else {
 			mol->_symbol[i] = strdup(atom->GetType());
 		}"""
-        # TODO: check if elements tabe is needed
+
+        # TODO: check if elements table is needed
 
         if args_dict["ignoreSym"]:
             symbol = "XX"
@@ -60,17 +61,14 @@ def read_ob_mol(obmol, args_dict):
         atom = Atom(symbol, position, args_dict["useMass"])
 
         adjacent = []
-        for neighbour_atom in openbabel.OBAtomAtomIter(obatom):
-            # TODO: check that it works
-            adjacent.append(neighbour_atom.idx)
+        iter = openbabel.OBAtomAtomIter(obatom)
+        for neighbour_atom in iter:
+            adjacent.append(neighbour_atom.GetIdx())
         atom.adjacent = adjacent
 
         atoms.append(atom)
-
-
-	#TODO: mol->initSimilarity(DEPTH_ITERATIONS);???
-
-	return atoms
+    #TODO: mol->initSimilarity(DEPTH_ITERATIONS);???
+    return atoms
 
 
 def read_csm_file(f, args_dict):
@@ -167,10 +165,16 @@ def read_perm_file(f):
 if __name__ == '__main__':
     print("Testing the file reading functions")
     try:
-        file = open("../../test_cases/ALA.csm", "r")
-        result = read_csm_file(file, {"ignoreSym": False, "useMass": True})
+        # file = open("../../test_cases/test1/AgCu10p1.xyz", "r")
+        # file = open("../../test_cases/test3/c_in_1282148276_benzene.mol", "r")
+        # file = open("../../test_cases/test6/AuCu10p6.xyz", "r")
+        args_dict = {"useformat": False, "babelBond": False,
+                     "inFileName": "../../test_cases/test3/c_in_1282148276_benzene.mol",
+                     "ignoreSym": False, "useMass": True}
+        obmol = open_non_csm_file(args_dict)
+        result = read_ob_mol(obmol, args_dict)
         for a in result:
             print(a)
-        file.close()
+        # file.close()
     except IOError:
         print("no file")
