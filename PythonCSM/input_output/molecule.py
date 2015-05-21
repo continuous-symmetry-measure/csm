@@ -12,6 +12,9 @@ def GetAtomicMass(symbol):
     atom.SetIsotope(0)
     return atom.GetAtomicMass()
 
+def GetAtomicSymbol(atomic_num):
+    return _tbl.GetSymbol(atomic_num)
+
 class Atom:
     def __init__(self, symbol, pos, useMass=True):
         self._symbol = symbol

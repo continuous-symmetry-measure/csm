@@ -3,7 +3,7 @@ import openbabel
 
 __author__ = 'YAEL'
 
-from input_output.molecule import Atom
+from input_output.molecule import Atom, GetAtomicSymbol
 
 
 def open_non_csm_file(args_dict):
@@ -55,7 +55,7 @@ def read_ob_mol(obmol, args_dict):
         if args_dict["ignoreSym"]:
             symbol = "XX"
         else:
-            symbol = obatom.GetType()
+            symbol = GetAtomicSymbol(obatom.GetAtomicNum())
         position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
 
         atom = Atom(symbol, position, args_dict["useMass"])
