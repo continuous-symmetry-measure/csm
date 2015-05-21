@@ -63,7 +63,7 @@ def read_ob_mol(obmol, args_dict):
         adjacent = []
         iter = openbabel.OBAtomAtomIter(obatom)
         for neighbour_atom in iter:
-            adjacent.append(neighbour_atom.GetIdx())
+            adjacent.append(neighbour_atom.GetIdx() - 1)
         atom.adjacent = adjacent
 
         atoms.append(atom)
