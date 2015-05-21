@@ -142,7 +142,7 @@ def process_arguments(parse_res):
 
     result['format'] = parse_res.format
     result['useformat'] = result['format'] is None
-    if result['format'] is None:
+    if not result['format']:
         # get input file extension
         result['format'] = parse_res.input.split(".")[-1]
 
