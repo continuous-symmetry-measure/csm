@@ -11,4 +11,10 @@ if __name__=='__main__':
     result = parser.parse_args() # Parse sys.args
     args = process_arguments(result)
 
-    csm.RunCSM(args)
+    if args["ignoreHy"] or args["removeHy"]:
+        args["obmol"].DeleteHydrogens()
+
+    output_dict = csm.RunCSM(args)
+
+    # TODO: print output_dict
+    # print_output(output_dict, args)

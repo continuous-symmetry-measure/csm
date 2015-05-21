@@ -53,29 +53,38 @@ def create_parser():
 
 
 def check_arguments(processed):
+
     if processed['sn_max'] and processed['type'] != 'CH':
         raise ValueError("Option -sn_max only applies to chirality")
-    if (processed['findPerm'] and 'permFile' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
-            or ('dirFile' in processed and 'permFile' in processed):
+
+    if (processed['findPerm'] and 'perm' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
+            or ('dirFile' in processed and 'perm' in processed):
         raise ValueError("-findperm, -useperm and -usedir are mutually exclusive")
-    if 'permFile' in processed and processed['type'] == 'CH':
+
+    if 'perm' in processed and processed['type'] == 'CH':
         raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
 
-    #In C++ code ignoreSym is used only when usePerm is false
-    if processed["ignoreSym"] and "perm" in processed:
-        raise ValueError("-useperm ignores the -ignoreSym option, can't use them together")
+    # In C++ code ignoreSym, ignoreHy and removeHy are used only when usePerm is false
+    if "perm" in processed:
+        if processed["ignoreSym"]:
+            raise ValueError("-useperm ignores the -ignoreSym option, can't use them together")
+        if processed["ignoreHy"]:
+            raise ValueError("-useperm ignores the -ignoreHy option, can't use them together")
+        if processed["removeHy"]:
+            raise ValueError("-useperm ignores the -removeHy option, can't use them together")
 
 
 
 def open_files(parse_res, result):
+
     # try to open and read the input file
     try:
         if result['format'].lower() == "csm":
             with open(parse_res.input, 'r') as infile:
                 atoms = read_csm_file(infile, result)
         else:
-            mol = open_non_csm_file(result)
-            atoms = read_ob_mol(mol, result)
+            result["obmol"] = open_non_csm_file(result)
+            atoms = read_ob_mol(result["obmol"], result)
         result['molecule'] = atoms
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
