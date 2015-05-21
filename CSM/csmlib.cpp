@@ -89,17 +89,15 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 }
 
 extern csm_options options;
+extern csm_output results;
 extern int mainWithOptions();
 
-int RunCSM(python_cpp_bridge bridge)
+csm_output RunCSM(python_cpp_bridge bridge)
 {
 	options = process_bridge(bridge);
+	mainWithOptions();  // Fills output
 
-	cout << "C++ domain entered" << endl;
-	int rc = mainWithOptions();
-	cout << "C++ is done" << endl;
-
-	return 1;
+	return results;
 }
 
 int SayHello()

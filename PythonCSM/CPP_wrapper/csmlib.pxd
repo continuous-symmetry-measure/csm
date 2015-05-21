@@ -50,6 +50,19 @@ cdef extern from "csmlib.h":
         vector[python_atom] molecule;
 
 cdef extern from "csmlib.h":
-    int SayHello();
-    int RunCSM(python_cpp_bridge options);
+    cdef cppclass csm_output:
+        vector[python_atom] molecule;
+        double norm;
+        int numGroups;
+
+        vector[vector[double]] outAtoms;
+        double csm;
+        vector[double] dir;
+        double dMin;
+        vector[double] localCSM;
+        int chMinOrder;
+        vector[int] perm;
+
+cdef extern from "csmlib.h":
+    csm_output RunCSM(python_cpp_bridge options);
 

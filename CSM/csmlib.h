@@ -28,6 +28,7 @@ struct python_atom
 	{ }
 };
 
+// Input from Python
 struct python_cpp_bridge
 {
 	std::string opType;
@@ -70,6 +71,23 @@ struct python_cpp_bridge
 	python_cpp_bridge();
 };
 
+struct csm_output
+{
+	// Molecule
+	std::vector<python_atom> molecule;
+	double norm;
+	int numGroups;
+
+	// Results from mainRot
+	std::vector<std::vector<double>> outAtoms; // x,y,z of each atom
+	double csm; // The actual CSM score
+	std::vector<double> dir; 
+	double dMin;
+	std::vector<double> localCSM;
+	int chMinOrder;
+	std::vector<int> perm;
+};
+
 
 #ifdef __cplusplus
 extern "C"
@@ -77,8 +95,7 @@ extern "C"
 #endif
 	// Runs the entire CSM application
 	// int RunCSM(const std::vector<std::string> args);
-	int RunCSM(python_cpp_bridge options);
-	int SayHello();
+	csm_output RunCSM(python_cpp_bridge options);
 #ifdef __cplusplus
 }
 #endif

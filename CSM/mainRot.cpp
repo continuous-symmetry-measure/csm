@@ -37,11 +37,10 @@ using namespace std;
 #define CSMFORMAT "CSM"
 
 csm_options options;
-
-void readPerm(FILE* permfile, int* perm, int size);
-void readDir(FILE* dirFile, double* dir);
+csm_output results;
 
 int mainWithOptions(); // Runs the main code after the options have been set
+static void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double dMin, double *localCSM, int chMinOrder, int *perm);
 
 /*
  * reutnrs n!
@@ -109,21 +108,6 @@ const char *getExtension(const char *fname) {
 	return strrchr(fname,'.') + 1;
 }
 
-// ************************************************************
-//       main program
-// ************************************************************
-
-/*
-* main funciton - check valid parameters, parse molecule and call chirality Operation
-*/
-int main(int argc, char *argv[])
-{
-	cout << "argc: " << argc << endl;
-	options = csm_options(argc, argv);
-
-	int rc = mainWithOptions();
-	return rc;
-}
 
 int mainWithOptions()
 {
@@ -350,6 +334,8 @@ int mainWithOptions()
 		outAtoms[i][2] *= m->norm();
 	}	
 
+	fill_output(m, outAtoms, csm, dir, dMin, localCSM, chMinOrder, perm);
+
 	if (options.useFormat) {
 		// If a specific format is used, read molecule using that format
 		if (boost::iequals(options.format, CSMFORMAT)) // Case insensitive comparison 
@@ -396,3 +382,49 @@ int mainWithOptions()
 	return 0;
 }
 
+void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double dMin, double *localCSM, int chMinOrder, int *perm)
+{
+	// All arrays that depend on the molecule's size
+	results.molecule.clear();
+	results.outAtoms.clear();
+	results.localCSM.clear();
+	results.perm.clear();
+	for (int i = 0; i < m->size(); i++)
+	{
+		// Molecule
+		python_atom atom;
+		atom.symbol = m->symbol(i);
+		atom.mass = m->mass(i);
+		for (int j = 0; j < 3; j++)
+			atom.pos.push_back(m->pos()[i][j]);
+		for (int j = 0; j < m->valency(i); j++)
+			atom.adjacent.push_back(m->adjacent(i, j));
+		results.molecule.push_back(atom);
+
+		// outAtoms
+		std::vector<double> outAtom;
+		for (int j = 0; j < 3; j++)
+			outAtom.push_back(outAtoms[i][j]);
+		results.outAtoms.push_back(outAtom);
+
+		// localCSM
+		if (localCSM)
+			results.localCSM.push_back(localCSM[i]);
+
+		// perm
+		results.perm.push_back(perm[i]);
+	}
+
+
+	// Other values
+	results.norm = m->norm();
+	results.numGroups = m->groupNum();
+	results.csm = csm;
+
+	results.dir.clear();
+	for (int i = 0; i < 3; i++)
+		results.dir.push_back(dir[i]);
+
+	results.dMin = dMin;
+	results.chMinOrder = chMinOrder;
+}

@@ -14,7 +14,8 @@ if __name__=='__main__':
     if args["ignoreHy"] or args["removeHy"]:
         args["obmol"].DeleteHydrogens()
 
-    output_dict = csm.RunCSM(args)
+    results = csm.RunCSM(args)
+    print(results)
 
-    # TODO: print output_dict
-    # print_output(output_dict, args)
+    # TODO: print results
+    # print_output(results, args)
