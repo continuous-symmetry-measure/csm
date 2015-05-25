@@ -168,7 +168,7 @@ csm_options::csm_options(int argc, char *argv[])
 
 		else if (strncmp(argv[i], "-format", 7) == 0) {
 			//useFormat = true;
-			format = argv[i] + 7;
+			//format = argv[i] + 7;
 		}
 		else if (strcmp(argv[i], "-writeOpenu") == 0) {
 			writeOpenu = true;
@@ -231,7 +231,7 @@ csm_options::csm_options(int argc, char *argv[])
 	}
 	if (writeOpenu) {
 		//useFormat = true;
-		format = "PDB";
+		//format = "PDB";
 	}
 }
 

@@ -26,7 +26,6 @@ struct csm_options
 	std::string opName;
 	bool printLocal;
 	bool writeOpenu;
-	std::string format;
 
 	bool ignoreHy;
 	bool removeHy;

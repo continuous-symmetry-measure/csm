@@ -60,9 +60,6 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.printLocal = args['printLocal']
     options.writeOpenu = args['writeOpenu']
 
-    if args['format']:
-        options.format = cs(args['format'])
-
     options.ignoreHy = args['ignoreHy']
     options.removeHy = args['removeHy']
     options.ignoreSym = args['ignoreSym']

@@ -54,8 +54,6 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 	options.keepCenter = bridge.keepCenter;
 	options.sn_max = bridge.sn_max;
 
-	options.format = bridge.format;
-
 	if (bridge.opType == "CS")
 		options.type = CS;
 	else if (bridge.opType == "CH")
