@@ -40,7 +40,8 @@ csm_options options;
 csm_output results;
 
 int mainWithOptions(); // Runs the main code after the options have been set
-static void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double dMin, double *localCSM, int chMinOrder, int *perm);
+static void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double dMin, double *localCSM, 
+	int chMinOrder, OperationType chMinType, int *perm);
 
 /*
  * reutnrs n!
@@ -318,6 +319,8 @@ int mainWithOptions()
 	if (options.printLocal) {
 		localCSM = (double *)malloc(sizeof(double) * m->size());
 		if (options.type == CH) 
+			// parameters dictionary change after the calculations
+			// TODO: check if it's used in python after calculations to python
 			options.opOrder = chMinOrder;
 		computeLocalCSM(m, localCSM, perm, dir, options.type != CH ? options.type : chMinType);
 	}
@@ -334,8 +337,9 @@ int mainWithOptions()
 		outAtoms[i][2] *= m->norm();
 	}	
 
-	fill_output(m, outAtoms, csm, dir, dMin, localCSM, chMinOrder, perm);
+	fill_output(m, outAtoms, csm, dir, dMin, localCSM, chMinOrder, chMinType, perm);
 
+	/*
 	if (options.useFormat) {
 		// If a specific format is used, read molecule using that format
 		if (boost::iequals(options.format, CSMFORMAT)) // Case insensitive comparison 
@@ -366,6 +370,7 @@ int mainWithOptions()
 		fprintf(options.outFile, "%d ", perm[i] + 1);
 	}
 	fprintf(options.outFile, "\n");
+	*/
 
 	// housekeeping
 	for (i=0;i<m->size();i++){
@@ -377,12 +382,11 @@ int mainWithOptions()
 
 	if (options.printLocal) free(localCSM);
 
-	fclose(options.outFile);
-
 	return 0;
 }
 
-void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double dMin, double *localCSM, int chMinOrder, int *perm)
+void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double dMin, double *localCSM, int chMinOrder, 
+	OperationType chMinType, int *perm)
 {
 	// All arrays that depend on the molecule's size
 	results.molecule.clear();
@@ -427,4 +431,11 @@ void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double
 
 	results.dMin = dMin;
 	results.chMinOrder = chMinOrder;
+	switch (chMinType) {
+		case CN: results.chMinType = "CN"; break;
+		case SN: results.chMinType = "SN"; break;
+		case CS: results.chMinType = "CS"; break;
+		case CI: results.chMinType = "CI"; break;
+		case CH: results.chMinType = "CH"; break;
+	}
 }

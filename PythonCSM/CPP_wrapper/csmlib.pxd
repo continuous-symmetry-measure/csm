@@ -61,6 +61,7 @@ cdef extern from "csmlib.h":
         double dMin;
         vector[double] localCSM;
         int chMinOrder;
+        string chMinType;
         vector[int] perm;
 
 cdef extern from "csmlib.h":

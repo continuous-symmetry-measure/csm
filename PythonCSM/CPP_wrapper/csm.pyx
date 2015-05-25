@@ -117,6 +117,7 @@ cdef parse_output(csmlib.csm_output &output):
     results['dMin'] = output.dMin
     results['localCSM'] = vector_double_to_list(output.localCSM)
     results['chMinOrder'] = output.chMinOrder
+    results['chMinType'] = output.chMinType
     results['perm'] = vector_int_to_list(output.perm)
 
     return results

@@ -15,7 +15,7 @@
 /*
 * prints the Molecule position, outcome position, csm, dMin and directional cosines to output file
 */
-void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out, double* localCSM)
+/*void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double dMin, FILE *out, double* localCSM)
 {
 
 	int i, j;
@@ -74,7 +74,10 @@ void printOutput(Molecule* m, double** outAtoms, double csm, double *dir, double
 	}
 
 
+
 }
+
+*/
 
 /*
 * prints PDB ATOM tags
@@ -147,6 +150,7 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 /*
 * prints in PDB format the Molecule position, outcome position, csm, dMin and directional cosines to output file
 */
+/*
 void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, double *dir, double dMin, FILE *out, const char *fname, double* localCSM) 
 {
 
@@ -195,4 +199,4 @@ void printOutputFormat(Molecule* m, OBMol& mol, double** outAtoms, double csm, d
 		fprintf(out, "\nsum: %7lf\n", sum);
 	}
 }
-
+*/

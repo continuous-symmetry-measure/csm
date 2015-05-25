@@ -85,6 +85,7 @@ struct csm_output
 	double dMin;
 	std::vector<double> localCSM;
 	int chMinOrder;
+	std::string chMinType;
 	std::vector<int> perm;
 };
 
