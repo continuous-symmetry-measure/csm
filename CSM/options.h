@@ -59,11 +59,6 @@ struct csm_options
 	Molecule *molecule;  // The molecule to be used
 
 	csm_options();
-	csm_options(int argc, char *argv[]);
-
-private:
-	void usage(const std::string op);
-	void init_defaults();
 };
 
 extern csm_options options;

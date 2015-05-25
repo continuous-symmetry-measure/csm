@@ -111,8 +111,6 @@ const char *getExtension(const char *fname) {
 
 int mainWithOptions()
 {
-	throw domain_error("Exception from C++");
-
 	init_logging();
 	LOG(info) << "CSM starting up";
 
@@ -148,9 +146,6 @@ int mainWithOptions()
 		
 	
 		if (!n){
-			if (options.writeOpenu) {
-				printf("ERR* Failed while trying to strip unwanted atoms *ERR\n");
-			}
 			throw domain_error("Failed while trying to strip unwanted atoms");
 		}
 		delete m;
@@ -183,9 +178,6 @@ int mainWithOptions()
 
 	//normalize Molecule
 	if (!m->normalizeMolecule(options.keepCenter)){
-		if (options.writeOpenu) {
-			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
-		}
 		throw domain_error("Failed to normalize atom positions: dimension of set of points = zero");
 	}
  
