@@ -468,8 +468,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 		if (options.writeOpenu) {
 			printf("ERR* Failed to create groupPermuter *ERR\n");
 		}
-		LOG(fatal) << "Failed to create groupPermuter";
-		exit(1);
+		throw domain_error("Failed to create groupPermuter");
 	};
 
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
@@ -497,8 +496,9 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 		if (options.writeOpenu) {
 			printf("ERR* Failed to calculate a csm value for %s *ERR\n", options.opName.c_str());
 		}
-		LOG(fatal) << "Failed to calculate a csm value for " << options.opName;
-		exit(1);
+		stringstream strm;
+		strm << "Failed to calculate a csm value for " << options.opName;
+		throw domain_error(strm.str());
 	}
 
 	// which is DMIN?
