@@ -138,12 +138,14 @@ void printOutputPDB(Molecule* m, double** outAtoms, double csm, double *dir, dou
 	else
 		printf("%s: %.4lf\n", options.opName.c_str(), fabs(csm));
 
+	/*
 	if (options.printNorm) {
 		printf("NORMALIZATION FACTOR: %7lf\n", m->norm());
 		printf("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf\n", dMin);
 		printf("DIRECTIONAL COSINES: %lf %lf %lf\n", dir[0], dir[1], dir[2]);
 		printf("NUMBER OF EQUIVALENCE GROUPS: %d\n", m->groupNum());
 	}
+	*/
 
 }
 

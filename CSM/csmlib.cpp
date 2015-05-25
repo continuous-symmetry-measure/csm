@@ -17,7 +17,7 @@ static FILE *convert_to_file(int fd, bool *flag=NULL);
 
 python_cpp_bridge::python_cpp_bridge()
 {
-	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
+	printLocal = writeOpenu = ignoreHy = removeHy = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
 	sn_max = 8;
 	fdOut = -1;  // -1 means no file
 }
@@ -39,7 +39,6 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 {
 	csm_options options;
 
-	options.printNorm = bridge.printNorm;
 	options.printLocal = bridge.printLocal;
 	options.writeOpenu = bridge.writeOpenu;
 	options.ignoreHy = bridge.ignoreHy;
@@ -56,7 +55,6 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 	options.sn_max = bridge.sn_max;
 
 	options.format = bridge.format;
-	options.useFormat = options.format != "";
 
 	if (bridge.opType == "CS")
 		options.type = CS;
@@ -71,11 +69,7 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 	options.opName = bridge.opName;
 	options.opOrder = bridge.opOrder;
 
-	options.inFileName = bridge.inFilename;
-	options.outFileName = bridge.outFilename;
 	options.logFileName = bridge.logFilename;
-
-	options.outFile = convert_to_file(bridge.fdOut, "w");
 	
 	options.dir = bridge.dir;
 	options.useDir = bridge.dir.size() == 3;

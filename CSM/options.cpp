@@ -104,6 +104,7 @@ csm_options::csm_options(int argc, char *argv[])
 
 
 	// try to open outfile for writing
+	/*
 	outFileName = argv[3];
 	if ((outFile = fopen(outFileName.c_str(), "w")) == NULL){
 		if (writeOpenu) {
@@ -112,6 +113,7 @@ csm_options::csm_options(int argc, char *argv[])
 		LOG(fatal) << "Failed to open output file " << outFileName << " for writing";
 		exit(1);
 	}
+	*/
 
 	// get commandline flags
 	int i;
@@ -165,7 +167,7 @@ csm_options::csm_options(int argc, char *argv[])
 			ignoreSym = true;
 
 		else if (strncmp(argv[i], "-format", 7) == 0) {
-			useFormat = true;
+			//useFormat = true;
 			format = argv[i] + 7;
 		}
 		else if (strcmp(argv[i], "-writeOpenu") == 0) {
@@ -192,7 +194,7 @@ csm_options::csm_options(int argc, char *argv[])
 			timeOnly = true;
 		}
 		else if (strcmp(argv[i], "-printNorm") == 0) {
-			printNorm = true;
+			//printNorm = true;
 		}
 		else if (strcmp(argv[i], "-help") == 0) {
 			usage(argv[0]);
@@ -228,15 +230,14 @@ csm_options::csm_options(int argc, char *argv[])
 		}
 	}
 	if (writeOpenu) {
-		useFormat = true;
+		//useFormat = true;
 		format = "PDB";
 	}
 }
 
 void csm_options::init_defaults()
 {
-	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
-	outFile = NULL;
+	printLocal = writeOpenu = ignoreHy = removeHy = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
 	dir.clear();
 	perm.clear();
 	molecule = NULL;

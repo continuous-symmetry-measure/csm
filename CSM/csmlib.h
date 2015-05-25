@@ -35,7 +35,6 @@ struct python_cpp_bridge
 	std::string opName;
 	int opOrder;
 
-	bool printNorm;
 	bool printLocal;
 	bool writeOpenu;
 	std::string format;

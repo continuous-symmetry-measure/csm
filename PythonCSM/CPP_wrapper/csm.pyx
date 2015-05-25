@@ -57,7 +57,6 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.opName = cs(args['opName'])
     options.opOrder = args['opOrder']
 
-    options.printNorm = args['printNorm']
     options.printLocal = args['printLocal']
     options.writeOpenu = args['writeOpenu']
 
@@ -82,11 +81,6 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
 
     if args['logFileName']:
         options.logFilename = cs(args['logFileName'])
-
-    options.inFilename = cs(args['inFileName'])
-
-    options.outFilename = cs(args['outFileName'])
-    options.fdOut = args['outFile'].fileno()
 
     if 'perm' in args:
         options.perm = args['perm']
