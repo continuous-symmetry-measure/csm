@@ -465,11 +465,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	}
 	gp = new GroupPermuter(m->groupNum(), groupSizes, m->size(), options.opOrder, addGroupsOfTwo);
 	if (!gp){
-		if (options.writeOpenu) {
-			printf("ERR* Failed to create groupPermuter *ERR\n");
-		}
-		LOG(fatal) << "Failed to create groupPermuter";
-		exit(1);
+		throw domain_error("Failed to create groupPermuter");
 	};
 
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
@@ -494,10 +490,9 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 	// failed to find value for any permutation
 
 	if (*csm == MAXDOUBLE){
-		if (options.writeOpenu) {
-			printf("ERR* Failed to calculate a csm value for %s *ERR\n", options.opName.c_str());
-		}
-		LOG(fatal) << "Failed to calculate a csm value for " << options.opName;
+		stringstream strm;
+		strm << "Failed to calculate a csm value for " << options.opName;
+		throw domain_error(strm.str());
 		exit(1);
 	}
 

@@ -65,5 +65,5 @@ cdef extern from "csmlib.h":
         vector[int] perm;
 
 cdef extern from "csmlib.h":
-    csm_output RunCSM(python_cpp_bridge options);
+    csm_output RunCSM(python_cpp_bridge options) except +;
 

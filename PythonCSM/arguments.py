@@ -67,11 +67,11 @@ def check_arguments(processed):
     # In C++ code ignoreSym, ignoreHy and removeHy are used only when usePerm is false
     if "perm" in processed:
         if processed["ignoreSym"]:
-            raise ValueError("-useperm ignores the -ignoreSym option, can't use them together")
+            raise ValueError("--useperm ignores the --ignoreSym option, can't use them together")
         if processed["ignoreHy"]:
-            raise ValueError("-useperm ignores the -ignoreHy option, can't use them together")
+            raise ValueError("--useperm ignores the --ignoreHy option, can't use them together")
         if processed["removeHy"]:
-            raise ValueError("-useperm ignores the -removeHy option, can't use them together")
+            raise ValueError("--useperm ignores the -r-emoveHy option, can't use them together")
 
 
 
