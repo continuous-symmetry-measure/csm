@@ -10,6 +10,7 @@
 #include <sstream>
 #include <iomanip>
 #include <complex>
+#include <memory.h>
 
 #include "calculations.h"
 #include "dmatrix.h"
@@ -21,7 +22,9 @@
 #include "math_utils.h"
 #include "logging.h"
 
-#define M_PI 3.1415926535
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 using namespace std;
 
