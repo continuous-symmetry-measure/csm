@@ -1,6 +1,6 @@
 #ifndef BABEL_ADAPTER_H
 #define BABEL_ADAPTER_H
-
+#ifdef false
 // Include Open Babel classes for OBMol and OBConversion
 extern "C" {
 #include <openbabel/mol.h>
@@ -46,4 +46,5 @@ OBMol readMolecule (const char *filename, const std::string format, int babelBon
  */
 void writeMolecule(OBMol& mol, const std::string format, FILE* file, const char *filename);
 
+#endif
 #endif

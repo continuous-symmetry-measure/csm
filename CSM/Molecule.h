@@ -55,7 +55,6 @@ public:
 	int getMaxGroupSize();
 	Molecule* stripAtoms(char** removeList, int removeListSize, int updateSimilarity);
 	bool normalizeMolecule(bool keepCenter);
-	void fillAtomicMasses();  // Fill the atomic masses for all the symbols
 
 	void print();
 	void printBasic();

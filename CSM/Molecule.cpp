@@ -877,9 +877,3 @@ void Molecule::printDebug2()
     printf("\n");
 
 };
-
-void Molecule::fillAtomicMasses()
-{
-	for (int i = 0; i < _size; i++)
-		_mass[i] = getAtomicMass(_symbol[i]);
-}
