@@ -35,7 +35,6 @@ struct python_cpp_bridge
 	std::string opName;
 	int opOrder;
 
-	bool printNorm;
 	bool printLocal;
 	bool writeOpenu;
 	std::string format;
@@ -85,6 +84,7 @@ struct csm_output
 	double dMin;
 	std::vector<double> localCSM;
 	int chMinOrder;
+	std::string chMinType;
 	std::vector<int> perm;
 };
 

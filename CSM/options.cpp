@@ -6,13 +6,15 @@
 */
 
 #include "options.h"
+#include "logging.h"
+#include <cstring>
+#include <stdio.h>
 
 using namespace std;
 
 csm_options::csm_options() 
 { 
-	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = useFormat = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
-	outFile = NULL;
+	printLocal = writeOpenu = ignoreHy = removeHy = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
 	dir.clear();
 	perm.clear();
 	molecule = NULL;

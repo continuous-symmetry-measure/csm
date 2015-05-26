@@ -1,5 +1,4 @@
-from openbabel import OBFormat
-import openbabel
+from openbabel import OBFormat, OBAtomAtomIter, OBConversion, OBMol
 
 __author__ = 'YAEL'
 
@@ -11,8 +10,8 @@ def open_non_csm_file(args_dict):
     :param args_dict: dictionary of processed command line arguments
     :return: OBMol object created from input file by OpenBabel
     """
-    conv = openbabel.OBConversion()
-    mol = openbabel.OBMol()
+    conv = OBConversion()
+    mol = OBMol()
     if not args_dict['useformat']:
         ob_format = conv.FormatFromExt(args_dict['inFileName'])
         if not ob_format:
@@ -61,7 +60,7 @@ def read_ob_mol(obmol, args_dict):
         atom = Atom(symbol, position, args_dict["useMass"])
 
         adjacent = []
-        iter = openbabel.OBAtomAtomIter(obatom)
+        iter = OBAtomAtomIter(obatom)
         for neighbour_atom in iter:
             adjacent.append(neighbour_atom.GetIdx() - 1)
         atom.adjacent = adjacent

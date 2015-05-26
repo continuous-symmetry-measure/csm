@@ -24,15 +24,12 @@ class Molecule;  // Forward reference
 struct csm_options
 {
 	std::string opName;
-	bool printNorm;
 	bool printLocal;
 	bool writeOpenu;
-	std::string format;
 
 	bool ignoreHy;
 	bool removeHy;
 	bool ignoreSym;
-	bool useFormat;
 	OperationType type;
 	int opOrder;
 	bool useperm;
@@ -47,11 +44,6 @@ struct csm_options
 	bool babelTest;
 	bool keepCenter;
 	std::string logFileName;
-
-	// file pointers
-	FILE* outFile;
-	std::string inFileName;
-	std::string outFileName;
 
 	std::vector<double> dir;
 	std::vector<int> perm;

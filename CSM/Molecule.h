@@ -16,7 +16,6 @@
 #define MOLECULE_H
 
 #include "csmlib.h"
-#include <openbabel/mol.h>
 
 #ifndef SQR
 #define SQR(x)      ((x) * (x))
@@ -45,8 +44,6 @@ private:
 
 public:
 	~Molecule();
-	static Molecule *create(FILE *in, FILE *err, bool replaceSym);
-	static Molecule* createFromOBMol(OpenBabel::OBMol &obmol, bool replaceSym, bool useMass = false);
 	static Molecule* createFromPython(const std::vector<python_atom> &atoms);
 
 public:
@@ -55,7 +52,6 @@ public:
 	int getMaxGroupSize();
 	Molecule* stripAtoms(char** removeList, int removeListSize, int updateSimilarity);
 	bool normalizeMolecule(bool keepCenter);
-	void fillAtomicMasses();  // Fill the atomic masses for all the symbols
 
 	void print();
 	void printBasic();

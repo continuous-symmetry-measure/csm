@@ -21,6 +21,8 @@
 #include "math_utils.h"
 #include "logging.h"
 
+#define M_PI 3.1415926535
+
 using namespace std;
 
 struct distRecord {
@@ -464,8 +466,9 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 		addGroupsOfTwo = 0;
 	}
 	gp = new GroupPermuter(m->groupNum(), groupSizes, m->size(), options.opOrder, addGroupsOfTwo);
-	if (!gp)
+	if (!gp){
 		throw domain_error("Failed to create groupPermuter");
+	};
 
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
 	while (gp->next()) {
@@ -492,6 +495,7 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 		stringstream strm;
 		strm << "Failed to calculate a csm value for " << options.opName;
 		throw domain_error(strm.str());
+		exit(1);
 	}
 
 	// which is DMIN?

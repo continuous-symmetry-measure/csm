@@ -67,11 +67,11 @@ def check_arguments(processed):
     # In C++ code ignoreSym, ignoreHy and removeHy are used only when usePerm is false
     if "perm" in processed:
         if processed["ignoreSym"]:
-            raise ValueError("-useperm ignores the -ignoreSym option, can't use them together")
+            raise ValueError("--useperm ignores the --ignoreSym option, can't use them together")
         if processed["ignoreHy"]:
-            raise ValueError("-useperm ignores the -ignoreHy option, can't use them together")
+            raise ValueError("--useperm ignores the --ignoreHy option, can't use them together")
         if processed["removeHy"]:
-            raise ValueError("-useperm ignores the -removeHy option, can't use them together")
+            raise ValueError("--useperm ignores the -r-emoveHy option, can't use them together")
 
 
 
@@ -93,7 +93,7 @@ def open_files(parse_res, result):
     try:
         result['outFile'] = open(parse_res.output, 'w')
     except IOError:
-        raise ValueError("Failed to open output file " + parse_res.input + " for writing")
+        raise ValueError("Failed to open output file " + parse_res.output + " for writing")
 
     # try to open the permFile for reading (if exists)
     if parse_res.useperm:
@@ -150,7 +150,7 @@ def process_arguments(parse_res):
     result['ignoreSym'] = parse_res.ignoreSym
 
     result['format'] = parse_res.format
-    result['useformat'] = result['format'] is None
+    result['useformat'] = result['format'] is not None
     if not result['format']:
         # get input file extension
         result['format'] = parse_res.input.split(".")[-1]

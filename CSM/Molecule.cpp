@@ -21,13 +21,11 @@
 #include "babelAdapter.h"
 
 #include "parseFunctions.h"
-#include <openbabel/mol.h>
 #include "elements.h"
 #include "logging.h"
 
 #include "csmlib.h"
 
-using namespace OpenBabel;
 using namespace std;
 
 const int DIM = 3;
@@ -144,159 +142,6 @@ Molecule* Molecule::createFromPython(const vector<python_atom> &atoms)
 	m->initSimilarity(DEPTH_ITERATIONS);
 
 	return m;
-}
-
-/*
- * creates a molecule from an input data file
- */
-Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
-
-    int size,i;
-
-    // read size
-    if (fscanf(in,"%d",&size)!=1){
-		LOG(error) << "Input Error: Number of atoms not supplied";
-        return NULL;
-    }
-    if (size == 0)
-		return NULL;
-
-    // allocate molecule
-    Molecule* m = new Molecule(size);
-
-    // read atoms
-    for (i=0; i<size; i++){
-
-        m->_symbol[i] = readString(in); // allocates space for symbol
-
-        if(fscanf(in,"%lf%lf%lf",&(m->_pos[i][0]),&(m->_pos[i][1]),&(m->_pos[i][2]))!=3){
-			LOG(error) << "Input Error: Failed reading input for atom " << i+1;
-			delete m;
-            return NULL;
-        }
-
-    }
-
-    if (replaceSym)
-    	m->replaceSymbols();
-
-    // read connectivity
-    int atomNum,neighbour;
-    char c;
-
-    // allocate temporary buffer
-    int *buff = (int*)malloc(size * sizeof(int));
-    int pos;
-
-    for (i=0; i<size; i++){
-
-        // read and check atom number
-        fscanf(in,"%d",&atomNum);
-        if (atomNum != i /* +0 */ +1){
-			LOG(error) << "Input Error: Failed reading connectivity for atom " << i + 1;
-            delete m;
-            return NULL;
-        }
-
-        int valency = 0;
-        pos = 0;
-
-        // read neighbour numbers till newline
-        while(1){
-
-            // eat whitespace except newline
-            c = getc(in);
-            while ( isspace( (unsigned char)c ) && (c != '\n' ) )
-                c = getc(in);
-
-            // termination
-            if (c == '\n')
-                break;
-
-            // otherwise put back read char
-            ungetc(c,in);
-
-            // read neighbour number
-            if( (fscanf(in,"%d",&neighbour) !=1) || (neighbour > /* >= */ size) ) {
-				LOG(error) << "Input Error: Failed reading connectivity for atom " << i+1;
-                delete m;
-                return NULL;
-            }
-
-            // write neighbour to buffer
-            buff[pos++] = neighbour  /* -0 */ -1;
-
-            // increment valancy
-            valency++;
-
-        }
-        m->_valency[i] = valency;
-
-        // allocate memory for neighbours and copy
-        m->_adjacent[i] = (int*)malloc(valency * sizeof(int));
-
-        int j;
-        for (j=0; j<valency; j++)
-        	m->_adjacent[i][j] = buff[j];
-
-    }
-
-    free(buff);
-
-    m->initSimilarity(DEPTH_ITERATIONS);
-
-    return (m);
-}
-
-/**
-* Create a molecule from an OBMol
-*
-* @param obmol The OpenBabel Molecule
-* @param replaceSym Whether to ignore atom names or not
-*
-* This function was moved from BabelAdapter.cpp
-*/
-Molecule* Molecule::createFromOBMol(OBMol &obmol, bool replaceSym, bool useMass) 
-{
-	int numAtoms = obmol.NumAtoms();
-	int i, j;
-	Molecule *mol = new Molecule(numAtoms);
-
-	for (i = 0; i < numAtoms; i++) {
-		OBAtom* atom = obmol.GetAtom(i + 1);
-		if (atom->GetAtomicNum() <= ELEMENTS.size() && atom->GetAtomicNum() > 0) {
-			mol->_symbol[i] = strdup(ELEMENTS[atom->GetAtomicNum() - 1].c_str());
-		}
-		else {
-			mol->_symbol[i] = strdup(atom->GetType());
-		}
-		if (useMass) {
-			mol->_mass[i] = atom->GetAtomicMass();
-		}
-		mol->_valency[i] = atom->GetValence();
-		mol->_adjacent[i] = (int*)malloc(mol->_valency[i] * sizeof(int));
-		j = 0;
-		for (OBBondIterator itr = atom->BeginBonds(); itr != atom->EndBonds(); itr++) {
-			// Check if it's the first or second atom that is the neighbour			
-			if ((*itr)->GetBeginAtomIdx() == atom->GetIdx()) {
-				mol->_adjacent[i][j] = (*itr)->GetEndAtomIdx() - 1;
-			}
-			else {
-				mol->_adjacent[i][j] = (*itr)->GetBeginAtomIdx() - 1;
-			}
-			j++;
-		}
-		mol->_pos[i][0] = atom->GetX();
-		mol->_pos[i][1] = atom->GetY();
-		mol->_pos[i][2] = atom->GetZ();
-	}
-
-	if (replaceSym) 
-		mol->replaceSymbols();
-
-	mol->initSimilarity(DEPTH_ITERATIONS);
-
-	return mol;
 }
 
 
@@ -877,9 +722,3 @@ void Molecule::printDebug2()
     printf("\n");
 
 };
-
-void Molecule::fillAtomicMasses()
-{
-	for (int i = 0; i < _size; i++)
-		_mass[i] = getAtomicMass(_symbol[i]);
-}
