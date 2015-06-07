@@ -11,6 +11,11 @@ cdef extern from "csmlib.h":
         double mass;
 
 cdef extern from "csmlib.h":
+    cdef cppclass python_molecule:
+        vector[python_atom] atoms;
+        vector[vector[int]] equivalenceClasses;
+
+cdef extern from "csmlib.h":
     cdef cppclass python_cpp_bridge:
         python_cpp_bridge()
         string opType;
@@ -47,11 +52,11 @@ cdef extern from "csmlib.h":
 
         vector[double] dir;
         vector[int] perm;
-        vector[python_atom] molecule;
+        python_molecule molecule;
 
 cdef extern from "csmlib.h":
     cdef cppclass csm_output:
-        vector[python_atom] molecule;
+        python_molecule molecule;
         double norm;
         int numGroups;
 

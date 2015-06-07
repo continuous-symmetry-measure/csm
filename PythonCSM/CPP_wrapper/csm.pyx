@@ -28,7 +28,7 @@ cdef vector_double_to_tuple(const vector[double] &vec):
     return tuple(vector_double_to_list(vec))
 
 cdef fill_molecule(csmlib.python_cpp_bridge &options, args):
-    cdef vector[csmlib.python_atom] atoms
+    cdef csmlib.python_molecule molecule
     cdef csmlib.python_atom bridge_atom
 
     for atom in args['molecule']:
@@ -36,21 +36,27 @@ cdef fill_molecule(csmlib.python_cpp_bridge &options, args):
         bridge_atom.adjacent = atom.adjacent
         bridge_atom.pos = atom.pos
         bridge_atom.mass = atom.mass
-        atoms.push_back(bridge_atom)
+        molecule.atoms.push_back(bridge_atom)
 
-    options.molecule = atoms
+    # Don't fill the equivalenceClasses yet
+    options.molecule = molecule
 
 cdef read_molecule(csmlib.csm_output &output):
     cdef int i;
 
     atoms = []
-    for i in range(output.molecule.size()):
-        atom = Atom(output.molecule[i].symbol, vector_double_to_tuple(output.molecule[i].pos), useMass=False)
-        atom.adjacent = vector_int_to_list(output.molecule[i].adjacent)
-        atom._mass = output.molecule[i].mass
+    for i in range(output.molecule.atoms.size()):
+        atom = Atom(output.molecule.atoms[i].symbol, vector_double_to_tuple(output.molecule.atoms[i].pos), useMass=False)
+        atom.adjacent = vector_int_to_list(output.molecule.atoms[i].adjacent)
+        atom._mass = output.molecule.atoms[i].mass
 
         atoms.append(atom)
-    return atoms
+
+    equivalenceClasses = []
+    for i in range(output.molecule.equivalenceClasses.size()):
+        oneClass = vector_int_to_list(output.molecule.equivalenceClasses[i])
+        equivalenceClasses.append(oneClass)
+    return (atoms, equivalenceClasses)
 
 cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.opType = cs(args['type'])
@@ -94,12 +100,13 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
 cdef parse_output(csmlib.csm_output &output):
     cdef int i;
     results = {}
-    results['atoms'] = read_molecule(output)
+
+    results['atoms'], results['equivalency'] = read_molecule(output)
     results['norm'] = output.norm;
     results['numGroups'] = output.numGroups;
 
     outAtoms = []
-    for i in range(output.molecule.size()):
+    for i in range(output.molecule.atoms.size()):
         outAtoms.append(vector_double_to_tuple(output.outAtoms[i]))
     results['outAtoms'] = outAtoms
 

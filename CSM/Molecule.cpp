@@ -120,8 +120,9 @@ void Molecule::replaceSymbols()
 /*
  * Creates a molecule from the python supplied atoms
  */
-Molecule* Molecule::createFromPython(const vector<python_atom> &atoms)
+Molecule* Molecule::createFromPython(const python_molecule &molecule)
 {
+	const std::vector<python_atom> &atoms = molecule.atoms;
 	Molecule *m = new Molecule(atoms.size());
 	for (int i = 0; i < atoms.size(); i++)
 	{
@@ -139,7 +140,16 @@ Molecule* Molecule::createFromPython(const vector<python_atom> &atoms)
 		m->_mass[i] = atoms[i].mass;
 	}
 
-	m->initSimilarity(DEPTH_ITERATIONS);
+	// Copy the equivalenceClasses
+	if (molecule.equivalenceClasses.size())
+	{
+		m->_similar.assign(0, atoms.size());
+		for (int group = 0; group < molecule.equivalenceClasses.size(); group++)
+			for (int i = 0; i < molecule.equivalenceClasses[i].size(); i++)
+				m->_similar[molecule.equivalenceClasses[group][i]] = group;
+	}
+	else
+		m->initSimilarity(DEPTH_ITERATIONS);  // TODO: Stop calling this function
 
 	return m;
 }

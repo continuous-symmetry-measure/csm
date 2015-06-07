@@ -44,7 +44,7 @@ private:
 
 public:
 	~Molecule();
-	static Molecule* createFromPython(const std::vector<python_atom> &atoms);
+	static Molecule* createFromPython(const python_molecule &molecule);
 
 public:
 	int getGroup(int num, int* buff);
