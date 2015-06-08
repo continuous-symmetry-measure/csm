@@ -11,7 +11,6 @@
 #include <string.h> //for strcmp,strlen
 #include "options.h"
 #include "groupPermuter.h"
-#include <openbabel/mol.h>
 #include "babelAdapter.h"
 #include <vector>
 #include "Molecule.h"
@@ -29,8 +28,6 @@ using namespace std;
 
 #include "dvector.h"
 #include "dmatrix.h"
-
-#include "PrintOuts.h"
 #include "drand48.h"
 #include "calculations.h"
 
@@ -127,7 +124,6 @@ int mainWithOptions()
 
 	// try to read molecule from infile
 	Molecule* m = options.molecule;
-	OBMol mol;  // This is now an empty object that's used for printing only.
 	OperationType chMinType = CS;
 	int chMinOrder = 2;
 	/*

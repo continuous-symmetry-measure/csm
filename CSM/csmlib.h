@@ -78,7 +78,7 @@ struct csm_output
 	int numGroups;
 
 	// Results from mainRot
-	std::vector<std::vector<double>> outAtoms; // x,y,z of each atom
+	std::vector<std::vector<double> > outAtoms; // x,y,z of each atom
 	double csm; // The actual CSM score
 	std::vector<double> dir; 
 	double dMin;

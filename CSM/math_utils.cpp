@@ -7,6 +7,9 @@
 
 #include "math_utils.h"
 #include "options.h"
+#include <cmath>
+
+using namespace std;
 
 /*
 * Normalizes the position of atoms of the molecule
