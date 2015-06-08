@@ -11,7 +11,6 @@
 #include <string.h> //for strcmp,strlen
 #include "options.h"
 #include "groupPermuter.h"
-#include "babelAdapter.h"
 #include <vector>
 #include "Molecule.h"
 
