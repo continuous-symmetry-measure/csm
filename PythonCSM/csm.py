@@ -13,8 +13,7 @@ if __name__=='__main__':
     parser = create_parser()
     result = parser.parse_args()  # Parse sys.args
     args = process_arguments(result)
-    
-
+    args['equivalence_classes'] = csm.CallInitSimilarity(args['molecule'])
 
     if args["ignoreHy"] or args["removeHy"]:
         args["obmol"].DeleteHydrogens()

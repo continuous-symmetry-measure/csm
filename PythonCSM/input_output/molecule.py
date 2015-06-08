@@ -1,4 +1,3 @@
-from collections import namedtuple
 from openbabel import OBAtom, OBElementTable
 
 __author__ = 'zmbq'
