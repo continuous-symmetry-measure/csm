@@ -28,6 +28,12 @@ struct python_atom
 	{ }
 };
 
+struct python_molecule
+{
+	std::vector<python_atom> atoms;   // The atoms
+	std::vector<std::vector<int> > equivalenceClasses;  // Equivalence classes
+};
+
 // Input from Python
 struct python_cpp_bridge
 {
@@ -64,8 +70,7 @@ struct python_cpp_bridge
 	//Permutation
 	std::vector<int> perm;
 
-	// Molecule
-	std::vector<python_atom> molecule;
+	python_molecule molecule;
 
 	python_cpp_bridge();
 };
@@ -73,7 +78,8 @@ struct python_cpp_bridge
 struct csm_output
 {
 	// Molecule
-	std::vector<python_atom> molecule;
+	python_molecule molecule;
+
 	double norm;
 	int numGroups;
 
@@ -96,6 +102,7 @@ extern "C"
 	// Runs the entire CSM application
 	// int RunCSM(const std::vector<std::string> args);
 	csm_output RunCSM(python_cpp_bridge options);
+	void FillEquivalencyClasses(python_molecule &molecule);
 #ifdef __cplusplus
 }
 #endif

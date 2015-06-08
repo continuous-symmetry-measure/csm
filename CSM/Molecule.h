@@ -36,15 +36,14 @@ private:
 
 private:
 	Molecule(size_t size);  // Private constructor forces creation through the factory methods
-
 	void replaceSymbols();
-	void initSimilarity(int depth);
 	int isSimilar(int a, int b);
 	Molecule* copy(int* selectedAtoms, int selectedAtomsSize, bool updateSimilarity);
 
 public:
 	~Molecule();
-	static Molecule* createFromPython(const std::vector<python_atom> &atoms);
+	static Molecule* createFromPython(const python_molecule &molecule);
+	void initSimilarity(int depth);
 
 public:
 	int getGroup(int num, int* buff);

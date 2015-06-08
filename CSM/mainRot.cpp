@@ -311,7 +311,7 @@ void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double
 	OperationType chMinType, int *perm)
 {
 	// All arrays that depend on the molecule's size
-	results.molecule.clear();
+	results.molecule.atoms.clear();
 	results.outAtoms.clear();
 	results.localCSM.clear();
 	results.perm.clear();
@@ -325,7 +325,7 @@ void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double
 			atom.pos.push_back(m->pos()[i][j]);
 		for (int j = 0; j < m->valency(i); j++)
 			atom.adjacent.push_back(m->adjacent(i, j));
-		results.molecule.push_back(atom);
+		results.molecule.atoms.push_back(atom);
 
 		// outAtoms
 		std::vector<double> outAtom;
@@ -340,6 +340,16 @@ void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double
 		// perm
 		results.perm.push_back(perm[i]);
 	}
+
+	// Molecule equivalencyClasses
+	results.molecule.equivalenceClasses.clear();
+	int *group = new int[m->size()]; // No group is larger than the molecule - this is enough
+	for (int i = 1; i <= m->groupNum(); i++)
+	{
+		int groupSize = m->getGroup(i, group);
+		results.molecule.equivalenceClasses.push_back(vector<int>(group, group + groupSize));
+	}
+	delete[] group;
 
 
 	// Other values
