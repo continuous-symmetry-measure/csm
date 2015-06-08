@@ -1,4 +1,4 @@
 CSM starting up
-Going to enumerate over 49 permutations
+Going to enumerate over 2 permutations
 Entire run should take approx. 0.00 hours on a 2.0Ghz Computer
-C4 SYMMETRY: 20.7659
+S6 SYMMETRY: 98.9854
