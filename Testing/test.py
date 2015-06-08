@@ -42,8 +42,12 @@ class CheckCSMOutput(TestCase):
     def test_9(self):
         self.one_test('test9')
 
-    def test_15(self):
-        self.one_test('test15')
+    """Test 15 is takes a lot of time"""
+    # def test_15(self):
+    #     self.one_test('test15')
 
     def test_16(self):
         self.one_test('test16')
+
+    def test_17(self):
+        self.one_test('test17')
