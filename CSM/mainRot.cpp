@@ -125,38 +125,6 @@ int mainWithOptions()
 	Molecule* m = options.molecule;
 	OperationType chMinType = CS;
 	int chMinOrder = 2;
-	/*
-	if (options.useFormat) {
-		// If a specific format is used, read molecule using that format
-		if (boost::iequals(options.format, CSMFORMAT)) // Case-insensitive comparison
-		{
-			m = Molecule::create(options.inFile, stdout, options.ignoreSym && !options.useperm);
-			if (m==NULL) exit(1);
-			if (options.useMass)
-			{
-				m->fillAtomicMasses();
-			}
-		} else {
-			mol = readMolecule(options.inFileName.c_str(), options.format, options.babelBond);
-			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
-		}
-   	} else {
-		options.format = getExtension(options.inFileName.c_str());
-
-		// if the extension is CSM - use csm
-		if (boost::iequals(options.format, CSMFORMAT)) {
-			m = Molecule::create(options.inFile, stdout, options.ignoreSym && !options.useperm);
-			if (m==NULL) exit(1);
-			if (options.useMass)
-			{
-				m->fillAtomicMasses();
-			}
-		} else {
-			
-			mol = readMolecule(options.inFileName.c_str(), "", options.babelBond);
-			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
-		}
-   	} */
 
 	if (options.babelTest) // Mol is ok - return 0
 		return 0;
@@ -325,39 +293,6 @@ int mainWithOptions()
 	}	
 
 	fill_output(m, outAtoms, csm, dir, dMin, localCSM, chMinOrder, chMinType, perm);
-
-	/*
-	if (options.useFormat) {
-		// If a specific format is used, read molecule using that format
-		if (boost::iequals(options.format, CSMFORMAT)) // Case insensitive comparison 
-		{
-			printOutput(m, outAtoms, csm, dir, dMin, options.outFile, localCSM);
-		} else {
-			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, options.outFile, options.outFileName.c_str(), localCSM);
-		}
-	} else {
-		// if the extension is CSM - use csm
-		if (strcasecmp(getExtension(options.inFileName.c_str()), CSMFORMAT) == 0) {
-			printOutput(m, outAtoms, csm, dir, dMin, options.outFile, localCSM);
-		} else {
-			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, options.outFile, options.outFileName.c_str(), localCSM);
-		}
-	}
-
-	if (options.type == CH) {
-		if (chMinType == CS) { 		
-			fprintf(options.outFile, "\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n");
-		} else { 
-			fprintf(options.outFile, "\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n", chMinOrder);
-		}
-	}	
-
-	fprintf(options.outFile, "\n PERMUTATION:\n\n");
-	for (i = 0; i < m->size(); i++) {
-		fprintf(options.outFile, "%d ", perm[i] + 1);
-	}
-	fprintf(options.outFile, "\n");
-	*/
 
 	// housekeeping
 	for (i=0;i<m->size();i++){

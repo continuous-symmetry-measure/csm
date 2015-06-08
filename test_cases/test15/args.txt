@@ -1,1 +1,1 @@
-c4 tetralin.mol
+ch AGA-alpha.pdb
