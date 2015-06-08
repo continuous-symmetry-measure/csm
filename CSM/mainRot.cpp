@@ -409,7 +409,7 @@ void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double
 	// Molecule equivalencyClasses
 	results.molecule.equivalenceClasses.clear();
 	int *group = new int[m->size()]; // No group is larger than the molecule - this is enough
-	for (int i = 0; i < m->groupNum(); i++)
+	for (int i = 1; i <= m->groupNum(); i++)
 	{
 		int groupSize = m->getGroup(i, group);
 		results.molecule.equivalenceClasses.push_back(vector<int>(group, group + groupSize));

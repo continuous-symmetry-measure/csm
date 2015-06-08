@@ -102,6 +102,7 @@ extern "C"
 	// Runs the entire CSM application
 	// int RunCSM(const std::vector<std::string> args);
 	csm_output RunCSM(python_cpp_bridge options);
+	void FillEquivalencyClasses(python_molecule &molecule);
 #ifdef __cplusplus
 }
 #endif

@@ -27,34 +27,44 @@ cdef vector_int_to_list(const vector[int] &vec):
 cdef vector_double_to_tuple(const vector[double] &vec):
     return tuple(vector_double_to_list(vec))
 
-cdef fill_molecule(csmlib.python_cpp_bridge &options, args):
+cdef vector[int] list_to_vector_int(lst):
+    cdef vector[int] vec;
+
+    for x in lst:
+        vec.push_back(x)
+    return vec
+
+cdef csmlib.python_molecule cppize_molecule(atoms, equivalence_classes):
+    """ Convert the Python structures to a CPP-compatible molecule """
     cdef csmlib.python_molecule molecule
     cdef csmlib.python_atom bridge_atom
 
-    for atom in args['molecule']:
+    for atom in atoms:
         bridge_atom.symbol = cs(atom.symbol)
         bridge_atom.adjacent = atom.adjacent
         bridge_atom.pos = atom.pos
         bridge_atom.mass = atom.mass
         molecule.atoms.push_back(bridge_atom)
 
-    # Don't fill the equivalenceClasses yet
-    options.molecule = molecule
+    for ec in equivalence_classes:
+        molecule.equivalenceClasses.push_back(list_to_vector_int(ec))
 
-cdef read_molecule(csmlib.csm_output &output):
+    return molecule
+
+cdef pythonize_molecule(const csmlib.python_molecule &molecule):
     cdef int i;
 
     atoms = []
-    for i in range(output.molecule.atoms.size()):
-        atom = Atom(output.molecule.atoms[i].symbol, vector_double_to_tuple(output.molecule.atoms[i].pos), useMass=False)
-        atom.adjacent = vector_int_to_list(output.molecule.atoms[i].adjacent)
-        atom._mass = output.molecule.atoms[i].mass
+    for i in range(molecule.atoms.size()):
+        atom = Atom(molecule.atoms[i].symbol, vector_double_to_tuple(molecule.atoms[i].pos), useMass=False)
+        atom.adjacent = vector_int_to_list(molecule.atoms[i].adjacent)
+        atom._mass = molecule.atoms[i].mass
 
         atoms.append(atom)
 
     equivalenceClasses = []
-    for i in range(output.molecule.equivalenceClasses.size()):
-        oneClass = vector_int_to_list(output.molecule.equivalenceClasses[i])
+    for i in range(molecule.equivalenceClasses.size()):
+        oneClass = vector_int_to_list(molecule.equivalenceClasses[i])
         equivalenceClasses.append(oneClass)
     return (atoms, equivalenceClasses)
 
@@ -95,13 +105,13 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     else:
         options.dir = []
 
-    fill_molecule(options, args)
+    options.molecule = cppize_molecule(args['molecule'], args['equivalence_classes'])
 
 cdef parse_output(csmlib.csm_output &output):
     cdef int i;
     results = {}
 
-    results['atoms'], results['equivalency'] = read_molecule(output)
+    results['atoms'], results['equivalency'] = pythonize_molecule(output.molecule)
     results['norm'] = output.norm;
     results['numGroups'] = output.numGroups;
 
@@ -127,3 +137,12 @@ def RunCSM(args):
     output = csmlib.RunCSM(options)
     result = parse_output(output)
     return result
+
+def CallInitSimilarity(atoms):
+    cdef csmlib.python_molecule molecule;
+
+    molecule = cppize_molecule(atoms, [])
+    csmlib.FillEquivalencyClasses(molecule)
+    _, equivalency_classes = pythonize_molecule(molecule)
+
+    return equivalency_classes

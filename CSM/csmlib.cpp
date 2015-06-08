@@ -92,8 +92,20 @@ csm_output RunCSM(python_cpp_bridge bridge)
 	return results;
 }
 
-int SayHello()
+void FillEquivalencyClasses(python_molecule &molecule)
 {
-	cout << "Hello from C++" << endl;
-	return 17;
+	Molecule *m = Molecule::createFromPython(molecule);
+	m->initSimilarity(9999);
+
+	// Copy equivalence classes back to the molecule
+	// Molecule equivalencyClasses
+	molecule.equivalenceClasses.clear();
+	int *group = new int[m->size()]; // No group is larger than the molecule - this is enough
+	for (int i = 1; i <= m->groupNum(); i++)
+	{
+		int groupSize = m->getGroup(i, group);
+		molecule.equivalenceClasses.push_back(vector<int>(group, group + groupSize));
+	}
+	delete[] group;
+	delete m;
 }

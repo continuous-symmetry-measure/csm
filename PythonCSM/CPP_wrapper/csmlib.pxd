@@ -71,4 +71,5 @@ cdef extern from "csmlib.h":
 
 cdef extern from "csmlib.h":
     csm_output RunCSM(python_cpp_bridge options) except +;
+    void FillEquivalencyClasses(python_molecule &molecule) except +;
 

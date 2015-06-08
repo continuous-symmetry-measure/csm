@@ -141,13 +141,26 @@ Molecule* Molecule::createFromPython(const python_molecule &molecule)
 	// Copy the equivalenceClasses
 	if (molecule.equivalenceClasses.size())
 	{
-		m->_similar.assign(0, atoms.size());
+		m->_similar.resize(atoms.size(), 0);
 		for (int group = 0; group < molecule.equivalenceClasses.size(); group++)
-			for (int i = 0; i < molecule.equivalenceClasses[i].size(); i++)
-				m->_similar[molecule.equivalenceClasses[group][i]] = group;
+		{
+			const vector<int> &eclass = molecule.equivalenceClasses[group];
+			for (int i = 0; i < eclass.size(); i++)
+			{
+				int atom = eclass[i];
+				m->_similar[atom] = group + 1;
+			}
+		}
+		m->_groupNum = molecule.equivalenceClasses.size();
 	}
 	else
-		m->initSimilarity(DEPTH_ITERATIONS);  // TODO: Stop calling this function
+	{
+		// Trivial equivalence classes - every atom on its own
+		m->_similar.resize(atoms.size(), 0);
+		for (int i = 0; i < atoms.size(); i++)
+			m->_similar[i] = i;
+		m->_groupNum = atoms.size(); 
+	}
 
 	return m;
 }
