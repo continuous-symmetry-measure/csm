@@ -36,3 +36,10 @@ class CheckCSMOutput(TestCase):
     def test_permutation(self):
         self.one_test('test_permutation')
 
+    def test_8(self):
+        self.one_test('test8')
+
+    def test_9(self):
+        self.one_test('test9')
+
+

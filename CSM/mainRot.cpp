@@ -27,7 +27,6 @@ using namespace std;
 
 #include "dvector.h"
 #include "dmatrix.h"
-
 #include "drand48.h"
 #include "calculations.h"
 
@@ -126,9 +125,49 @@ int mainWithOptions()
 	Molecule* m = options.molecule;
 	OperationType chMinType = CS;
 	int chMinOrder = 2;
+	/*
+	if (options.useFormat) {
+		// If a specific format is used, read molecule using that format
+		if (boost::iequals(options.format, CSMFORMAT)) // Case-insensitive comparison
+		{
+			m = Molecule::create(options.inFile, stdout, options.ignoreSym && !options.useperm);
+			if (m==NULL) exit(1);
+			if (options.useMass)
+			{
+				m->fillAtomicMasses();
+			}
+		} else {
+			mol = readMolecule(options.inFileName.c_str(), options.format, options.babelBond);
+			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
+		}
+   	} else {
+		options.format = getExtension(options.inFileName.c_str());
+
+		// if the extension is CSM - use csm
+		if (boost::iequals(options.format, CSMFORMAT)) {
+			m = Molecule::create(options.inFile, stdout, options.ignoreSym && !options.useperm);
+			if (m==NULL) exit(1);
+			if (options.useMass)
+			{
+				m->fillAtomicMasses();
+			}
+		} else {
+			
+			mol = readMolecule(options.inFileName.c_str(), "", options.babelBond);
+			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
+		}
+   	} */
 
 	if (options.babelTest) // Mol is ok - return 0
 		return 0;
+
+	if (!m){
+		if (options.writeOpenu) {
+			printf("ERR* Failed to read molecule from data file *ERR\n");
+		}
+		LOG(fatal) << "Failed to read molecule from data file";
+		exit(1);
+	}
 
 	// strip unwanted atoms if needbe
 	if ((options.ignoreHy || options.removeHy) && !options.useperm){
@@ -137,10 +176,14 @@ int mainWithOptions()
 		if (options.ignoreHy)
 			n = m->stripAtoms(removeList,2,false);
 		else //removeHy 
-			n = m->stripAtoms(removeList,2,true);		
+			n = m->stripAtoms(removeList,2,true);			
 	
 		if (!n){
-			throw domain_error("Failed while trying to strip unwanted atoms");
+			if (options.writeOpenu) {
+				printf("ERR* Failed while trying to strip unwanted atoms *ERR\n");
+			}
+			LOG(fatal) << "Failed while trying to strip unwanted atoms";
+			exit(1);
 		}
 		delete m;
 		m = n;
@@ -172,7 +215,11 @@ int mainWithOptions()
 
 	//normalize Molecule
 	if (!m->normalizeMolecule(options.keepCenter)){
-		throw domain_error("Failed to normalize atom positions: dimension of set of points = zero");
+		if (options.writeOpenu) {
+			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
+		}
+		LOG(fatal) << "Failed to normalize atom positions: dimension of set of points = zero";
+		exit(1);
 	}
  
 	if (options.useDir)

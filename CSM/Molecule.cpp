@@ -18,8 +18,6 @@
 #include <ctype.h>  //for ispace
 #include <math.h>   //for sqrt
 #include "Molecule.h"
-#include "babelAdapter.h"
-
 #include "parseFunctions.h"
 #include "elements.h"
 #include "logging.h"

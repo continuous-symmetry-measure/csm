@@ -182,7 +182,6 @@ def write_ob_molecule(mol, format, f):
 
     # write to file
 
-    #TODO: check if works:
     try:
         s = conv.WriteString(mol)
     except (TypeError, ValueError, IOError):

@@ -61,17 +61,23 @@ def check_arguments(processed):
             or ('dirFile' in processed and 'perm' in processed):
         raise ValueError("-findperm, -useperm and -usedir are mutually exclusive")
 
-    if 'perm' in processed and processed['type'] == 'CH':
-        raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
-
-    # In C++ code ignoreSym, ignoreHy and removeHy are used only when usePerm is false
     if "perm" in processed:
+
+        if processed['type'] == 'CH':
+            raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
+
+        # In C++ code ignoreSym, ignoreHy and removeHy are used only when usePerm is false
         if processed["ignoreSym"]:
             raise ValueError("--useperm ignores the --ignoreSym option, can't use them together")
         if processed["ignoreHy"]:
             raise ValueError("--useperm ignores the --ignoreHy option, can't use them together")
         if processed["removeHy"]:
             raise ValueError("--useperm ignores the -r-emoveHy option, can't use them together")
+
+        if len(processed["perm"]) != len(processed["molecule"]):
+            raise ValueError("Invalid permutation")
+
+
 
 
 

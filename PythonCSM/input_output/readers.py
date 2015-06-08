@@ -40,20 +40,10 @@ def read_ob_mol(obmol, args_dict):
 
     for i in range(num_atoms):
         obatom = obmol.GetAtom(i + 1)
-		# get symbol by atomic number
-        """ C++ code uses here an elements table:
-        if (atom->GetAtomicNum() <= ELEMENTS.size() && atom->GetAtomicNum() > 0) {
-			mol->_symbol[i] = strdup(ELEMENTS[atom->GetAtomicNum() - 1].c_str());
-		}
-		else {
-			mol->_symbol[i] = strdup(atom->GetType());
-		}"""
-
-        # TODO: check if elements table is needed
-
         if args_dict["ignoreSym"]:
             symbol = "XX"
         else:
+       		# get symbol by atomic number
             symbol = GetAtomicSymbol(obatom.GetAtomicNum())
         position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
 
@@ -66,7 +56,6 @@ def read_ob_mol(obmol, args_dict):
         atom.adjacent = adjacent
 
         atoms.append(atom)
-    #TODO: mol->initSimilarity(DEPTH_ITERATIONS);???
     return atoms
 
 
