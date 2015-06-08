@@ -125,11 +125,6 @@ int mainWithOptions()
 	if (options.logFileName != "")
 		set_file_logging(options.logFileName);
 
-	if ((options.findPerm && options.useperm) || (options.findPerm && options.useDir) || (options.useDir && options.useperm)) {
-		LOG(fatal) << "-findperm, -useperm and -usedir are mutually exclusive";
-		exit(1);
-	} 
-
 	// try to read molecule from infile
 	Molecule* m = options.molecule;
 	OBMol mol;  // This is now an empty object that's used for printing only.
@@ -186,10 +181,7 @@ int mainWithOptions()
 		if (options.ignoreHy)
 			n = m->stripAtoms(removeList,2,false);
 		else //removeHy 
-			n = m->stripAtoms(removeList,2,true);		
-	
-		mol.DeleteHydrogens();
-		
+			n = m->stripAtoms(removeList,2,true);			
 	
 		if (!n){
 			if (options.writeOpenu) {
