@@ -42,7 +42,7 @@ def print_all_output(output_dict, args_dict):
     # print chirality
 
     if args_dict['type'] == 'CH':
-        if args_dict['chMinType'] == 'CS':
+        if output_dict['chMinType'] == 'CS':
             f.write("\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n")
         else:
             f.write("\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n" % output_dict['chMinOrder'])

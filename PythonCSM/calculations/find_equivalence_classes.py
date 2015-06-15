@@ -1,30 +1,32 @@
 __author__ = 'YAEL'
+import numpy as np
 
 def find_equivalence_classes(atoms):
     group_num = 0
     groups = []
     atoms_size = len(atoms)
-    marked = [False for i in range(atoms_size)]
+    marked = set()
 
     atoms_group_num = {}
+    # atoms_group_num = np.zeros(atoms_size, dtype=int)
 
     # TODO: LOG(debug) << "Breaking molecule into similarity groups";
     print("Breaking molecule into similarity groups")
 
     # break into initial groups by symbol and valency
     for i in range(atoms_size):
-        if marked[i]:
+        if i in marked:
             continue
 
         groups.append([])
 
         for j in range(atoms_size):
-            if marked[j] or len(atoms[i].adjacent) != len(atoms[j].adjacent) or atoms[i].symbol != atoms[j].symbol:
+            if j in marked or len(atoms[i].adjacent) != len(atoms[j].adjacent) or atoms[i].symbol != atoms[j].symbol:
                 continue
 
             groups[group_num].append(j)
             atoms_group_num[j] = group_num
-            marked[j] = True
+            marked.add(j)
 
         group_num += 1
 
@@ -76,7 +78,7 @@ def find_equivalence_classes(atoms):
 def is_similar(atoms_group_num, atoms, a, b):
     found = True
     atoms_size = len(atoms)
-    mark = [False for i in range(atoms_size)]
+    mark = set() # [False for i in range(atoms_size)]
 
     valency_a = len(atoms[a].adjacent)
     valency_b = len(atoms[b].adjacent)
@@ -86,13 +88,15 @@ def is_similar(atoms_group_num, atoms, a, b):
         found = False
 
         for j in range(valency_b):
-            if mark[j]:
+            #if mark[j]:
+            if j in mark:
                 continue
 
             if atoms_group_num[atoms[a].adjacent[i]] == atoms_group_num[atoms[b].adjacent[j]]:
                 # the i-th neighbour of 'a' belongs to the same group as the j-th neighbour of 'b'
                 found = True
-                mark[j] = True
+                mark.add(j)
+                # mark[j] = True
                 break
 
         if not found:
