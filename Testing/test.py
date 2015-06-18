@@ -2,13 +2,13 @@ from unittest import TestCase
 
 __author__ = 'zmbq'
 
-from helpers import run_test
+from helpers import run_test_python
 import config
 import os.path
 
 class CheckCSMOutput(TestCase):
     def one_test(self, test_dir):
-        self.assertTrue(run_test(os.path.join(config.TEST_PATH, test_dir)))
+        self.assertTrue(run_test_python(os.path.join(config.TEST_PATH, test_dir)))
 
     def test_1(self):
         self.one_test('test1')

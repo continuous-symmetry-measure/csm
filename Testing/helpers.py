@@ -1,7 +1,9 @@
 import pprint
+import sys
 from tempfile import NamedTemporaryFile, mkstemp
 
 __author__ = 'zmbq'
+import csm
 
 """
 Helper functions for running CSM tests
@@ -34,34 +36,6 @@ def get_first_line(path):
     """
     return read_file(path)[0]
 
-def get_test_args(test_dir, output_path):
-    """
-    Returns the arg list as should be passed to the subprocess functions
-    :param test_dir: Folder with the test files
-    :param output_path: The path for the CSM output file
-    :return: An argument list, including the CSM executable
-    """
-    input_args = get_first_line(os.path.join(test_dir, 'args.txt'))
-    # args.txt file looks like:
-    # mode input_file [-option -option -option...]
-    #
-    # The actual arguments to CSM should be
-    # mode input_file output_file [-option -option -option]
-    input_args_list = input_args.split(' ')
-
-    # Parse the first input arguments
-    mode = input_args_list[0]
-    input_file = input_args_list[1]
-    input_path = os.path.join(test_dir, input_file)
-
-    # Make sure input_args[2:] all begin with -
-    for i in range(2,len(input_args_list)):
-        if input_args_list[i][0]!='-':
-            raise ValueError("Unexpected argument, options should be preceeded by a -")
-
-    # Now return the modified arguments
-    return [config.CSM_PATH, mode, input_path, output_path] + input_args_list[2:]
-
 def get_python_test_args(test_dir, output_path):
     input_args = get_first_line(os.path.join(test_dir, 'args.txt'))
     input_args_list = input_args.split(' ')
@@ -80,13 +54,10 @@ def get_python_test_args(test_dir, output_path):
                 input_args_list[i] = os.path.join(test_dir, input_args_list[i])
 
     # TODO: Add the path for dirfile, permfile and log
-    return ['python', config.PYTHON_CSM_PATH, mode, input_path, output_path] + input_args_list[2:]
+    return [mode, input_path, output_path] + input_args_list[2:]
 
 def run_csm(test_dir, output_path):
-    if config.RUN_PYTHON:
-        args = get_python_test_args(test_dir, output_path)
-    else:
-        args = get_test_args(test_dir, output_path)
+    args = get_python_test_args(test_dir, output_path)
     print('Executing %s...' % args)
     with subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as ps:
         output = ps.stdout.readlines()
@@ -113,8 +84,8 @@ def parse_output(lines):
     :return: A dictionary with the parsed information
     """
     result = {}
-    result['symmetry'] = lines[0]
-    result['scaling'] = lines[1]
+    result['symmetry'] = float(lines[0].split()[-1])
+    result['scaling'] = float(lines[1].split()[-1])
     result['direction'] = ()
     result['permutation'] = ()
     for i in range(len(lines)):
@@ -153,6 +124,39 @@ def compare_files(file1, file2):
 
     return True
 
+def compare_results(expected_filename, results):
+    expected = parse_output(read_file(expected_filename))
+
+    ok = True
+    # Check symmetry
+    if abs(expected['symmetry'] - results['csm']) > 1e-4:
+        print("Expected CSM of %f, got %f" % (expected['symmetry'], results['csm']), file=sys.stderr)
+        ok = False
+
+    # Check scale
+    if abs(expected['scaling'] - results['dMin'] > 1e-4):
+        print("Expected scaling of %f, got %f" % (expected['scaling'], results['dMin']), file=sys.stderr)
+        ok = False
+
+    # Check permutation
+    expected_perm = [int(p)-1 for p in expected['permutation']]
+    if expected_perm!=results['perm']:
+        print("Expected permutation %s, got %s" % (expected_perm, results['perm']), file=sys.stderr)
+        ok = False
+
+    # Check direction, first compare straight on
+    diff = 0.0
+    diff_neg = 0.0
+    for i in range(3):
+        diff += (expected['direction'][i] - results['dir'][i]) ** 2
+        diff_neg += (expected['direction'][i] + results['dir'][i]) ** 2
+    if diff > 1e-5 and diff_neg > 1e-5: # Try inversed
+        print("Expected direction %s, got %s" % (expected['direction'], results['dir']), file=sys.stderr)
+        ok = False
+
+    return ok
+
+
 def report_error(expected_file, generated_file):
     print("Output was not identical")
     expected = parse_output(read_file(expected_file))
@@ -177,3 +181,17 @@ def run_test(test_dir):
             return True
     finally:
         os.remove(tmp_name)
+
+def run_csm_python(test_dir, output_path):
+    args = get_python_test_args(test_dir, output_path)
+    return csm.run_csm(args)
+
+def run_test_python(test_dir):
+    try:
+        (tmp_fd, tmp_name) = mkstemp(text=True)
+        os.close(tmp_fd)
+        results = run_csm_python(test_dir, tmp_name)
+        return compare_results(os.path.join(test_dir, 'result.txt'), results)
+    finally:
+        # os.remove(tmp_name)
+        pass
