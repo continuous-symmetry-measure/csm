@@ -137,27 +137,6 @@ int mainWithOptions()
 		exit(1);
 	}
 
-	// strip unwanted atoms if needbe
-	if ((options.ignoreHy || options.removeHy) && !options.useperm){
-		char* removeList[] = {"H"," H"};
-		Molecule* n = NULL;
-		if (options.ignoreHy)
-			n = m->stripAtoms(removeList,2,false);
-		else //removeHy 
-			n = m->stripAtoms(removeList,2,true);			
-	
-		if (!n){
-			if (options.writeOpenu) {
-				printf("ERR* Failed while trying to strip unwanted atoms *ERR\n");
-			}
-			LOG(fatal) << "Failed while trying to strip unwanted atoms";
-			exit(1);
-		}
-		delete m;
-		m = n;
-		// continue as per usual
-	}
-
 	if (!options.findPerm) {
 		if (!options.useperm && !options.useDir) {
 			double time = 1.0*totalNumPermutations(m) / 3600 / APPROX_RUN_PER_SEC;

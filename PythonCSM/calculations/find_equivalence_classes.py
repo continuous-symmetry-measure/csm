@@ -77,8 +77,7 @@ def find_equivalence_classes(atoms):
 
 def is_similar(atoms_group_num, atoms, a, b):
     found = True
-    atoms_size = len(atoms)
-    mark = set() # [False for i in range(atoms_size)]
+    mark = set()  # [False for i in range(atoms_size)]
 
     valency_a = len(atoms[a].adjacent)
     valency_b = len(atoms[b].adjacent)
@@ -103,3 +102,72 @@ def is_similar(atoms_group_num, atoms, a, b):
             break
 
     return found
+
+def preprocess_molecule(csm_args):
+    if csm_args['ignoreHy'] or csm_args['removeHy']:
+        removeList = ["H", " H"]
+        strip_atoms(csm_args, removeList)
+
+
+def strip_atoms(csm_args, remove_list):
+    """
+    Creates a new Molecule from m by removing atoms who's symbol is in the remove list
+    :param csm_args:
+    :param removeList: atomic symbols to remove
+    """
+
+    # find atoms in removeList
+    to_remove = []
+    size = len(csm_args['molecule'])
+    for i in range(size):
+        hits = 0
+        for s in remove_list:
+            if csm_args['molecule'][i].symbol == s:
+                hits +=1
+                break
+        if hits > 0:
+            to_remove.append(i)
+
+    if len(to_remove) > 0:
+        remove_atoms(csm_args, to_remove)
+
+
+def remove_atoms(csm_args, to_remove):
+    move_indexes = {}
+    size = len(csm_args['molecule'])
+    j = 0
+
+    for i in range(size):
+        if i == to_remove[j]:
+            j += 1
+        else:
+            move_indexes[i] = i-j
+    j -= 1
+
+    for i in range(size-1, 0, -1):
+        if i == to_remove[j]:
+            # remove the atom i
+            csm_args['molecule'].pop(i)
+            j -= 1
+        else:
+            # update the i-th atom adjacents
+            l = len(csm_args['molecule'][i].adjacent)
+            for k in range(l):
+                if csm_args['molecule'][i].adjacent[k] in move_indexes:
+                    csm_args['molecule'][i].adjacent[k] = move_indexes[csm_args['molecule'][i].adjacent[k]]
+                else:
+                    csm_args['molecule'][i].adjacent.pop(k)
+
+    if csm_args['ignoreHy']:
+        # update indexes in equivalence classes
+        l = len(csm_args['equivalence_classes'])
+        # TODO
+
+    if csm_args['removeHy']:
+        csm_args['equivalence_classes'] = find_equivalence_classes(csm_args['molecule'])
+
+
+
+
+
+

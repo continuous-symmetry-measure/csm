@@ -165,98 +165,6 @@ Molecule* Molecule::createFromPython(const python_molecule &molecule)
 	return m;
 }
 
-
-/*
- * Creates a new Molecule from selected atoms of the source Molecule (src)
- *
- * ! assumes selectedAtoms are present in src
- * ! This implies that the selectedAtomsSize is smaller or equal to source size
- *
- */
-Molecule* Molecule::copy(int* selectedAtoms, int selectedAtomsSize, bool updateSimilarity )
-{
-
-	int i,j,old_i,len;
-
-	// allocate molecule
-    Molecule* dest = new Molecule(selectedAtomsSize);
-    if (!dest){
-    	return NULL; // allocation failed
-    }
-
-	//// allocate temporary buffers
-	int *buff = (int*)malloc(dest->_size * sizeof(int));
-	int *inversSelected = (int*)malloc(_size * sizeof(int));
-	int *newGroups = (int*)malloc(_groupNum * sizeof(int));
-
-	// init inversSelected - is the inverse of selectedAtoms (index->element,element->index)
-	for ( i=0;  i< _size ;  i++ ) {
-		inversSelected[i] = -1;	
-	}
-	for (i = 0; i < _groupNum; i++) {
-		newGroups[i] = 0;
-	}
-	for ( i=0;  i< dest->_size ;  i++ )
-		inversSelected[selectedAtoms[i]] = i;
-
-	dest->_groupNum = 0;
-
-	// main loop
-	for (i=0; i<dest->_size; i++){
-
-		old_i = selectedAtoms[i];
-
-		// copy pos
-		for (j=0; j<DIM; j++){
-			dest->_pos[i][j] = _pos[old_i][j];
-		}
-		// Copy mass
-		dest->_mass[i] = _mass[old_i];
-
-		// copy similar
-		if (newGroups[_similar[old_i] - 1] == 0) {
-			dest->_groupNum++;
-			newGroups[_similar[old_i] - 1] = dest->_groupNum;
-		}
-		dest->_similar[i] = newGroups[_similar[old_i] - 1];
-
-		// copy symbol - allocate the same size as old
-		len = strlen(_symbol[old_i]);
-		dest->_symbol[i] = (char *)malloc((len+1) * sizeof(char) );
-		strcpy(dest->_symbol[i],_symbol[old_i]);
-
-		// update adjacency and valency
-		int pos = -1;
-		int valency = 0;
-
-    	// for each item in src adjacency list
-		for ( j=0;  j< _valency[old_i] ;  j++ ){
-
-			// if item in selectedAtoms add to buffer
-			pos = inversSelected[_adjacent[old_i][j]];
-			if (pos != -1)
-				buff[valency++] = pos;
-		}
-
-		dest->_valency[i] = valency;
-
-		// allocate memory for adjacent and copy buffer
-        dest->_adjacent[i] = (int*)malloc(valency * sizeof(int));
-        for (j=0; j<valency; j++)
-        	dest->_adjacent[i][j] = buff[j];
-
-	}
-
-	free(inversSelected);
-	free(buff);
-	free(newGroups);
-
-	if (updateSimilarity)
-		dest->initSimilarity(DEPTH_ITERATIONS);
-
-	return(dest);
-}
-
 /*
  * breaks down atoms into similar groups by symbol and graph structure
  * depth -  is the desired maximal depth to take into account
@@ -445,40 +353,6 @@ int Molecule::getMaxGroupSize()
 	return max;
 }
 
-/*
- * Creates a new Molecule from m by removing atoms who's symbol is in the
- * remove list
- */
-Molecule* Molecule::stripAtoms(char** removeList, int removeListSize, int updateSimilarity)
-{
-	Molecule* newM;
-
-	int i, j, count, hits;
-
-    int *selected = (int*)malloc(_size * sizeof(int));
-
-	// find atoms not in removeList
-    count = 0;
-
-	for ( i=0;  i< _size ;  i++ ){
-		hits = 0;
-		for ( j=0;  j< removeListSize ;  j++ ) {
-			if( strcmp( _symbol[i], removeList[j] ) == 0 ) {
-				hits++;
-				break;
-			}
-		}
-		if (hits == 0){
-			selected[count] = i;
-			count ++;
-		}
-	}
-
-	// return a new Molecule copy
-	newM = copy(selected,count,updateSimilarity);
-	free(selected);
-	return newM;
-}
 
 /*
  * Normalizes the position of atoms of the molecule

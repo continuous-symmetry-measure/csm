@@ -59,7 +59,10 @@ def check_arguments(processed):
 
     if (processed['findPerm'] and 'perm' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
             or ('dirFile' in processed and 'perm' in processed):
-        raise ValueError("-findperm, -useperm and -usedir are mutually exclusive")
+        raise ValueError("--findperm, --useperm and --usedir are mutually exclusive")
+
+    if processed['removeHy'] and processed['ignoreHy']:
+        raise ValueError("--removeHy and --ignoreHy are mutually exclusive")
 
     if "perm" in processed:
 
