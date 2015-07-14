@@ -1,0 +1,1 @@
+ci CUBLEQ.PDB -ignoreHy -babelbond

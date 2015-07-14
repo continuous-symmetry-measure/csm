@@ -152,7 +152,7 @@ def remove_atoms(csm_args, to_remove):
         else:
             # update the i-th atom adjacents
             l = len(csm_args['molecule'][i].adjacent)
-            for k in range(l):
+            for k in range(l - 1, 0, -1):
                 if csm_args['molecule'][i].adjacent[k] in move_indexes:
                     csm_args['molecule'][i].adjacent[k] = move_indexes[csm_args['molecule'][i].adjacent[k]]
                 else:
@@ -160,14 +160,16 @@ def remove_atoms(csm_args, to_remove):
 
     if csm_args['ignoreHy']:
         # update indexes in equivalence classes
-        l = len(csm_args['equivalence_classes'])
-        # TODO
+        groups_num = len(csm_args['equivalence_classes'])
+        for i in range(groups_num - 1, 0, -1):
+            group_size = len(csm_args['equivalence_classes'][i])
+            for j in range(group_size - 1, 0, -1):
+                if csm_args['equivalence_classes'][i][j] in move_indexes:
+                    csm_args['equivalence_classes'][i][j] = move_indexes[csm_args['equivalence_classes'][i][j]]
+                else:
+                    csm_args['equivalence_classes'][i].pop(j)
+            if len(csm_args['equivalence_classes'][i]) == 0:
+                csm_args['equivalence_classes'].pop(i)
 
     if csm_args['removeHy']:
         csm_args['equivalence_classes'] = find_equivalence_classes(csm_args['molecule'])
-
-
-
-
-
-
