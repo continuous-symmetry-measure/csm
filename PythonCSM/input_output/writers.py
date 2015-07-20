@@ -189,6 +189,26 @@ def write_ob_molecule(mol, format, f):
     f.write(s)
 
 
+def print_molecule(molecule, f):
+    f.write("The molecule:\n")
+    for i in range(len(molecule)):
+        f.write("%d %3s\n" % (i, molecule[i].symbol))
+        f.write("\tconnections: ")
+        for j in molecule[i].adjacent:
+            f.write("%d, " %j )
+        f.write("\n")
+
+
+def print_equivalence_classes(groups, f):
+    groups_num = len(groups)
+    for i in range(groups_num):
+        f.write("Group %d: " % i)
+        for j in groups[i]:
+            f.write("%d, " % j)
+        f.write('\n')
+
+
+
 if __name__ == '__main__':
     f = open("../testFiles/output.txt", "w")
 

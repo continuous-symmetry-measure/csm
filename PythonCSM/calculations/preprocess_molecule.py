@@ -1,17 +1,30 @@
 __author__ = 'YAEL'
 
+# from input_output.writers import print_equivalence_classes, print_molecule
+
+# debug_file = open("debug_file.txt", "w")
+
 def preprocess_molecule(csm_args):
     """
     Removes Hydrogen if needed and calculates equivalence classes
     :param csm_args:
     """
+
+    # print_molecule(csm_args['molecule'], debug_file)
+
     if not csm_args['removeHy']:
         csm_args['equivalence_classes'] = find_equivalence_classes(csm_args['molecule'])
+        # debug_file.write("Similarities after initSimilarity: there are %d groups\n" % len(csm_args['equivalence_classes']))
+        # print_equivalence_classes(csm_args['equivalence_classes'], debug_file)
 
     if csm_args['ignoreHy'] or csm_args['removeHy']:
         csm_args["obmol"].DeleteHydrogens()
         remove_list = ["H", " H"]
         strip_atoms(csm_args, remove_list)
+        # debug_file.write("Similarities after ignoreHy: there are %d groups\n" % len(csm_args['equivalence_classes']))
+        # print_equivalence_classes(csm_args['equivalence_classes'],debug_file)
+
+    # debug_file.close()
 
 
 def find_equivalence_classes(atoms):
@@ -81,6 +94,7 @@ def find_equivalence_classes(atoms):
                 groups[i] = [el for el in group if el != -1]
 
         groups.extend(new_groups)
+        # print_equivalence_classes(groups, debug_file)
 
     #TODO: LOG(debug) << "Broken into groups with " << num_iters << " iterations.";
     print("Broken into groups with %d iterations." % num_iters)
@@ -100,7 +114,6 @@ def is_similar(atoms_group_num, atoms, a, b):
         found = False
 
         for j in range(valency_b):
-            #if mark[j]:
             if j in mark:
                 continue
 
@@ -108,7 +121,6 @@ def is_similar(atoms_group_num, atoms, a, b):
                 # the i-th neighbour of 'a' belongs to the same group as the j-th neighbour of 'b'
                 found = True
                 mark.add(j)
-                # mark[j] = True
                 break
 
         if not found:
@@ -186,3 +198,5 @@ def remove_atoms(csm_args, to_remove):
 
     if csm_args['removeHy']:
         csm_args['equivalence_classes'] = find_equivalence_classes(csm_args['molecule'])
+
+

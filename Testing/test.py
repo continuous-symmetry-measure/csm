@@ -42,8 +42,16 @@ class CheckCSMOutput(TestCase):
     def test_9(self):
         self.one_test('test9')
 
+    def test_12(self):
+        self.one_test('test12')
+
+    """ Test 13 gives wrong result in C++ as a result of different versions of OpenBabel. We can't use it.
     def test_13(self):
         self.one_test('test13')
+    """
+
+    def test_14(self):
+        self.one_test('test14')
 
     """Test 15 is takes a lot of time"""
     #def test_15(self):
@@ -54,6 +62,9 @@ class CheckCSMOutput(TestCase):
 
     def test_17(self):
         self.one_test('test17')
+
+    def test_18(self):
+        self.one_test('test18')
 
     """Test 19 is takes a lot of time"""
     #def test_19(self):
