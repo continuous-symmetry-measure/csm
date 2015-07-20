@@ -1,5 +1,18 @@
 __author__ = 'YAEL'
-import numpy as np
+
+def preprocess_molecule(csm_args):
+    """
+    Removes Hydrogen if needed and calculates equivalence classes
+    :param csm_args:
+    """
+    if not csm_args['removeHy']:
+        csm_args['equivalence_classes'] = find_equivalence_classes(csm_args['molecule'])
+
+    if csm_args['ignoreHy'] or csm_args['removeHy']:
+        csm_args["obmol"].DeleteHydrogens()
+        remove_list = ["H", " H"]
+        strip_atoms(csm_args, remove_list)
+
 
 def find_equivalence_classes(atoms):
     group_num = 0
@@ -103,11 +116,6 @@ def is_similar(atoms_group_num, atoms, a, b):
 
     return found
 
-def preprocess_molecule(csm_args):
-    if csm_args['ignoreHy'] or csm_args['removeHy']:
-        removeList = ["H", " H"]
-        strip_atoms(csm_args, removeList)
-
 
 def strip_atoms(csm_args, remove_list):
     """
@@ -133,6 +141,11 @@ def strip_atoms(csm_args, remove_list):
 
 
 def remove_atoms(csm_args, to_remove):
+    """
+    Removes atoms with indexes in the to_remove list from the molecule
+    :param csm_args:
+    :param to_remove:
+    """
     move_indexes = {}
     size = len(csm_args['molecule'])
     j = 0

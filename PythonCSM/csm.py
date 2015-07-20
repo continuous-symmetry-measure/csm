@@ -3,8 +3,7 @@ Performs some tests on the CSM C++ wrapper
 """
 import sys
 from input_output.writers import print_all_output
-from calculations.find_equivalence_classes import find_equivalence_classes, preprocess_molecule
-import os
+from calculations.preprocess_molecule import find_equivalence_classes, preprocess_molecule
 
 __author__ = 'zmbq'
 
@@ -17,9 +16,6 @@ def run_csm(args, print_output=True):
         result = parser.parse_args(args)
         csm_args = process_arguments(result)
 
-        csm_args['equivalence_classes'] = find_equivalence_classes(csm_args['molecule'])
-        if csm_args["ignoreHy"] or csm_args["removeHy"]:
-            csm_args["obmol"].DeleteHydrogens()
         preprocess_molecule(csm_args)
 
         results = csm.RunCSM(csm_args)
