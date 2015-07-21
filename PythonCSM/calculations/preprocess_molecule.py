@@ -1,6 +1,6 @@
 __author__ = 'YAEL'
 
-# from input_output.writers import print_equivalence_classes, print_molecule
+from input_output.writers import print_equivalence_classes, print_molecule
 
 # debug_file = open("debug_file.txt", "w")
 
@@ -34,7 +34,6 @@ def find_equivalence_classes(atoms):
     marked = set()
 
     atoms_group_num = {}
-    # atoms_group_num = np.zeros(atoms_size, dtype=int)
 
     # TODO: LOG(debug) << "Breaking molecule into similarity groups";
     print("Breaking molecule into similarity groups")
@@ -104,7 +103,7 @@ def find_equivalence_classes(atoms):
 
 def is_similar(atoms_group_num, atoms, a, b):
     found = True
-    mark = set()  # [False for i in range(atoms_size)]
+    mark = set()
 
     valency_a = len(atoms[a].adjacent)
     valency_b = len(atoms[b].adjacent)
@@ -143,7 +142,7 @@ def strip_atoms(csm_args, remove_list):
         hits = 0
         for s in remove_list:
             if csm_args['molecule'][i].symbol == s:
-                hits +=1
+                hits += 1
                 break
         if hits > 0:
             to_remove.append(i)
@@ -169,6 +168,9 @@ def remove_atoms(csm_args, to_remove):
             move_indexes[i] = i-j
     j -= 1
 
+    # for i in move_indexes:
+    #     debug_file.write("%d -> %d\n" % (i, move_indexes[i]))
+
     for i in range(size-1, 0, -1):
         if i == to_remove[j]:
             # remove the atom i
@@ -186,9 +188,9 @@ def remove_atoms(csm_args, to_remove):
     if csm_args['ignoreHy']:
         # update indexes in equivalence classes
         groups_num = len(csm_args['equivalence_classes'])
-        for i in range(groups_num - 1, 0, -1):
+        for i in range(groups_num - 1, -1, -1):
             group_size = len(csm_args['equivalence_classes'][i])
-            for j in range(group_size - 1, 0, -1):
+            for j in range(group_size - 1, -1, -1):
                 if csm_args['equivalence_classes'][i][j] in move_indexes:
                     csm_args['equivalence_classes'][i][j] = move_indexes[csm_args['equivalence_classes'][i][j]]
                 else:
