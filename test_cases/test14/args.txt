@@ -1,1 +1,1 @@
-csm ci AFADOA.PDB -ignoreHy -babelbond
+ci AFADOA.PDB -ignoreHy -babelbond
