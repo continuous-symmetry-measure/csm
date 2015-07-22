@@ -1,6 +1,7 @@
 cimport csmlib
 
 cdef csmlib.python_molecule cppize_molecule(atoms, equivalence_classes):
+    # TODO: Get a molecule instead of atoms, equivalence_classes
     """ Convert the Python structures to a CPP-compatible molecule """
     cdef csmlib.python_molecule molecule
     cdef csmlib.python_atom bridge_atom
@@ -18,6 +19,7 @@ cdef csmlib.python_molecule cppize_molecule(atoms, equivalence_classes):
     return molecule
 
 cdef pythonize_molecule(const csmlib.python_molecule &molecule):
+    # TODO: Return a molecule instead of (atoms, equivalence_classes)
     cdef int i;
 
     atoms = []

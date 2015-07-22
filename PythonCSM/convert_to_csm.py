@@ -1,6 +1,7 @@
-from openbabel import OBAtomAtomIter, OBConversion, OBMol
-from input_output.molecule import Atom, GetAtomicSymbol
 from argparse import ArgumentParser
+
+from openbabel import OBAtomAtomIter, OBConversion, OBMol
+from calculations.molecule import Atom, GetAtomicSymbol
 
 
 def create_parser():

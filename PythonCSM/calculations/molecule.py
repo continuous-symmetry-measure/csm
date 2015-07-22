@@ -38,3 +38,23 @@ class Atom:
 
     def __str__(self):
         return "Symbol: %s\tPos: %s\tAdjacent: %s" % (self.symbol, self.pos, self.adjacent)
+
+class Molecule:
+    # A Molecule has atoms and equivalency classes
+
+    @property
+    def atoms(self):
+        return self._atoms
+
+    @property
+    def equivalency_classes(self):
+        return self._equivalency_classes
+
+    @property
+    def norm_factor(self):
+        # Normalization factor. Defaults to 1.0 if normalize wasn't called
+        return self._norm_factor
+
+    def normalize(self):
+        """  Normalize the molecule  """
+        pass

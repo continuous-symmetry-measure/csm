@@ -8,6 +8,7 @@
 #include "math_utils.h"
 #include "options.h"
 #include <cmath>
+#include "logging.h"
 
 using namespace std;
 
@@ -46,7 +47,7 @@ void normalize(double **coords, Molecule *m)
 	// normalize to 1 and not molecule size
 	//norm = sqrt(norm / (double)m->size());
 	norm = sqrt(norm);
-
+	LOG(debug) << "Second normalization factor is " << norm << " and average is (" << x_avg << ", " << y_avg << ", " << z_avg << ")";
 
 	for (i = 0; i< m->size(); i++){
 		coords[i][0] = ((coords[i][0] - x_avg) / norm);

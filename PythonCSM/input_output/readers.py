@@ -1,7 +1,7 @@
 __author__ = 'YAEL'
 
-from openbabel import OBFormat, OBAtomAtomIter, OBConversion, OBMol
-from input_output.molecule import Atom, GetAtomicSymbol
+from openbabel import OBAtomAtomIter, OBConversion, OBMol
+from calculations.molecule import Atom, GetAtomicSymbol
 
 def open_non_csm_file(args_dict):
     """

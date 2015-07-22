@@ -1,8 +1,7 @@
 """ The Python wrapper of csmlib """
 
-cimport csmlib
-from input_output.molecule import Atom
-
+from calculations.molecule import Atom
+from calculations.molecule import Molecule
 include "misc.pxi"
 include "molecule.pxi"
 
