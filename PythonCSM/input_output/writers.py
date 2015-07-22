@@ -1,6 +1,6 @@
 __author__ = 'YAEL'
 
-from input_output.molecule import Atom
+from calculations.molecule import Atom
 from openbabel import OBConversion
 
 def print_all_output(output_dict, args_dict):

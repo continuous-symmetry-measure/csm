@@ -200,3 +200,4 @@ def remove_atoms(csm_args, to_remove):
 
     if csm_args['removeHy']:
         csm_args['equivalence_classes'] = find_equivalence_classes(csm_args['molecule'])
+
