@@ -61,7 +61,7 @@ def write_output(obmol, output_file_name):
 
     f.write("%i\n" % size)
     for i in range(size):
-        f.write("%s%10lf %10lf %10lf\n" %
+        f.write("%s%14lf %14lf %14lf\n" %
                 (atoms[i].symbol,
                  atoms[i].pos[0],
                  atoms[i].pos[1],

@@ -42,13 +42,9 @@ class CheckCSMOutput(TestCase):
     def test_9(self):
         self.one_test('test9')
 
-    """def test_12(self):
+    """Open babel can not open the molecule file for test 12
+    def test_12(self):
         self.one_test('test12')"""
-
-    """ Test 13 gives wrong result in C++ as a result of different versions of OpenBabel. We can't use it.
-    def test_13(self):
-        self.one_test('test13')
-    """
 
     def test_16(self):
         self.one_test('test16')
@@ -61,6 +57,8 @@ class LongCSMCheckOutput(TestCase):
     def one_test(self, test_dir):
         self.assertTrue(run_test_python(os.path.join(config.TEST_PATH, test_dir)))
 
+    def test_13(self):
+        self.one_test('test13csm')
 
     def test_14(self):
         self.one_test('test14')
