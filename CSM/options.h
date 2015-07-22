@@ -43,6 +43,7 @@ struct csm_options
 	bool detectOutliers;
 	bool babelTest;
 	bool keepCenter;
+	bool displayPerms;
 	std::string logFileName;
 
 	std::vector<double> dir;
