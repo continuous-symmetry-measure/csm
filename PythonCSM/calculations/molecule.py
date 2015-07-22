@@ -41,14 +41,19 @@ class Atom:
 
 class Molecule:
     # A Molecule has atoms and equivalency classes
+    def __init__(self, atoms, equivalence_classes=None):
+        self._atoms = atoms
+        if equivalence_classes:
+            self.equivalence_classes = equivalence_classes
+        else:
+            self.equivalence_classes = []
+
+
 
     @property
     def atoms(self):
         return self._atoms
 
-    @property
-    def equivalency_classes(self):
-        return self._equivalency_classes
 
     @property
     def norm_factor(self):

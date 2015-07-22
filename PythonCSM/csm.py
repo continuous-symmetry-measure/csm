@@ -3,7 +3,7 @@ Performs some tests on the CSM C++ wrapper
 """
 import sys
 from input_output.writers import print_all_output
-from calculations.preprocess_molecule import find_equivalence_classes, preprocess_molecule
+from calculations.preprocess_molecule import preprocess_molecule
 
 __author__ = 'zmbq'
 

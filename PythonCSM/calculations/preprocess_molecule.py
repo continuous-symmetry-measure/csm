@@ -18,7 +18,8 @@ def preprocess_molecule(csm_args):
         # print_equivalence_classes(csm_args['equivalence_classes'], debug_file)
 
     if csm_args['ignoreHy'] or csm_args['removeHy']:
-        csm_args["obmol"].DeleteHydrogens()
+        if "obmol" in csm_args:
+            csm_args["obmol"].DeleteHydrogens()
         remove_list = ["H", " H"]
         strip_atoms(csm_args, remove_list)
         # debug_file.write("Similarities after ignoreHy: there are %d groups\n" % len(csm_args['equivalence_classes']))

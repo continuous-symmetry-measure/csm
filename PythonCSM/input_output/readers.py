@@ -99,10 +99,10 @@ def read_csm_file(f, args_dict):
         neighbours = []
         for neighbour_str in line:
             try:
-                neighbour = int(neighbour_str)
+                neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
             except ValueError:
                 raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
-            if neighbour > size:
+            if neighbour >= size:
                 raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
             neighbours.append(neighbour)
 
