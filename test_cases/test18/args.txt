@@ -1,1 +1,1 @@
-csm c4 phthalocyanin.mol -ignoreHy
+c4 phthalocyanin.mol -ignoreHy
