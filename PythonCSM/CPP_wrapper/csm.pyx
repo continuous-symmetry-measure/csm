@@ -30,6 +30,8 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.babelTest = args['babelTest']
     options.keepCenter = args['keepCenter']
 
+    options.displayPerms = args['displayPerms']
+
     if args['logFileName']:
         options.logFilename = cs(args['logFileName'])
 

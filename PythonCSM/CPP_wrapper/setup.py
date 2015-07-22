@@ -5,7 +5,7 @@ from distutils.extension import Extension
 from Cython.Build import cythonize
 import sys
 
-BOOST_ROOT = r'd:\boost\1_57_0\lib64-msvc-10.0' # Default, Windows only. Override in local_settings for now
+BOOST_ROOT = r'd:\boost\1_57_0\lib64' # Default, Windows only. Override in local_settings for now
 
 try:
     from local_settings import *

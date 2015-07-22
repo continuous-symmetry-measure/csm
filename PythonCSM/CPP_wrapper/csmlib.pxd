@@ -43,12 +43,8 @@ cdef extern from "csmlib.h":
         double A;
         bool babelTest;
         bool keepCenter;
+        bool displayPerms;
         string logFilename;
-
-        string inFilename;
-        string outFilename;
-
-        int fdOut;
 
         vector[double] dir;
         vector[int] perm;

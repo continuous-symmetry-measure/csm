@@ -50,18 +50,24 @@ class CheckCSMOutput(TestCase):
         self.one_test('test13')
     """
 
+    def test_16(self):
+        self.one_test('test16')
+
+    def test_17(self):
+        self.one_test('test17')
+
+
+class LongCSMCheckOutput(TestCase):
+    def one_test(self, test_dir):
+        self.assertTrue(run_test_python(os.path.join(config.TEST_PATH, test_dir)))
+
+
     def test_14(self):
         self.one_test('test14')
 
     """Test 15 is takes a lot of time"""
     #def test_15(self):
     #    self.one_test('test15')
-
-    def test_16(self):
-        self.one_test('test16')
-
-    def test_17(self):
-        self.one_test('test17')
 
     """def test_18(self):
         self.one_test('test18')"""

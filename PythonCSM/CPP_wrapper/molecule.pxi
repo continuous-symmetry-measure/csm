@@ -22,7 +22,7 @@ cdef pythonize_molecule(const csmlib.python_molecule &molecule):
 
     atoms = []
     for i in range(molecule.atoms.size()):
-        atom = Atom(molecule.atoms[i].symbol, vector_double_to_tuple(molecule.atoms[i].pos), useMass=False)
+        atom = Atom(ps(molecule.atoms[i].symbol), vector_double_to_tuple(molecule.atoms[i].pos), useMass=False)
         atom.adjacent = vector_int_to_list(molecule.atoms[i].adjacent)
         atom._mass = molecule.atoms[i].mass
 

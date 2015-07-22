@@ -57,12 +57,8 @@ struct python_cpp_bridge
 	bool detectOutliers;
 	bool babelTest;
 	bool keepCenter;
+	bool displayPerms;
 	std::string logFilename;
-	std::string inFilename;
-	std::string outFilename;
-
-	// File descriptors - -1 means no file
-	int fdOut;
 
 	// Direction Axis
 	std::vector<double> dir;

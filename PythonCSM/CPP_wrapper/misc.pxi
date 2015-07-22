@@ -4,6 +4,10 @@ def cs(s):
     """ Converts a Python string to a C++ string """
     return s.encode('UTF8')
 
+def ps(cs):
+    """ Converts a C++ string to a Python string """
+    return cs.decode('UTF8')
+
 cdef vector_double_to_list(const vector[double] &vec):
     cdef int i;
 
