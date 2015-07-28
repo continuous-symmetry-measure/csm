@@ -27,9 +27,6 @@ struct csm_options
 	bool printLocal;
 	bool writeOpenu;
 
-	bool ignoreHy;
-	bool removeHy;
-	bool ignoreSym;
 	OperationType type;
 	int opOrder;
 	bool useperm;

@@ -1,25 +1,23 @@
 cimport csmlib
 
-cdef csmlib.python_molecule cppize_molecule(atoms, equivalence_classes):
-    # TODO: Get a molecule instead of atoms, equivalence_classes
+cdef csmlib.python_molecule cppize_molecule(p_molecule):
     """ Convert the Python structures to a CPP-compatible molecule """
     cdef csmlib.python_molecule molecule
     cdef csmlib.python_atom bridge_atom
 
-    for atom in atoms:
+    for atom in p_molecule.atoms:
         bridge_atom.symbol = cs(atom.symbol)
         bridge_atom.adjacent = atom.adjacent
         bridge_atom.pos = atom.pos
         bridge_atom.mass = atom.mass
         molecule.atoms.push_back(bridge_atom)
 
-    for ec in equivalence_classes:
+    for ec in p_molecule.equivalence_classes:
         molecule.equivalenceClasses.push_back(list_to_vector_int(ec))
 
     return molecule
 
 cdef pythonize_molecule(const csmlib.python_molecule &molecule):
-    # TODO: Return a molecule instead of (atoms, equivalence_classes)
     cdef int i;
 
     atoms = []
@@ -34,4 +32,4 @@ cdef pythonize_molecule(const csmlib.python_molecule &molecule):
     for i in range(molecule.equivalenceClasses.size()):
         oneClass = vector_int_to_list(molecule.equivalenceClasses[i])
         equivalenceClasses.append(oneClass)
-    return (atoms, equivalenceClasses)
+    return Molecule(atoms, equivalenceClasses)

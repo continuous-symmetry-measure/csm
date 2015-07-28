@@ -13,10 +13,6 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.printLocal = args['printLocal']
     options.writeOpenu = args['writeOpenu']
 
-    options.ignoreHy = args['ignoreHy']
-    options.removeHy = args['removeHy']
-    options.ignoreSym = args['ignoreSym']
-
     options.findPerm = args['findPerm']
     options.useMass = args['useMass']
     options.limitRun = args['limitRun']
@@ -44,13 +40,14 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     else:
         options.dir = []
 
-    options.molecule = cppize_molecule(args['molecule'], args['equivalence_classes'])
+    print (args['molecule'])
+    options.molecule = cppize_molecule(args['molecule'])
 
 cdef parse_output(csmlib.csm_output &output):
     cdef int i;
     results = {}
 
-    results['atoms'], results['equivalency'] = pythonize_molecule(output.molecule)
+    results['molecule'] = pythonize_molecule(output.molecule)
     results['norm'] = output.norm;
     results['numGroups'] = output.numGroups;
 
@@ -76,12 +73,3 @@ def RunCSM(args):
     output = csmlib.RunCSM(options)
     result = parse_output(output)
     return result
-
-def CallInitSimilarity(atoms):
-    cdef csmlib.python_molecule molecule;
-
-    molecule = cppize_molecule(atoms, [])
-    csmlib.FillEquivalencyClasses(molecule)
-    _, equivalency_classes = pythonize_molecule(molecule)
-
-    return equivalency_classes

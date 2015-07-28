@@ -33,10 +33,10 @@ def print_all_output(output_dict, args_dict):
     if args_dict['printLocal']:
         sum = 0
         f.write("\nLocal CSM: \n")
-        size = len(output_dict['atoms'])
+        size = len(output_dict['molecule'].atoms)
         for i in range(size):
             sum += output_dict['localCSM'][i]
-            f.write("%s %7lf\n" % (output_dict['atoms'][i].symbol, output_dict['localCSM'][i]))
+            f.write("%s %7lf\n" % (output_dict['molecule'].atoms[i].symbol, output_dict['localCSM'][i]))
         f.write("\nsum: %7lf\n" % sum)
 
     # print chirality
@@ -66,21 +66,21 @@ def print_output(output_dict, args_dict):
 
     f = args_dict['outFile']
     print("%s: %.6lf" % (args_dict['opName'], abs(output_dict['csm'])))
-    size = len(output_dict['atoms'])
+    size = len(output_dict['molecule'].atoms)
 
     # print initial molecule
 
     f.write("\n INITIAL STRUCTURE COORDINATES\n%i\n\n" % size)
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
-                (output_dict['atoms'][i].symbol,
-                 output_dict['atoms'][i].pos[0],
-                 output_dict['atoms'][i].pos[1],
-                 output_dict['atoms'][i].pos[2]))
+                (output_dict['molecule'].atoms[i].symbol,
+                 output_dict['molecule'].atoms[i].pos[0],
+                 output_dict['molecule'].atoms[i].pos[1],
+                 output_dict['molecule'].atoms[i].pos[2]))
 
     for i in range(size):
         f.write("%d " % (i + 1))
-        for j in output_dict['atoms'][i].adjacent:
+        for j in output_dict['molecule'].atoms[i].adjacent:
             f.write("%d " % (j + 1))
         f.write("\n")
 
@@ -90,14 +90,14 @@ def print_output(output_dict, args_dict):
 
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
-                (output_dict['atoms'][i].symbol,
+                (output_dict['molecule'].atoms[i].symbol,
                  output_dict['outAtoms'][i][0],
                  output_dict['outAtoms'][i][1],
                  output_dict['outAtoms'][i][2]))
 
     for i in range(size):
         f.write("%d " % (i + 1))
-        for j in output_dict['atoms'][i].adjacent:
+        for j in output_dict['molecule'].atoms[i].adjacent:
             f.write("%d " % (j + 1))
         f.write("\n")
 
@@ -126,9 +126,9 @@ def print_output_format(output_dict, args_dict):
     # update coordinates
     for i in range(num_atoms):
         atom = args_dict['obmol'].GetAtom(i + 1)
-        atom.SetVector(output_dict['atoms'][i].pos[0],
-                       output_dict['atoms'][i].pos[1],
-                       output_dict['atoms'][i].pos[2])
+        atom.SetVector(output_dict['molecule'].atoms[i].pos[0],
+                       output_dict['molecule'].atoms[i].pos[1],
+                       output_dict['molecule'].atoms[i].pos[2])
 
     write_ob_molecule(args_dict['obmol'], args_dict['format'], f)
 

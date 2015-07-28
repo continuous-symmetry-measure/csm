@@ -15,7 +15,7 @@ static csm_options process_bridge(const python_cpp_bridge &bridge);
 
 python_cpp_bridge::python_cpp_bridge()
 {
-	printLocal = writeOpenu = ignoreHy = removeHy = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = displayPerms = false;
+	printLocal = writeOpenu = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = displayPerms = false;
 	sn_max = 8;
 }
 
@@ -25,9 +25,6 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 
 	options.printLocal = bridge.printLocal;
 	options.writeOpenu = bridge.writeOpenu;
-	options.ignoreHy = bridge.ignoreHy;
-	options.removeHy = bridge.removeHy;
-	options.ignoreSym = bridge.ignoreSym;
 	options.findPerm = bridge.findPerm;
 	options.useMass = bridge.useMass;
 	options.limitRun = bridge.limitRun;
@@ -75,22 +72,4 @@ csm_output RunCSM(python_cpp_bridge bridge)
 	mainWithOptions();  // Fills output
 
 	return results;
-}
-
-void FillEquivalencyClasses(python_molecule &molecule)
-{
-	Molecule *m = Molecule::createFromPython(molecule);
-	m->initSimilarity(9999);
-
-	// Copy equivalence classes back to the molecule
-	// Molecule equivalencyClasses
-	molecule.equivalenceClasses.clear();
-	int *group = new int[m->size()]; // No group is larger than the molecule - this is enough
-	for (int i = 1; i <= m->groupNum(); i++)
-	{
-		int groupSize = m->getGroup(i, group);
-		molecule.equivalenceClasses.push_back(vector<int>(group, group + groupSize));
-	}
-	delete[] group;
-	delete m;
 }

@@ -3,6 +3,7 @@ Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
 from input_output.readers import read_dir_file, read_perm_file, read_csm_file, open_non_csm_file, read_ob_mol
+from calculations.molecule import Molecule
 
 __author__ = 'zmbq'
 
@@ -79,11 +80,8 @@ def check_arguments(processed):
         if processed["removeHy"]:
             raise ValueError("--useperm ignores the -r-emoveHy option, can't use them together")
 
-        if len(processed["perm"]) != len(processed["molecule"]):
+        if len(processed["perm"]) != len(processed["molecule"].atoms):
             raise ValueError("Invalid permutation")
-
-
-
 
 
 def open_files(parse_res, result):
@@ -96,7 +94,7 @@ def open_files(parse_res, result):
         else:
             result["obmol"] = open_non_csm_file(result)
             atoms = read_ob_mol(result["obmol"], result)
-        result['molecule'] = atoms
+        result['molecule'] = Molecule(atoms)
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
 
@@ -165,7 +163,6 @@ def process_arguments(parse_res):
     if not result['format']:
         # get input file extension
         result['format'] = parse_res.input.split(".")[-1]
-
 
     result['writeOpenu'] = parse_res.writeOpenu
     result['limitRun'] = not parse_res.nolimit
