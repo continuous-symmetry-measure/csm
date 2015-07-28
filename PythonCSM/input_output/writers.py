@@ -23,10 +23,10 @@ def print_all_output(output_dict, args_dict):
     # print norm
 
     if args_dict['printNorm']:
-        print("NORMALIZATION FACTOR: %7lf" % output_dict['norm'])
+        print("NORMALIZATION FACTOR: %7lf" % args_dict['molecule'].norm_factor)
         print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % output_dict['dMin'])
         print("DIRECTIONAL COSINES: %lf %lf %lf" % (output_dict['dir'][0], output_dict['dir'][1], output_dict['dir'][2]))
-        print("NUMBER OF EQUIVALENCE GROUPS: %d" % output_dict['groupNum'])
+        print("NUMBER OF EQUIVALENCE GROUPS: %d" % len(args_dict['molecule'].equivalence_classes))
 
     # print local CSM
 

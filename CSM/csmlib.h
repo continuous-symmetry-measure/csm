@@ -43,20 +43,13 @@ struct python_cpp_bridge
 
 	bool printLocal;
 	bool writeOpenu;
-	std::string format;
 
-	bool ignoreHy;
-	bool removeHy;
-	bool ignoreSym;
 	bool findPerm;
-	bool useMass;
 	bool limitRun;
-	bool babelBond;
 	bool timeOnly;
 	int sn_max;
 	bool detectOutliers;
 	bool babelTest;
-	bool keepCenter;
 	bool displayPerms;
 	std::string logFilename;
 
@@ -75,9 +68,6 @@ struct csm_output
 {
 	// Molecule
 	python_molecule molecule;
-
-	double norm;
-	int numGroups;
 
 	// Results from mainRot
 	std::vector<std::vector<double> > outAtoms; // x,y,z of each atom
@@ -98,7 +88,6 @@ extern "C"
 	// Runs the entire CSM application
 	// int RunCSM(const std::vector<std::string> args);
 	csm_output RunCSM(python_cpp_bridge options);
-	void FillEquivalencyClasses(python_molecule &molecule);
 #ifdef __cplusplus
 }
 #endif

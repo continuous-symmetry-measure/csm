@@ -14,7 +14,7 @@ using namespace std;
 
 csm_options::csm_options() 
 { 
-	printLocal = writeOpenu = useperm = useDir = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = displayPerms= false;
+	printLocal = writeOpenu = useperm = useDir = findPerm = limitRun = timeOnly = detectOutliers = babelTest = displayPerms= false;
 	dir.clear();
 	perm.clear();
 	molecule = NULL;

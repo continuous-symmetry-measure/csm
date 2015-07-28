@@ -31,27 +31,21 @@ private:
 	std::vector<int> _valency;           // valency of each atom
 	std::vector<int> _similar;           // similarity
 	int  _groupNum;          // the number of groups of similarity
-	double _norm;	     // The normalization factor
 	std::vector<double> _mass;	     // The atomic masses
 
 private:
 	Molecule(size_t size);  // Private constructor forces creation through the factory methods
-	void replaceSymbols();
-	int isSimilar(int a, int b);
 	Molecule* copy(int* selectedAtoms, int selectedAtomsSize, bool updateSimilarity);
 
 public:
 	~Molecule();
 	static Molecule* createFromPython(const python_molecule &molecule);
-	void initSimilarity(int depth);
 
 public:
 	int getGroup(int num, int* buff);
 	int getGroupSize(int num);
 	int getMaxGroupSize();
-	Molecule* stripAtoms(char** removeList, int removeListSize, int updateSimilarity);
-	bool normalizeMolecule(bool keepCenter);
-
+	
 	void print();
 	void printBasic();
 	void printSimilar();
@@ -63,7 +57,6 @@ public:
 	int size() const { return _size; }
 	char *symbol(int index) const { return _symbol[index]; }
 	char **symbols() const { return _symbol;  }
-	double norm() const { return _norm; }
 	double mass(int index) const { return _mass[index]; }
 	int similar(int index) const { return _similar[index]; }
 	int adjacent(int i, int j) const { return _adjacent[i][j]; }

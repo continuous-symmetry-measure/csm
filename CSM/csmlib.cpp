@@ -15,7 +15,7 @@ static csm_options process_bridge(const python_cpp_bridge &bridge);
 
 python_cpp_bridge::python_cpp_bridge()
 {
-	printLocal = writeOpenu = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = displayPerms = false;
+	printLocal = writeOpenu = findPerm = limitRun = timeOnly = detectOutliers = babelTest = displayPerms = false;
 	sn_max = 8;
 }
 
@@ -26,13 +26,10 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 	options.printLocal = bridge.printLocal;
 	options.writeOpenu = bridge.writeOpenu;
 	options.findPerm = bridge.findPerm;
-	options.useMass = bridge.useMass;
 	options.limitRun = bridge.limitRun;
-	options.babelBond = bridge.babelBond;
 	options.timeOnly = bridge.timeOnly;
 	options.detectOutliers = bridge.detectOutliers;
 	options.babelTest = bridge.babelTest;
-	options.keepCenter = bridge.keepCenter;
 	options.sn_max = bridge.sn_max;
 	options.displayPerms = bridge.displayPerms;
 

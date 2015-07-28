@@ -167,15 +167,6 @@ int mainWithOptions()
        
 	perm = (int *)malloc(sizeof(int) * m->size());
 
-	//normalize Molecule
-	if (!m->normalizeMolecule(options.keepCenter)){
-		if (options.writeOpenu) {
-			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
-		}
-		LOG(fatal) << "Failed to normalize atom positions: dimension of set of points = zero";
-		exit(1);
-	}
- 
 	if (options.useDir)
 	{
 		dir[0] = options.dir[0];
@@ -266,18 +257,6 @@ int mainWithOptions()
 		computeLocalCSM(m, localCSM, perm, dir, options.type != CH ? options.type : chMinType);
 	}
 
-	normalize(outAtoms, m);
-
-	// De-normalize
-	for (i = 0; i < m->size(); i++) { 
-		m->pos()[i][0] *= m->norm();
-		m->pos()[i][1] *= m->norm();
-		m->pos()[i][2] *= m->norm();
-		outAtoms[i][0] *= m->norm();
-		outAtoms[i][1] *= m->norm();
-		outAtoms[i][2] *= m->norm();
-	}	
-
 	fill_output(m, outAtoms, csm, dir, dMin, localCSM, chMinOrder, chMinType, perm);
 
 	// housekeeping
@@ -339,8 +318,6 @@ void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double
 
 
 	// Other values
-	results.norm = m->norm();
-	results.numGroups = m->groupNum();
 	results.csm = csm;
 
 	results.dir.clear();

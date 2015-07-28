@@ -32,14 +32,11 @@ struct csm_options
 	bool useperm;
 	bool useDir;
 	bool findPerm;
-	bool useMass;
 	bool limitRun;
-	bool babelBond;
 	bool timeOnly;
 	int sn_max;
 	bool detectOutliers;
 	bool babelTest;
-	bool keepCenter;
 	bool displayPerms;
 	std::string logFileName;
 

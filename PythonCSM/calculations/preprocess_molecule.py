@@ -28,3 +28,5 @@ def preprocess_molecule(csm_args):
 
     # debug_file.close()
 
+    csm_args['molecule'].normalize(csm_args['keepCenter'])
+

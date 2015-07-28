@@ -12,49 +12,6 @@
 
 using namespace std;
 
-/*
-* Normalizes the position of atoms of the molecule
-* returns one [true] if successful, zero[false] otherwise
-*/
-void normalize(double **coords, Molecule *m)
-{
-
-	double tmp, x_avg, y_avg, z_avg, norm;
-	int i;
-
-	x_avg = y_avg = z_avg = 0.0;
-
-	if (!options.keepCenter) {
-		double mass_sum = 0;
-		for (i = 0; i< m->size(); i++){
-			x_avg += coords[i][0] * m->mass(i);
-			y_avg += coords[i][1] * m->mass(i);
-			z_avg += coords[i][2] * m->mass(i);
-			mass_sum += m->mass(i);
-		}
-		x_avg /= (double)(mass_sum);
-		y_avg /= (double)(mass_sum);
-		z_avg /= (double)(mass_sum);
-	}
-
-	norm = 0.0;
-	for (i = 0; i< m->size(); i++){
-		tmp = SQR(coords[i][0] - x_avg) +
-			SQR(coords[i][1] - y_avg) +
-			SQR(coords[i][2] - z_avg);
-		norm += tmp;
-	}
-	// normalize to 1 and not molecule size
-	//norm = sqrt(norm / (double)m->size());
-	norm = sqrt(norm);
-	LOG(debug) << "Second normalization factor is " << norm << " and average is (" << x_avg << ", " << y_avg << ", " << z_avg << ")";
-
-	for (i = 0; i< m->size(); i++){
-		coords[i][0] = ((coords[i][0] - x_avg) / norm);
-		coords[i][1] = ((coords[i][1] - y_avg) / norm);
-		coords[i][2] = ((coords[i][2] - z_avg) / norm);
-	}
-}
 
 double Magnitude(double *Point1, double *Point2)
 {

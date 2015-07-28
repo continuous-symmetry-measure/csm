@@ -1,4 +1,5 @@
 from openbabel import OBAtom, OBElementTable
+from calculations.normalizations import normalize_coords, de_normalize_coords
 
 __author__ = 'zmbq'
 
@@ -21,7 +22,7 @@ class Atom:
     def __init__(self, symbol, pos, useMass=True):
         self._symbol = symbol
         self.adjacent = []
-        self._pos = pos
+        self.pos = pos
         if useMass and symbol != 'XX':
             self._mass = GetAtomicMass(symbol)
         else:
@@ -30,10 +31,6 @@ class Atom:
     @property
     def mass(self):
         return self._mass
-
-    @property
-    def pos(self):
-        return self._pos
 
     @property
     def symbol(self):
@@ -51,6 +48,7 @@ class Molecule:
             self._equivalence_classes = equivalence_classes
         else:
             self._equivalence_classes = []
+        self._norm_factor = 1.0
 
     @property
     def atoms(self):
@@ -60,15 +58,33 @@ class Molecule:
     def equivalence_classes(self):
         return self._equivalence_classes
 
-
     @property
     def norm_factor(self):
         # Normalization factor. Defaults to 1.0 if normalize wasn't called
         return self._norm_factor
 
-    def normalize(self):
-        """  Normalize the molecule  """
-        pass
+    def set_norm_factor(self, value):
+        self._norm_factor = value
+
+    def normalize(self, keep_center):
+        """
+        Normalize the molecule
+        :param keep_center:
+        """
+        coords = [atom.pos for atom in self._atoms]
+        masses = [atom.mass for atom in self._atoms]
+        (norm_coords, self._norm_factor) = normalize_coords(coords, masses, keep_center)
+        size = len(self._atoms)
+        for i in range(size):
+            self._atoms[i].pos = norm_coords[i]
+
+    def de_normalize(self):
+        coords = [atom.pos for atom in self._atoms]
+        denorm_coords = de_normalize_coords(coords, self.norm_factor)
+
+        size = len(self._atoms)
+        for i in range(size):
+            self._atoms[i].pos = denorm_coords[i]
 
     def find_equivalence_classes(self):
         group_num = 0
@@ -237,6 +253,5 @@ class Molecule:
                     self._equivalence_classes.pop(i)
         else:  # removeHy
             self.find_equivalence_classes()
-
 
 

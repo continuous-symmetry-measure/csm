@@ -1,5 +1,7 @@
 cimport csmlib
 
+from calculations.molecule import Atom, Molecule
+
 cdef csmlib.python_molecule cppize_molecule(p_molecule):
     """ Convert the Python structures to a CPP-compatible molecule """
     cdef csmlib.python_molecule molecule

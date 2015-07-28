@@ -20,29 +20,16 @@ cdef extern from "csmlib.h":
         python_cpp_bridge()
         string opType;
         string opName;
-        bool printNorm;
         bool printLocal;
         bool writeOpenu;
-        string format;
-
-        bool ignoreHy;
-        bool removeHy;
-        bool ignoreSym;
-        bool useFormat;
 
         int opOrder;
-        bool useperm;
-        bool useDir;
         bool findPerm;
-        bool useMass;
         bool limitRun;
-        bool babelBond;
         bool timeOnly;
         int sn_max;
         bool detectOutliers;
-        double A;
         bool babelTest;
-        bool keepCenter;
         bool displayPerms;
         string logFilename;
 
@@ -53,8 +40,6 @@ cdef extern from "csmlib.h":
 cdef extern from "csmlib.h":
     cdef cppclass csm_output:
         python_molecule molecule;
-        double norm;
-        int numGroups;
 
         vector[vector[double]] outAtoms;
         double csm;
@@ -67,5 +52,4 @@ cdef extern from "csmlib.h":
 
 cdef extern from "csmlib.h":
     csm_output RunCSM(python_cpp_bridge options) except +;
-    void FillEquivalencyClasses(python_molecule &molecule) except +;
 

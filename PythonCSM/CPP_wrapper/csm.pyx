@@ -1,7 +1,5 @@
 """ The Python wrapper of csmlib """
 
-from calculations.molecule import Atom
-from calculations.molecule import Molecule
 include "misc.pxi"
 include "molecule.pxi"
 
@@ -14,16 +12,13 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.writeOpenu = args['writeOpenu']
 
     options.findPerm = args['findPerm']
-    options.useMass = args['useMass']
     options.limitRun = args['limitRun']
-    options.babelBond = args['babelBond']
     options.timeOnly = args['timeOnly']
     if args['sn_max']:
         options.sn_max = args['sn_max']
 
     options.detectOutliers = args['detectOutliers']
     options.babelTest = args['babelTest']
-    options.keepCenter = args['keepCenter']
 
     options.displayPerms = args['displayPerms']
 
@@ -40,7 +35,6 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     else:
         options.dir = []
 
-    print (args['molecule'])
     options.molecule = cppize_molecule(args['molecule'])
 
 cdef parse_output(csmlib.csm_output &output):
@@ -48,15 +42,13 @@ cdef parse_output(csmlib.csm_output &output):
     results = {}
 
     results['molecule'] = pythonize_molecule(output.molecule)
-    results['norm'] = output.norm;
-    results['numGroups'] = output.numGroups;
 
     outAtoms = []
     for i in range(output.molecule.atoms.size()):
         outAtoms.append(vector_double_to_tuple(output.outAtoms[i]))
     results['outAtoms'] = outAtoms
 
-    results['csm'] = output.csm;
+    results['csm'] = output.csm
     results['dir'] = vector_double_to_tuple(output.dir)
     results['dMin'] = output.dMin
     results['localCSM'] = vector_double_to_list(output.localCSM)

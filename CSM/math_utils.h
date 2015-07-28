@@ -10,7 +10,6 @@
 
 #include "Molecule.h"
 
-void normalize(double **coords, Molecule *m);
 double Magnitude(double *Point1, double *Point2);
 double computeDistanceFromLine(double *Point, double *LineStart, double *LineEnd);
 double findMedian(double arr[], int n);
