@@ -73,7 +73,7 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 	}
 	
 	dir = (double *) malloc(DIM * sizeof(double));
-	for (i = 0; i<DIM; i++)
+	for (i = 0; i<python.dir.size(); i++)
 	{
 		dir[i] = python.dir[i];
 	}
@@ -105,7 +105,7 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 cpp_calculation_data::~cpp_calculation_data()
 {
 	int i, size = molecule->size();
-	free(molecule);
+	delete molecule;
 	for (i=0; i<size; i++)
 	{
 		free(outAtoms[i]);
