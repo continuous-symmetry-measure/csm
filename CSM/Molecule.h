@@ -21,6 +21,9 @@
 #define SQR(x)      ((x) * (x))
 #endif
 
+extern const int DIM;
+class python_molecule;
+
 class Molecule
 {
 private:
@@ -39,7 +42,7 @@ private:
 
 public:
 	~Molecule();
-	static Molecule* createFromPython(const python_molecule &molecule);
+	static Molecule *createFromPython(const python_molecule &molecule);
 
 public:
 	int getGroup(int num, int* buff);

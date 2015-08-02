@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 #include "options.h"
+#include "Molecule.h"
 
 
 // A representation of one atom in Python

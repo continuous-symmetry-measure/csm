@@ -37,6 +37,28 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
 
     options.molecule = cppize_molecule(args['molecule'])
 
+
+cdef init_csm_data(csmlib.csm_calculation_data &data, csm_args):
+    data.molecule = cppize_molecule(csm_args['molecule'])
+    data.outAtoms = []
+    if 'dir' in csm_args:
+        data.dir = csm_args['dir']
+    else:
+        data.dir = []
+    data.csm = 0
+    data.dMin = 0
+    if 'perm' in csm_args:
+        data.perm = csm_args['perm']
+    else:
+        data.perm = []
+    data.localCSM = []
+    data.operationType = cs(csm_args['type'])
+
+cdef parse_csm_data(csmlib.csm_calculation_data &data):
+    results = {}
+    return results
+
+
 cdef parse_output(csmlib.csm_output &output):
     cdef int i;
     results = {}
@@ -73,3 +95,9 @@ def TotalNumberOfPemrutations():
     cdef double num
     num = csmlib.TotalNumberOfPermutations()
     return num
+
+def RunSinglePerm(csm_args):
+    cdef csmlib.csm_calculation_data data
+    init_csm_data(data, csm_args)
+    cdef csmlib.csm_calculation_data result = csmlib.RunSinglePerm(data)
+    return parse_csm_data(result)

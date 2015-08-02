@@ -60,6 +60,123 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 	return options;
 }
 
+cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
+{
+	int i;
+	molecule = Molecule::createFromPython(python.molecule);
+	int size = molecule->size();
+	
+	outAtoms = (double **)malloc(size * sizeof(double*));
+	for (i=0; i<size; i++)
+	{
+		outAtoms[i] = (double *)malloc(DIM * sizeof(double));
+	}
+	
+	dir = (double *) malloc(DIM * sizeof(double));
+	for (i = 0; i<DIM; i++)
+	{
+		dir[i] = python.dir[i];
+	}
+	
+	csm = 0;
+	dMin = 0;
+	
+	perm = (int *)malloc(size * sizeof(int));
+	int perm_size = python.perm.size();
+	for (i=0; i<perm_size; i++)
+	{
+		perm[i] = python.perm[i];
+	}
+	
+	localCSM = (double *)malloc(sizeof(double) * size);
+		
+	if (python.operationType == "CS")
+		operationType = CS;
+	else if (python.operationType == "CH")
+		operationType = CH;
+	else if (python.operationType == "CN")
+		operationType = CN;
+	else if (python.operationType == "SN")
+		operationType = SN;
+	else if (python.operationType == "CI")
+		operationType = CI;
+}
+
+cpp_calculation_data::~cpp_calculation_data()
+{
+	int i, size = molecule->size();
+	free(molecule);
+	for (i=0; i<size; i++)
+	{
+		free(outAtoms[i]);
+	}
+	free(outAtoms);
+	free(dir);
+	free(perm);
+	free(localCSM);
+}
+
+csm_calculation_data cpp_calculation_data::get_csm_data()
+{
+	csm_calculation_data python;
+
+	python.molecule.atoms.clear();
+	python.outAtoms.clear();
+	python.localCSM.clear();
+	python.perm.clear();
+
+	int size = molecule->size();
+
+	for (int i = 0; i < size; i++)
+	{
+		// Molecule
+		python_atom atom;
+		atom.symbol = molecule->symbol(i);
+		atom.mass = molecule->mass(i);
+		for (int j = 0; j < 3; j++)
+			atom.pos.push_back(molecule->pos()[i][j]);
+		for (int j = 0; j < molecule->valency(i); j++)
+			atom.adjacent.push_back(molecule->adjacent(i, j));
+		python.molecule.atoms.push_back(atom);
+
+		// outAtoms
+		std::vector<double> outAtom;
+		for (int j = 0; j < 3; j++)
+			outAtom.push_back(outAtoms[i][j]);
+		python.outAtoms.push_back(outAtom);
+
+		// localCSM
+		if (localCSM)
+			python.localCSM.push_back(localCSM[i]);
+
+		// perm
+		python.perm.push_back(perm[i]);
+	}
+
+	// Molecule equivalencyClasses
+	python.molecule.equivalenceClasses.clear();
+	int *group = new int[size]; // No group is larger than the molecule - this is enough
+	for (int i = 1; i <= molecule->groupNum(); i++)
+	{
+		int groupSize = molecule->getGroup(i, group);
+		python.molecule.equivalenceClasses.push_back(vector<int>(group, group + groupSize));
+	}
+	delete[] group;
+
+
+	// Other values
+	python.csm = csm;
+
+	python.dir.clear();
+	for (int i = 0; i < 3; i++)
+		python.dir.push_back(dir[i]);
+
+	python.dMin = dMin;
+
+	return python;
+}
+	
+
 extern csm_options options;
 extern csm_output results;
 extern int mainWithOptions();
@@ -86,9 +203,8 @@ double TotalNumberOfPermutations()
 csm_calculation_data RunSinglePerm(csm_calculation_data input)
 {
 	cpp_calculation_data cpp_input(input);
-	runSinglePerm(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, &cpp_input.operationType);
+	runSinglePerm(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
 
 	csm_calculation_data output = cpp_input.get_csm_data();
 	return output;
 }
-

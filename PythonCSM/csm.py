@@ -23,13 +23,18 @@ def run_csm(args, print_output=True):
         csm.SetCSMOptions(csm_args)
         total_perms = csm.TotalNumberOfPemrutations()
         print("Total number of permutations: %f" % total_perms)
-        results = csm.Calculate()
 
-        process_results(results, csm_args)
+        #data = csm.InitCSMData(csm_args)
+        perm_res = csm.RunSinglePerm(csm_args)
+        # TODO
 
-        if print_output:
-            print_all_output(results, csm_args)
-        return results
+        #results = csm.Calculate()
+
+        #process_results(results, csm_args)
+
+        #if print_output:
+        #    print_all_output(results, csm_args)
+        #return results
     finally:
         try:
             csm_args['outFile'].close()

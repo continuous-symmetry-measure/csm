@@ -38,6 +38,17 @@ cdef extern from "csmlib.h":
         python_molecule molecule;
 
 cdef extern from "csmlib.h":
+    cdef cppclass csm_calculation_data:
+        python_molecule molecule;
+        vector[vector[double]] outAtoms;  # x,y,z of each atom
+        vector[double] dir;
+        double csm;
+        double dMin;
+        vector[int] perm;
+        vector[double] localCSM;
+        string operationType;
+
+cdef extern from "csmlib.h":
     cdef cppclass csm_output:
         python_molecule molecule;
 
@@ -54,4 +65,5 @@ cdef extern from "csmlib.h":
     void SetCSMOptions(python_cpp_bridge options) except +;
     double TotalNumberOfPermutations();
     csm_output RunCSM() except +;
+    csm_calculation_data RunSinglePerm(csm_calculation_data input) except +;
 

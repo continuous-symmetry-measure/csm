@@ -26,9 +26,9 @@
 
 using namespace std;
 
-const int DIM = 3;
 const double MINDOOUBLE = 1e-8;
 const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking similarity */
+const int DIM = 3;
 
 // ************************************************************
 //       implementation
