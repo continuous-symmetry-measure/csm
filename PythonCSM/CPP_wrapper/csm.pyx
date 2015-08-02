@@ -3,6 +3,8 @@
 include "misc.pxi"
 include "molecule.pxi"
 
+from calculations.csm_calculations_data import CSMCalculationsData
+
 cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.opType = cs(args['type'])
     options.opName = cs(args['opName'])
@@ -38,25 +40,30 @@ cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.molecule = cppize_molecule(args['molecule'])
 
 
-cdef init_csm_data(csmlib.csm_calculation_data &data, csm_args):
-    data.molecule = cppize_molecule(csm_args['molecule'])
-    data.outAtoms = []
-    if 'dir' in csm_args:
-        data.dir = csm_args['dir']
-    else:
-        data.dir = []
-    data.csm = 0
-    data.dMin = 0
-    if 'perm' in csm_args:
-        data.perm = csm_args['perm']
-    else:
-        data.perm = []
-    data.localCSM = []
-    data.operationType = cs(csm_args['type'])
+cdef python_data_obj_to_csm_data(csmlib.csm_calculation_data &data, python_data_object):
+    data.molecule = cppize_molecule(python_data_object.molecule)
+    data.outAtoms = python_data_object.outAtoms
+    data.dir = python_data_object.dir
+    data.csm = python_data_object.csm
+    data.dMin = python_data_object.dMin
+    data.perm = python_data_object.perm
+    data.localCSM = python_data_object.localCSM
+    data.operationType = cs(python_data_object.operationType)
 
 cdef parse_csm_data(csmlib.csm_calculation_data &data):
-    results = {}
-    return results
+    result = CSMCalculationsData()
+    result.molecule = pythonize_molecule(data.molecule)
+    outAtoms = []
+    for i in range(data.molecule.atoms.size()):
+        outAtoms.append(vector_double_to_tuple(data.outAtoms[i]))
+    result.outAtoms = outAtoms
+
+    result.csm = data.csm
+    result.dir = vector_double_to_tuple(data.dir)
+    result.dMin = data.dMin
+    result.localCSM = vector_double_to_list(data.localCSM)
+    result.perm = vector_int_to_list(data.perm)
+    return result
 
 
 cdef parse_output(csmlib.csm_output &output):
@@ -96,8 +103,8 @@ def TotalNumberOfPemrutations():
     num = csmlib.TotalNumberOfPermutations()
     return num
 
-def RunSinglePerm(csm_args):
+def RunSinglePerm(python_data_obj):
     cdef csmlib.csm_calculation_data data
-    init_csm_data(data, csm_args)
+    python_data_obj_to_csm_data(data, python_data_obj)
     cdef csmlib.csm_calculation_data result = csmlib.RunSinglePerm(data)
     return parse_csm_data(result)

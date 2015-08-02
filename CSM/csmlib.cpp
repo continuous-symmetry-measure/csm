@@ -73,7 +73,7 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 	}
 	
 	dir = (double *) malloc(DIM * sizeof(double));
-	for (i = 0; i<DIM; i++)
+	for (i = 0; i<python.dir.size(); i++)
 	{
 		dir[i] = python.dir[i];
 	}
@@ -105,7 +105,8 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 cpp_calculation_data::~cpp_calculation_data()
 {
 	int i, size = molecule->size();
-	free(molecule);
+	delete molecule;
+
 	for (i=0; i<size; i++)
 	{
 		free(outAtoms[i]);
@@ -202,6 +203,7 @@ double TotalNumberOfPermutations()
 
 csm_calculation_data RunSinglePerm(csm_calculation_data input)
 {
+	
 	cpp_calculation_data cpp_input(input);
 	runSinglePerm(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
 
