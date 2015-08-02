@@ -58,10 +58,18 @@ cdef parse_output(csmlib.csm_output &output):
 
     return results
 
-def RunCSM(args):
+def SetCSMOptions(args):
     cdef csmlib.python_cpp_bridge options
     init_options(options, args)
 
-    output = csmlib.RunCSM(options)
+    csmlib.SetCSMOptions(options)
+
+def Calculate():
+    output = csmlib.RunCSM()
     result = parse_output(output)
     return result
+
+def TotalNumberOfPemrutations():
+    cdef double num
+    num = csmlib.TotalNumberOfPermutations()
+    return num

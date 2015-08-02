@@ -51,5 +51,7 @@ cdef extern from "csmlib.h":
         vector[int] perm;
 
 cdef extern from "csmlib.h":
-    csm_output RunCSM(python_cpp_bridge options) except +;
+    void SetCSMOptions(python_cpp_bridge options) except +;
+    double TotalNumberOfPermutations();
+    csm_output RunCSM() except +;
 

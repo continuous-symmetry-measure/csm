@@ -20,7 +20,10 @@ def run_csm(args, print_output=True):
 
         preprocess_molecule(csm_args)
 
-        results = csm.RunCSM(csm_args)
+        csm.SetCSMOptions(csm_args)
+        total_perms = csm.TotalNumberOfPemrutations()
+        print("Total number of permutations: %f" % total_perms)
+        results = csm.Calculate()
 
         process_results(results, csm_args)
 

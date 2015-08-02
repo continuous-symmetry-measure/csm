@@ -80,14 +80,49 @@ struct csm_output
 	std::vector<int> perm;
 };
 
+struct csm_calculation_data
+{
+	python_molecule molecule;
+	std::vector<std::vector<double> > outAtoms; // x,y,z of each atom
+	std::vector<double> dir;
+	double csm;
+	double dMin;
+	std::vector<int> perm;
+	std::vector<double> localCSM;
+	std::string operationType;
+};
+
+struct cpp_calculation_data
+{
+	Molecule *molecule;
+	double **outAtoms;
+	double *dir;
+	double csm;
+	double dMin;
+	int *perm;
+	double *localCSM;
+	OperationType operationType;
+
+	cpp_calculation_data(const csm_calculation_data &python);
+	~cpp_calculation_data();
+
+	csm_calculation_data get_csm_data();
+};
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+	// Sets the CSM options for all future function calls
+	void SetCSMOptions(python_cpp_bridge options);
+
+	double TotalNumberOfPermutations();
+
 	// Runs the entire CSM application
 	// int RunCSM(const std::vector<std::string> args);
-	csm_output RunCSM(python_cpp_bridge options);
+	csm_output RunCSM();
+
+	csm_calculation_data RunSinglePerm(csm_calculation_data input);
 #ifdef __cplusplus
 }
 #endif
