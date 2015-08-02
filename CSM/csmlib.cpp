@@ -106,7 +106,6 @@ cpp_calculation_data::~cpp_calculation_data()
 {
 	int i, size = molecule->size();
 	delete molecule;
-
 	for (i=0; i<size; i++)
 	{
 		free(outAtoms[i]);
