@@ -3,84 +3,85 @@ __author__ = 'YAEL'
 from calculations.molecule import Atom
 from openbabel import OBConversion
 
-def print_all_output(output_dict, args_dict):
+
+def print_all_output(output_obj, args_dict):
     """
     Prints all the outputs
-    :param output_dict: Dictionary with all calculations outputs
+    :param output_obj: Object with all calculations outputs
     :param args_dict: Dictionary with all processed arguments
     """
     f = args_dict['outFile']
-    f.write("%s: %.4lf\n" % (args_dict['opName'], abs(output_dict['csm'])))
-    f.write("SCALING FACTOR: %7lf\n" % (output_dict['dMin']))
+    f.write("%s: %.4lf\n" % (args_dict['opName'], abs(output_obj.csm)))
+    f.write("SCALING FACTOR: %7lf\n" % output_obj.dMin)
 
     # print CSM, initial molecule, resulting structure and direction according to format specified
 
     if args_dict['format'].lower() == "csm":
-        print_output(output_dict, args_dict)
+        print_output(output_obj, args_dict)
     else:
-        print_output_format(output_dict, args_dict)
+        print_output_format(output_obj, args_dict)
 
     # print norm
 
     if args_dict['printNorm']:
-        print("NORMALIZATION FACTOR: %7lf" % args_dict['molecule'].norm_factor)
-        print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % output_dict['dMin'])
-        print("DIRECTIONAL COSINES: %lf %lf %lf" % (output_dict['dir'][0], output_dict['dir'][1], output_dict['dir'][2]))
-        print("NUMBER OF EQUIVALENCE GROUPS: %d" % len(args_dict['molecule'].equivalence_classes))
+        print("NORMALIZATION FACTOR: %7lf" % output_obj.molecule.norm_factor)
+        print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % output_obj.dMin)
+        print("DIRECTIONAL COSINES: %lf %lf %lf" % (output_obj.dir[0], output_obj.dir[1], output_obj.dir[2]))
+        print("NUMBER OF EQUIVALENCE GROUPS: %d" % len(output_obj.molecule.equivalence_classes))
 
     # print local CSM
 
     if args_dict['printLocal']:
         sum = 0
         f.write("\nLocal CSM: \n")
-        size = len(output_dict['molecule'].atoms)
+        size = len(output_obj.molecule.atoms)
         for i in range(size):
-            sum += output_dict['localCSM'][i]
-            f.write("%s %7lf\n" % (output_dict['molecule'].atoms[i].symbol, output_dict['localCSM'][i]))
+            sum += output_obj.localCSM[i]
+            f.write("%s %7lf\n" % (output_obj.molecule.atoms[i].symbol, output_obj.localCSM[i]))
         f.write("\nsum: %7lf\n" % sum)
 
     # print chirality
 
     if args_dict['type'] == 'CH':
-        if output_dict['chMinType'] == 'CS':
+        if output_obj.chMinType == 'CS':
             f.write("\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n")
         else:
-            f.write("\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n" % output_dict['chMinOrder'])
+            f.write("\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n" % output_obj.chMinOrder)
 
     # print permutation
 
     f.write("\n PERMUTATION:\n\n")
-    for i in output_dict['perm']:
+    for i in output_obj.perm:
         f.write("%d " % (i + 1))
     f.write("\n")
 
     f.close()
 
 
-def print_output(output_dict, args_dict):
+def print_output(output_obj, args_dict):
     """
     Prints output in CSM format
-    :param output_dict: Dictionary with all calculations outputs
+    :param output_obj: Object with all calculations outputs
     :param args_dict: Dictionary with all processed arguments
     """
 
     f = args_dict['outFile']
-    print("%s: %.6lf" % (args_dict['opName'], abs(output_dict['csm'])))
-    size = len(output_dict['molecule'].atoms)
+    print("%s: %.6lf" % (args_dict['opName'], abs(output_obj.csm)))
+    size = len(output_obj.molecule.atoms)
 
     # print initial molecule
 
     f.write("\n INITIAL STRUCTURE COORDINATES\n%i\n\n" % size)
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
-                (output_dict['molecule'].atoms[i].symbol,
-                 output_dict['molecule'].atoms[i].pos[0],
-                 output_dict['molecule'].atoms[i].pos[1],
-                 output_dict['molecule'].atoms[i].pos[2]))
+                (output_obj.molecule.atoms[i].symbol,
+                 output_obj.molecule.atoms[i].pos[0],
+                 output_obj.molecule.atoms[i].pos[1],
+                 output_obj.molecule.atoms[i].pos[2]))
 
     for i in range(size):
         f.write("%d " % (i + 1))
-        for j in output_dict['molecule'].atoms[i].adjacent:
+        for j in output_obj.molecule.atoms[i].adjacent:
             f.write("%d " % (j + 1))
         f.write("\n")
 
@@ -90,27 +91,27 @@ def print_output(output_dict, args_dict):
 
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
-                (output_dict['molecule'].atoms[i].symbol,
-                 output_dict['outAtoms'][i][0],
-                 output_dict['outAtoms'][i][1],
-                 output_dict['outAtoms'][i][2]))
+                (output_obj.molecule.atoms[i].symbol,
+                 output_obj.outAtoms[i][0],
+                 output_obj.outAtoms[i][1],
+                 output_obj.outAtoms[i][2]))
 
     for i in range(size):
         f.write("%d " % (i + 1))
-        for j in output_dict['molecule'].atoms[i].adjacent:
+        for j in output_obj.molecule.atoms[i].adjacent:
             f.write("%d " % (j + 1))
         f.write("\n")
 
     # print dir
 
     f.write("\n DIRECTIONAL COSINES:\n\n")
-    f.write("%lf %lf %lf\n" % (output_dict['dir'][0], output_dict['dir'][1], output_dict['dir'][2]))
+    f.write("%lf %lf %lf\n" % (output_obj.dir[0], output_obj.dir[1], output_obj.dir[2]))
 
 
-def print_output_format(output_dict, args_dict):
+def print_output_format(output_obj, args_dict):
     """
     Prints output using Open Babel
-    :param output_dict: Dictionary with all calculations outputs
+    :param output_obj: Object with all calculations outputs
     :param args_dict: Dictionary with all processed arguments
     """
     f = args_dict['outFile']
@@ -126,9 +127,9 @@ def print_output_format(output_dict, args_dict):
     # update coordinates
     for i in range(num_atoms):
         atom = args_dict['obmol'].GetAtom(i + 1)
-        atom.SetVector(output_dict['molecule'].atoms[i].pos[0],
-                       output_dict['molecule'].atoms[i].pos[1],
-                       output_dict['molecule'].atoms[i].pos[2])
+        atom.SetVector(output_obj.molecule.atoms[i].pos[0],
+                       output_obj.molecule.atoms[i].pos[1],
+                       output_obj.molecule.atoms[i].pos[2])
 
     write_ob_molecule(args_dict['obmol'], args_dict['format'], f)
 
@@ -137,9 +138,9 @@ def print_output_format(output_dict, args_dict):
     # update coordinates
     for i in range(num_atoms):
         atom = args_dict['obmol'].GetAtom(i + 1)
-        atom.SetVector(output_dict['outAtoms'][i][0],
-                       output_dict['outAtoms'][i][1],
-                       output_dict['outAtoms'][i][2])
+        atom.SetVector(output_obj.outAtoms[i][0],
+                       output_obj.outAtoms[i][1],
+                       output_obj.outAtoms[i][2])
 
     f.write("\n RESULTING STRUCTURE COORDINATES\n")
     write_ob_molecule(args_dict['obmol'], args_dict['format'], f)
@@ -147,12 +148,12 @@ def print_output_format(output_dict, args_dict):
     # print dir
 
     f.write("\n DIRECTIONAL COSINES:\n\n")
-    f.write("%lf %lf %lf\n" % (output_dict['dir'][0], output_dict['dir'][1], output_dict['dir'][2]))
+    f.write("%lf %lf %lf\n" % (output_obj.dir[0], output_obj.dir[1], output_obj.dir[2]))
 
     if args_dict['writeOpenu']:
-        print("SV* %.4lf *SV\n" % abs(output_dict['csm']))
+        print("SV* %.4lf *SV\n" % abs(output_obj.csm))
     else:
-        print("%s: %.4lf\n" % (args_dict['opName'], abs(output_dict['csm'])))
+        print("%s: %.4lf\n" % (args_dict['opName'], abs(output_obj.csm)))
 
 
 
@@ -227,5 +228,3 @@ if __name__ == '__main__':
            'localCSM': [23.3, 2.4, -0.21]}
     print_output(out,
                  {'outFile': f, 'opName': 'C4 SYMMETRY', 'printNorm': True, 'printLocal': True})
-
-

@@ -32,21 +32,12 @@ def run_csm(args, print_output=True):
 
         #results = csm.Calculate()
 
-        results = {}
-        results['molecule'] = perm_res.molecule
-        results['outAtoms'] = perm_res.outAtoms
-        results['dir'] = perm_res.dir
-        results['csm'] = perm_res.csm
-        results['dMin'] = perm_res.dMin
-        results['perm'] = perm_res.perm
-        results['localCSM'] = perm_res.localCSM
-        results['operationType'] = perm_res.operationType
-
-        process_results(results, csm_args)
+        process_results(perm_res, csm_args)
 
         if print_output:
-            print_all_output(results, csm_args)
-        return results
+            print_all_output(perm_res, csm_args)
+
+        return perm_res
     finally:
         try:
             csm_args['outFile'].close()

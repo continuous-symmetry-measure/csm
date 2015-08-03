@@ -129,29 +129,29 @@ def compare_results(expected_filename, results):
 
     ok = True
     # Check symmetry
-    if abs(expected['symmetry'] - results['csm']) > 1e-4:
-        print("Expected CSM of %f, got %f" % (expected['symmetry'], results['csm']), file=sys.stderr)
+    if abs(expected['symmetry'] - results.csm) > 1e-4:
+        print("Expected CSM of %f, got %f" % (expected['symmetry'], results.csm), file=sys.stderr)
         ok = False
 
     # Check scale
-    if abs(expected['scaling'] - results['dMin'] > 1e-4):
-        print("Expected scaling of %f, got %f" % (expected['scaling'], results['dMin']), file=sys.stderr)
+    if abs(expected['scaling'] - results.dMin) > 1e-4:
+        print("Expected scaling of %f, got %f" % (expected['scaling'], results.dMin), file=sys.stderr)
         ok = False
 
     # Check permutation
     expected_perm = [int(p)-1 for p in expected['permutation']]
-    if expected_perm!=results['perm']:
-        print("Expected permutation %s, got %s" % (expected_perm, results['perm']), file=sys.stderr)
+    if expected_perm!=results.perm:
+        print("Expected permutation %s, got %s" % (expected_perm, results.perm), file=sys.stderr)
         ok = False
 
     # Check direction, first compare straight on
     diff = 0.0
     diff_neg = 0.0
     for i in range(3):
-        diff += (expected['direction'][i] - results['dir'][i]) ** 2
-        diff_neg += (expected['direction'][i] + results['dir'][i]) ** 2
+        diff += (expected['direction'][i] - results.dir[i]) ** 2
+        diff_neg += (expected['direction'][i] + results.dir[i]) ** 2
     if diff > 1e-5 and diff_neg > 1e-5: # Try inversed
-        print("Expected direction %s, got %s" % (expected['direction'], results['dir']), file=sys.stderr)
+        print("Expected direction %s, got %s" % (expected['direction'], results.dir), file=sys.stderr)
         ok = False
 
     return ok
