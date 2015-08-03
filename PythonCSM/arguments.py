@@ -97,6 +97,8 @@ def open_files(parse_res, result):
         result['molecule'] = Molecule(atoms)
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
+    except ValueError:
+        raise ValueError("Failed to read molecule from data file")
 
     # try to open the output file for writing
     try:
@@ -185,6 +187,10 @@ def process_arguments(parse_res):
 
     open_files(parse_res, result)
     check_arguments(result)
+
+    if not result['sn_max']:
+        result['sn_max'] = 8
+
     return result
 
 if __name__ == '__main__':

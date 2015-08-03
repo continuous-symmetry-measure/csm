@@ -19,8 +19,8 @@ class CSMCalculationsData:
                 self.perm = []
             self.localCSM = []
             self.operationType = csm_args['type']
-            self.chMinOrder = 0
-            self.chMinType = ''
+            self.chMinOrder = 2
+            self.chMinType = 'CS'
         else:
             self.molecule = None
             self.outAtoms = []
@@ -30,5 +30,5 @@ class CSMCalculationsData:
             self.perm = []
             self.localCSM = []
             self.operationType = ''
-            self.chMinOrder = 0
-            self.chMinType = ''
+            self.chMinOrder = 2
+            self.chMinType = 'CS'

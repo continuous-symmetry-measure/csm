@@ -91,6 +91,8 @@ struct csm_calculation_data
 	std::vector<int> perm;
 	std::vector<double> localCSM;
 	std::string operationType;
+	int chMinOrder;
+	std::string chMinType;
 };
 
 struct cpp_calculation_data
@@ -103,6 +105,9 @@ struct cpp_calculation_data
 	int *perm;
 	double *localCSM;
 	OperationType operationType;
+	int chMinOrder;
+	OperationType chMinType;
+	
 
 	cpp_calculation_data(const csm_calculation_data &python);
 	~cpp_calculation_data();
@@ -123,7 +128,18 @@ extern "C"
 	// int RunCSM(const std::vector<std::string> args);
 	csm_output RunCSM();
 
+
+	void DisplayPermutations(Molecule * m);
+
 	csm_calculation_data RunSinglePerm(csm_calculation_data input);
+
+	
+	csm_calculation_data FindBestPermUsingDir (csm_calculation_data input);
+	csm_calculation_data FindBestPerm (csm_calculation_data input);
+	csm_calculation_data CsmOperation (csm_calculation_data input);
+	csm_calculation_data ComputeLocalCSM (csm_calculation_data input);
+	
+
 #ifdef __cplusplus
 }
 #endif

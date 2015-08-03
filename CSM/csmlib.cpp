@@ -7,6 +7,7 @@
 #include <iostream>
 #include "Molecule.h"
 #include "calculations.h"
+#include "logging.h"
 
 using namespace std;
 
@@ -100,6 +101,20 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 		operationType = SN;
 	else if (python.operationType == "CI")
 		operationType = CI;
+
+	chMinOrder = 0;
+
+	if (python.chMinType == "CS")
+		chMinType = CS;
+	else if (python.chMinType == "CH")
+		chMinType = CH;
+	else if (python.chMinType == "CN")
+		chMinType = CN;
+	else if (python.chMinType == "SN")
+		chMinType = SN;
+	else if (python.chMinType == "CI")
+		chMinType = CI;
+	
 }
 
 cpp_calculation_data::~cpp_calculation_data()
@@ -172,6 +187,24 @@ csm_calculation_data cpp_calculation_data::get_csm_data()
 		python.dir.push_back(dir[i]);
 
 	python.dMin = dMin;
+	
+	python.chMinOrder = chMinOrder;
+	
+	switch (chMinType) {
+		case CN: python.chMinType = "CN"; break;
+		case SN: python.chMinType = "SN"; break;
+		case CS: python.chMinType = "CS"; break;
+		case CI: python.chMinType = "CI"; break;
+		case CH: python.chMinType = "CH"; break;
+	}
+
+	switch (operationType) {
+		case CN: python.operationType = "CN"; break;
+		case SN: python.operationType = "SN"; break;
+		case CS: python.operationType = "CS"; break;
+		case CI: python.operationType = "CI"; break;
+		case CH: python.operationType = "CH"; break;
+	}
 
 	return python;
 }
@@ -191,6 +224,12 @@ csm_output RunCSM()
 void SetCSMOptions(python_cpp_bridge bridge)
 {
 	options = process_bridge(bridge);
+	
+	init_logging();
+	LOG(info) << "C++ CSM starting up";
+
+	if (options.logFileName != "")
+		set_file_logging(options.logFileName);
 }
 
 double TotalNumberOfPermutations()
@@ -206,6 +245,39 @@ csm_calculation_data RunSinglePerm(csm_calculation_data input)
 	cpp_calculation_data cpp_input(input);
 	runSinglePerm(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
 
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+csm_calculation_data FindBestPermUsingDir (csm_calculation_data input)
+{
+	cpp_calculation_data cpp_input(input);
+	findBestPermUsingDir(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+csm_calculation_data FindBestPerm (csm_calculation_data input)
+{
+	cpp_calculation_data cpp_input(input);
+	findBestPerm(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+csm_calculation_data CsmOperation (csm_calculation_data input)
+{
+	cpp_calculation_data cpp_input(input);
+	csmOperation(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+csm_calculation_data ComputeLocalCSM (csm_calculation_data input)
+{
+	cpp_calculation_data cpp_input(input);
+	computeLocalCSM(cpp_input.molecule, cpp_input.localCSM, cpp_input.perm, cpp_input.dir, 
+		cpp_input.operationType != CH ? cpp_input.operationType : cpp_input.chMinType);
 	csm_calculation_data output = cpp_input.get_csm_data();
 	return output;
 }

@@ -47,6 +47,9 @@ cdef extern from "csmlib.h":
         vector[int] perm;
         vector[double] localCSM;
         string operationType;
+        int chMinOrder;
+        string chMinType;
+
 
 cdef extern from "csmlib.h":
     cdef cppclass csm_output:
@@ -66,4 +69,9 @@ cdef extern from "csmlib.h":
     double TotalNumberOfPermutations();
     csm_output RunCSM() except +;
     csm_calculation_data RunSinglePerm(csm_calculation_data input) except +;
+    csm_calculation_data FindBestPermUsingDir (csm_calculation_data input) except +;
+    csm_calculation_data FindBestPerm (csm_calculation_data input) except +;
+    csm_calculation_data CsmOperation (csm_calculation_data input) except +;
+    csm_calculation_data ComputeLocalCSM (csm_calculation_data input) except +;
+
 

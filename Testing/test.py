@@ -64,8 +64,8 @@ class LongCSMCheckOutput(TestCase):
         self.one_test('test14')
 
     """Test 15 is takes a lot of time"""
-    #def test_15(self):
-    #    self.one_test('test15')
+    def test_15(self):
+        self.one_test('test15')
 
     """def test_18(self):
         self.one_test('test18')"""
