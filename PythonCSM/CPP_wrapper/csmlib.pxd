@@ -48,6 +48,7 @@ cdef extern from "csmlib.h":
     void SetCSMOptions(python_cpp_bridge options) except +;
     double TotalNumberOfPermutations();
     void DisplayPermutations() except +;
+    vector[vector[int]] GetPermutations(int size, int groupSize, bool addGroupsOfTwo);
 
     csm_calculation_data RunSinglePerm(csm_calculation_data input) except +;
     csm_calculation_data FindBestPermUsingDir (csm_calculation_data input) except +;

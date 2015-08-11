@@ -125,9 +125,12 @@ extern "C"
 	csm_calculation_data FindBestPerm (csm_calculation_data input);
 	csm_calculation_data CsmOperation (csm_calculation_data input);
 	csm_calculation_data ComputeLocalCSM (csm_calculation_data input);
-	
 
 #ifdef __cplusplus
 }
+
+std::vector< std::vector<int> > GetPermutations(int size, int groupSize, bool addGroupsOfTwo);
+
+
 #endif
 #endif
