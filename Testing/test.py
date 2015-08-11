@@ -70,6 +70,9 @@ class LongCSMCheckOutput(TestCase):
     def one_test(self, test_dir):
         self.assertTrue(run_test_python(os.path.join(config.TEST_PATH, test_dir)))
 
+    def test_10(self):
+        self.one_test('test10')
+
     def test_13(self):
         self.one_test('test13csm')
 
