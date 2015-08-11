@@ -5,58 +5,30 @@
 
 #include "csmlib.h"
 #include <iostream>
-#include <cstdio>
 #include "Molecule.h"
+#include "calculations.h"
+#include "logging.h"
+#include "permuter.h"
+#include <sstream>
+#include <iomanip>
 
 using namespace std;
 
-extern int main(int argc, char *argv[]); // Defined in mainRot.cpp
-
 static csm_options process_bridge(const python_cpp_bridge &bridge);
-static FILE *convert_to_file(int fd, bool *flag=NULL);
 
 python_cpp_bridge::python_cpp_bridge()
 {
-	printNorm = printLocal = writeOpenu = ignoreHy = removeHy = findPerm = useMass = limitRun = babelBond = timeOnly = detectOutliers = babelTest = keepCenter = false;
+	writeOpenu = detectOutliers = false;
 	sn_max = 8;
-	fdOut = -1;  // -1 means no file
-}
-
-FILE *convert_to_file(int fd, const char *mode, bool *flag=NULL)
-{
-#pragma warning (disable: 4996)
-	FILE *f = NULL;
-	if (fd != -1)
-		f = fdopen(fd, mode);  // This causes a warning on Windows, but is required on Linux since _fdopen is nowhere to be found
-
-	if (flag != NULL)
-		*flag = f != NULL;
-
-	return f;
 }
 
 csm_options process_bridge(const python_cpp_bridge &bridge)
 {
 	csm_options options;
 
-	options.printNorm = bridge.printNorm;
-	options.printLocal = bridge.printLocal;
 	options.writeOpenu = bridge.writeOpenu;
-	options.ignoreHy = bridge.ignoreHy;
-	options.removeHy = bridge.removeHy;
-	options.ignoreSym = bridge.ignoreSym;
-	options.findPerm = bridge.findPerm;
-	options.useMass = bridge.useMass;
-	options.limitRun = bridge.limitRun;
-	options.babelBond = bridge.babelBond;
-	options.timeOnly = bridge.timeOnly;
 	options.detectOutliers = bridge.detectOutliers;
-	options.babelTest = bridge.babelTest;
-	options.keepCenter = bridge.keepCenter;
 	options.sn_max = bridge.sn_max;
-
-	options.format = bridge.format;
-	options.useFormat = options.format != "";
 
 	if (bridge.opType == "CS")
 		options.type = CS;
@@ -71,39 +43,250 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 	options.opName = bridge.opName;
 	options.opOrder = bridge.opOrder;
 
-	options.inFileName = bridge.inFilename;
-	options.outFileName = bridge.outFilename;
 	options.logFileName = bridge.logFilename;
-
-	options.outFile = convert_to_file(bridge.fdOut, "w");
 	
 	options.dir = bridge.dir;
-	options.useDir = bridge.dir.size() == 3;
 
 	options.perm = bridge.perm;
-	options.useperm = bridge.perm.size() > 0;
 
 	options.molecule = Molecule::createFromPython(bridge.molecule);
 
 	return options;
 }
 
-extern csm_options options;
-extern int mainWithOptions();
-
-int RunCSM(python_cpp_bridge bridge)
+cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 {
-	options = process_bridge(bridge);
+	int i;
+	molecule = Molecule::createFromPython(python.molecule);
+	int size = molecule->size();
+	
+	outAtoms = (double **)malloc(size * sizeof(double*));
+	for (i=0; i<size; i++)
+	{
+		outAtoms[i] = (double *)malloc(DIM * sizeof(double));
+	}
+	
+	dir = (double *) malloc(DIM * sizeof(double));
+	for (i = 0; i<python.dir.size(); i++)
+	{
+		dir[i] = python.dir[i];
+	}
+	
+	csm = 0;
+	dMin = 0;
+	
+	perm = (int *)malloc(size * sizeof(int));
+	int perm_size = python.perm.size();
+	for (i=0; i<perm_size; i++)
+	{
+		perm[i] = python.perm[i];
+	}
+	
+	localCSM = (double *)malloc(sizeof(double) * size);
+		
+	if (python.operationType == "CS")
+		operationType = CS;
+	else if (python.operationType == "CH")
+		operationType = CH;
+	else if (python.operationType == "CN")
+		operationType = CN;
+	else if (python.operationType == "SN")
+		operationType = SN;
+	else if (python.operationType == "CI")
+		operationType = CI;
 
-	cout << "C++ domain entered" << endl;
-	int rc = mainWithOptions();
-	cout << "C++ is done" << endl;
+	chMinOrder = 0;
 
-	return 1;
+	if (python.chMinType == "CS")
+		chMinType = CS;
+	else if (python.chMinType == "CH")
+		chMinType = CH;
+	else if (python.chMinType == "CN")
+		chMinType = CN;
+	else if (python.chMinType == "SN")
+		chMinType = SN;
+	else if (python.chMinType == "CI")
+		chMinType = CI;
+	
 }
 
-int SayHello()
+cpp_calculation_data::~cpp_calculation_data()
 {
-	cout << "Hello from C++" << endl;
-	return 17;
+	int i, size = molecule->size();
+	delete molecule;
+	for (i=0; i<size; i++)
+	{
+		free(outAtoms[i]);
+	}
+	free(outAtoms);
+	free(dir);
+	free(perm);
+	free(localCSM);
+}
+
+csm_calculation_data cpp_calculation_data::get_csm_data()
+{
+	csm_calculation_data python;
+
+	python.molecule.atoms.clear();
+	python.outAtoms.clear();
+	python.localCSM.clear();
+	python.perm.clear();
+
+	int size = molecule->size();
+
+	for (int i = 0; i < size; i++)
+	{
+		// Molecule
+		python_atom atom;
+		atom.symbol = molecule->symbol(i);
+		atom.mass = molecule->mass(i);
+		for (int j = 0; j < 3; j++)
+			atom.pos.push_back(molecule->pos()[i][j]);
+		for (int j = 0; j < molecule->valency(i); j++)
+			atom.adjacent.push_back(molecule->adjacent(i, j));
+		python.molecule.atoms.push_back(atom);
+
+		// outAtoms
+		std::vector<double> outAtom;
+		for (int j = 0; j < 3; j++)
+			outAtom.push_back(outAtoms[i][j]);
+		python.outAtoms.push_back(outAtom);
+
+		// localCSM
+		if (localCSM)
+			python.localCSM.push_back(localCSM[i]);
+
+		// perm
+		python.perm.push_back(perm[i]);
+	}
+
+	// Molecule equivalencyClasses
+	python.molecule.equivalenceClasses.clear();
+	int *group = new int[size]; // No group is larger than the molecule - this is enough
+	for (int i = 1; i <= molecule->groupNum(); i++)
+	{
+		int groupSize = molecule->getGroup(i, group);
+		python.molecule.equivalenceClasses.push_back(vector<int>(group, group + groupSize));
+	}
+	delete[] group;
+
+
+	// Other values
+	python.csm = csm;
+
+	python.dir.clear();
+	for (int i = 0; i < 3; i++)
+		python.dir.push_back(dir[i]);
+
+	python.dMin = dMin;
+	
+	python.chMinOrder = chMinOrder;
+	
+	switch (chMinType) {
+		case CN: python.chMinType = "CN"; break;
+		case SN: python.chMinType = "SN"; break;
+		case CS: python.chMinType = "CS"; break;
+		case CI: python.chMinType = "CI"; break;
+		case CH: python.chMinType = "CH"; break;
+	}
+
+	switch (operationType) {
+		case CN: python.operationType = "CN"; break;
+		case SN: python.operationType = "SN"; break;
+		case CS: python.operationType = "CS"; break;
+		case CI: python.operationType = "CI"; break;
+		case CH: python.operationType = "CH"; break;
+	}
+
+	return python;
+}
+	
+
+extern csm_options options;
+extern csm_output results;
+
+void SetCSMOptions(python_cpp_bridge bridge)
+{
+	options = process_bridge(bridge);
+	
+	init_logging();
+	LOG(info) << "C++ CSM starting up";
+
+	if (options.logFileName != "")
+		set_file_logging(options.logFileName);
+}
+
+double TotalNumberOfPermutations()
+{
+	Molecule *m = options.molecule;
+
+	return totalNumPermutations(m);  // Notice the small t - this is the original function
+}
+
+void DisplayPermutations()
+{
+	Molecule *m = options.molecule;
+
+	displayPermutations(m);
+}
+
+csm_calculation_data RunSinglePerm(csm_calculation_data input)
+{
+	
+	cpp_calculation_data cpp_input(input);
+	runSinglePerm(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
+
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+csm_calculation_data FindBestPermUsingDir (csm_calculation_data input)
+{
+	cpp_calculation_data cpp_input(input);
+	findBestPermUsingDir(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+csm_calculation_data FindBestPerm (csm_calculation_data input)
+{
+	cpp_calculation_data cpp_input(input);
+	findBestPerm(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+csm_calculation_data CsmOperation (csm_calculation_data input)
+{
+	cpp_calculation_data cpp_input(input);
+	csmOperation(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+csm_calculation_data ComputeLocalCSM (csm_calculation_data input)
+{
+	cpp_calculation_data cpp_input(input);
+	computeLocalCSM(cpp_input.molecule, cpp_input.localCSM, cpp_input.perm, cpp_input.dir, 
+		cpp_input.operationType != CH ? cpp_input.operationType : cpp_input.chMinType);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
+}
+
+
+std::vector< std::vector<int> > GetPermutations(int size, int groupSize, bool addGroupsOfTwo)
+{
+	std::vector< std::vector<int> > perms;
+
+	Permuter p(size, groupSize, addGroupsOfTwo);
+	while (p.next())
+	{
+		vector<int> perm;
+		for (int i = 0; i < size; i++)
+			perm.push_back(p[i]);
+		perms.push_back(perm);
+	}
+
+	return perms;
 }

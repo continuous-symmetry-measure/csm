@@ -32,4 +32,7 @@ void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double *dir, OperationType type, double dMin);
 double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
 
+double totalNumPermutations(Molecule *m);  // So this function can be called from csmlib.cpp
+void displayPermutations(Molecule *m);
+
 #endif

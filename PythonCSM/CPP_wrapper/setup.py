@@ -5,7 +5,7 @@ from distutils.extension import Extension
 from Cython.Build import cythonize
 import sys
 
-BOOST_ROOT = r'd:\boost\1_57_0\lib64-msvc-10.0' # Default, Windows only. Override in local_settings for now
+BOOST_ROOT = r'd:\boost\1_57_0\lib64' # Default, Windows only. Override in local_settings for now
 
 try:
     from local_settings import *
@@ -15,7 +15,7 @@ except:
 extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
-    library_dirs = ['../../openbabel-files/Windows/lib/x64/Release', '../../CSM/cmake/RelWithDebInfo', BOOST_ROOT]
+    library_dirs = ['../../openbabel-files/Windows/lib/x64/Release', '../../CSM/cmake/Release', BOOST_ROOT]
     libraries = ['openbabel-2', 'csmlib']
     extra_compiler_args = ['/Zi', '/Od']  # Debug info, no optimization
     extra_link_args = ['/debug']

@@ -1,18 +1,15 @@
-from openbabel import OBFormat
-import openbabel
-
 __author__ = 'YAEL'
 
-from input_output.molecule import Atom
-
+from openbabel import OBAtomAtomIter, OBConversion, OBMol
+from calculations.molecule import Atom, GetAtomicSymbol
 
 def open_non_csm_file(args_dict):
     """
     :param args_dict: dictionary of processed command line arguments
     :return: OBMol object created from input file by OpenBabel
     """
-    conv = openbabel.OBConversion()
-    mol = openbabel.OBMol()
+    conv = OBConversion()
+    mol = OBMol()
     if not args_dict['useformat']:
         ob_format = conv.FormatFromExt(args_dict['inFileName'])
         if not ob_format:
@@ -41,33 +38,22 @@ def read_ob_mol(obmol, args_dict):
 
     for i in range(num_atoms):
         obatom = obmol.GetAtom(i + 1)
-		# get symbol by atomic number
-        """ C++ code uses here an elements table:
-        if (atom->GetAtomicNum() <= ELEMENTS.size() && atom->GetAtomicNum() > 0) {
-			mol->_symbol[i] = strdup(ELEMENTS[atom->GetAtomicNum() - 1].c_str());
-		}
-		else {
-			mol->_symbol[i] = strdup(atom->GetType());
-		}"""
-
-        # TODO: check if elements table is needed
-
         if args_dict["ignoreSym"]:
             symbol = "XX"
         else:
-            symbol = obatom.GetType()
+       		# get symbol by atomic number
+            symbol = GetAtomicSymbol(obatom.GetAtomicNum())
         position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
 
         atom = Atom(symbol, position, args_dict["useMass"])
 
         adjacent = []
-        iter = openbabel.OBAtomAtomIter(obatom)
+        iter = OBAtomAtomIter(obatom)
         for neighbour_atom in iter:
-            adjacent.append(neighbour_atom.GetIdx())
+            adjacent.append(neighbour_atom.GetIdx() - 1)
         atom.adjacent = adjacent
 
         atoms.append(atom)
-    #TODO: mol->initSimilarity(DEPTH_ITERATIONS);???
     return atoms
 
 
@@ -113,10 +99,10 @@ def read_csm_file(f, args_dict):
         neighbours = []
         for neighbour_str in line:
             try:
-                neighbour = int(neighbour_str)
+                neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
             except ValueError:
                 raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
-            if neighbour > size:
+            if neighbour >= size:
                 raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
             neighbours.append(neighbour)
 

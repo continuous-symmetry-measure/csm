@@ -11,8 +11,6 @@
 #include <string.h> //for strcmp,strlen
 #include "options.h"
 #include "groupPermuter.h"
-#include <openbabel/mol.h>
-#include "babelAdapter.h"
 #include <vector>
 #include "Molecule.h"
 
@@ -29,19 +27,14 @@ using namespace std;
 
 #include "dvector.h"
 #include "dmatrix.h"
-
-#include "PrintOuts.h"
 #include "drand48.h"
 #include "calculations.h"
 
 #define CSMFORMAT "CSM"
 
 csm_options options;
+csm_output results;
 
-void readPerm(FILE* permfile, int* perm, int size);
-void readDir(FILE* dirFile, double* dir);
-
-int mainWithOptions(); // Runs the main code after the options have been set
 
 /*
  * reutnrs n!
@@ -104,27 +97,7 @@ double totalNumPermutations(Molecule *m) {
 		return numPerms;		
 	}
 }
-
-const char *getExtension(const char *fname) {
-	return strrchr(fname,'.') + 1;
-}
-
-// ************************************************************
-//       main program
-// ************************************************************
-
 /*
-* main funciton - check valid parameters, parse molecule and call chirality Operation
-*/
-int main(int argc, char *argv[])
-{
-	cout << "argc: " << argc << endl;
-	options = csm_options(argc, argv);
-
-	int rc = mainWithOptions();
-	return rc;
-}
-
 int mainWithOptions()
 {
 	init_logging();
@@ -140,48 +113,10 @@ int mainWithOptions()
 	if (options.logFileName != "")
 		set_file_logging(options.logFileName);
 
-	if ((options.findPerm && options.useperm) || (options.findPerm && options.useDir) || (options.useDir && options.useperm)) {
-		LOG(fatal) << "-findperm, -useperm and -usedir are mutually exclusive";
-		exit(1);
-	} 
-
 	// try to read molecule from infile
 	Molecule* m = options.molecule;
-	OBMol mol;  // This is now an empty object that's used for printing only.
 	OperationType chMinType = CS;
 	int chMinOrder = 2;
-	/*
-	if (options.useFormat) {
-		// If a specific format is used, read molecule using that format
-		if (boost::iequals(options.format, CSMFORMAT)) // Case-insensitive comparison
-		{
-			m = Molecule::create(options.inFile, stdout, options.ignoreSym && !options.useperm);
-			if (m==NULL) exit(1);
-			if (options.useMass)
-			{
-				m->fillAtomicMasses();
-			}
-		} else {
-			mol = readMolecule(options.inFileName.c_str(), options.format, options.babelBond);
-			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
-		}
-   	} else {
-		options.format = getExtension(options.inFileName.c_str());
-
-		// if the extension is CSM - use csm
-		if (boost::iequals(options.format, CSMFORMAT)) {
-			m = Molecule::create(options.inFile, stdout, options.ignoreSym && !options.useperm);
-			if (m==NULL) exit(1);
-			if (options.useMass)
-			{
-				m->fillAtomicMasses();
-			}
-		} else {
-			
-			mol = readMolecule(options.inFileName.c_str(), "", options.babelBond);
-			m = Molecule::createFromOBMol(mol, options.ignoreSym && !options.useperm, options.useMass);
-		}
-   	} */
 
 	if (options.babelTest) // Mol is ok - return 0
 		return 0;
@@ -192,30 +127,6 @@ int mainWithOptions()
 		}
 		LOG(fatal) << "Failed to read molecule from data file";
 		exit(1);
-	}
-
-	// strip unwanted atoms if needbe
-	if ((options.ignoreHy || options.removeHy) && !options.useperm){
-		char* removeList[] = {"H"," H"};
-		Molecule* n = NULL;
-		if (options.ignoreHy)
-			n = m->stripAtoms(removeList,2,false);
-		else //removeHy 
-			n = m->stripAtoms(removeList,2,true);		
-	
-		mol.DeleteHydrogens();
-		
-	
-		if (!n){
-			if (options.writeOpenu) {
-				printf("ERR* Failed while trying to strip unwanted atoms *ERR\n");
-			}
-			LOG(fatal) << "Failed while trying to strip unwanted atoms";
-			exit(1);
-		}
-		delete m;
-		m = n;
-		// continue as per usual
 	}
 
 	if (!options.findPerm) {
@@ -234,6 +145,12 @@ int mainWithOptions()
 		if (options.timeOnly) { return 0; };
 	}
 
+	if (options.displayPerms)
+	{
+		//displayPermutations(m);
+		return 0;
+	}
+
 	// allocate memory for outAtoms
 	outAtoms = (double **)malloc(m->size() * sizeof(double*));
 	for (i=0;i<m->size();i++)
@@ -241,15 +158,6 @@ int mainWithOptions()
        
 	perm = (int *)malloc(sizeof(int) * m->size());
 
-	//normalize Molecule
-	if (!m->normalizeMolecule(options.keepCenter)){
-		if (options.writeOpenu) {
-			printf("ERR* Failed to normalize atom positions: dimension of set of points = zero *ERR\n");
-		}
-		LOG(fatal) << "Failed to normalize atom positions: dimension of set of points = zero";
-		exit(1);
-	}
- 
 	if (options.useDir)
 	{
 		dir[0] = options.dir[0];
@@ -334,52 +242,13 @@ int mainWithOptions()
 	if (options.printLocal) {
 		localCSM = (double *)malloc(sizeof(double) * m->size());
 		if (options.type == CH) 
+			// parameters dictionary change after the calculations
+			// TODO: check if it's used in python after calculations to python
 			options.opOrder = chMinOrder;
 		computeLocalCSM(m, localCSM, perm, dir, options.type != CH ? options.type : chMinType);
 	}
 
-	normalize(outAtoms, m);
-
-	// De-normalize
-	for (i = 0; i < m->size(); i++) { 
-		m->pos()[i][0] *= m->norm();
-		m->pos()[i][1] *= m->norm();
-		m->pos()[i][2] *= m->norm();
-		outAtoms[i][0] *= m->norm();
-		outAtoms[i][1] *= m->norm();
-		outAtoms[i][2] *= m->norm();
-	}	
-
-	if (options.useFormat) {
-		// If a specific format is used, read molecule using that format
-		if (boost::iequals(options.format, CSMFORMAT)) // Case insensitive comparison 
-		{
-			printOutput(m, outAtoms, csm, dir, dMin, options.outFile, localCSM);
-		} else {
-			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, options.outFile, options.outFileName.c_str(), localCSM);
-		}
-	} else {
-		// if the extension is CSM - use csm
-		if (strcasecmp(getExtension(options.inFileName.c_str()), CSMFORMAT) == 0) {
-			printOutput(m, outAtoms, csm, dir, dMin, options.outFile, localCSM);
-		} else {
-			printOutputFormat(m, mol, outAtoms, csm, dir, dMin, options.outFile, options.outFileName.c_str(), localCSM);
-		}
-	}
-
-	if (options.type == CH) {
-		if (chMinType == CS) { 		
-			fprintf(options.outFile, "\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n");
-		} else { 
-			fprintf(options.outFile, "\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n", chMinOrder);
-		}
-	}	
-
-	fprintf(options.outFile, "\n PERMUTATION:\n\n");
-	for (i = 0; i < m->size(); i++) {
-		fprintf(options.outFile, "%d ", perm[i] + 1);
-	}
-	fprintf(options.outFile, "\n");
+	fill_output(m, outAtoms, csm, dir, dMin, localCSM, chMinOrder, chMinType, perm);
 
 	// housekeeping
 	for (i=0;i<m->size();i++){
@@ -391,8 +260,71 @@ int mainWithOptions()
 
 	if (options.printLocal) free(localCSM);
 
-	fclose(options.outFile);
-
 	return 0;
 }
+*/
 
+
+void displayPermutations(Molecule *m)
+{
+	int *groupSizes;
+	int addGroupsOfTwo;
+	std::vector<int> idxToPos;
+
+	groupSizes = new int[m->groupNum()];
+	for (int i = 1; i <= m->groupNum(); i++){
+		groupSizes[i - 1] = m->getGroupSize(i);
+	}
+
+	// build idxToPos
+	idxToPos.resize(m->size());
+	int pos = 0;
+	// build idxToPos
+	for (int j = 1; j <= m->groupNum(); j++){
+		for (int i = 0; i< m->size(); i++){
+			if (m->similar(i) == j){
+				idxToPos[pos++] = i;
+			}
+		}
+	}
+
+	// create permuter
+	if (options.type == SN && options.opOrder > 2) {
+		addGroupsOfTwo = 1;
+	}
+	else {
+		addGroupsOfTwo = 0;
+	}
+	LOG(info) << "Permutation information:" << endl;
+
+	LOG(info) << "Operation type " << options.type << " and order is " << options.opOrder << " (addGroupsOfTwo " << addGroupsOfTwo << ")";
+	LOG(info) << "Molecule has " << m->size() << " atoms";
+	LOG(info) << "There are " << m->groupNum() << " equivalency classes";
+	for (int i = 1; i <= m->groupNum(); i++)
+	{
+		int group[2048];
+		stringstream strm;
+		strm << setw(2) << i << ": ";
+		
+		int size = m->getGroupSize(i);
+		m->getGroup(i, group);
+		for (int j = 0; j < size; j++)
+			strm << group[j] << " ";
+		LOG(info) << strm.str();
+	}
+
+	GroupPermuter gp(m->groupNum(), groupSizes, m->size(), options.opOrder, addGroupsOfTwo);
+
+	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
+	int count = 0;
+	while (gp.next()) 
+	{
+		stringstream strm;
+		strm << setw(10) << ++count << setw(2) << " :        ";
+		for (int i = 0; i < m->size(); i++)
+			strm << idxToPos[gp[i]] << " ";
+		LOG(info) << strm.str();
+	}
+
+	delete[] groupSizes;
+}

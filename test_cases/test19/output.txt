@@ -1,0 +1,29 @@
+CSM starting up
+Attempt #1: best csm is 0.15 after 3 iterations
+Attempt #2: best csm is 18.32 after 3 iterations
+Attempt #3: best csm is 0.15 after 3 iterations
+Attempt #4: best csm is 0.15 after 3 iterations
+Attempt #5: best csm is 18.32 after 3 iterations
+Attempt #6: best csm is 0.15 after 2 iterations
+Attempt #7: best csm is 0.15 after 3 iterations
+Attempt #8: best csm is 18.32 after 3 iterations
+Attempt #9: best csm is 0.15 after 2 iterations
+Attempt #10: best csm is 18.32 after 3 iterations
+Attempt #11: best csm is 0.15 after 2 iterations
+Attempt #12: best csm is 0.15 after 3 iterations
+Attempt #13: best csm is 0.15 after 2 iterations
+Attempt #14: best csm is 18.32 after 3 iterations
+Attempt #15: best csm is 0.15 after 3 iterations
+Attempt #16: best csm is 18.32 after 3 iterations
+Attempt #17: best csm is 0.15 after 2 iterations
+Attempt #18: best csm is 0.15 after 3 iterations
+Attempt #19: best csm is 0.15 after 3 iterations
+Attempt #20: best csm is 18.32 after 3 iterations
+Attempt #21: best csm is 0.15 after 3 iterations
+Attempt #22: best csm is 18.32 after 3 iterations
+Attempt #23: best csm is 0.15 after 2 iterations
+Attempt #24: best csm is 0.15 after 3 iterations
+Attempt #25: best csm is 0.15 after 3 iterations
+Attempt #26: best csm is 18.32 after 3 iterations
+Attempt #27: best csm is 0.15 after 3 iterations
+C2 SYMMETRY: 0.1505

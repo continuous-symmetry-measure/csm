@@ -3,6 +3,7 @@ Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
 from input_output.readers import read_dir_file, read_perm_file, read_csm_file, open_non_csm_file, read_ob_mol
+from calculations.molecule import Molecule
 
 __author__ = 'zmbq'
 
@@ -48,43 +49,62 @@ def create_parser():
     parser.add_argument('--keepCenter', action='store_true', default=False,
                         help='Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass')
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
+    parser.add_argument('--display-perms', dest='display_perms', action='store_true', default=False,
+                        help='Display all the permutations and nothing else')
 
     return parser
 
 
 def check_arguments(processed):
+
     if processed['sn_max'] and processed['type'] != 'CH':
         raise ValueError("Option -sn_max only applies to chirality")
-    if (processed['findPerm'] and 'permFile' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
-            or ('dirFile' in processed and 'permFile' in processed):
-        raise ValueError("-findperm, -useperm and -usedir are mutually exclusive")
-    if 'permFile' in processed and processed['type'] == 'CH':
-        raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
 
-    #In C++ code ignoreSym is used only when usePerm is false
-    if processed["ignoreSym"] and "perm" in processed:
-        raise ValueError("-useperm ignores the -ignoreSym option, can't use them together")
+    if (processed['findPerm'] and 'perm' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
+            or ('dirFile' in processed and 'perm' in processed):
+        raise ValueError("--findperm, --useperm and --usedir are mutually exclusive")
 
+    if processed['removeHy'] and processed['ignoreHy']:
+        raise ValueError("--removeHy and --ignoreHy are mutually exclusive")
+
+    if "perm" in processed:
+
+        if processed['type'] == 'CH':
+            raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
+
+        # In C++ code ignoreSym, ignoreHy and removeHy are used only when usePerm is false
+        if processed["ignoreSym"]:
+            raise ValueError("--useperm ignores the --ignoreSym option, can't use them together")
+        if processed["ignoreHy"]:
+            raise ValueError("--useperm ignores the --ignoreHy option, can't use them together")
+        if processed["removeHy"]:
+            raise ValueError("--useperm ignores the -r-emoveHy option, can't use them together")
+
+        if len(processed["perm"]) != len(processed["molecule"].atoms):
+            raise ValueError("Invalid permutation")
 
 
 def open_files(parse_res, result):
+
     # try to open and read the input file
     try:
         if result['format'].lower() == "csm":
             with open(parse_res.input, 'r') as infile:
                 atoms = read_csm_file(infile, result)
         else:
-            mol = open_non_csm_file(result)
-            atoms = read_ob_mol(mol, result)
-        result['molecule'] = atoms
+            result["obmol"] = open_non_csm_file(result)
+            atoms = read_ob_mol(result["obmol"], result)
+        result['molecule'] = Molecule(atoms)
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
+    except ValueError:
+        raise ValueError("Failed to read molecule from data file")
 
     # try to open the output file for writing
     try:
         result['outFile'] = open(parse_res.output, 'w')
     except IOError:
-        raise ValueError("Failed to open output file " + parse_res.input + " for writing")
+        raise ValueError("Failed to open output file " + parse_res.output + " for writing")
 
     # try to open the permFile for reading (if exists)
     if parse_res.useperm:
@@ -141,11 +161,10 @@ def process_arguments(parse_res):
     result['ignoreSym'] = parse_res.ignoreSym
 
     result['format'] = parse_res.format
-    result['useformat'] = result['format'] is None
-    if result['format'] is None:
+    result['useformat'] = result['format'] is not None
+    if not result['format']:
         # get input file extension
         result['format'] = parse_res.input.split(".")[-1]
-
 
     result['writeOpenu'] = parse_res.writeOpenu
     result['limitRun'] = not parse_res.nolimit
@@ -163,10 +182,15 @@ def process_arguments(parse_res):
     result['keepCenter'] = parse_res.keepCenter
     if parse_res.writeOpenu:
         result['format'] = "PDB"
+    result['displayPerms'] = parse_res.display_perms
     result['logFileName'] = parse_res.log
 
     open_files(parse_res, result)
     check_arguments(result)
+
+    if not result['sn_max']:
+        result['sn_max'] = 8
+
     return result
 
 if __name__ == '__main__':

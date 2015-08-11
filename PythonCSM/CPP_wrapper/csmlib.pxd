@@ -11,45 +11,49 @@ cdef extern from "csmlib.h":
         double mass;
 
 cdef extern from "csmlib.h":
+    cdef cppclass python_molecule:
+        vector[python_atom] atoms;
+        vector[vector[int]] equivalenceClasses;
+
+cdef extern from "csmlib.h":
     cdef cppclass python_cpp_bridge:
         python_cpp_bridge()
         string opType;
         string opName;
-        bool printNorm;
-        bool printLocal;
         bool writeOpenu;
-        string format;
-
-        bool ignoreHy;
-        bool removeHy;
-        bool ignoreSym;
-        bool useFormat;
 
         int opOrder;
-        bool useperm;
-        bool useDir;
-        bool findPerm;
-        bool useMass;
-        bool limitRun;
-        bool babelBond;
-        bool timeOnly;
         int sn_max;
         bool detectOutliers;
-        double A;
-        bool babelTest;
-        bool keepCenter;
         string logFilename;
-
-        string inFilename;
-        string outFilename;
-
-        int fdOut;
 
         vector[double] dir;
         vector[int] perm;
-        vector[python_atom] molecule;
+        python_molecule molecule;
 
 cdef extern from "csmlib.h":
-    int SayHello();
-    int RunCSM(python_cpp_bridge options);
+    cdef cppclass csm_calculation_data:
+        python_molecule molecule;
+        vector[vector[double]] outAtoms;  # x,y,z of each atom
+        vector[double] dir;
+        double csm;
+        double dMin;
+        vector[int] perm;
+        vector[double] localCSM;
+        string operationType;
+        int chMinOrder;
+        string chMinType;
+
+cdef extern from "csmlib.h":
+    void SetCSMOptions(python_cpp_bridge options) except +;
+    double TotalNumberOfPermutations();
+    void DisplayPermutations() except +;
+    vector[vector[int]] GetPermutations(int size, int groupSize, bool addGroupsOfTwo);
+
+    csm_calculation_data RunSinglePerm(csm_calculation_data input) except +;
+    csm_calculation_data FindBestPermUsingDir (csm_calculation_data input) except +;
+    csm_calculation_data FindBestPerm (csm_calculation_data input) except +;
+    csm_calculation_data CsmOperation (csm_calculation_data input) except +;
+    csm_calculation_data ComputeLocalCSM (csm_calculation_data input) except +;
+
 

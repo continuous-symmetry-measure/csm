@@ -1,0 +1,31 @@
+CHIRALITY: 4.3314
+SCALING FACTOR: 0.913372
+
+ INITIAL STRUCTURE COORDINATES
+4
+test_cases\test21\h2o2-twist2.xyz
+O         -0.48500        0.13019        0.13732
+O          0.48500        0.13019        0.13732
+H         -0.80833        0.47400       -0.71011
+H          0.80833       -0.73438        0.43546
+
+
+ RESULTING STRUCTURE COORDINATES
+4
+test_cases\test21\h2o2-twist2.xyz
+O         -0.49585       -0.00000       -0.00001
+O          0.49586        0.00001        0.00000
+H         -0.82643        0.61771       -0.58560
+H          0.82642       -0.61772        0.58561
+
+
+ DIRECTIONAL COSINES:
+
+-0.000018 0.687978 0.725731
+
+ MINIMUM CHIRALITY WAS FOUND IN CS
+
+
+ PERMUTATION:
+
+1 2 3 4 

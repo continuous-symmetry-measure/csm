@@ -14,6 +14,7 @@
 #include <vector>
 #include <string>
 #include "options.h"
+#include "Molecule.h"
 
 
 // A representation of one atom in Python
@@ -28,35 +29,24 @@ struct python_atom
 	{ }
 };
 
+struct python_molecule
+{
+	std::vector<python_atom> atoms;   // The atoms
+	std::vector<std::vector<int> > equivalenceClasses;  // Equivalence classes
+};
+
+// Input from Python
 struct python_cpp_bridge
 {
 	std::string opType;
 	std::string opName;
 	int opOrder;
 
-	bool printNorm;
-	bool printLocal;
 	bool writeOpenu;
-	std::string format;
 
-	bool ignoreHy;
-	bool removeHy;
-	bool ignoreSym;
-	bool findPerm;
-	bool useMass;
-	bool limitRun;
-	bool babelBond;
-	bool timeOnly;
 	int sn_max;
 	bool detectOutliers;
-	bool babelTest;
-	bool keepCenter;
 	std::string logFilename;
-	std::string inFilename;
-	std::string outFilename;
-
-	// File descriptors - -1 means no file
-	int fdOut;
 
 	// Direction Axis
 	std::vector<double> dir;
@@ -64,22 +54,83 @@ struct python_cpp_bridge
 	//Permutation
 	std::vector<int> perm;
 
-	// Molecule
-	std::vector<python_atom> molecule;
+	python_molecule molecule;
 
 	python_cpp_bridge();
 };
 
+struct csm_output
+{
+	// Molecule
+	python_molecule molecule;
+
+	// Results from mainRot
+	std::vector<std::vector<double> > outAtoms; // x,y,z of each atom
+	double csm; // The actual CSM score
+	std::vector<double> dir; 
+	double dMin;
+	std::vector<double> localCSM;
+	int chMinOrder;
+	std::string chMinType;
+	std::vector<int> perm;
+};
+
+struct csm_calculation_data
+{
+	python_molecule molecule;
+	std::vector<std::vector<double> > outAtoms; // x,y,z of each atom
+	std::vector<double> dir;
+	double csm;
+	double dMin;
+	std::vector<int> perm;
+	std::vector<double> localCSM;
+	std::string operationType;
+	int chMinOrder;
+	std::string chMinType;
+};
+
+struct cpp_calculation_data
+{
+	Molecule *molecule;
+	double **outAtoms;
+	double *dir;
+	double csm;
+	double dMin;
+	int *perm;
+	double *localCSM;
+	OperationType operationType;
+	int chMinOrder;
+	OperationType chMinType;
+	
+
+	cpp_calculation_data(const csm_calculation_data &python);
+	~cpp_calculation_data();
+
+	csm_calculation_data get_csm_data();
+};
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-	// Runs the entire CSM application
-	// int RunCSM(const std::vector<std::string> args);
-	int RunCSM(python_cpp_bridge options);
-	int SayHello();
+	// Sets the CSM options for all future function calls
+	void SetCSMOptions(python_cpp_bridge options);
+
+	double TotalNumberOfPermutations();
+	
+	void DisplayPermutations();
+
+	csm_calculation_data RunSinglePerm(csm_calculation_data input);
+	csm_calculation_data FindBestPermUsingDir (csm_calculation_data input);
+	csm_calculation_data FindBestPerm (csm_calculation_data input);
+	csm_calculation_data CsmOperation (csm_calculation_data input);
+	csm_calculation_data ComputeLocalCSM (csm_calculation_data input);
+
 #ifdef __cplusplus
 }
+
+std::vector< std::vector<int> > GetPermutations(int size, int groupSize, bool addGroupsOfTwo);
+
+
 #endif
 #endif

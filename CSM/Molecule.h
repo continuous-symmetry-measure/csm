@@ -16,11 +16,13 @@
 #define MOLECULE_H
 
 #include "csmlib.h"
-#include <openbabel/mol.h>
 
 #ifndef SQR
 #define SQR(x)      ((x) * (x))
 #endif
+
+extern const int DIM;
+class python_molecule;
 
 class Molecule
 {
@@ -32,31 +34,21 @@ private:
 	std::vector<int> _valency;           // valency of each atom
 	std::vector<int> _similar;           // similarity
 	int  _groupNum;          // the number of groups of similarity
-	double _norm;	     // The normalization factor
 	std::vector<double> _mass;	     // The atomic masses
 
 private:
 	Molecule(size_t size);  // Private constructor forces creation through the factory methods
-
-	void replaceSymbols();
-	void initSimilarity(int depth);
-	int isSimilar(int a, int b);
 	Molecule* copy(int* selectedAtoms, int selectedAtomsSize, bool updateSimilarity);
 
 public:
 	~Molecule();
-	static Molecule *create(FILE *in, FILE *err, bool replaceSym);
-	static Molecule* createFromOBMol(OpenBabel::OBMol &obmol, bool replaceSym, bool useMass = false);
-	static Molecule* createFromPython(const std::vector<python_atom> &atoms);
+	static Molecule *createFromPython(const python_molecule &molecule);
 
 public:
 	int getGroup(int num, int* buff);
 	int getGroupSize(int num);
 	int getMaxGroupSize();
-	Molecule* stripAtoms(char** removeList, int removeListSize, int updateSimilarity);
-	bool normalizeMolecule(bool keepCenter);
-	void fillAtomicMasses();  // Fill the atomic masses for all the symbols
-
+	
 	void print();
 	void printBasic();
 	void printSimilar();
@@ -68,7 +60,6 @@ public:
 	int size() const { return _size; }
 	char *symbol(int index) const { return _symbol[index]; }
 	char **symbols() const { return _symbol;  }
-	double norm() const { return _norm; }
 	double mass(int index) const { return _mass[index]; }
 	int similar(int index) const { return _similar[index]; }
 	int adjacent(int i, int j) const { return _adjacent[i][j]; }
