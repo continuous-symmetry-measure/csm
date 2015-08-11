@@ -35,9 +35,6 @@ using namespace std;
 csm_options options;
 csm_output results;
 
-int mainWithOptions(); // Runs the main code after the options have been set
-static void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double dMin, double *localCSM, 
-	int chMinOrder, OperationType chMinType, int *perm);
 
 /*
  * reutnrs n!
@@ -100,13 +97,7 @@ double totalNumPermutations(Molecule *m) {
 		return numPerms;		
 	}
 }
-
-const char *getExtension(const char *fname) {
-	return strrchr(fname,'.') + 1;
-}
-
-//static void displayPermutations(Molecule *m);
-
+/*
 int mainWithOptions()
 {
 	init_logging();
@@ -271,69 +262,8 @@ int mainWithOptions()
 
 	return 0;
 }
+*/
 
-void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double dMin, double *localCSM, int chMinOrder, 
-	OperationType chMinType, int *perm)
-{
-	// All arrays that depend on the molecule's size
-	results.molecule.atoms.clear();
-	results.outAtoms.clear();
-	results.localCSM.clear();
-	results.perm.clear();
-	for (int i = 0; i < m->size(); i++)
-	{
-		// Molecule
-		python_atom atom;
-		atom.symbol = m->symbol(i);
-		atom.mass = m->mass(i);
-		for (int j = 0; j < 3; j++)
-			atom.pos.push_back(m->pos()[i][j]);
-		for (int j = 0; j < m->valency(i); j++)
-			atom.adjacent.push_back(m->adjacent(i, j));
-		results.molecule.atoms.push_back(atom);
-
-		// outAtoms
-		std::vector<double> outAtom;
-		for (int j = 0; j < 3; j++)
-			outAtom.push_back(outAtoms[i][j]);
-		results.outAtoms.push_back(outAtom);
-
-		// localCSM
-		if (localCSM)
-			results.localCSM.push_back(localCSM[i]);
-
-		// perm
-		results.perm.push_back(perm[i]);
-	}
-
-	// Molecule equivalencyClasses
-	results.molecule.equivalenceClasses.clear();
-	int *group = new int[m->size()]; // No group is larger than the molecule - this is enough
-	for (int i = 1; i <= m->groupNum(); i++)
-	{
-		int groupSize = m->getGroup(i, group);
-		results.molecule.equivalenceClasses.push_back(vector<int>(group, group + groupSize));
-	}
-	delete[] group;
-
-
-	// Other values
-	results.csm = csm;
-
-	results.dir.clear();
-	for (int i = 0; i < 3; i++)
-		results.dir.push_back(dir[i]);
-
-	results.dMin = dMin;
-	results.chMinOrder = chMinOrder;
-	switch (chMinType) {
-		case CN: results.chMinType = "CN"; break;
-		case SN: results.chMinType = "SN"; break;
-		case CS: results.chMinType = "CS"; break;
-		case CI: results.chMinType = "CI"; break;
-		case CH: results.chMinType = "CH"; break;
-	}
-}
 
 void displayPermutations(Molecule *m)
 {

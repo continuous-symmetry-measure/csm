@@ -24,20 +24,12 @@ class Molecule;  // Forward reference
 struct csm_options
 {
 	std::string opName;
-	bool printLocal;
 	bool writeOpenu;
 
 	OperationType type;
 	int opOrder;
-	bool useperm;
-	bool useDir;
-	bool findPerm;
-	bool limitRun;
-	bool timeOnly;
 	int sn_max;
 	bool detectOutliers;
-	bool babelTest;
-	bool displayPerms;
 	std::string logFileName;
 
 	std::vector<double> dir;

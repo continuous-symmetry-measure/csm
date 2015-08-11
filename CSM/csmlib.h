@@ -42,16 +42,10 @@ struct python_cpp_bridge
 	std::string opName;
 	int opOrder;
 
-	bool printLocal;
 	bool writeOpenu;
 
-	bool findPerm;
-	bool limitRun;
-	bool timeOnly;
 	int sn_max;
 	bool detectOutliers;
-	bool babelTest;
-	bool displayPerms;
 	std::string logFilename;
 
 	// Direction Axis
@@ -123,12 +117,7 @@ extern "C"
 	void SetCSMOptions(python_cpp_bridge options);
 
 	double TotalNumberOfPermutations();
-
-	// Runs the entire CSM application
-	// int RunCSM(const std::vector<std::string> args);
-	csm_output RunCSM();
-
-
+	
 	void DisplayPermutations();
 
 	csm_calculation_data RunSinglePerm(csm_calculation_data input);

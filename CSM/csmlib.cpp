@@ -11,13 +11,11 @@
 
 using namespace std;
 
-extern int main(int argc, char *argv[]); // Defined in mainRot.cpp
-
 static csm_options process_bridge(const python_cpp_bridge &bridge);
 
 python_cpp_bridge::python_cpp_bridge()
 {
-	printLocal = writeOpenu = findPerm = limitRun = timeOnly = detectOutliers = babelTest = displayPerms = false;
+	writeOpenu = detectOutliers = false;
 	sn_max = 8;
 }
 
@@ -25,15 +23,9 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 {
 	csm_options options;
 
-	options.printLocal = bridge.printLocal;
 	options.writeOpenu = bridge.writeOpenu;
-	options.findPerm = bridge.findPerm;
-	options.limitRun = bridge.limitRun;
-	options.timeOnly = bridge.timeOnly;
 	options.detectOutliers = bridge.detectOutliers;
-	options.babelTest = bridge.babelTest;
 	options.sn_max = bridge.sn_max;
-	options.displayPerms = bridge.displayPerms;
 
 	if (bridge.opType == "CS")
 		options.type = CS;
@@ -51,10 +43,8 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 	options.logFileName = bridge.logFilename;
 	
 	options.dir = bridge.dir;
-	options.useDir = bridge.dir.size() == 3;
 
 	options.perm = bridge.perm;
-	options.useperm = bridge.perm.size() > 0;
 
 	options.molecule = Molecule::createFromPython(bridge.molecule);
 
@@ -212,14 +202,6 @@ csm_calculation_data cpp_calculation_data::get_csm_data()
 
 extern csm_options options;
 extern csm_output results;
-extern int mainWithOptions();
-
-csm_output RunCSM()
-{
-	mainWithOptions();  // Fills output
-
-	return results;
-}
 
 void SetCSMOptions(python_cpp_bridge bridge)
 {

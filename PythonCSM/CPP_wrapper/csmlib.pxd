@@ -20,17 +20,11 @@ cdef extern from "csmlib.h":
         python_cpp_bridge()
         string opType;
         string opName;
-        bool printLocal;
         bool writeOpenu;
 
         int opOrder;
-        bool findPerm;
-        bool limitRun;
-        bool timeOnly;
         int sn_max;
         bool detectOutliers;
-        bool babelTest;
-        bool displayPerms;
         string logFilename;
 
         vector[double] dir;
@@ -50,26 +44,11 @@ cdef extern from "csmlib.h":
         int chMinOrder;
         string chMinType;
 
-
-cdef extern from "csmlib.h":
-    cdef cppclass csm_output:
-        python_molecule molecule;
-
-        vector[vector[double]] outAtoms;
-        double csm;
-        vector[double] dir;
-        double dMin;
-        vector[double] localCSM;
-        int chMinOrder;
-        string chMinType;
-        vector[int] perm;
-
 cdef extern from "csmlib.h":
     void SetCSMOptions(python_cpp_bridge options) except +;
     double TotalNumberOfPermutations();
     void DisplayPermutations() except +;
 
-    csm_output RunCSM() except +;
     csm_calculation_data RunSinglePerm(csm_calculation_data input) except +;
     csm_calculation_data FindBestPermUsingDir (csm_calculation_data input) except +;
     csm_calculation_data FindBestPerm (csm_calculation_data input) except +;
