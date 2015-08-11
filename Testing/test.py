@@ -8,7 +8,8 @@ import os.path
 
 class CheckCSMOutput(TestCase):
     def one_test(self, test_dir):
-        self.assertTrue(run_test_python(os.path.join(config.TEST_PATH, test_dir)))
+        result = run_test_python(os.path.join(config.TEST_PATH, test_dir))
+        self.assertTrue(result)
 
     def test_1(self):
         self.one_test('test1')
