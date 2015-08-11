@@ -138,3 +138,6 @@ def ComputeLocalCSM  (python_data_obj):
     python_data_obj_to_csm_data(data, python_data_obj)
     cdef csmlib.csm_calculation_data result = csmlib.ComputeLocalCSM(data)
     return parse_csm_data(result)
+
+def DisplayPermutations():
+    csmlib.DisplayPermutations()

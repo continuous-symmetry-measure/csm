@@ -105,7 +105,7 @@ const char *getExtension(const char *fname) {
 	return strrchr(fname,'.') + 1;
 }
 
-static void DisplayPermutations(Molecule *m);
+//static void displayPermutations(Molecule *m);
 
 int mainWithOptions()
 {
@@ -156,7 +156,7 @@ int mainWithOptions()
 
 	if (options.displayPerms)
 	{
-		DisplayPermutations(m);
+		//displayPermutations(m);
 		return 0;
 	}
 
@@ -335,7 +335,7 @@ void fill_output(Molecule *m, double **outAtoms, double csm, double *dir, double
 	}
 }
 
-void DisplayPermutations(Molecule *m)
+void displayPermutations(Molecule *m)
 {
 	int *groupSizes;
 	int addGroupsOfTwo;

@@ -50,7 +50,7 @@ def run_csm(args, print_output=True):
                 return None
 
         if csm_args['displayPerms']:
-            # TODO: csm.DisplayPermutations(m)
+            csm.DisplayPermutations()
             return None
 
         data = CSMCalculationsData(csm_args)

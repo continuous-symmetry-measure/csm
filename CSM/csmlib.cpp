@@ -239,6 +239,13 @@ double TotalNumberOfPermutations()
 	return totalNumPermutations(m);  // Notice the small t - this is the original function
 }
 
+void DisplayPermutations()
+{
+	Molecule *m = options.molecule;
+
+	displayPermutations(m);
+}
+
 csm_calculation_data RunSinglePerm(csm_calculation_data input)
 {
 	

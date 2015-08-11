@@ -129,11 +129,9 @@ extern "C"
 	csm_output RunCSM();
 
 
-	void DisplayPermutations(Molecule * m);
+	void DisplayPermutations();
 
 	csm_calculation_data RunSinglePerm(csm_calculation_data input);
-
-	
 	csm_calculation_data FindBestPermUsingDir (csm_calculation_data input);
 	csm_calculation_data FindBestPerm (csm_calculation_data input);
 	csm_calculation_data CsmOperation (csm_calculation_data input);

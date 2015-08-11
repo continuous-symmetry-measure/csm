@@ -67,6 +67,8 @@ cdef extern from "csmlib.h":
 cdef extern from "csmlib.h":
     void SetCSMOptions(python_cpp_bridge options) except +;
     double TotalNumberOfPermutations();
+    void DisplayPermutations() except +;
+
     csm_output RunCSM() except +;
     csm_calculation_data RunSinglePerm(csm_calculation_data input) except +;
     csm_calculation_data FindBestPermUsingDir (csm_calculation_data input) except +;
