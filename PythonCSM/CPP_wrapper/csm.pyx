@@ -113,7 +113,7 @@ def GetPermutations(size, groupSize, addGroupsOfTwo):
     c_perms = csmlib.GetPermutations(size, groupSize, addGroupsOfTwo)
 
     perms = []
-    cdef i
+    cdef int i
     for i in range(c_perms.size()):
         perm = []
         for j in range(size):
