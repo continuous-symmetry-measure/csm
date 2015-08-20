@@ -118,6 +118,6 @@ def GetPermutations(size, groupSize, addGroupsOfTwo):
         perm = []
         for j in range(size):
             perm.append(c_perms[i][j])
-        perms.append(perm)
+        perms.append(tuple(perm))
 
     return perms

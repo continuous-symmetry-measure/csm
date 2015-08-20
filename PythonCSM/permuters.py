@@ -1,8 +1,11 @@
 import itertools
+import colorama
 
 __author__ = 'zmbq'
 
 from CPP_wrapper import csm
+
+colorama.init()
 
 # Utility functions
 def apply_perm(array, perm):
@@ -68,70 +71,52 @@ def get_cycle_structs(perm_size, cycle_sizes):
 
     yield from generate([], list(range(perm_size)))
 
+def all_circles(elements):
+    """ Returns all the circles (full cycles) of elements (e0->e1->e2->e3...->e0) and the trivial cycle """
 
-def all_circular_permutations(elements):
-    first = elements[0]
-    rest = elements[1:]
-    for rest_perm in itertools.permutations(rest):
-        yield [first] + list(rest_perm)
+    def all_circle_indices(size):
+        # To compute a full cycle of length n, we take a permutation p of size n-1 and
+        # create the cycle like so: 0 goes to p[0], p[0] to p[1], p[1] to p[2] and so on, until p[n-1] goes back to 0
+        # For this to work, p needs to be a permutation of 1..n-1.
+        #
+        # For example, size = 3 we have p=(1,2) for the cycle 0->1->2->0 and p=(2,1) for the cycle 0->2->1->0
+        trivial = tuple(range(1, size))
+        for cycle in itertools.permutations(trivial):
+            full_cycle = [0] * size
+            cur = 0
+            for element in cycle:
+                full_cycle[cur] = cur = element
+            full_cycle[cycle[-1]] = 0
+            yield full_cycle
 
-def perm_from_cycle_struct(perm_size, cycle_structs):
-    # Each cycle_struct yields one permutation - one that rotates all the cycles once.
-    perm = list(range(perm_size))
-    for cycle in cycle_structs:
-        if len(cycle)>1:
-            for i in range(len(cycle)):
-                perm[cycle[i]] = cycle[(i+1)%len(cycle)]
-    return perm
+    # yield elements  # Trivial circle
+    for cycle_indices in all_circle_indices(len(elements)):
+        circle = tuple(elements[i] for i in cycle_indices)
+        yield circle
 
-
-def all_perms_from_cycle_struct(start_point, perm, cycle_sizes):
-    trivial = list(range(len(perm)))
-    cycle_sizes = [len(cs) for cs in cycle_sizes if len(cs) > 1]
-    i = 1
-
-    cur = start_point
-    if cur != trivial:
-        yield cur
-    cur = apply_perm(cur, perm)
-
-    while cur != start_point:
-        skip = False
-        for cs in cycle_sizes:
-            if (i % cs) == 0:
-                skip = True
-                break
-        if not skip:
-            print("%s, %s, %s, %2d: %s" % (start_point, perm, cycle_sizes, i, cur))
-            yield cur
-        cur = apply_perm(cur, perm)
-        i += 1
-
-
-def cycle_struct_start_points(perm_size, cycle_struct):
-    print("cycle_struct_start_points %s, %s" % (perm_size, cycle_struct))
+def all_perms_from_cycle_struct(perm_size, cycle_struct):
     trivial = list(range(perm_size))
-    yield trivial
-    print("\t==> %s" % trivial)
 
-    def generate(perm, cycle_struct):
-        print("cycle_struct_start_points.generate %s, %s" % (perm, cycle_struct))
-        if not cycle_struct and perm!=trivial:
-            print("\t==> %s" % perm)
-            yield perm
-
-        if not cycle_struct:
+    def generate(perm, cycle_struct, cycles_left):
+        if not cycles_left:
+            if perm != trivial:
+                #print("%s: %s" % (cycle_struct, perm))
+                yield tuple(perm)
             return
 
-        cycle = cycle_struct[0]
-        for cycle_perm in all_circular_permutations(cycle):
-            new_perm = perm[:]
-            for i in range(len(cycle)):
-                new_perm[cycle[i]] = cycle_perm[i]
-            yield from generate(new_perm, cycle_struct[1:])
+        cycle = cycles_left[0]
+        cycles_left = cycles_left[1:]
+        if len(cycle) > 1:
+            start_perm = perm[:]
+            for circle in all_circles(cycle):
+                for i in range(len(circle)):
+                    perm[cycle[i]] = circle[i]
+                yield from generate(perm, cycle_struct, cycles_left)
+                perm = start_perm[:]
+        else:
+            yield from generate(perm, cycle_struct, cycles_left)
 
-    trivial = list(range(perm_size))
-    yield from generate(trivial, cycle_struct)
+    yield from generate(trivial[:], cycle_struct, cycle_struct)
 
 
 def get_permutations(perm_size, group_size, add_groups_of_two):
@@ -140,48 +125,59 @@ def get_permutations(perm_size, group_size, add_groups_of_two):
         cycle_lengths.add(2)
     cycle_lengths = sorted(cycle_lengths)
 
-    yield list(range(perm_size)) # The identity permutation first
+    yield tuple(range(perm_size)) # The identity permutation first
     for cycle_struct in get_cycle_structs(perm_size, cycle_lengths):
-        perm = perm_from_cycle_struct(perm_size, cycle_struct)
-        start_points = cycle_struct_start_points(perm_size, cycle_struct)
-        for start_point in start_points:
-            yield from all_perms_from_cycle_struct(start_point, perm, cycle_struct)
+        yield from all_perms_from_cycle_struct(perm_size, cycle_struct)
 
 
 def compare(perm_size, group_size, add_groups_of_two):
     csm_perms = list(csm.GetPermutations(perm_size, group_size, add_groups_of_two))
     our_perms = list(get_permutations(perm_size, group_size, add_groups_of_two))
 
+    allowed_cycles = {1, group_size}
+    if add_groups_of_two:
+        allowed_cycles.add(2)
+
+    print("C++ permutations: %d, Python permutations: %d, unique Python: %d" % (len(csm_perms), len(our_perms), len(set(our_perms))))
+
+    if set(csm_perms)==set(our_perms):
+        return
+
+    print("There are problems!!!")
     print("Our permutations:")
-    display_perms("Py", our_perms)
+    for i, perm in enumerate(our_perms):
+        cycles = cycle_decomposition(perm)
+        bad_cycle = bad_perm = duplicate = False
+        for cycle_size in cycles:
+            if not len(cycle_size) in allowed_cycles:
+                bad_cycle = True
+        if not perm in csm_perms:
+            bad_perm = True
+        if i > 0 and perm in our_perms[:i-1]:
+            duplicate = True
 
-    print()
-    print("C++ permutations")
-    display_perms("C++", csm_perms)
-
-compare(4, 3, False)
-
-#cycles = find_cycles(6, [1, 3])
-#for cycle_set in cycles:
-#    print([cycle for cycle in cycle_set if len(cycle)>1])
-
-
-
-#perms = get_permutations(6, 3, False))
-#display_perms("Py ", perms)
-
-#print()
-#cpp_perms = list(csm.GetPermutations(6, 3, False))
-# perms = one_cycle(5, 3)
-#display_perms("C++", cpp_perms)
-
-#print()
-#for cp in cpp_perms:
-#    if cp not in perms:
-#        print("Missing: %s" % cp)
+        print("%s %4d: %s\torder=%d\tcycles=%s" % ("Py ", i, perm, perm_order(perm), cycle_decomposition(perm)), end='')
+        if bad_perm or bad_cycle:
+            print(colorama.Fore.LIGHTRED_EX, end='')
+            if bad_cycle:
+                print('   BAD CYCLE', end='')
+            elif bad_perm:
+                print('   NOT IN C++', end='')
+            elif duplicate:
+                print('   DUPLICATE', end='')
+        print(colorama.Fore.RESET)
 
 
-#csm.TestPermuter(5, 3, True)
-#csm.TestPermuter(5, 4, True)
-#csm.TestPermuter(5, 5, True)
+    #print()
+    #print("C++ permutations")
+    for i, perm in enumerate(csm_perms):
+        bad_perm = not perm in our_perms
+        print("%s %4d: %s\torder=%d\tcycles=%s" % ("C++", i, perm, perm_order(perm), cycle_decomposition(perm)), end='')
+        if bad_perm:
+            print(colorama.Fore.LIGHTRED_EX + "   NOT IN PYTHON" + colorama.Fore.RESET, end='')
+        print()
 
+#print(list(all_circles((2,3))))
+compare(12, 5, True)
+# print(list(all_circles((0,1,2,3))))
+# print (list(all_perms_from_cycle_struct(4, [[0,1], [2,3]])))
