@@ -6,6 +6,7 @@ from helpers import run_test_python
 import config
 import os.path
 
+
 class CheckCSMOutput(TestCase):
     def one_test(self, test_dir):
         self.assertTrue(run_test_python(os.path.join(config.TEST_PATH, test_dir)))
@@ -65,6 +66,12 @@ class CheckCSMOutput(TestCase):
     def test_22(self):
         self.one_test('test22')
 
+    def test_23(self):
+        self.one_test('test23')
+
+    def test_24(self):
+        self.one_test('test24')
+
 
 class LongCSMCheckOutput(TestCase):
     def one_test(self, test_dir):
@@ -73,15 +80,17 @@ class LongCSMCheckOutput(TestCase):
     def test_10(self):
         self.one_test('test10')
 
+    def test_11(self):
+        self.one_test('test11')
+
     def test_13(self):
         self.one_test('test13csm')
 
     def test_14(self):
         self.one_test('test14')
 
-    """def test_18(self):
-        self.one_test('test18')"""
+    def test_18(self):
+        self.one_test('test18')
 
-    """Test 19 is takes a lot of time"""
-    #def test_19(self):
-    #    self.one_test('test19')
+    def test_19(self):
+        self.one_test('test19')
