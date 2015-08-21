@@ -43,6 +43,7 @@ cdef extern from "csmlib.h":
         string operationType;
         int chMinOrder;
         string chMinType;
+        int opOrder;
 
 cdef extern from "csmlib.h":
     void SetCSMOptions(python_cpp_bridge options) except +;

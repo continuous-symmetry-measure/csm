@@ -87,6 +87,7 @@ struct csm_calculation_data
 	std::string operationType;
 	int chMinOrder;
 	std::string chMinType;
+	int opOrder;
 };
 
 struct cpp_calculation_data
@@ -101,6 +102,7 @@ struct cpp_calculation_data
 	OperationType operationType;
 	int chMinOrder;
 	OperationType chMinType;
+	int opOrder;
 	
 
 	cpp_calculation_data(const csm_calculation_data &python);

@@ -105,6 +105,8 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 	else if (python.chMinType == "CI")
 		chMinType = CI;
 	
+	options.opOrder = python.opOrder; 
+	
 }
 
 cpp_calculation_data::~cpp_calculation_data()
@@ -195,6 +197,7 @@ csm_calculation_data cpp_calculation_data::get_csm_data()
 		case CI: python.operationType = "CI"; break;
 		case CH: python.operationType = "CH"; break;
 	}
+	python.opOrder = options.opOrder;
 
 	return python;
 }

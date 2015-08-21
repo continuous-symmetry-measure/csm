@@ -21,6 +21,7 @@ class CSMCalculationsData:
             self.operationType = csm_args['type']
             self.chMinOrder = 2
             self.chMinType = 'CS'
+            self.opOrder = csm_args['opOrder']
         else:
             self.molecule = None
             self.outAtoms = []
@@ -32,3 +33,4 @@ class CSMCalculationsData:
             self.operationType = ''
             self.chMinOrder = 2
             self.chMinType = 'CS'
+            self.opOrder = 0

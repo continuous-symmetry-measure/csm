@@ -44,6 +44,8 @@ cdef python_data_obj_to_csm_data(csmlib.csm_calculation_data &data, python_data_
     data.operationType = cs(python_data_object.operationType)
     data.chMinOrder = python_data_object.chMinOrder
     data.chMinType = cs(python_data_object.chMinType)
+    data.opOrder = python_data_object.opOrder
+
 
 
 cdef parse_csm_data(csmlib.csm_calculation_data &data):
@@ -61,6 +63,7 @@ cdef parse_csm_data(csmlib.csm_calculation_data &data):
     result.perm = vector_int_to_list(data.perm)
     result.chMinOrder = data.chMinOrder
     result.chMinType = data.chMinType
+    result.opOrder = data.opOrder
 
     return result
 

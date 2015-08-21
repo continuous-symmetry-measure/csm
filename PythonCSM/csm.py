@@ -65,26 +65,27 @@ def run_csm(args, print_output=True):
                 # chirality support
                 data.operationType = data.chMinType = "CS"
                 # TODO: options.opOrder = 2;
+                data.opOrder = 2
                 result = perform_operation(csm_args, data)
 
                 if result.csm > MINDOUBLE:
                     data.operationType = "SN"
                     for i in range(2, csm_args['sn_max'] + 1, 2):
                         # TODO: options.opOrder = i
+                        data.opOrder = i
                         ch_result = perform_operation(csm_args, data)
                         if ch_result.csm < result.csm:
                             result = ch_result
                             result.chMinType = 'SN'
-                            result.chMinOrder = i
+                            result.chMinOrder = ch_result.opOrder
 
                         if result.csm < MINDOUBLE:
                             break
 
         if csm_args['printLocal']:
-            # TODO: send to CPP options.opOrder
             if csm_args['type'] == 'CH':
-                pass
                 # TODO: options.opOrder = chMinOrder;
+                data.opOrder = result.chMinOrder
             local_res = csm.ComputeLocalCSM(data)
             result.localCSM = local_res.localCSM
 
