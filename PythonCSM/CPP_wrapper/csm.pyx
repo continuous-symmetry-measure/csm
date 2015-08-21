@@ -110,3 +110,17 @@ def ComputeLocalCSM  (python_data_obj):
 
 def DisplayPermutations():
     csmlib.DisplayPermutations()
+
+def GetPermutations(size, groupSize, addGroupsOfTwo):
+    cdef vector[vector[int]] c_perms
+    c_perms = csmlib.GetPermutations(size, groupSize, addGroupsOfTwo)
+
+    perms = []
+    cdef int i
+    for i in range(c_perms.size()):
+        perm = []
+        for j in range(size):
+            perm.append(c_perms[i][j])
+        perms.append(tuple(perm))
+
+    return perms

@@ -8,6 +8,9 @@
 #include "Molecule.h"
 #include "calculations.h"
 #include "logging.h"
+#include "permuter.h"
+#include <sstream>
+#include <iomanip>
 
 using namespace std;
 
@@ -272,4 +275,21 @@ csm_calculation_data ComputeLocalCSM (csm_calculation_data input)
 		cpp_input.operationType != CH ? cpp_input.operationType : cpp_input.chMinType);
 	csm_calculation_data output = cpp_input.get_csm_data();
 	return output;
+}
+
+
+std::vector< std::vector<int> > GetPermutations(int size, int groupSize, bool addGroupsOfTwo)
+{
+	std::vector< std::vector<int> > perms;
+
+	Permuter p(size, groupSize, addGroupsOfTwo);
+	while (p.next())
+	{
+		vector<int> perm;
+		for (int i = 0; i < size; i++)
+			perm.push_back(p[i]);
+		perms.push_back(perm);
+	}
+
+	return perms;
 }
