@@ -209,6 +209,6 @@ def timeit(perm_size, group_size, add_groups_of_two):
 
 #print(list(all_circles((2,3))))
 
-compare(11, 4, True)
+compare(9, 6, True)
 # print(list(all_circles((0,1,2,3))))
 # print (list(all_perms_from_cycle_struct(4, [[0,1], [2,3]])))
