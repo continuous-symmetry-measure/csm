@@ -94,12 +94,13 @@ def all_circles(elements):
         #
         # For example, size = 3 we have p=(1,2) for the circle 0->1->2->0 and p=(2,1) for the circle 0->2->1->0
         trivial = tuple(range(1, size))
-        for cycle in itertools.permutations(trivial):
+        for necklace in itertools.permutations(trivial):
+            # The actual necklace is [0]+necklace
             full_cycle = [0] * size
             cur = 0
-            for element in cycle:
+            for element in necklace:
                 full_cycle[cur] = cur = element
-            full_cycle[cycle[-1]] = 0
+            full_cycle[necklace[-1]] = 0  # Add the [0] that is missing from the necklace
             yield full_cycle
 
     # yield elements  # Trivial circle
@@ -117,7 +118,7 @@ def all_perms_from_cycle_struct(perm_size, cycle_struct):
     trivial = list(range(perm_size))
 
     def generate(perm, cycle_struct, cycles_left):
-        # Goes over all the circles of the first cycle, fixes each circle and
+        # Goes over all the circles of the first cycle, apply each circle and
         # recursively generates the circles of the rest of the cycles
         if not cycles_left:
             yield tuple(perm)
@@ -208,6 +209,14 @@ def timeit(perm_size, group_size, add_groups_of_two):
     generator = get_permutations(perm_size, group_size, add_groups_of_two)
 
 #print(list(all_circles((2,3))))
+
+#structs = get_cycle_structs(5, [1,3])
+#for s in structs:
+#    print(s)
+
+circles = all_circles([0,1,2,3])
+for cir in circles:
+    print(cir)
 
 compare(9, 6, True)
 # print(list(all_circles((0,1,2,3))))
