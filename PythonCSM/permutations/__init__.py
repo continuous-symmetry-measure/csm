@@ -1,3 +1,4 @@
 __author__ = 'zmbq'
 
-from .permuter import permuter
+from .permuters import group_permuter
+from .permuters import molecule_permuter

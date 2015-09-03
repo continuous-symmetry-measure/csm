@@ -1,6 +1,6 @@
 import itertools
 import colorama
-from permutations import permuter
+from permutations import group_permuter
 from permutations.utils import cycle_decomposition
 
 __author__ = 'zmbq'
@@ -18,8 +18,8 @@ colorama.init()
 # cycle_structs: A list of cycles in a permutation: [[0], [1, 3, 4], [2], ...]
 
 def compare(perm_size, group_size, add_groups_of_two):
-    csm_perms = list(csm.GetPermutations(perm_size, group_size, add_groups_of_two))
-    our_perms = list(permuter(perm_size, group_size, add_groups_of_two))
+    csm_perms = list(csm.GetPermuterPermutations(perm_size, group_size, add_groups_of_two))
+    our_perms = list(group_permuter(perm_size, group_size, add_groups_of_two))
 
     allowed_cycles = {1, group_size}
     if add_groups_of_two:
@@ -71,6 +71,6 @@ def compare(perm_size, group_size, add_groups_of_two):
 #for s in structs:
 #    print(s)
 
-compare(9, 6, True)
+compare(10, 6, True)
 # print(list(_all_circles((0,1,2,3))))
 # print (list(_all_perms_from_cycle_struct(4, [[0,1], [2,3]])))
