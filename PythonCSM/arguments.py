@@ -50,7 +50,7 @@ def create_parser():
                         help='Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass')
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
     parser.add_argument('--display-perms', dest='display_perms', action='store_true', default=False,
-                        help='Display all the permutations and nothing else')
+                        help='Display all the permutations')
 
     return parser
 

@@ -33,6 +33,6 @@ double createSymmetricStructure(Molecule* m, double **outAtom, int *perm, double
 double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
 
 double totalNumPermutations(Molecule *m);  // So this function can be called from csmlib.cpp
-void displayPermutations(Molecule *m);
+
 
 #endif

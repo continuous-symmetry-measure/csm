@@ -109,28 +109,18 @@ struct cpp_calculation_data
 	csm_calculation_data get_csm_data();
 };
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-	// Sets the CSM options for all future function calls
-	void SetCSMOptions(python_cpp_bridge options);
+// Sets the CSM options for all future function calls
+void SetCSMOptions(python_cpp_bridge options);
 
-	double TotalNumberOfPermutations();
+double TotalNumberOfPermutations();
 	
-	void DisplayPermutations();
+csm_calculation_data RunSinglePerm(csm_calculation_data input);
+csm_calculation_data FindBestPermUsingDir (csm_calculation_data input);
+csm_calculation_data FindBestPerm (csm_calculation_data input);
+csm_calculation_data CsmOperation (csm_calculation_data input);
+csm_calculation_data ComputeLocalCSM (csm_calculation_data input);
 
-	csm_calculation_data RunSinglePerm(csm_calculation_data input);
-	csm_calculation_data FindBestPermUsingDir (csm_calculation_data input);
-	csm_calculation_data FindBestPerm (csm_calculation_data input);
-	csm_calculation_data CsmOperation (csm_calculation_data input);
-	csm_calculation_data ComputeLocalCSM (csm_calculation_data input);
+std::vector< std::vector<int> > GetPermuterPermutations(int size, int groupSize, bool addGroupsOfTwo);
+std::vector< std::vector<int> > GetMoleculePermutations();
 
-#ifdef __cplusplus
-}
-
-std::vector< std::vector<int> > GetPermutations(int size, int groupSize, bool addGroupsOfTwo);
-
-
-#endif
 #endif
