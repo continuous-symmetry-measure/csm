@@ -50,7 +50,9 @@ def run_csm(args, print_output=True):
                 return None
 
         if csm_args['displayPerms']:
-            csm.DisplayPermutations()
+            perms = csm.GetMoleculePermutations()
+            for i, perm in enumerate(perms):
+                print("%5d: %s" % (i, perm))
             return None
 
         data = CSMCalculationsData(csm_args)

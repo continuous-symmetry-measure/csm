@@ -1,4 +1,4 @@
 colorama==0.3.3
-Cython==0.23
+Cython==0.23.1
 numpy==1.9.2
 openbabel==1.8.2

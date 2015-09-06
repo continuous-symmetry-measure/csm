@@ -11,6 +11,7 @@
 #include "permuter.h"
 #include <sstream>
 #include <iomanip>
+#include "groupPermuter.h"
 
 using namespace std;
 
@@ -227,13 +228,6 @@ double TotalNumberOfPermutations()
 	return totalNumPermutations(m);  // Notice the small t - this is the original function
 }
 
-void DisplayPermutations()
-{
-	Molecule *m = options.molecule;
-
-	displayPermutations(m);
-}
-
 csm_calculation_data RunSinglePerm(csm_calculation_data input)
 {
 	
@@ -278,7 +272,7 @@ csm_calculation_data ComputeLocalCSM (csm_calculation_data input)
 }
 
 
-std::vector< std::vector<int> > GetPermutations(int size, int groupSize, bool addGroupsOfTwo)
+std::vector< std::vector<int> > GetPermuterPermutations(int size, int groupSize, bool addGroupsOfTwo)
 {
 	std::vector< std::vector<int> > perms;
 
@@ -290,6 +284,58 @@ std::vector< std::vector<int> > GetPermutations(int size, int groupSize, bool ad
 			perm.push_back(p[i]);
 		perms.push_back(perm);
 	}
+
+	return perms;
+}
+
+std::vector< std::vector<int> > GetMoleculePermutations()
+{
+	std::vector< std::vector<int> > perms;
+
+	Molecule *m = options.molecule;
+
+	int *groupSizes;
+	int addGroupsOfTwo;
+	std::vector<int> idxToPos;
+
+	groupSizes = new int[m->groupNum()];
+	for (int i = 1; i <= m->groupNum(); i++){
+		groupSizes[i - 1] = m->getGroupSize(i);
+	}
+
+	// build idxToPos
+	idxToPos.resize(m->size());
+	int pos = 0;
+	// build idxToPos
+	for (int j = 1; j <= m->groupNum(); j++){
+		for (int i = 0; i< m->size(); i++){
+			if (m->similar(i) == j){
+				idxToPos[pos++] = i;
+			}
+		}
+	}
+
+	// create permuter
+	if (options.type == SN && options.opOrder > 2) {
+		addGroupsOfTwo = 1;
+	}
+	else {
+		addGroupsOfTwo = 0;
+	}
+
+	GroupPermuter gp(m->groupNum(), groupSizes, m->size(), options.opOrder, addGroupsOfTwo);
+
+	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
+	int count = 0;
+	while (gp.next())
+	{
+		vector<int> perm(m->size());
+		for (int i = 0; i < m->size(); i++)
+			perm[i] = idxToPos[gp[i]];
+		perms.push_back(perm);
+	}
+
+	delete[] groupSizes;
 
 	return perms;
 }

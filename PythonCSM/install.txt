@@ -1,0 +1,12 @@
+Special care needs to be taken care when installing the requirements.
+
+One Windows, install open-babel from the Wheel in CSM/openbabel-files/Windows/python.
+
+On OS X install OpenBabel before installing the requirements using
+
+brew install open-babel
+brew link --overwrite open-babel
+
+On Ubuntu install OpenBabel before installing the requirements using
+sudo apt-get install openbabel libopenbabel-dev
+
