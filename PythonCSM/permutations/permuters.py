@@ -2,6 +2,7 @@ import itertools
 
 __author__ = 'zmbq'
 
+
 def _get_cycle_structs(perm_size, cycle_sizes):
     """
     Generates a list of cycles in a permutation. The cycles cover the entire permutation, and are only of sizes in cycle_sizes
@@ -112,13 +113,38 @@ def molecule_permuter(molecule_size, groups, cycle_size, add_cycles_of_two):
     :param molecule_size: Molecule size
     :param groups: Equivalency groups
     :param cycle_size: Allowed cycle size
-    :param add_cycles_of_two: When trye, cycles of size of two are legal
+    :param add_cycles_of_two: When true, cycles of size of two are legal
     :return: Generator for all the permutations
     """
     def generate(perm, groups_left):
+        """ Goes over all the permutations of the first group, applies each
+         permutation and recursively aplies permutations of the entire groups
+        :param perm:
+        :param groups_left:
+        :return:
+        """
         if not groups_left:
             yield tuple(perm)
             return
+
+        group = groups_left[0]
+        groups_left = groups_left[1:]
+        if len(group) == 1:
+            yield from generate(perm, groups_left)
+        else:
+            # Example:
+            # Lets say the permutation is (0, 1 ,2 ,3), and the group is (0, 1, 3)
+            start_perm = perm[:]
+            for group_perm in group_permuter(len(group), cycle_size, add_cycles_of_two):
+                # group_permuter yields (1, 2, 0) and (2, 0 ,1)
+                # The permutations we need to return are (1, 3, 2, 0) and (3, 0, 2, 1) - these have
+                # one stationary point - 2, and a cycle of length 3.
+                # To do this, we need to convert the group_perm from (1,2,0) and (2,0,1) to (1,3,0) and (3,0,1)
+                converted_group = [group[i] for i in group_perm]  # Converted circle is now (1,3,0) or (3,0,1)
+                for i in range(len(converted_group)):
+                    perm[group[i]] = converted_group[i]  # Perm is now (1, 3, 2, 0) or (3, 0, 2, 1) <--- The converted_circle applied to (0, 1, 3)
+                yield from generate(perm, groups_left)    # Apply the rest of the circles
+                perm = start_perm[:]
 
     perm = list(range(molecule_size))  # The trivial permutation
     yield from generate(perm, groups)

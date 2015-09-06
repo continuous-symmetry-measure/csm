@@ -56,5 +56,5 @@ cdef extern from "csmlib.h":
     csm_calculation_data FindBestPerm (csm_calculation_data input) except +;
     csm_calculation_data CsmOperation (csm_calculation_data input) except +;
     csm_calculation_data ComputeLocalCSM (csm_calculation_data input) except +;
-
-
+    csm_calculation_data CalcRefPlane (csm_calculation_data input) except +;
+    csm_calculation_data CreateSymmetricStructure (csm_calculation_data input) except +;

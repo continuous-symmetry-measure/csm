@@ -52,7 +52,7 @@ cdef parse_csm_data(csmlib.csm_calculation_data &data):
     result = CSMCalculationsData()
     result.molecule = pythonize_molecule(data.molecule)
     outAtoms = []
-    for i in range(data.molecule.atoms.size()):
+    for i in range(data.outAtoms.size()):
         outAtoms.append(vector_double_to_tuple(data.outAtoms[i]))
     result.outAtoms = outAtoms
 
@@ -62,8 +62,9 @@ cdef parse_csm_data(csmlib.csm_calculation_data &data):
     result.localCSM = vector_double_to_list(data.localCSM)
     result.perm = vector_int_to_list(data.perm)
     result.chMinOrder = data.chMinOrder
-    result.chMinType = data.chMinType
+    result.chMinType = ps(data.chMinType)
     result.opOrder = data.opOrder
+    result.operationType = ps(data.operationType)
 
     return result
 
@@ -131,3 +132,15 @@ def GetMoleculePermutations():
     cdef vector[vector[int]] c_perms
     c_perms = csmlib.GetMoleculePermutations()
     return _convert_perms_to_python(c_perms)
+
+def CalcRefPlane(python_data_obj):
+    cdef csmlib.csm_calculation_data data
+    python_data_obj_to_csm_data(data, python_data_obj)
+    cdef csmlib.csm_calculation_data result = csmlib.CalcRefPlane(data)
+    return parse_csm_data(result)
+
+def CreateSymmetricStructure(python_data_obj):
+    cdef csmlib.csm_calculation_data data
+    python_data_obj_to_csm_data(data, python_data_obj)
+    cdef csmlib.csm_calculation_data result = csmlib.CreateSymmetricStructure(data)
+    return parse_csm_data(result)

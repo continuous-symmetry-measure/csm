@@ -15,12 +15,14 @@ def perm_order(perm):
         order += 1
     return order
 
+
 def cycle_decomposition(perm):
     unvisited = set(range(len(perm)))  # All indices are unvisited
+
     def find_cycle(start):
         cycle = [start]
         next = perm[start]
-        while next!=start:
+        while next != start:
             cycle.append(next)
             unvisited.remove(next)
             next = perm[next]
@@ -34,6 +36,7 @@ def cycle_decomposition(perm):
             cycles.append(cycle)
 
     return cycles
+
 
 def display_perms(prefix, perms):
     for i, perm in enumerate(perms):

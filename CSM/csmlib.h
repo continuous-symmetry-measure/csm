@@ -125,4 +125,6 @@ csm_calculation_data ComputeLocalCSM (csm_calculation_data input);
 std::vector< std::vector<int> > GetPermuterPermutations(int size, int groupSize, bool addGroupsOfTwo);
 std::vector< std::vector<int> > GetMoleculePermutations();
 
+csm_calculation_data CalcRefPlane (csm_calculation_data input);
+csm_calculation_data CreateSymmetricStructure (csm_calculation_data input);
 #endif

@@ -57,7 +57,7 @@ csm_options process_bridge(const python_cpp_bridge &bridge)
 
 cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 {
-	int i;
+	int i,j;
 	molecule = Molecule::createFromPython(python.molecule);
 	int size = molecule->size();
 	
@@ -65,6 +65,12 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 	for (i=0; i<size; i++)
 	{
 		outAtoms[i] = (double *)malloc(DIM * sizeof(double));
+		if (python.outAtoms.size()>0)
+			for (j=0; j<DIM; j++)
+				outAtoms[i][j] = python.outAtoms[i][j];
+		else
+			for (j=0; j<DIM; j++)
+				outAtoms[i][j] = 0.0;
 	}
 	
 	dir = (double *) malloc(DIM * sizeof(double));
@@ -73,8 +79,8 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 		dir[i] = python.dir[i];
 	}
 	
-	csm = 0;
-	dMin = 0;
+	csm = python.csm;
+	dMin = python.dMin;
 	
 	perm = (int *)malloc(size * sizeof(int));
 	int perm_size = python.perm.size();
@@ -96,7 +102,7 @@ cpp_calculation_data::cpp_calculation_data(const csm_calculation_data &python)
 	else if (python.operationType == "CI")
 		operationType = CI;
 
-	chMinOrder = 0;
+	chMinOrder = python.chMinOrder;
 
 	if (python.chMinType == "CS")
 		chMinType = CS;
@@ -152,8 +158,10 @@ csm_calculation_data cpp_calculation_data::get_csm_data()
 
 		// outAtoms
 		std::vector<double> outAtom;
-		for (int j = 0; j < 3; j++)
+		for (int j = 0; j < DIM; j++)
+		{
 			outAtom.push_back(outAtoms[i][j]);
+		}	
 		python.outAtoms.push_back(outAtom);
 
 		// localCSM
@@ -173,7 +181,6 @@ csm_calculation_data cpp_calculation_data::get_csm_data()
 		python.molecule.equivalenceClasses.push_back(vector<int>(group, group + groupSize));
 	}
 	delete[] group;
-
 
 	// Other values
 	python.csm = csm;
@@ -338,4 +345,22 @@ std::vector< std::vector<int> > GetMoleculePermutations()
 	delete[] groupSizes;
 
 	return perms;
+}
+
+
+csm_calculation_data CalcRefPlane (csm_calculation_data input) {
+	cpp_calculation_data cpp_input(input);
+	double result_csm = calcRefPlane(cpp_input.molecule, cpp_input.perm, cpp_input.dir, 
+		cpp_input.operationType);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	output.csm = result_csm;
+	return output;
+}
+
+csm_calculation_data CreateSymmetricStructure (csm_calculation_data input) {
+	cpp_calculation_data cpp_input(input);
+	createSymmetricStructure(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, cpp_input.dir, 
+		cpp_input.operationType, cpp_input.dMin);
+	csm_calculation_data output = cpp_input.get_csm_data();
+	return output;
 }

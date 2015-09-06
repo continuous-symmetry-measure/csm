@@ -330,7 +330,7 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	for (i = 1; i < options.opOrder; i++) {
 		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / options.opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
-		for (j = 0; j < m->size(); j++) {
+		for (j = 0; j < m->size(); j++) {	
 			curPerm[j] = perm[curPerm[j]];
 		}
 		for (j = 0; j < 3; j++) {
@@ -346,10 +346,10 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 			for (k = 0; k < 3; k++) {
 				for (l = 0; l < 3; l++) {
 					outAtoms[j][k] += rotaionMatrix[k][l] * m->pos()[curPerm[j]][l];
+					
 				}
 			}
 		}
-
 	}
 
 	for (j = 0; j < m->size(); j++) {
@@ -357,6 +357,7 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 			outAtoms[j][k] /= options.opOrder;
 			outAtoms[j][k] *= dMin;
 			res += SQR(outAtoms[j][k]);
+			
 		}
 	}
 
@@ -475,10 +476,11 @@ void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm,
 
 	// calculate csm for each valid permutation & remember minimal (in optimalAntimer)
 	while (gp->next()) {
-
 		for (i = 0; i < m->size(); i++) {
 			realPerm[i] = idxToPos[gp->elementAt(posToIdx[i])];
 		}
+
+		
 		curCsm = calcRefPlane(m, realPerm, curDir, type);
 
 		// check, if it's a minimal csm, update maxGroupCsm and optimalAntimer
