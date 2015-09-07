@@ -10,7 +10,7 @@ from input_output.writers import print_all_output
 from calculations.preprocess_molecule import preprocess_molecule
 from calculations.process_results import process_results
 from calculations.csm_calculations_data import CSMCalculationsData
-from calculations.csm_calculations import perform_operation, MAXDOUBLE
+from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations
 from arguments import process_arguments, create_parser
 from CPP_wrapper import csm
 
@@ -33,12 +33,11 @@ def run_csm(args, print_output=True):
 
         if not csm_args['findPerm']:
             if not 'perm' in csm_args and not 'dir' in csm_args:
-                total_perms = csm.TotalNumberOfPemrutations()
+                total_perms = total_number_of_permutations(csm_args)
                 time = 1.0 * total_perms / 3600 / APPROX_RUN_PER_SEC
                 if math.isnan(time):
                     # time is NaN
                     time = MAXDOUBLE
-
                 print("Going to enumerate over %d permutations" % total_perms)
                 print("Entire run should take approx. %.2lf hours on a 2.0Ghz Computer" % time)
             else:

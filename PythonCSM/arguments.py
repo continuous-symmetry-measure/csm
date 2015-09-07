@@ -58,7 +58,7 @@ def create_parser():
 def check_arguments(processed):
 
     if processed['sn_max'] and processed['type'] != 'CH':
-        raise ValueError("Option -sn_max only applies to chirality")
+        raise ValueError("Option --sn_max only applies to chirality")
 
     if (processed['findPerm'] and 'perm' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
             or ('dirFile' in processed and 'perm' in processed):
@@ -78,7 +78,7 @@ def check_arguments(processed):
         if processed["ignoreHy"]:
             raise ValueError("--useperm ignores the --ignoreHy option, can't use them together")
         if processed["removeHy"]:
-            raise ValueError("--useperm ignores the -r-emoveHy option, can't use them together")
+            raise ValueError("--useperm ignores the --removeHy option, can't use them together")
 
         if len(processed["perm"]) != len(processed["molecule"].atoms):
             raise ValueError("Invalid permutation")
