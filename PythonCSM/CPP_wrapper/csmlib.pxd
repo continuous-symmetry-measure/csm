@@ -47,14 +47,12 @@ cdef extern from "csmlib.h":
 
 cdef extern from "csmlib.h":
     void SetCSMOptions(python_cpp_bridge options) except +;
-    double TotalNumberOfPermutations();
     vector[vector[int]] GetPermuterPermutations(int size, int groupSize, bool addGroupsOfTwo);
     vector[vector[int]] GetMoleculePermutations();
 
     csm_calculation_data RunSinglePerm(csm_calculation_data input) except +;
     csm_calculation_data FindBestPermUsingDir (csm_calculation_data input) except +;
     csm_calculation_data FindBestPerm (csm_calculation_data input) except +;
-    csm_calculation_data CsmOperation (csm_calculation_data input) except +;
     csm_calculation_data ComputeLocalCSM (csm_calculation_data input) except +;
     csm_calculation_data CalcRefPlane (csm_calculation_data input) except +;
     csm_calculation_data CreateSymmetricStructure (csm_calculation_data input) except +;

@@ -20,7 +20,6 @@
 #define ZERO_IM_PART_MAX (1e-3)
 #define MIN_GROUPS_FOR_OUTLIERS 10
 
-void csmOperation(Molecule* m, double** outAtoms, int *optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void runSinglePerm(Molecule* m, double** outAtoms, int* perm, double* csm, double* dir, double* dMin, OperationType type);
 void findBestPerm(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
 void findBestPermUsingDir(Molecule* m, double** outAtoms, int* optimalPerm, double* csm, double* dir, double* dMin, OperationType type);
@@ -31,7 +30,6 @@ void planeFit(double **points, int nPoints, double **dirs, int *outliers);
 void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos);
 double computeLocalCSM(Molecule* m, double *localCSM, int *perm, double *dir, OperationType type);
 
-double totalNumPermutations(Molecule *m);  // So this function can be called from csmlib.cpp
 double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type);
 double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, double *dir, OperationType type, double dMin);
 

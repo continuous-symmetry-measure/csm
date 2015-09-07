@@ -228,13 +228,6 @@ void SetCSMOptions(python_cpp_bridge bridge)
 		set_file_logging(options.logFileName);
 }
 
-double TotalNumberOfPermutations()
-{
-	Molecule *m = options.molecule;
-
-	return totalNumPermutations(m);  // Notice the small t - this is the original function
-}
-
 csm_calculation_data RunSinglePerm(csm_calculation_data input)
 {
 	
@@ -257,14 +250,6 @@ csm_calculation_data FindBestPerm (csm_calculation_data input)
 {
 	cpp_calculation_data cpp_input(input);
 	findBestPerm(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
-	csm_calculation_data output = cpp_input.get_csm_data();
-	return output;
-}
-
-csm_calculation_data CsmOperation (csm_calculation_data input)
-{
-	cpp_calculation_data cpp_input(input);
-	csmOperation(cpp_input.molecule, cpp_input.outAtoms, cpp_input.perm, &cpp_input.csm, cpp_input.dir, &cpp_input.dMin, cpp_input.operationType);
 	csm_calculation_data output = cpp_input.get_csm_data();
 	return output;
 }
