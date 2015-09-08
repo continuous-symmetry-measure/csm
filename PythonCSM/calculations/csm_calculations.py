@@ -24,9 +24,13 @@ def csm_operation(current_calc_data, op_name):
     dir = []
     optimal_perm = []
     current_calc_data.dir = [0, 0, 0]
+
     # calculate csm for each valid permutation & remember minimal
-    for perm in molecule_permuter(len(current_calc_data.molecule.atoms), current_calc_data.molecule.equivalence_classes,
-                                  current_calc_data.opOrder, current_calc_data.operationType == 'SN'):
+    perm_size = len(current_calc_data.molecule.atoms)
+    groups = current_calc_data.molecule.equivalence_classes
+    opOrder = current_calc_data.opOrder
+    isSN = current_calc_data.operationType=='SN'
+    for perm in molecule_permuter(perm_size, groups, opOrder, isSN):
         current_calc_data.perm = perm
         current_calc_data = csm.CalcRefPlane(current_calc_data)
         # check, if it's a minimal csm, update dir and optimal perm
