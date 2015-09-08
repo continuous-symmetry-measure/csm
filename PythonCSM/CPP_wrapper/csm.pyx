@@ -74,11 +74,6 @@ def SetCSMOptions(args):
 
     csmlib.SetCSMOptions(options)
 
-def TotalNumberOfPemrutations():
-    cdef double num
-    num = csmlib.TotalNumberOfPermutations()
-    return num
-
 def RunSinglePerm(python_data_obj):
     cdef csmlib.csm_calculation_data data
     python_data_obj_to_csm_data(data, python_data_obj)
@@ -95,12 +90,6 @@ def FindBestPerm (python_data_obj):
     cdef csmlib.csm_calculation_data data
     python_data_obj_to_csm_data(data, python_data_obj)
     cdef csmlib.csm_calculation_data result = csmlib.FindBestPerm(data)
-    return parse_csm_data(result)
-
-def CsmOperation (python_data_obj):
-    cdef csmlib.csm_calculation_data data
-    python_data_obj_to_csm_data(data, python_data_obj)
-    cdef csmlib.csm_calculation_data result = csmlib.CsmOperation(data)
     return parse_csm_data(result)
 
 def ComputeLocalCSM  (python_data_obj):
