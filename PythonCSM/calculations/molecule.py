@@ -19,7 +19,7 @@ def GetAtomicSymbol(atomic_num):
 
 
 class Atom:
-    def __init__(self, symbol, pos, useMass=True):
+    def __init__(self, symbol, pos, useMass=True, chain=''):
         self._symbol = symbol
         self.adjacent = []
         self.pos = pos
@@ -27,6 +27,7 @@ class Atom:
             self._mass = GetAtomicMass(symbol)
         else:
             self._mass = 1.0
+        self.chain = chain
 
     @property
     def mass(self):
@@ -42,13 +43,17 @@ class Atom:
 
 class Molecule:
     # A Molecule has atoms and equivalency classes
-    def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0):
+    def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0, chains=None):
         self._atoms = atoms
         if equivalence_classes:
             self._equivalence_classes = equivalence_classes
         else:
             self._equivalence_classes = []
         self._norm_factor = norm_factor
+        if chains:
+            self.chains = chains
+        else:
+            self.chains = []
 
     @property
     def atoms(self):

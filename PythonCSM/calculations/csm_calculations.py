@@ -143,5 +143,3 @@ def total_number_of_permutations_CPP(csm_args):
         for i in range(2, csm_args['sn_max'] + 1, 2):
             num_perms += num_permutations(csm_args['molecule'], i, 'SN')
         return num_perms
-
-

@@ -3,6 +3,7 @@ __author__ = 'YAEL'
 from openbabel import OBAtomAtomIter, OBConversion, OBMol
 from calculations.molecule import Atom, GetAtomicSymbol
 
+
 def open_non_csm_file(args_dict):
     """
     :param args_dict: dictionary of processed command line arguments
@@ -26,35 +27,35 @@ def open_non_csm_file(args_dict):
         raise ValueError("Error reading file " + args_dict['inFileName'] + " using OpenBabel")
     return mol
 
+
 def read_ob_mol(obmol, args_dict):
     """
     :param obmol: OBmol molecule
     :param args_dict: dictionary of processed command line arguments
-    :return: A list of Atoms
+    :return: A list of Atoms and a list of chains
     """
-
     num_atoms = obmol.NumAtoms()
     atoms = []
-
+    chains = set()
     for i in range(num_atoms):
         obatom = obmol.GetAtom(i + 1)
         if args_dict["ignoreSym"]:
             symbol = "XX"
         else:
-       		# get symbol by atomic number
+            # get symbol by atomic number
             symbol = GetAtomicSymbol(obatom.GetAtomicNum())
         position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
-
-        atom = Atom(symbol, position, args_dict["useMass"])
-
+        chain = obatom.GetResidue().GetChain()
+        chains.add(chain)
+        atom = Atom(symbol, position, args_dict["useMass"], chain)
         adjacent = []
         iter = OBAtomAtomIter(obatom)
         for neighbour_atom in iter:
             adjacent.append(neighbour_atom.GetIdx() - 1)
         atom.adjacent = adjacent
-
         atoms.append(atom)
-    return atoms
+    args_dict['chains'] = len(chains) > 1
+    return atoms, list(chains)
 
 
 def read_csm_file(f, args_dict):

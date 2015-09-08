@@ -33,13 +33,8 @@ def run_csm(args, print_output=True):
             return None
 
         if not csm_args['findPerm']:
-            if not 'perm' in csm_args and not 'dir' in csm_args:
-                total_perms_CPP = total_number_of_permutations_CPP(csm_args)
+            if 'perm' not in csm_args and 'dir' not in csm_args:
                 total_perms = total_number_of_permutations(csm_args)
-                print("==========================================")
-                print("CPP:\t\t\t\t%d" % total_perms_CPP)
-                print("Python:\t\t\t\t%d" % total_perms)
-                print("------------------------------------------")
                 time = 1.0 * total_perms / 3600 / APPROX_RUN_PER_SEC
                 if math.isnan(time):
                     # time is NaN

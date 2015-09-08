@@ -93,8 +93,8 @@ def open_files(parse_res, result):
                 atoms = read_csm_file(infile, result)
         else:
             result["obmol"] = open_non_csm_file(result)
-            atoms = read_ob_mol(result["obmol"], result)
-        result['molecule'] = Molecule(atoms)
+            (atoms, chains) = read_ob_mol(result["obmol"], result)
+        result['molecule'] = Molecule(atoms, chains)
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
     except ValueError:
@@ -185,6 +185,7 @@ def process_arguments(parse_res):
     result['displayPerms'] = parse_res.display_perms
     result['logFileName'] = parse_res.log
 
+    result['chains'] = False
     open_files(parse_res, result)
     check_arguments(result)
 
