@@ -1,7 +1,7 @@
 import math
 from calculations.csm_calculations_data import CSMCalculationsData
 from permutations import molecule_permuter
-from permutations.permuters import _get_cycle_structs
+from permutations.permuters import _get_cycle_structs, len_molecule_permuter
 
 __author__ = 'YAEL'
 
@@ -72,40 +72,6 @@ def csm_operation(current_calc_data, op_name, chains_perms):
     current_calc_data.csm = result_csm
 
     return csm.CreateSymmetricStructure(current_calc_data)
-
-
-def _len_all_circle_permutations(size):
-    return math.factorial(size-1)
-
-
-def _len_all_perms_from_cycle_struct(cycle_struct):
-    result = 1
-    for cycle in cycle_struct:
-        result *= _len_all_circle_permutations(len(cycle))
-        if result > 2**40:
-            raise ValueError("The calculation is too long")
-    return result
-
-
-def _len_group_permuter(group_size, cycle_size, add_cycles_of_two):
-    cycle_lengths = {1, cycle_size}
-    if add_cycles_of_two:
-        cycle_lengths.add(2)
-    result = 0
-    for cycle_struct in _get_cycle_structs(group_size, cycle_lengths):
-        result += _len_all_perms_from_cycle_struct(cycle_struct)
-        if result > 2**40:
-            raise ValueError("The calculation is too long")
-    return result
-
-
-def len_molecule_permuter(molecule, op_order, op_type):
-    result = 1
-    for group in molecule.equivalence_classes:
-        result *= _len_group_permuter(len(group), op_order, op_type == 'SN')
-        if result > 2**40:
-            raise ValueError("The calculation is too long")
-    return result
 
 
 def total_number_of_permutations(csm_args):

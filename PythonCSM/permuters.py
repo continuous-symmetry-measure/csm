@@ -1,11 +1,14 @@
 import itertools
 import sys
+from timeit import Timer
 from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.preprocess_molecule import preprocess_molecule
 import colorama
 from permutations import group_permuter, molecule_permuter
-from permutations.utils import cycle_decomposition
+from permutations.permuters import _len_group_permuter, _get_cycle_structs
+from permutations.utils import cycle_decomposition, perm_order
 from arguments import process_arguments, create_parser
+import numpy as np
 
 __author__ = 'zmbq'
 
@@ -23,7 +26,10 @@ colorama.init()
 # cycle_sizes: a list of legal cycle sizes
 # cycle_structs: A list of cycles in a permutation: [[0], [1, 3, 4], [2], ...]
 def compare(perm_size, group_size, add_groups_of_two):
-    csm_perms = list(csm.GetPermuterPermutations(perm_size, group_size, add_groups_of_two))
+    csm_perms = []
+    for csm_perm in csm.GetPermuterPermutations(perm_size, group_size, add_groups_of_two):
+        csm_perms.append(tuple(csm_perm))
+
     our_perms = list(group_permuter(perm_size, group_size, add_groups_of_two))
 
     allowed_cycles = {1, group_size}
@@ -33,6 +39,7 @@ def compare(perm_size, group_size, add_groups_of_two):
     print("C++ permutations: %d, Python permutations: %d, unique Python: %d" % (
     len(csm_perms), len(our_perms), len(set(our_perms))))
 
+    csm_perms = [tuple(perm) for perm in csm_perms]
     if set(csm_perms) == set(our_perms):
         return
 
@@ -142,6 +149,27 @@ def compare_molecule(args):
     result = csm.CsmOperation(data)
 
 
+group_size, cycle_size, add_groups_of_two = 11, 4, True
+
+def count_cpp():
+    count = 0
+    for perm in csm.GetPermuterPermutations(group_size, cycle_size, add_groups_of_two):
+        count += 1
+    print('C++ count: %d' % count)
+
+def count_python():
+    count = 0
+    for perm in group_permuter(group_size, cycle_size, add_groups_of_two):
+        count += 1
+    print('Python count: %d' % count)
+
+#timer_cpp = Timer(count_cpp)
+#time_cpp = timer_cpp.timeit(number=2)
+#print("Lists: %s" % (time_cpp / 2))
+
+#timer_python = Timer(count_python)
+#time_python = timer_python.timeit(number=2)
+#print("Numpy: %s" % (time_python /2))
 
 
 # print(list(_all_circles((2,3))))
@@ -150,8 +178,18 @@ def compare_molecule(args):
 # for s in structs:
 #    print(s)
 
-# compare(10, 6, True)
+def count_structs(perm_size, cycle_sizes):
+    count = 0
+    for struct in _get_cycle_structs(perm_size, cycle_sizes):
+        count += 1
+        print(struct)
+    return count
+
+# print(count_structs(7, [1,2,3]))
+
+print(_len_group_permuter(571, 2, False))
+# compare(11, 6, True)
 # print(list(_all_circles((0,1,2,3))))
 # print (list(_all_perms_from_cycle_struct(4, [[0,1], [2,3]])))
 
-compare_molecule(sys.argv[1:])
+# compare_molecule(sys.argv[1:])
