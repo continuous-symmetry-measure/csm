@@ -37,6 +37,7 @@ def read_ob_mol(obmol, args_dict):
     num_atoms = obmol.NumAtoms()
     atoms = []
     chains = set()
+    chains_list = []
     for i in range(num_atoms):
         obatom = obmol.GetAtom(i + 1)
         if args_dict["ignoreSym"]:
@@ -46,7 +47,9 @@ def read_ob_mol(obmol, args_dict):
             symbol = GetAtomicSymbol(obatom.GetAtomicNum())
         position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
         chain = obatom.GetResidue().GetChain()
-        chains.add(chain)
+        if chain not in chains:
+            chains.add(chain)
+            chains_list.append(chain)
         atom = Atom(symbol, position, args_dict["useMass"], chain)
         adjacent = []
         iter = OBAtomAtomIter(obatom)
@@ -54,8 +57,7 @@ def read_ob_mol(obmol, args_dict):
             adjacent.append(neighbour_atom.GetIdx() - 1)
         atom.adjacent = adjacent
         atoms.append(atom)
-    args_dict['chains'] = len(chains) > 1
-    return atoms, list(chains)
+    return atoms, chains_list
 
 
 def read_csm_file(f, args_dict):

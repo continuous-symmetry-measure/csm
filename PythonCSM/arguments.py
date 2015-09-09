@@ -45,7 +45,7 @@ def create_parser():
     parser.add_argument('--printLocal', action='store_true', default=False,
                         help='Print the local CSM (csm for each atom) in the output file')
     parser.add_argument('--approx', action='store_true', default=False,
-                        help='Equivalent to -detectOutliers -findperm together')
+                        help='Equivalent to --detectOutliers --findperm together')
     parser.add_argument('--keepCenter', action='store_true', default=False,
                         help='Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass')
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
@@ -91,10 +91,11 @@ def open_files(parse_res, result):
         if result['format'].lower() == "csm":
             with open(parse_res.input, 'r') as infile:
                 atoms = read_csm_file(infile, result)
+                result['molecule'] = Molecule(atoms)
         else:
             result["obmol"] = open_non_csm_file(result)
             (atoms, chains) = read_ob_mol(result["obmol"], result)
-        result['molecule'] = Molecule(atoms, chains)
+            result['molecule'] = Molecule(atoms, chains=chains)
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
     except ValueError:
@@ -185,7 +186,6 @@ def process_arguments(parse_res):
     result['displayPerms'] = parse_res.display_perms
     result['logFileName'] = parse_res.log
 
-    result['chains'] = False
     open_files(parse_res, result)
     check_arguments(result)
 
