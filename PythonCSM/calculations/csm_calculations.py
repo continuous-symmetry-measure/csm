@@ -53,7 +53,7 @@ def csm_operation(current_calc_data, op_name, chains_perms):
             new_perm = [-1 for i in perm]
             for chain_perm in chains_perms:
                 # Apply chain_perm on perm
-                for i in len(perm):
+                for i in range(len(perm)):
                     new_perm[chain_perm[i]] = perm[i]
 
                 current_calc_data.perm = new_perm
@@ -82,7 +82,8 @@ def _len_all_perms_from_cycle_struct(cycle_struct):
     result = 1
     for cycle in cycle_struct:
         result *= _len_all_circle_permutations(len(cycle))
-
+        if result > 2**40:
+            raise ValueError("The calculation is too long")
     return result
 
 
@@ -93,7 +94,8 @@ def _len_group_permuter(group_size, cycle_size, add_cycles_of_two):
     result = 0
     for cycle_struct in _get_cycle_structs(group_size, cycle_lengths):
         result += _len_all_perms_from_cycle_struct(cycle_struct)
-
+        if result > 2**40:
+            raise ValueError("The calculation is too long")
     return result
 
 
@@ -101,6 +103,8 @@ def len_molecule_permuter(molecule, op_order, op_type):
     result = 1
     for group in molecule.equivalence_classes:
         result *= _len_group_permuter(len(group), op_order, op_type == 'SN')
+        if result > 2**40:
+            raise ValueError("The calculation is too long")
     return result
 
 
