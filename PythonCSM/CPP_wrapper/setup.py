@@ -4,6 +4,7 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
 import sys
+import numpy
 
 BOOST_ROOT = r'd:\boost\1_57_0\lib64' # Default, Windows only. Override in local_settings for now
 
@@ -33,7 +34,7 @@ setup(
             "*",
             ["*.pyx"],
             language='c++',
-            include_dirs=['../../CSM'],
+            include_dirs=['../../CSM', numpy.get_include()],
             library_dirs=library_dirs,
             libraries=libraries,
             extra_compile_args=extra_compile_args,

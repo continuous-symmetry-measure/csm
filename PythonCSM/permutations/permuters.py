@@ -39,7 +39,7 @@ def _get_cycle_structs(perm_size, cycle_sizes):
     yield from generate([], list(range(perm_size)))
 
 
-def _all_circle_permutations(size):
+def _calc_all_circle_permutations(size):
     """ Returns the permutation of the cycle """
     # To compute a full cycle of length n, we take a permutation p of size n-1 and
     # create the cycle like so: 0 goes to p[0], p[0] to p[1], p[1] to p[2] and so on, until p[n-1] goes back to 0
@@ -57,7 +57,18 @@ def _all_circle_permutations(size):
         cycle_perm[necklace[-1]] = 0  # Add the [0] that is missing from the necklace
         yield cycle_perm
 
+_circle_cache = {}  # perm_size->all circles of size
+_CACHE_LIMIT = 10
 
+def _all_circle_permutations(size):
+    if size > _CACHE_LIMIT:
+        return _calc_all_circle_permutations(size)
+
+    if not size in _circle_cache:
+        entries = list(_calc_all_circle_permutations(size))
+        _circle_cache[size] = entries
+    result = _circle_cache[size]
+    return result
 
 def _all_perms_from_cycle_struct(perm_size, cycle_struct):
     """
@@ -83,7 +94,8 @@ def _all_perms_from_cycle_struct(perm_size, cycle_struct):
             # Example:
             # Lets say the permutation is (0, 1 ,2 ,3), and the cycle is (0, 1, 3)
             start_perm = perm[:]
-            for circle_perm in _all_circle_permutations(len(cycle)):
+            circles = _all_circle_permutations(len(cycle))
+            for circle_perm in circles:
                 # _all_circle_permtuations yields (1, 2, 0) and (2, 0 ,1)
                 # The permutations we need to return are (1, 3, 2, 0) and (3, 0, 2, 1) - these have
                 # one stationary point - 2, and a cycle of length 3.

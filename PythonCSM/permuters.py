@@ -30,7 +30,9 @@ def compare(perm_size, group_size, add_groups_of_two):
     for csm_perm in csm.GetPermuterPermutations(perm_size, group_size, add_groups_of_two):
         csm_perms.append(tuple(csm_perm))
 
-    our_perms = list(group_permuter(perm_size, group_size, add_groups_of_two))
+    our_perms = []
+    for our_perm in permutations.group_permuter(perm_size, group_size, add_groups_of_two):
+        our_perms.append(tuple(our_perm))
 
     allowed_cycles = {1, group_size}
     if add_groups_of_two:
@@ -148,53 +150,68 @@ def compare_molecule(args):
     data = CSMCalculationsData(csm_args)
     result = csm.CsmOperation(data)
 
+def big_test():
+    group_size, cycle_size, add_groups_of_two = 12, 8, True
+    cycle_sizes = {1, cycle_size}
+    if add_groups_of_two:
+        cycle_sizes.add(2)
 
-group_size, cycle_size, add_groups_of_two = 11, 4, True
-cycle_sizes = {1, cycle_size}
-if add_groups_of_two:
-    cycle_sizes.add(2)
+    def count_cpp():
+        count = 0
+        for perm in csm.GetPermuterPermutations(group_size, cycle_size, add_groups_of_two):
+            count += 1
+        print('C++ count: %d' % count)
 
-def count_cpp():
-    count = 0
-    for perm in csm.GetPermuterPermutations(group_size, cycle_size, add_groups_of_two):
-        count += 1
-    print('C++ count: %d' % count)
-
-def count_python():
-    count = 0
-    #for struct in _get_cycle_structs(group_size, cycle_sizes):
-    for perm in group_permuter(group_size, cycle_size, add_groups_of_two):
-        count += 1
-    print('Python count: %d' % count)
+    def count_python():
+        count = 0
+        #for struct in _get_cycle_structs(group_size, cycle_sizes):
+        for perm in group_permuter(group_size, cycle_size, add_groups_of_two):
+            count += 1
+        print('Python count: %d' % count)
 
 
-def count_cython():
-    count = 0
-    #for struct in permutations._get_cycle_structs(group_size, cycle_sizes):
-    for perm in permutations.group_permuter(group_size, cycle_size, add_groups_of_two):
-        count += 1
-    print('Cython count: %d' % count)
+    def count_cython():
+        count = 0
+        #for struct in permutations._get_cycle_structs(group_size, cycle_sizes):
+        for perm in permutations.group_permuter(group_size, cycle_size, add_groups_of_two):
+            count += 1
+        print('Cython count: %d' % count)
 
-timer_cython = Timer(count_cython)
-time_cython = timer_cython.timeit(number=2)
-print("Cython: %s" % (time_cython / 2))
+    timer_cython = Timer(count_cython)
+    time_cython = timer_cython.timeit(number=1)
+    print("Cython: %s" % time_cython)
 
-timer_python = Timer(count_python)
-time_python = timer_python.timeit(number=2)
-print("Python: %s" % (time_python / 2))
+    #timer_python = Timer(count_python)
+    #time_python = timer_python.timeit(number=1)
+    #print("Python: %s" % time_python)
 
-timer_cpp = Timer(count_cpp)
-time_cpp = timer_cpp.timeit(number=4)
-print("C++: %s" % (time_cpp / 4))
+    timer_cpp = Timer(count_cpp)
+    time_cpp = timer_cpp.timeit(number=1)
+    print("C++: %s" % time_cpp)
 
-def experiment(size, count):
-    total = 0
-    for entry in experiments.changer_array(size, count):
-        total += 1
+big_test()
 
-#timer = Timer(lambda: experiment(500, 200000))
-#print(timer.timeit(number=10))
+# compare(10, 5, True)
 
+def some_experiment():
+    def experiment(func, size, count):
+        total = 0
+        for entry in func(size, count):
+            # print(entry)
+            total += 1
+
+    funcs = [#experiments.measure_straight,
+             #experiments.measure_typed,
+             experiments.measure_array,
+             experiments.measure_memory_view,
+             experiments.measure_pointer,
+             experiments.measure_numpy]
+
+    for func in funcs:
+        timer = Timer(lambda: experiment(func, 5, 4000000))
+        print(func.__name__, '...')
+        print(timer.timeit(number=3) / 3)
+#some_experiment()
 
 # print(list(_all_circles((2,3))))
 
@@ -217,7 +234,7 @@ def ratio(group_size, cycle_size, add_groups_of_two):
     return total / structs
 
 #print(ratio(12, 2, True))
-# compare(11, 6, True)
+#compare(11, 6, True)
 # print(list(_all_circles((0,1,2,3))))
 # print (list(_all_perms_from_cycle_struct(4, [[0,1], [2,3]])))
 
