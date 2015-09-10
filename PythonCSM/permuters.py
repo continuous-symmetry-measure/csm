@@ -5,14 +5,14 @@ from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.preprocess_molecule import preprocess_molecule
 import colorama
 from permutations import group_permuter, molecule_permuter
-from permutations.permuters import _len_group_permuter, _get_cycle_structs
+from permutations.permuters import _len_group_permuter, _get_cycle_structs, _all_circle_permutations
 from permutations.utils import cycle_decomposition, perm_order
 from arguments import process_arguments, create_parser
 import numpy as np
 
 __author__ = 'zmbq'
 
-from CPP_wrapper import csm
+from CPP_wrapper import csm, permutations, experiments
 
 colorama.init()
 
@@ -86,7 +86,7 @@ def compare_molecule(args):
     csm.SetCSMOptions(csm_args)
 
     csm_perms = list(csm.GetMoleculePermutations())
-    our_perms = list(molecule_permuter(len(csm_args['molecule'].atoms), csm_args['molecule'].equivalence_classes,
+    our_perms = list(csm.molecule_permuter(len(csm_args['molecule'].atoms), csm_args['molecule'].equivalence_classes,
                                        csm_args['opOrder'], csm_args['type'] == 'SN'))
 
     print("C++ permutations: %d, Python permutations: %d, unique Python: %d" % (
@@ -150,6 +150,9 @@ def compare_molecule(args):
 
 
 group_size, cycle_size, add_groups_of_two = 11, 4, True
+cycle_sizes = {1, cycle_size}
+if add_groups_of_two:
+    cycle_sizes.add(2)
 
 def count_cpp():
     count = 0
@@ -159,17 +162,38 @@ def count_cpp():
 
 def count_python():
     count = 0
+    #for struct in _get_cycle_structs(group_size, cycle_sizes):
     for perm in group_permuter(group_size, cycle_size, add_groups_of_two):
         count += 1
     print('Python count: %d' % count)
 
-#timer_cpp = Timer(count_cpp)
-#time_cpp = timer_cpp.timeit(number=2)
-#print("Lists: %s" % (time_cpp / 2))
 
-#timer_python = Timer(count_python)
-#time_python = timer_python.timeit(number=2)
-#print("Numpy: %s" % (time_python /2))
+def count_cython():
+    count = 0
+    #for struct in permutations._get_cycle_structs(group_size, cycle_sizes):
+    for perm in permutations.group_permuter(group_size, cycle_size, add_groups_of_two):
+        count += 1
+    print('Cython count: %d' % count)
+
+timer_cython = Timer(count_cython)
+time_cython = timer_cython.timeit(number=2)
+print("Cython: %s" % (time_cython / 2))
+
+timer_python = Timer(count_python)
+time_python = timer_python.timeit(number=2)
+print("Python: %s" % (time_python / 2))
+
+timer_cpp = Timer(count_cpp)
+time_cpp = timer_cpp.timeit(number=4)
+print("C++: %s" % (time_cpp / 4))
+
+def experiment(size, count):
+    total = 0
+    for entry in experiments.changer_array(size, count):
+        total += 1
+
+#timer = Timer(lambda: experiment(500, 200000))
+#print(timer.timeit(number=10))
 
 
 # print(list(_all_circles((2,3))))
@@ -182,12 +206,17 @@ def count_structs(perm_size, cycle_sizes):
     count = 0
     for struct in _get_cycle_structs(perm_size, cycle_sizes):
         count += 1
-        print(struct)
     return count
 
-# print(count_structs(7, [1,2,3]))
+def ratio(group_size, cycle_size, add_groups_of_two):
+    cycle_sizes = {1, cycle_size}
+    if add_groups_of_two:
+        cycle_sizes.add(2)
+    structs = count_structs(group_size, cycle_sizes)
+    total = _len_group_permuter(group_size, cycle_size, add_groups_of_two)
+    return total / structs
 
-print(_len_group_permuter(571, 2, False))
+#print(ratio(12, 2, True))
 # compare(11, 6, True)
 # print(list(_all_circles((0,1,2,3))))
 # print (list(_all_perms_from_cycle_struct(4, [[0,1], [2,3]])))

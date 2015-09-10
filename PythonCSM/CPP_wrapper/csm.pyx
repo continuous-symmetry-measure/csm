@@ -113,9 +113,7 @@ cdef _convert_vector_to_array(vector[int] vec, int[:] ar):
 
 def GetPermuterPermutations(size, groupSize, addGroupsOfTwo):
     cdef vector[vector[int]] c_perms
-    print("Calling C++")
     c_perms = csmlib.GetPermuterPermutations(size, groupSize, addGroupsOfTwo)
-    print("Done")
 
     cdef array.array arr = array.clone(_perm_template, size, False)
     cdef int[:] arr_view = arr
