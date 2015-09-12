@@ -4,15 +4,15 @@ from timeit import Timer
 from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.preprocess_molecule import preprocess_molecule
 import colorama
-from permutations import group_permuter, molecule_permuter
-from permutations.permuters import _len_group_permuter, _get_cycle_structs, _all_circle_permutations
+from permutations.permuters import group_permuter, _get_cycle_structs, _all_circle_permutations
+from permutations.lengths import _len_group_permuter
 from permutations.utils import cycle_decomposition, perm_order
 from arguments import process_arguments, create_parser
 import numpy as np
 
 __author__ = 'zmbq'
 
-from CPP_wrapper import csm, permutations, experiments
+from CPP_wrapper import csm, permutations
 
 colorama.init()
 
@@ -181,37 +181,17 @@ def big_test():
     time_cython = timer_cython.timeit(number=1)
     print("Cython: %s" % time_cython)
 
-    #timer_python = Timer(count_python)
-    #time_python = timer_python.timeit(number=1)
-    #print("Python: %s" % time_python)
+    timer_python = Timer(count_python)
+    time_python = timer_python.timeit(number=1)
+    print("Python: %s" % time_python)
 
-#    timer_cpp = Timer(count_cpp)
-#    time_cpp = timer_cpp.timeit(number=1)
-#    print("C++: %s" % time_cpp)
+    timer_cpp = Timer(count_cpp)
+    time_cpp = timer_cpp.timeit(number=1)
+    print("C++: %s" % time_cpp)
 
 big_test()
 
 # compare(10, 5, True)
-
-def some_experiment():
-    def experiment(func, size, count):
-        total = 0
-        for entry in func(size, count):
-            # print(entry)
-            total += 1
-
-    funcs = [#experiments.measure_straight,
-             #experiments.measure_typed,
-             experiments.measure_array,
-             experiments.measure_memory_view,
-             experiments.measure_pointer,
-             experiments.measure_numpy]
-
-    for func in funcs:
-        timer = Timer(lambda: experiment(func, 5, 4000000))
-        print(func.__name__, '...')
-        print(timer.timeit(number=3) / 3)
-#some_experiment()
 
 # print(list(_all_circles((2,3))))
 

@@ -106,7 +106,7 @@ def DisplayPermutations():
 cdef array.array _perm_template = array.array('i', [])
 
 @cython.boundscheck(False)
-cdef _convert_vector_to_array(vector[int] vec, int[:] ar):
+cdef _convert_vector_to_array(vector[int] vec, int *ar):
     cdef int i
     for i in range(vec.size()):
         ar[i] = vec[i]
@@ -116,18 +116,20 @@ def GetPermuterPermutations(size, groupSize, addGroupsOfTwo):
     c_perms = csmlib.GetPermuterPermutations(size, groupSize, addGroupsOfTwo)
 
     cdef array.array arr = array.clone(_perm_template, size, False)
-    cdef int[:] arr_view = arr
+    cdef int* p = ptr(arr)
 
     for c_perm in c_perms:
-        _convert_vector_to_array(c_perm, arr_view)
+        _convert_vector_to_array(c_perm, p)
         yield arr
 
 def GetMoleculePermutations():
     cdef vector[vector[int]] c_perms
     c_perms = csmlib.GetMoleculePermutations()
     cdef array.array arr = array.clone(_perm_template, c_perms[0].size(), False)
+    cdef int *p = ptr(arr)
+
     for c_perm in c_perms:
-        _convert_vector_to_array(c_perm, arr)
+        _convert_vector_to_array(c_perm, p)
         yield arr
 
 def CalcRefPlane(python_data_obj):

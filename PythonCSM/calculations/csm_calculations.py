@@ -1,7 +1,5 @@
-import math
+from permutations.lengths import len_molecule_permuter
 from CPP_wrapper.permutations import molecule_permuter
-from calculations.csm_calculations_data import CSMCalculationsData
-from permutations.permuters import _get_cycle_structs, len_molecule_permuter
 
 __author__ = 'YAEL'
 

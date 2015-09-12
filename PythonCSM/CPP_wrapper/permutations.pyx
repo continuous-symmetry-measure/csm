@@ -1,17 +1,10 @@
 __author__ = 'zmbq'
 
+include "misc.pxi"
 import itertools
-from cpython cimport array
 from libcpp cimport bool
 
 cimport cython
-
-cdef array.array _int_array_template = array.array('i', [])
-cdef inline int *ptr(array.array int_array):
-    return int_array.data.as_ints
-
-cdef array.array int_array(int size, zeros=False):
-    return array.clone(_int_array_template, size, zeros)
 
 
 def _get_cycle_structs(perm_size, cycle_sizes):
@@ -233,5 +226,5 @@ def molecule_permuter(int molecule_size, groups, int cycle_size, int add_cycles_
                     p_perm[p_group[i]] = molecule_space
                 yield from generate(group_idx-1)    # Apply the rest of the circles
 
-    yield from generate(len(groups))
+    yield from generate(len(groups)-1)
 

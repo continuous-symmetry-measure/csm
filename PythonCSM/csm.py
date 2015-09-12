@@ -10,8 +10,7 @@ from input_output.writers import print_all_output
 from calculations.preprocess_molecule import preprocess_molecule
 from calculations.process_results import process_results
 from calculations.csm_calculations_data import CSMCalculationsData
-from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations_CPP, \
-    len_molecule_permuter, total_number_of_permutations
+from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations
 from arguments import process_arguments, create_parser
 from CPP_wrapper import csm
 
