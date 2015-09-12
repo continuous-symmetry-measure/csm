@@ -185,9 +185,9 @@ def big_test():
     #time_python = timer_python.timeit(number=1)
     #print("Python: %s" % time_python)
 
-    timer_cpp = Timer(count_cpp)
-    time_cpp = timer_cpp.timeit(number=1)
-    print("C++: %s" % time_cpp)
+#    timer_cpp = Timer(count_cpp)
+#    time_cpp = timer_cpp.timeit(number=1)
+#    print("C++: %s" % time_cpp)
 
 big_test()
 
@@ -234,7 +234,7 @@ def ratio(group_size, cycle_size, add_groups_of_two):
     return total / structs
 
 #print(ratio(12, 2, True))
-#compare(11, 6, True)
+compare(11, 6, True)
 # print(list(_all_circles((0,1,2,3))))
 # print (list(_all_perms_from_cycle_struct(4, [[0,1], [2,3]])))
 
