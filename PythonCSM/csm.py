@@ -47,12 +47,6 @@ def run_csm(args, print_output=True):
             if csm_args['timeOnly']:
                 return None
 
-        if csm_args['displayPerms']:
-            perms = csm.GetMoleculePermutations()
-            for i, perm in enumerate(perms):
-                print("%5d: %s" % (i, perm))
-            return None
-
         data = CSMCalculationsData(csm_args)
 
         # Code from the old mainRot.cpp

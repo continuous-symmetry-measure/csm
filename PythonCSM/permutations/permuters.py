@@ -1,11 +1,16 @@
 import itertools
+import warnings
 
 __author__ = 'zmbq'
 
+warnings.warn(
+    'This is the inefficient Python implementation, use CPP_Wrapper.permutations for the efficient  version',
+    RuntimeWarning)
 
 def _get_cycle_structs(perm_size, cycle_sizes):
     """
-    Generates a list of cycles in a permutation. The cycles cover the entire permutation, and are only of sizes in cycle_sizes
+    Generates a list of cycles in a permutation. The cycles cover the entire permutation,
+    and are only of sizes in cycle_sizes
     :param perm_size: Permutation size
     :param cycle_sizes: Allowed cycle sizes
     :return: A generator of a list of cycles covering the entire permtutation
