@@ -190,18 +190,3 @@ def process_arguments(parse_res):
         result['sn_max'] = 8
 
     return result
-
-if __name__ == '__main__':
-    # This code runs when you execute the script from PyCharm.
-    parser = create_parser()
-
-    args = ['--help']
-    args = ['c2', 'abc.xyz', 'abc.output', '--useperm', 'permFile.dat']
-    args = ['ci', 'testFiles/input.xyz', 'testFiles/output.txt', '--ignoreHy', '--removeHy', '--log', 'log.txt']
-
-    result = parser.parse_args(args)  # Call the parse
-
-    processed = process_arguments(result)
-
-    print('Processed results (type, opOrder, opName): ')
-    print(processed)
