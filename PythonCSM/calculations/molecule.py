@@ -1,3 +1,4 @@
+import itertools
 from openbabel import OBAtom, OBElementTable
 from calculations.normalizations import normalize_coords, de_normalize_coords
 
@@ -19,7 +20,7 @@ def GetAtomicSymbol(atomic_num):
 
 
 class Atom:
-    def __init__(self, symbol, pos, useMass=True):
+    def __init__(self, symbol, pos, useMass=True, chain=''):
         self._symbol = symbol
         self.adjacent = []
         self.pos = pos
@@ -27,6 +28,7 @@ class Atom:
             self._mass = GetAtomicMass(symbol)
         else:
             self._mass = 1.0
+        self._chain = chain
 
     @property
     def mass(self):
@@ -36,19 +38,28 @@ class Atom:
     def symbol(self):
         return self._symbol
 
+    @property
+    def chain(self):
+        return self._chain
+
     def __str__(self):
         return "Symbol: %s\tPos: %s\tAdjacent: %s" % (self.symbol, self.pos, self.adjacent)
 
 
 class Molecule:
     # A Molecule has atoms and equivalency classes
-    def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0):
+    def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0, chains=None):
         self._atoms = atoms
         if equivalence_classes:
             self._equivalence_classes = equivalence_classes
         else:
             self._equivalence_classes = []
         self._norm_factor = norm_factor
+        if chains and len(chains) > 1:
+            self._chains = chains
+        else:
+            self._chains = None
+        self._chains_perms = None
 
     @property
     def atoms(self):
@@ -62,6 +73,14 @@ class Molecule:
     def norm_factor(self):
         # Normalization factor. Defaults to 1.0 if normalize wasn't called
         return self._norm_factor
+
+    @property
+    def chains(self):
+        return self._chains
+
+    @property
+    def chains_perms(self):
+        return self._chains_perms
 
     def set_norm_factor(self, value):
         self._norm_factor = value
@@ -105,8 +124,8 @@ class Molecule:
             groups.append([])
 
             for j in range(atoms_size):
-                if j in marked\
-                        or len(self._atoms[i].adjacent) != len(self._atoms[j].adjacent)\
+                if j in marked \
+                        or len(self._atoms[i].adjacent) != len(self._atoms[j].adjacent) \
                         or self._atoms[i].symbol != self._atoms[j].symbol:
                     continue
 
@@ -116,10 +135,8 @@ class Molecule:
 
             group_num += 1
 
-        # Comment from C++:
         # iteratively refine the breakdown into groups
-        # In a previous version we had 'depth' iterations, this version breaks into subgroups at an infinite depth -
-        # as long as there's something to break, it is broken
+        # break into subgroups at an infinite depth - as long as there's something to break, it is broken
 
         divided_group = True
         num_iters = 0
@@ -142,7 +159,6 @@ class Molecule:
                         # add elem to new subGroup
                         sub_group.append(group[j])
                         group[j] = -1
-                        atoms_group_num[j]
 
                 if len(sub_group) > 0:
                     divided_group = True
@@ -155,10 +171,48 @@ class Molecule:
 
             groups.extend(new_groups)
 
-        #TODO: LOG(debug) << "Broken into groups with " << num_iters << " iterations.";
+        # TODO: LOG(debug) << "Broken into groups with " << num_iters << " iterations.";
         print("Broken into groups with %d iterations." % num_iters)
 
         self._equivalence_classes = groups
+
+        if self.chains:
+            self.process_chains()
+
+    def process_chains(self):
+        # Divide all the equivalence classes so that no equivalence class includes two atoms from different chains
+        divided_groups = []
+
+        chain_perms = list(itertools.permutations(self.chains))  # all permutations between chains
+        chain_perms.remove(tuple(self.chains))  # we don't need the identity permutation
+        # here we will put permutations between atoms that replace chains one by another like in chain_perms
+        elements_perms = [[-1 for atom in self.atoms] for perm in chain_perms]
+
+        for group in self.equivalence_classes:
+            sub_groups = {}
+            for chain in self.chains:
+                sub_groups[chain] = []
+            for elem in group:
+                sub_groups[self.atoms[elem].chain].append(elem)  # put an atom into a suitable chain sub_group
+            for chain in sub_groups:
+                if len(sub_groups[chain]) == len(group)/len(self._chains):  # check that all chains are the same length
+                    divided_groups.append(sub_groups[chain])
+                else:
+                    raise ValueError("Illegal chains molecule structure")
+
+            # Here we build a permutation between atoms of the current group so that one chain replaces
+            # another according to chain_perms
+            for (k, chain_perm) in enumerate(chain_perms):
+                for i in range(len(self.chains)):
+                    first = sub_groups[self.chains[i]]
+                    second = sub_groups[chain_perm[i]]
+                    # Atoms of the first subgroup will be put on place of the atoms of the second sub_group by
+                    # our permutation
+                    for j in range(len(first)):
+                        elements_perms[k][first[j]] = second[j]
+
+        self._equivalence_classes = divided_groups
+        self._chains_perms = elements_perms
 
     def is_similar(self, atoms_group_num, a, b):
         found = True
@@ -222,10 +276,10 @@ class Molecule:
             if i == to_remove[j]:
                 j += 1
             else:
-                move_indexes[i] = i-j
+                move_indexes[i] = i - j
         j -= 1
 
-        for i in range(size-1, 0, -1):
+        for i in range(size - 1, 0, -1):
             if i == to_remove[j]:
                 # remove the atom i
                 self._atoms.pop(i)
@@ -253,5 +307,3 @@ class Molecule:
                     self._equivalence_classes.pop(i)
         else:  # removeHy
             self.find_equivalence_classes()
-
-

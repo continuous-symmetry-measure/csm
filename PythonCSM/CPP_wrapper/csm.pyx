@@ -4,6 +4,8 @@ include "misc.pxi"
 include "molecule.pxi"
 
 from calculations.csm_calculations_data import CSMCalculationsData
+from cpython cimport array
+cimport cython
 
 cdef init_options(csmlib.python_cpp_bridge &options, args):
     options.opType = cs(args['type'])
@@ -101,26 +103,34 @@ def ComputeLocalCSM  (python_data_obj):
 def DisplayPermutations():
     csmlib.DisplayPermutations()
 
-def _convert_perms_to_python(vector[vector[int]] c_perms):
-    perms = []
-    cdef int i
-    for i in range(c_perms.size()):
-        perm = []
-        for j in range(c_perms[i].size()):
-            perm.append(c_perms[i][j])
-        perms.append(tuple(perm))
+cdef array.array _perm_template = array.array('i', [])
 
-    return perms
+@cython.boundscheck(False)
+cdef _convert_vector_to_array(vector[int] vec, int *ar):
+    cdef int i
+    for i in range(vec.size()):
+        ar[i] = vec[i]
 
 def GetPermuterPermutations(size, groupSize, addGroupsOfTwo):
     cdef vector[vector[int]] c_perms
     c_perms = csmlib.GetPermuterPermutations(size, groupSize, addGroupsOfTwo)
-    return _convert_perms_to_python(c_perms)
+
+    cdef array.array arr = array.clone(_perm_template, size, False)
+    cdef int* p = ptr(arr)
+
+    for c_perm in c_perms:
+        _convert_vector_to_array(c_perm, p)
+        yield arr
 
 def GetMoleculePermutations():
     cdef vector[vector[int]] c_perms
     c_perms = csmlib.GetMoleculePermutations()
-    return _convert_perms_to_python(c_perms)
+    cdef array.array arr = array.clone(_perm_template, c_perms[0].size(), False)
+    cdef int *p = ptr(arr)
+
+    for c_perm in c_perms:
+        _convert_vector_to_array(c_perm, p)
+        yield arr
 
 def CalcRefPlane(python_data_obj):
     cdef csmlib.csm_calculation_data data

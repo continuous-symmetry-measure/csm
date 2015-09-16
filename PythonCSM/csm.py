@@ -32,7 +32,7 @@ def run_csm(args, print_output=True):
             return None
 
         if not csm_args['findPerm']:
-            if not 'perm' in csm_args and not 'dir' in csm_args:
+            if 'perm' not in csm_args and 'dir' not in csm_args:
                 total_perms = total_number_of_permutations(csm_args)
                 time = 1.0 * total_perms / 3600 / APPROX_RUN_PER_SEC
                 if math.isnan(time):

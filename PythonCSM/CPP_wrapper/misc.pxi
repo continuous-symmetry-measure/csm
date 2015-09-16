@@ -1,4 +1,6 @@
 from libcpp.vector cimport vector
+from cpython cimport array
+
 
 def cs(s):
     """ Converts a Python string to a C++ string """
@@ -33,3 +35,10 @@ cdef vector[int] list_to_vector_int(lst):
     for x in lst:
         vec.push_back(x)
     return vec
+
+cdef array.array _int_array_template = array.array('i', [])
+cdef inline int *ptr(array.array int_array):
+    return int_array.data.as_ints
+
+cdef array.array int_array(int size, zeros=False):
+    return array.clone(_int_array_template, size, zeros)

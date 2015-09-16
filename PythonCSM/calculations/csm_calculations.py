@@ -1,6 +1,5 @@
-import math
-from calculations.csm_calculations_data import CSMCalculationsData
-from permutations import molecule_permuter
+from permutations.lengths import len_molecule_permuter
+from CPP_wrapper.permutations import molecule_permuter
 
 __author__ = 'YAEL'
 
@@ -22,11 +21,11 @@ def perform_operation(csm_args, data):
         if csm_args['findPerm']:
             result = csm.FindBestPerm(data)
         else:
-            result = csm_operation(data, csm_args['opName'])
+            result = csm_operation(data, csm_args['opName'], csm_args['molecule'].chains_perms)
     return result
 
 
-def csm_operation(current_calc_data, op_name):
+def csm_operation(current_calc_data, op_name, chains_perms):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -50,9 +49,20 @@ def csm_operation(current_calc_data, op_name):
         current_calc_data = csm.CalcRefPlane(current_calc_data)
         # check, if it's a minimal csm, update dir and optimal perm
         if current_calc_data.csm < result_csm:
-            result_csm = current_calc_data.csm
-            dir = current_calc_data.dir[:]
-            optimal_perm = perm[:]
+            (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], perm[:])
+
+        if chains_perms:
+            new_perm = [-1 for i in perm]
+            for chain_perm in chains_perms:
+                # Apply chain_perm on perm
+                for i in range(len(perm)):
+                    new_perm[chain_perm[i]] = perm[i]
+
+                current_calc_data.perm = new_perm
+                current_calc_data = csm.CalcRefPlane(current_calc_data)
+                # check, if it's a minimal csm, update dir and optimal perm
+                if current_calc_data.csm < result_csm:
+                    (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], new_perm[:])
 
     if result_csm == MAXDOUBLE:
         # failed to find csm value for any permutation
@@ -67,44 +77,10 @@ def csm_operation(current_calc_data, op_name):
 
 
 def total_number_of_permutations(csm_args):
-    """
-    Calculates the number of permutations to be checked in the csm calculation
-    :param csm_args: the csm arguments dictionary
-    :return: the number of permutations
-    """
-
-    def num_permutations(molecule, operation_order, operation_type):
-        total = 1.0
-        if operation_order > 2 and operation_type == 'SN':
-            # In this case - we enumerate over groups of 1, 2, N
-            for group in molecule.equivalence_classes:
-                group_size = len(group)
-                temp = 0
-                fact = math.factorial(group_size)
-                # Enumerate over the number of groups of size two
-                for k in range(int(group_size / 2) + 1):
-                    # Enumerate over the number of groups of size operation_order
-                    for j in range(int((group_size - 2 * k) / operation_order) + 1):
-                        temp += fact / (math.factorial(group_size - j * operation_order - k * 2) *
-                                        math.pow(operation_order, j) * math.pow(2, k) * math.factorial(k))
-                total *= temp
-        else:
-            for group in molecule.equivalence_classes:
-                group_size = len(group)
-                temp = 0
-                fact = math.factorial(group_size)
-                for j in range(int(group_size / operation_order) + 1):
-                    temp += fact / (math.factorial(group_size - j * operation_order) *
-                                    math.pow(operation_order, j) * math.factorial(j))
-                total *= temp
-        return total
-
     if csm_args['type'] != 'CH':
-        return num_permutations(csm_args['molecule'], csm_args['opOrder'], csm_args['type'])
+        return len_molecule_permuter(csm_args['molecule'], csm_args['opOrder'], csm_args['type'])
     else:
-        num_perms = num_permutations(csm_args['molecule'], 2, 'SN')
+        num_perms = len_molecule_permuter(csm_args['molecule'], 2, 'SN')
         for i in range(2, csm_args['sn_max'] + 1, 2):
-            num_perms += num_permutations(csm_args['molecule'], i, 'SN')
+            num_perms += len_molecule_permuter(csm_args['molecule'], i, 'SN')
         return num_perms
-
-

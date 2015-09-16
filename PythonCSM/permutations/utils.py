@@ -1,3 +1,5 @@
+from math import factorial, log, exp
+
 __author__ = 'zmbq'
 
 def apply_perm(array, perm):
@@ -41,3 +43,27 @@ def cycle_decomposition(perm):
 def display_perms(prefix, perms):
     for i, perm in enumerate(perms):
         print("%s %4d: %s\torder=%d\tcycles=%s" % (prefix, i, perm, perm_order(perm), cycle_decomposition(perm)))
+
+
+def log_fact(n):
+    """
+    Returns the log(n!)
+    """
+    result = 0.0
+    for i in range(1,n+1):
+        result += log(i)
+    return result
+
+
+def log_nCr(n, r):
+    """
+    Calculates the log of n choose r
+    """
+    if r > n:
+        raise ValueError("r must be <= n for nCr")
+    if r < 0:
+        raise ValueError("r must be non-negative")
+    if n <= 0:
+        raise ValueError("n must be positive")
+
+    return log_fact(n) - log_fact(n-r) - log_fact(r)

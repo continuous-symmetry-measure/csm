@@ -5,6 +5,5 @@
     <orderEntry type="jdk" jdkName="CSM env" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="Testing" />
-    <orderEntry type="module" module-name="Testing" />
   </component>
 </module>
