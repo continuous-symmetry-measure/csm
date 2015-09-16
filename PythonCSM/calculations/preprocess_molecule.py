@@ -30,3 +30,10 @@ def preprocess_molecule(csm_args):
 
     csm_args['molecule'].normalize(csm_args['keepCenter'])
 
+    if csm_args['printPermutations']:
+        # Print the equivalency classes
+        print("Equivalence classes:")
+        for cls in csm_args['molecule']._equivalence_classes:
+            print(cls)
+
+

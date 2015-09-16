@@ -49,6 +49,8 @@ def create_parser():
     parser.add_argument('--keepCenter', action='store_true', default=False,
                         help='Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass')
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
+    parser.add_argument('--printPermutations', action='store_true', default=False,
+                        help='Print all the enumerated permutations')
 
     return parser
 
@@ -182,6 +184,7 @@ def process_arguments(parse_res):
     if parse_res.writeOpenu:
         result['format'] = "PDB"
     result['logFileName'] = parse_res.log
+    result['printPermutations'] = parse_res.printPermutations
 
     open_files(parse_res, result)
     check_arguments(result)

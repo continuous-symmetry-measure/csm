@@ -22,19 +22,22 @@ def perform_operation(csm_args, data):
         if csm_args['findPerm']:
             result = csm.FindBestPerm(data)
         else:
-            result = csm_operation(data, csm_args['opName'], csm_args['molecule'].chains_perms)
+            result = csm_operation(data, csm_args) # csm_args['opName'], csm_args['molecule'].chains_perms)
     return result
 
 
-def csm_operation(current_calc_data, op_name, chains_perms):
+def csm_operation(current_calc_data, csm_args): # op_name, chains_perms):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
     Once it finds the optimal permutation , calls the CreateSymmetricStructure on the optimal permutation
     :param current_calc_data: current calculations data object
-    :param op_name: operation name
+    :param args: The CSM arguments
     :return: the calculations data object with the permutation, csm, dMin and direction values updated
     """
+    op_name = csm_args['opName']
+    chains_perms = csm_args['molecule'].chains_perms
+
     result_csm = MAXDOUBLE
     dir = []
     optimal_perm = []
@@ -42,6 +45,8 @@ def csm_operation(current_calc_data, op_name, chains_perms):
     # calculate csm for each valid permutation & remember minimal
     for perm in molecule_permuter(len(current_calc_data.molecule.atoms), current_calc_data.molecule.equivalence_classes,
                                   current_calc_data.opOrder, current_calc_data.operationType == 'SN'):
+        if csm_args['printPermutations']:
+            print(perm)
         current_calc_data.perm = perm
         current_calc_data = csm.CalcRefPlane(current_calc_data)
         # check, if it's a minimal csm, update dir and optimal perm
