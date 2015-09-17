@@ -51,8 +51,8 @@ def create_parser():
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
     parser.add_argument('--printPermutations', action='store_true', default=False,
                         help='Print all the enumerated permutations')
-    parser.add_argument('--ignoreChains', action='store_true', default=False,
-                        help='Ignore chains in the PDB file')
+    parser.add_argument('--useChains', action='store_true', default=False,
+                        help='Use chains specified in the PDB file in order to calculate permutations')
 
     return parser
 
@@ -85,6 +85,9 @@ def check_arguments(processed):
         if len(processed["perm"]) != len(processed["molecule"].atoms):
             raise ValueError("Invalid permutation")
 
+    if processed['useChains'] and not processed['molecule'].chains:
+        raise ValueError("--useChains specified but no chains provided in the molecule file")
+
 
 def open_files(parse_res, result):
 
@@ -97,7 +100,7 @@ def open_files(parse_res, result):
         else:
             result["obmol"] = open_non_csm_file(result)
             (atoms, chains) = read_ob_mol(result["obmol"], result)
-            if parse_res.ignoreChains:  # Todo: Print chains
+            if not parse_res.useChains:  # Todo: Print chains
                 chains = []
             result['molecule'] = Molecule(atoms, chains=chains)
     except IOError:
@@ -179,7 +182,7 @@ def process_arguments(parse_res):
     result['printNorm'] = parse_res.printNorm
     result['findPerm'] = parse_res.findperm
     result['detectOutliers'] = parse_res.detectOutliers
-    result['ignoreChains'] = parse_res.ignoreChains
+    result['useChains'] = parse_res.useChains
     if parse_res.approx:
         result['findPerm'] = True
         result['detectOutliers'] = True

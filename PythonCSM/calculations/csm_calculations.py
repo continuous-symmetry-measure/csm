@@ -1,6 +1,6 @@
 from permutations.lengths import len_molecule_permuter
-from permutations.permuters import molecule_permuter
-# from CPP_wrapper.permutations import molecule_permuter
+# from permutations.permuters import molecule_permuter
+from CPP_wrapper.permutations import molecule_permuter
 
 __author__ = 'YAEL'
 

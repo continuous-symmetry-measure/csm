@@ -1,11 +1,10 @@
 import math
-
+import sys
 __author__ = 'zmbq'
 
 """
 Performs some tests on the CSM C++ wrapper
 """
-import sys
 from input_output.writers import print_all_output
 from calculations.preprocess_molecule import preprocess_molecule
 from calculations.process_results import process_results
@@ -16,6 +15,9 @@ from CPP_wrapper import csm
 
 MINDOUBLE = 1e-8
 APPROX_RUN_PER_SEC = 8e4
+
+
+sys.setrecursionlimit(10000)
 
 
 def run_csm(args, print_output=True):
