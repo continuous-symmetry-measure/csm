@@ -12,7 +12,8 @@ def create_parser():
     parser = ArgumentParser()
 
     # The first three positional arguments
-    parser.add_argument('type', choices=('c2', 'c3', 'c4', 'c8', 's2', 's4', 's6', 's8', 'cs', 'ci', 'ch'),
+    parser.add_argument('type',
+                        choices=('c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 's2', 's4', 's6', 's8', 'cs', 'ci', 'ch'),
                         help='The type of operation')
     parser.add_argument('input', help='Input file')
     parser.add_argument('output', help='Output file')

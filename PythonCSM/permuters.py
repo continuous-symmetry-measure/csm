@@ -4,7 +4,7 @@ from timeit import Timer
 from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.preprocess_molecule import preprocess_molecule
 import colorama
-from permutations.permuters import group_permuter, _get_cycle_structs, _all_circle_permutations
+from permutations.permuters import group_permuter, _get_cycle_structs, all_circle_permutations
 from permutations.lengths import _len_group_permuter
 from permutations.utils import cycle_decomposition, perm_order
 from arguments import process_arguments, create_parser
@@ -12,7 +12,7 @@ import numpy as np
 
 __author__ = 'zmbq'
 
-from CPP_wrapper import csm, permutations
+from CPP_wrapper import csm, fast_permutations
 
 colorama.init()
 
@@ -31,7 +31,7 @@ def compare(perm_size, group_size, add_groups_of_two):
         csm_perms.append(tuple(csm_perm))
 
     our_perms = []
-    for our_perm in permutations.group_permuter(perm_size, group_size, add_groups_of_two):
+    for our_perm in fast_permutations.group_permuter(perm_size, group_size, add_groups_of_two):
         our_perms.append(tuple(our_perm))
 
     allowed_cycles = {1, group_size}
@@ -173,7 +173,7 @@ def big_test():
     def count_cython():
         count = 0
         #for struct in permutations._get_cycle_structs(group_size, cycle_sizes):
-        for perm in permutations.group_permuter(group_size, cycle_size, add_groups_of_two):
+        for perm in fast_permutations.group_permuter(group_size, cycle_size, add_groups_of_two):
             count += 1
         print('Cython count: %d' % count)
 

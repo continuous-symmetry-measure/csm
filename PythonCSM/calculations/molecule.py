@@ -1,6 +1,8 @@
-import itertools
 from openbabel import OBAtom, OBElementTable
 from calculations.normalizations import normalize_coords, de_normalize_coords
+from collections import namedtuple
+# from permutations.permuters import all_circle_permutations
+from CPP_wrapper.fast_permutations import all_circle_permutations
 
 __author__ = 'zmbq'
 
@@ -59,7 +61,7 @@ class Molecule:
             self._chains = chains
         else:
             self._chains = None
-        self._chains_perms = None
+        self._chained_perms = None
 
     @property
     def atoms(self):
@@ -80,7 +82,7 @@ class Molecule:
 
     @property
     def chains_perms(self):
-        return self._chains_perms
+        return self._chained_perms
 
     def set_norm_factor(self, value):
         self._norm_factor = value
@@ -183,10 +185,12 @@ class Molecule:
         # Divide all the equivalence classes so that no equivalence class includes two atoms from different chains
         divided_groups = []
 
-        chain_perms = list(itertools.permutations(self.chains))  # all permutations between chains
-        chain_perms.remove(tuple(self.chains))  # we don't need the identity permutation
-        # here we will put permutations between atoms that replace chains one by another like in chain_perms
-        elements_perms = [[-1 for atom in self.atoms] for perm in chain_perms]
+        # all permutations between chains so that no chain remains at the same place
+        chain_perms = all_circle_permutations(len(self.chains))
+
+        # here we will keep the chain_perms and the suitable permutations between atoms in ChainedPermutation objects
+        chained_perms = []
+        ChainedPermutation = namedtuple('ChainedPermutation', ['chain_perm', 'atom_perm'])
 
         for group in self.equivalence_classes:
             sub_groups = {}
@@ -202,17 +206,20 @@ class Molecule:
 
             # Here we build a permutation between atoms of the current group so that one chain replaces
             # another according to chain_perms
-            for (k, chain_perm) in enumerate(chain_perms):
+            for chain_perm in enumerate(chain_perms):
                 for i in range(len(self.chains)):
                     first = sub_groups[self.chains[i]]
                     second = sub_groups[chain_perm[i]]
                     # Atoms of the first subgroup will be put on place of the atoms of the second sub_group by
                     # our permutation
+                    elements_perm = [-1 for atom in self.atoms]
                     for j in range(len(first)):
-                        elements_perms[k][first[j]] = second[j]
+                        elements_perm[first[j]] = second[j]
+
+                    chained_perms.append(ChainedPermutation(chain_perm, elements_perm))
 
         self._equivalence_classes = divided_groups
-        self._chains_perms = elements_perms
+        self._chained_perms = chained_perms
 
     def is_similar(self, atoms_group_num, a, b):
         found = True

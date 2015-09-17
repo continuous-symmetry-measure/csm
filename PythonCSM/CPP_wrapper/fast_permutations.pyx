@@ -86,7 +86,7 @@ def _calc_all_circle_permutations(size, bool for_caching=False):
 _circle_cache = {}  # perm_size->all circles of size
 _CACHE_LIMIT = 10
 
-def _all_circle_permutations(size):
+def all_circle_permutations(size):
     if size > _CACHE_LIMIT:
         return _calc_all_circle_permutations(size, for_caching=False)
 
@@ -133,7 +133,7 @@ def _all_perms_from_cycle_struct(perm_size, cycle_struct):
             # Lets say the permutation is (0, 1 ,2 ,3), and the cycle is (0, 1, 3)
 
             p_cycle = ptr(cycle)
-            for circle_perm in _all_circle_permutations(cycle_len):
+            for circle_perm in all_circle_permutations(cycle_len):
                 p_circle_perm = ptr(circle_perm)
                 # _all_circle_permtuations yields (1, 2, 0) and (2, 0 ,1)
                 # The permutations we need to return are (1, 3, 2, 0) and (3, 0, 2, 1) - these have

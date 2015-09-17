@@ -1,6 +1,6 @@
 from permutations.lengths import len_molecule_permuter
 # from permutations.permuters import molecule_permuter
-from CPP_wrapper.permutations import molecule_permuter
+from CPP_wrapper.fast_permutations import molecule_permuter
 
 __author__ = 'YAEL'
 
@@ -52,7 +52,8 @@ def csm_operation(current_calc_data, csm_args): # op_name, chains_perms):
         # check, if it's a minimal csm, update dir and optimal perm
         if current_calc_data.csm < result_csm:
             (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], perm[:])
-
+        """print("CSM: %7lf\tPermutation: " % current_calc_data.csm + str(current_calc_data.perm)+"\tDirection: " +
+              str(current_calc_data.dir))"""
         if chains_perms:
             new_perm = [-1 for i in perm]
             for chain_perm in chains_perms:

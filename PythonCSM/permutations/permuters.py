@@ -7,6 +7,7 @@ warnings.warn(
     'This is the inefficient Python implementation, use CPP_Wrapper.permutations for the efficient  version',
     RuntimeWarning)
 
+
 def _get_cycle_structs(perm_size, cycle_sizes):
     """
     Generates a list of cycles in a permutation. The cycles cover the entire permutation,
@@ -63,7 +64,8 @@ def _calc_all_circle_permutations(size):
 _circle_cache = {}  # perm_size->all circles of size
 _CACHE_LIMIT = 10
 
-def _all_circle_permutations(size):
+
+def all_circle_permutations(size):
     if size > _CACHE_LIMIT:
         return _calc_all_circle_permutations(size)
 
@@ -72,6 +74,7 @@ def _all_circle_permutations(size):
         _circle_cache[size] = entries
     result = _circle_cache[size]
     return result
+
 
 def _all_perms_from_cycle_struct(perm_size, cycle_struct):
     """
@@ -96,7 +99,7 @@ def _all_perms_from_cycle_struct(perm_size, cycle_struct):
         else:
             # Example:
             # Lets say the permutation is (0, 1 ,2 ,3), and the cycle is (0, 1, 3)
-            circles = _all_circle_permutations(len(cycle))
+            circles = all_circle_permutations(len(cycle))
             for circle_perm in circles:
                 # _all_circle_permtuations yields (1, 2, 0) and (2, 0 ,1)
                 # The permutations we need to return are (1, 3, 2, 0) and (3, 0, 2, 1) - these have
@@ -126,7 +129,6 @@ def group_permuter(group_size, cycle_size, add_cycles_of_two):
     for cycle_struct in _get_cycle_structs(group_size, cycle_lengths):
         # Loop over all cycle structures, which are of the allowed lengths covering the entire permutation
         yield from _all_perms_from_cycle_struct(group_size, cycle_struct) # Return all permutations for each cycle structure
-
 
 
 def molecule_permuter(molecule_size, groups, cycle_size, add_cycles_of_two):
