@@ -34,6 +34,6 @@ def preprocess_molecule(csm_args):
         # Print the equivalency classes
         print("Equivalence classes:")
         for cls in csm_args['molecule']._equivalence_classes:
-            print(cls)
+            print("%3d: %s" % (len(cls), cls))
 
 

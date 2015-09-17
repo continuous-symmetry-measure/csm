@@ -51,6 +51,8 @@ def create_parser():
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
     parser.add_argument('--printPermutations', action='store_true', default=False,
                         help='Print all the enumerated permutations')
+    parser.add_argument('--ignoreChains', action='store_true', default=False,
+                        help='Ignore chains in the PDB file')
 
     return parser
 
@@ -95,6 +97,8 @@ def open_files(parse_res, result):
         else:
             result["obmol"] = open_non_csm_file(result)
             (atoms, chains) = read_ob_mol(result["obmol"], result)
+            if parse_res.ignoreChains:  # Todo: Print chains
+                chains = []
             result['molecule'] = Molecule(atoms, chains=chains)
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
@@ -175,6 +179,7 @@ def process_arguments(parse_res):
     result['printNorm'] = parse_res.printNorm
     result['findPerm'] = parse_res.findperm
     result['detectOutliers'] = parse_res.detectOutliers
+    result['ignoreChains'] = parse_res.ignoreChains
     if parse_res.approx:
         result['findPerm'] = True
         result['detectOutliers'] = True

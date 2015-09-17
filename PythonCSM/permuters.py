@@ -151,7 +151,7 @@ def compare_molecule(args):
     result = csm.CsmOperation(data)
 
 def big_test():
-    group_size, cycle_size, add_groups_of_two = 12, 8, True
+    group_size, cycle_size, add_groups_of_two = 11, 7, True
     cycle_sizes = {1, cycle_size}
     if add_groups_of_two:
         cycle_sizes.add(2)
@@ -181,9 +181,9 @@ def big_test():
     time_cython = timer_cython.timeit(number=1)
     print("Cython: %s" % time_cython)
 
-    timer_python = Timer(count_python)
-    time_python = timer_python.timeit(number=1)
-    print("Python: %s" % time_python)
+    #timer_python = Timer(count_python)
+    #time_python = timer_python.timeit(number=1)
+    #print("Python: %s" % time_python)
 
     timer_cpp = Timer(count_cpp)
     time_cpp = timer_cpp.timeit(number=1)
@@ -214,7 +214,7 @@ def ratio(group_size, cycle_size, add_groups_of_two):
     return total / structs
 
 #print(ratio(12, 2, True))
-compare(11, 6, True)
+# compare(11, 6, True)
 # print(list(_all_circles((0,1,2,3))))
 # print (list(_all_perms_from_cycle_struct(4, [[0,1], [2,3]])))
 
