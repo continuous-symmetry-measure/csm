@@ -22,7 +22,7 @@
 #endif
 
 extern const int DIM;
-class python_molecule;
+struct python_molecule;
 
 class Molecule
 {

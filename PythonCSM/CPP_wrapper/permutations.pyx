@@ -182,6 +182,8 @@ def molecule_permuter(int molecule_size, groups, int cycle_size, int add_cycles_
     cdef int *p_perm = ptr(perm)
 
     cdef int i
+    for i in range(molecule_size):
+        p_perm[i] = i
 
     def generate(group_idx):
         """ Goes over all the permutations of the first group, applies each
