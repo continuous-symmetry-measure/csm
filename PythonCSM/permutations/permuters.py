@@ -131,7 +131,7 @@ def group_permuter(group_size, cycle_size, add_cycles_of_two):
         yield from _all_perms_from_cycle_struct(group_size, cycle_struct) # Return all permutations for each cycle structure
 
 
-def molecule_permuter(molecule_size, groups, cycle_size, add_cycles_of_two):
+def molecule_permuter(elements, groups, cycle_size, add_cycles_of_two):
     """
     Generates all permutations of a molecule
     :param molecule_size: Molecule size
@@ -140,25 +140,25 @@ def molecule_permuter(molecule_size, groups, cycle_size, add_cycles_of_two):
     :param add_cycles_of_two: When true, cycles of size of two are legal
     :return: Generator for all the permutations
     """
-    def generate(perm, groups_left):
+    def generate(ordered_elements, groups_left):
         """ Goes over all the permutations of the first group, applies each
          permutation and recursively aplies permutations of the entire groups
-        :param perm:
+        :param ordered_elements:
         :param groups_left:
         :return:
         """
         if not groups_left:
-            yield tuple(perm)
+            yield tuple(ordered_elements)
             return
 
         group = groups_left[0]
         groups_left = groups_left[1:]
         if len(group) == 1:
-            yield from generate(perm, groups_left)
+            yield from generate(ordered_elements, groups_left)
         else:
             # Example:
             # Lets say the permutation is (0, 1 ,2 ,3), and the group is (0, 1, 3)
-            start_perm = perm[:]
+            start_elements_order = ordered_elements[:]
             for group_perm in group_permuter(len(group), cycle_size, add_cycles_of_two):
                 # group_permuter yields (1, 2, 0) and (2, 0 ,1)
                 # The permutations we need to return are (1, 3, 2, 0) and (3, 0, 2, 1) - these have
@@ -166,12 +166,13 @@ def molecule_permuter(molecule_size, groups, cycle_size, add_cycles_of_two):
                 # To do this, we need to convert the group_perm from (1,2,0) and (2,0,1) to (1,3,0) and (3,0,1)
                 converted_group = [group[i] for i in group_perm]  # Converted circle is now (1,3,0) or (3,0,1)
                 for i in range(len(converted_group)):
-                    perm[group[i]] = converted_group[i]  # Perm is now (1, 3, 2, 0) or (3, 0, 2, 1) <--- The converted_circle applied to (0, 1, 3)
-                yield from generate(perm, groups_left)    # Apply the rest of the circles
-                perm = start_perm[:]
+                    ordered_elements[group[i]] = start_elements_order[converted_group[i]]
+                    # Perm is now (1, 3, 2, 0) or (3, 0, 2, 1) <--- The converted_circle applied to (0, 1, 3)
+                yield from generate(ordered_elements, groups_left)    # Apply the rest of the circles
+                ordered_elements = start_elements_order[:]
 
-    perm = list(range(molecule_size))  # The trivial permutation
-    yield from generate(perm, groups)
+    elements_order = elements  # The starting elements order
+    yield from generate(elements_order, groups)
 
 
-
+print(list(molecule_permuter(['a', 'b', 'c', 'd', 'e'], [[0, 1, 3], [2, 4]], 2, False)))

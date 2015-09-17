@@ -1,6 +1,6 @@
 from permutations.lengths import len_molecule_permuter
-# from permutations.permuters import molecule_permuter
-from CPP_wrapper.fast_permutations import molecule_permuter
+from permutations.permuters import molecule_permuter
+# from CPP_wrapper.fast_permutations import molecule_permuter
 
 __author__ = 'YAEL'
 
@@ -43,8 +43,10 @@ def csm_operation(current_calc_data, csm_args): # op_name, chains_perms):
     optimal_perm = []
     current_calc_data.dir = [0, 0, 0]
     # calculate csm for each valid permutation & remember minimal
-    for perm in molecule_permuter(len(current_calc_data.molecule.atoms), current_calc_data.molecule.equivalence_classes,
-                                  current_calc_data.opOrder, current_calc_data.operationType == 'SN'):
+    for perm in molecule_permuter(list(range(len(current_calc_data.molecule.atoms))),
+                                  current_calc_data.molecule.equivalence_classes,
+                                  current_calc_data.opOrder,
+                                  current_calc_data.operationType == 'SN'):
         if csm_args['printPermutations']:
             print(perm)
         current_calc_data.perm = perm
