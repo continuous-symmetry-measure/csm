@@ -175,4 +175,4 @@ def molecule_permuter(elements, groups, cycle_size, add_cycles_of_two):
     yield from generate(elements_order, groups)
 
 
-print(list(molecule_permuter(['a', 'b', 'c', 'd', 'e'], [[0, 1, 3], [2, 4]], 2, False)))
+# print(list(molecule_permuter(['a', 'b', 'c', 'd', 'e'], [[0, 1, 3], [2, 4]], 2, False)))

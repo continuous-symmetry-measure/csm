@@ -1,6 +1,8 @@
 from permutations.lengths import len_molecule_permuter
 from permutations.permuters import molecule_permuter
 # from CPP_wrapper.fast_permutations import molecule_permuter
+from calculations.molecule import ChainedPermutation
+
 
 __author__ = 'YAEL'
 
@@ -22,11 +24,11 @@ def perform_operation(csm_args, data):
         if csm_args['findPerm']:
             result = csm.FindBestPerm(data)
         else:
-            result = csm_operation(data, csm_args) # csm_args['opName'], csm_args['molecule'].chains_perms)
+            result = csm_operation(data, csm_args)  # csm_args['opName'], csm_args['molecule'].chains_perms)
     return result
 
 
-def csm_operation(current_calc_data, csm_args): # op_name, chains_perms):
+def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -36,38 +38,34 @@ def csm_operation(current_calc_data, csm_args): # op_name, chains_perms):
     :return: the calculations data object with the permutation, csm, dMin and direction values updated
     """
     op_name = csm_args['opName']
-    chains_perms = csm_args['molecule'].chains_perms
+    chained_perms = csm_args['molecule'].chained_perms
 
     result_csm = MAXDOUBLE
     dir = []
     optimal_perm = []
     current_calc_data.dir = [0, 0, 0]
     # calculate csm for each valid permutation & remember minimal
-    for perm in molecule_permuter(list(range(len(current_calc_data.molecule.atoms))),
-                                  current_calc_data.molecule.equivalence_classes,
-                                  current_calc_data.opOrder,
-                                  current_calc_data.operationType == 'SN'):
-        if csm_args['printPermutations']:
-            print(perm)
-        current_calc_data.perm = perm
-        current_calc_data = csm.CalcRefPlane(current_calc_data)
-        # check, if it's a minimal csm, update dir and optimal perm
-        if current_calc_data.csm < result_csm:
-            (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], perm[:])
-        """print("CSM: %7lf\tPermutation: " % current_calc_data.csm + str(current_calc_data.perm)+"\tDirection: " +
-              str(current_calc_data.dir))"""
-        if chains_perms:
-            new_perm = [-1 for i in perm]
-            for chain_perm in chains_perms:
-                # Apply chain_perm on perm
-                for i in range(len(perm)):
-                    new_perm[chain_perm[i]] = perm[i]
 
-                current_calc_data.perm = new_perm
-                current_calc_data = csm.CalcRefPlane(current_calc_data)
-                # check, if it's a minimal csm, update dir and optimal perm
-                if current_calc_data.csm < result_csm:
-                    (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], new_perm[:])
+    if not chained_perms:
+        # If no chained permutations specified - the regular permutations will be used
+        chained_perms = [ChainedPermutation(1, list(range(len(current_calc_data.molecule.atoms))))]
+
+    # Iterate through the permutations that swap chains
+    for chained_perm in chained_perms:
+        # and apply on each of them all the permutations on elements inside of each chain
+        for perm in molecule_permuter(chained_perm.atom_perm,
+                                      current_calc_data.molecule.equivalence_classes,
+                                      current_calc_data.opOrder,
+                                      current_calc_data.operationType == 'SN'):
+            if csm_args['printPermutations']:
+                print(perm)
+            current_calc_data.perm = perm
+            current_calc_data = csm.CalcRefPlane(current_calc_data)
+            # check, if it's a minimal csm, update dir and optimal perm
+            if current_calc_data.csm < result_csm:
+                (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], perm[:])
+            """print("CSM: %7lf\tPermutation: " % current_calc_data.csm + str(current_calc_data.perm)+"\tDirection: " +
+                  str(current_calc_data.dir))"""
 
     if result_csm == MAXDOUBLE:
         # failed to find csm value for any permutation

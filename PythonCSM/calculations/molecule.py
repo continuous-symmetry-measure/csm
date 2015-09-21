@@ -1,6 +1,6 @@
+from collections import namedtuple
 from openbabel import OBAtom, OBElementTable
 from calculations.normalizations import normalize_coords, de_normalize_coords
-from collections import namedtuple
 # from permutations.permuters import all_circle_permutations
 from CPP_wrapper.fast_permutations import all_circle_permutations
 
@@ -8,6 +8,7 @@ __author__ = 'zmbq'
 
 _tbl = OBElementTable()
 
+ChainedPermutation = namedtuple('ChainedPermutation', ['chain_perm', 'atom_perm'])
 
 def GetAtomicMass(symbol):
     atomicNum = _tbl.GetAtomicNum(symbol)
@@ -81,7 +82,7 @@ class Molecule:
         return self._chains
 
     @property
-    def chains_perms(self):
+    def chained_perms(self):
         return self._chained_perms
 
     def set_norm_factor(self, value):
@@ -190,7 +191,6 @@ class Molecule:
 
         # here we will keep the chain_perms and the suitable permutations between atoms in ChainedPermutation objects
         chained_perms = []
-        ChainedPermutation = namedtuple('ChainedPermutation', ['chain_perm', 'atom_perm'])
 
         for group in self.equivalence_classes:
             sub_groups = {}
