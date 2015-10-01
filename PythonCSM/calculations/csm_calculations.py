@@ -1,3 +1,4 @@
+import csv
 from permutations.lengths import len_molecule_permuter
 from permutations.permuters import molecule_permuter
 # from CPP_wrapper.fast_permutations import molecule_permuter
@@ -46,6 +47,11 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     current_calc_data.dir = [0, 0, 0]
     # calculate csm for each valid permutation & remember minimal
 
+    csv_writer = None
+    if csm_args['outPermFile']:
+        csv_writer = csv.writer(csm_args['outPermFile'], lineterminator='\n')
+        csv_writer.writerow(['Permutation', 'Direction', 'CSM'])
+
     if not chained_perms:
         # If no chained permutations specified - the regular permutations will be used
         chained_perms = [ChainedPermutation(1, list(range(len(current_calc_data.molecule.atoms))))]
@@ -57,15 +63,13 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
                                       current_calc_data.molecule.equivalence_classes,
                                       current_calc_data.opOrder,
                                       current_calc_data.operationType == 'SN'):
-            if csm_args['printPermutations']:
-                print(perm)
             current_calc_data.perm = perm
             current_calc_data = csm.CalcRefPlane(current_calc_data)
             # check, if it's a minimal csm, update dir and optimal perm
             if current_calc_data.csm < result_csm:
                 (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], perm[:])
-            """print("CSM: %7lf\tPermutation: " % current_calc_data.csm + str(current_calc_data.perm)+"\tDirection: " +
-                  str(current_calc_data.dir))"""
+            if csv_writer:
+                csv_writer.writerow([perm, current_calc_data.dir, current_calc_data.csm])
 
     if result_csm == MAXDOUBLE:
         # failed to find csm value for any permutation

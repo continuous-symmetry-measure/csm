@@ -2,6 +2,7 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
+import csv
 from input_output.readers import read_dir_file, read_perm_file, read_csm_file, open_non_csm_file, read_ob_mol
 from calculations.molecule import Molecule
 
@@ -50,8 +51,8 @@ def create_parser():
     parser.add_argument('--keepCenter', action='store_true', default=False,
                         help='Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass')
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
-    parser.add_argument('--printPermutations', action='store_true', default=False,
-                        help='Print all the enumerated permutations')
+    parser.add_argument('--outputPerms', action='store',
+                        help='Writes all enumerated permutations to file')
     parser.add_argument('--useChains', action='store_true', default=False,
                         help='Use chains specified in the PDB file in order to calculate permutations')
 
@@ -135,6 +136,15 @@ def open_files(parse_res, result):
         except (ValueError, IndexError):
             raise ValueError("Can't read legal direction from file " + parse_res.usedir)
 
+    # Try to open the permutation output file
+    if parse_res.outputPerms:
+        try:
+            result['outPermFile'] = open(parse_res.outputPerms, 'w')
+        except IOError:
+            raise ValueError("Failed to open output permutation file " + parse_res.outputPerms + " for writing")
+    else:
+        result['outPermFile'] = None
+
 
 def process_arguments(parse_res):
 
@@ -193,7 +203,6 @@ def process_arguments(parse_res):
     if parse_res.writeOpenu:
         result['format'] = "PDB"
     result['logFileName'] = parse_res.log
-    result['printPermutations'] = parse_res.printPermutations
 
     open_files(parse_res, result)
     check_arguments(result)

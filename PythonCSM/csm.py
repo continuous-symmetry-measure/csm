@@ -91,6 +91,7 @@ def run_csm(args, print_output=True):
     finally:
         try:
             csm_args['outFile'].close()
+            csm_args['outPermFile'].close()
         except:
             pass
 

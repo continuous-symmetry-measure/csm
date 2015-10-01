@@ -235,7 +235,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 			maxval = roots[i].real();
 	}
 
-	LOG(debug) << setprecision(6) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
+	LOG(debug) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
 	scl = 0.0;
 	if ((isZeroAngle) || (options.opOrder == 2)) {
 		// If we are in zero angle case, we should pick the direction matching maxval
@@ -298,13 +298,13 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}
 
 
-	LOG(debug) << setprecision(6) << fixed << "csm=" << csm << " maxval=" << maxval << " scl=" << scl;
-	LOG(debug) << setprecision(6) << fixed << "dir: " << dir[0] << " " << dir[1] << " " << dir[2];
+	LOG(debug) << fixed << "csm=" << csm << " maxval=" << maxval << " scl=" << scl;
+	LOG(debug) << fixed << "dir: " << dir[0] << " " << dir[1] << " " << dir[2];
 	csm += (maxval - scl) / 2;
 	csm = fabs(100 * (1.0 - csm / options.opOrder));
 	free(curPerm);
 
-	LOG(debug) << setprecision(6) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
+	LOG(debug) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
 
 	return csm;
 }
@@ -875,10 +875,10 @@ void estimatePerm(Molecule* m, int *perm, double *dir, OperationType type) {
 				rotated[j][k] += rotaionMatrix[k][l] * m->pos()[j][l];
 			}
 		}
-		LOG(debug) << boost::format("%d (%4.2f, %4.2f, %4.2f) -> (%4.2f, %4.2f, %4.2f)") %
+		/*LOG(debug) << boost::format("%d (%4.2f, %4.2f, %4.2f) -> (%4.2f, %4.2f, %4.2f)") %
 			j %
 			m->pos()[j][0] % m->pos()[j][1] % m->pos()[j][2] %
-			rotated[j][0] % rotated[j][1] % rotated[j][2];
+			rotated[j][0] % rotated[j][1] % rotated[j][2]; */
 	}
 
 	// run over the groups
