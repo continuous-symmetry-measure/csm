@@ -112,10 +112,12 @@ def calc_ref_plane(current_calc_data):
     Q = [numpy.matrix([[atom.pos[0]], [atom.pos[1]], [atom.pos[2]]]) for atom in current_calc_data.molecule.atoms]
     Q_transpose = [Q[i].transpose() for i in range(size)]
 
+    """
     print("======================================================================\nQ:")
     for i in range(size):
         print("%d:" % i)
         print(Q[i])
+    """
 
     # A is calculated according to formula (17) in the paper
     A = numpy.matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
@@ -123,7 +125,7 @@ def calc_ref_plane(current_calc_data):
     # B is calculated according to formula (12) in the paper
     B = numpy.matrix([0, 0, 0])
 
-    numpy.set_printoptions(precision=4)
+    numpy.set_printoptions(precision=6)
 
 
     # compute matrices according to current perm and its powers (the identity does not contribute anyway)
@@ -140,6 +142,7 @@ def calc_ref_plane(current_calc_data):
         Q_tag = [Q[cur_perm[i]] for i in range(size)]
         Q_transpose_tag = [Q_tag[i].transpose() for i in range(size)]
 
+        """
         print("Q_tag:")
         for j in range(size):
             print("%d:" % j)
@@ -148,6 +151,7 @@ def calc_ref_plane(current_calc_data):
         for j in range(size):
             print("%d:" % j)
             print(Q_transpose_tag[j])
+        """
 
         # A_intermediate is calculated according to the formula (5) in the paper
         A_intermediate = numpy.matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
@@ -163,8 +167,8 @@ def calc_ref_plane(current_calc_data):
         else:
             A = A + (A_intermediate * (1 - math.cos(theta)))
 
-        print("Theta: %lf\tA - intermediate:" % theta)
-        print(A_intermediate)
+        # print("Theta: %lf\tA - intermediate:" % theta)
+        # print(A_intermediate)
 
     # TODO: LOG(debug) << "Computed matrix is:" << setprecision(4);
     # TODO: LOG(debug) << A[0][0] << " " << A[0][1] << " " << A[0][2];
@@ -229,9 +233,7 @@ def calc_ref_plane(current_calc_data):
             if math.fabs(lambdas[i] - lambda_max) < min_dist:
                 min_dist = math.fabs(lambdas[i] - lambda_max)
                 minarg = i
-
-        current_calc_data.dir = m[minarg].tolist()[0][:]
-
+        current_calc_data.dir = [m.tolist()[i][minarg] for i in range(3)]
     else:
         for i in range(3):
             current_calc_data.dir[i] = 0.0
