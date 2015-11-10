@@ -168,20 +168,28 @@ def group_permuter(int group_size, int cycle_size, int add_cycles_of_two):
         yield from _all_perms_from_cycle_struct(group_size, cycle_struct) # Return all permutations for each cycle structure
 
 
-def molecule_permuter(int molecule_size, groups, int cycle_size, int add_cycles_of_two):
+def molecule_permuter(molecule, groups, int cycle_size, int add_cycles_of_two):
     """
     Generates all permutations of a molecule
-    :param molecule_size: Molecule size
+    :param molecule: The molecule (this may not be the unit permutation, as outer permutations are in place)
     :param groups: Equivalency groups
     :param cycle_size: Allowed cycle size
     :param add_cycles_of_two: When true, cycles of size of two are legal
     :return: Generator for all the permutations
     """
 
+    # Convert molecule into efficient structures
+    cdef int molecule_size = len(molecule)
+    cdef array.array original_molecule = int_array(molecule_size)
+    cdef int *p_original = ptr(original_molecule)
+
+    cdef int i
+    for i in range(molecule_size):
+        p_original[i] = molecule[i]
+
     cdef array.array perm = int_array(molecule_size)
     cdef int *p_perm = ptr(perm)
 
-    cdef int i
     for i in range(molecule_size):
         p_perm[i] = i
 
@@ -225,7 +233,7 @@ def molecule_permuter(int molecule_size, groups, int cycle_size, int add_cycles_
                 # we call this 'molecule_space'
                 for i in range(group_len):
                     molecule_space = p_group[p_group_perm[i]]
-                    p_perm[p_group[i]] = molecule_space
+                    p_perm[p_group[i]] = p_original[molecule_space]
                 yield from generate(group_idx-1)    # Apply the rest of the circles
 
     yield from generate(len(groups)-1)

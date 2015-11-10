@@ -4,7 +4,7 @@ from timeit import Timer
 from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.preprocess_molecule import preprocess_molecule
 import colorama
-from permutations.permuters import group_permuter, _get_cycle_structs, all_circle_permutations
+from permutations.permuters import group_permuter, _get_cycle_structs, molecule_permuter, all_circle_permutations
 from permutations.lengths import _len_group_permuter
 from permutations.utils import cycle_decomposition, perm_order
 from arguments import process_arguments, create_parser
@@ -189,8 +189,6 @@ def big_test():
     time_cpp = timer_cpp.timeit(number=1)
     print("C++: %s" % time_cpp)
 
-big_test()
-
 # compare(10, 5, True)
 
 # print(list(_all_circles((2,3))))
@@ -212,6 +210,23 @@ def ratio(group_size, cycle_size, add_groups_of_two):
     structs = count_structs(group_size, cycle_sizes)
     total = _len_group_permuter(group_size, cycle_size, add_groups_of_two)
     return total / structs
+
+def maayan():
+    groups = [[0, 1, 3], [2, 4]]
+    perm = [-1, -2, -3, -4, -5]
+
+    for perm in fast_permutations.molecule_permuter(perm, groups, 2, False):
+        print(perm)
+
+    print()
+    perm = [-1, -2, -3, -4, -5]
+    for perm in molecule_permuter(perm, groups, 2, False):
+        print(perm)
+
+maayan()
+
+# print(list(molecule_permuter(['a', 'b', 'c', 'd', 'e'], [[0, 1, 3], [2, 4]], 2, False)))
+
 
 #print(ratio(12, 2, True))
 # compare(11, 6, True)
