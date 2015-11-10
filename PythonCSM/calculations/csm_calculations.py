@@ -1,8 +1,12 @@
 import csv
+
+import math
+
 import numpy
+# from permutations.lengths import len_molecule_permuter
 from permutations.lengths import len_molecule_permuter
 from permutations.permuters import molecule_permuter
-# from CPP_wrapper.fast_permutations import molecule_permuter
+from CPP_wrapper.fast_permutations import molecule_permuter
 from calculations.molecule import ChainedPermutation
 from CPP_wrapper import csm
 
@@ -64,7 +68,8 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
                                       current_calc_data.opOrder,
                                       current_calc_data.operationType == 'SN'):
             current_calc_data.perm = perm
-            current_calc_data = calc_ref_plane(current_calc_data)
+            # current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
+            current_calc_data = calc_ref_plane(current_calc_data) # Python version
             # check, if it's a minimal csm, update dir and optimal perm
             if current_calc_data.csm < result_csm:
                 (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], perm[:])
@@ -98,79 +103,71 @@ def calc_ref_plane(current_calc_data):
     is_improper = current_calc_data.operationType != 'CN'
     is_zero_angle = current_calc_data.operationType == 'CS'
 
-    # TODO:	LOG(debug) << "calcRefPlane called";
-    # TODO: LOG(debug) << "Permutation is " << permstrm.str();
-    # TODO: LOG(debug) << "Direction is " << setprecision(2) << fixed << dir[0] << " " << dir[1] << " " << dir[2];
-
     print('calcRefPlane called')
     print('Permutation is ' + str(current_calc_data.perm))
     print("Direction is %lf %lf %lf" % (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2]))
-
-    # initialize identity permutation
-    cur_perm = [i for i in range(size)]
 
     # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
     # - described on the first page of the paper
     Q = [numpy.matrix([[atom.pos[0]], [atom.pos[1]], [atom.pos[2]]]) for atom in current_calc_data.molecule.atoms]
     Q_transpose = [Q[i].transpose() for i in range(size)]
 
-    """
-    print("======================================================================\nQ:")
-    for i in range(size):
-        print("%d:" % i)
-        print(Q[i])
-    """
+    def calc_A_B():
+        cur_perm = [i for i in range(size)]
 
-    # A is calculated according to formula (17) in the paper
-    A = numpy.matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+        # A is calculated according to formula (17) in the paper
+        A = numpy.matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
 
-    # B is calculated according to formula (12) in the paper
-    B = numpy.matrix([0, 0, 0])
+        # B is calculated according to formula (12) in the paper
+        B = numpy.matrix([0, 0, 0])
 
-    numpy.set_printoptions(precision=6)
+        numpy.set_printoptions(precision=6)
 
 
-    # compute matrices according to current perm and its powers (the identity does not contribute anyway)
-    for i in range(1, current_calc_data.opOrder):
-        if is_zero_angle:
-            theta = 0.0
-        else:
-            theta = 2 * math.pi * i / current_calc_data.opOrder
+        # compute matrices according to current perm and its powers (the identity does not contribute anyway)
+        for i in range(1, current_calc_data.opOrder):
+            if is_zero_angle:
+                theta = 0.0
+            else:
+                theta = 2 * math.pi * i / current_calc_data.opOrder
 
-        # The i'th power of the permutation
-        cur_perm = [current_calc_data.perm[cur_perm[j]] for j in range(size)]
+            # The i'th power of the permutation
+            cur_perm = [current_calc_data.perm[cur_perm[j]] for j in range(size)]
 
-        # Q_tag is Q after applying the i'th permutation on atoms
-        Q_tag = [Q[cur_perm[i]] for i in range(size)]
-        Q_transpose_tag = [Q_tag[i].transpose() for i in range(size)]
+            # Q_tag is Q after applying the i'th permutation on atoms
+            Q_tag = [Q[cur_perm[i]] for i in range(size)]
+            Q_transpose_tag = [Q_tag[i].transpose() for i in range(size)]
 
-        """
-        print("Q_tag:")
-        for j in range(size):
-            print("%d:" % j)
-            print(Q_tag[j])
+            """
+            print("Q_tag:")
+            for j in range(size):
+                print("%d:" % j)
+                print(Q_tag[j])
 
-        for j in range(size):
-            print("%d:" % j)
-            print(Q_transpose_tag[j])
-        """
+            for j in range(size):
+                print("%d:" % j)
+                print(Q_transpose_tag[j])
+            """
 
-        # A_intermediate is calculated according to the formula (5) in the paper
-        A_intermediate = numpy.matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
+            # A_intermediate is calculated according to the formula (5) in the paper
+            A_intermediate = numpy.matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
 
-        for k in range(size):
-            A_intermediate = A_intermediate + (Q_tag[k] * Q_transpose[k]) + (Q[k] * Q_transpose_tag[k])
-            B = B + numpy.cross(Q[k].transpose(), Q_tag[k].transpose())
+            for k in range(size):
+                A_intermediate = A_intermediate + (Q_tag[k] * Q_transpose[k]) + (Q[k] * Q_transpose_tag[k])
+                B = B + numpy.cross(Q[k].transpose(), Q_tag[k].transpose())
 
-        B *= math.sin(theta)
+            B *= math.sin(theta)
 
-        if is_improper and (i % 2) == 1:
-            A = A + (A_intermediate * (-1 - math.cos(theta)))
-        else:
-            A = A + (A_intermediate * (1 - math.cos(theta)))
+            if is_improper and (i % 2) == 1:
+                A = A + (A_intermediate * (-1 - math.cos(theta)))
+            else:
+                A = A + (A_intermediate * (1 - math.cos(theta)))
 
-        # print("Theta: %lf\tA - intermediate:" % theta)
-        # print(A_intermediate)
+            # print("Theta: %lf\tA - intermediate:" % theta)
+            # print(A_intermediate)
+        return A, B
+
+    A,B = calc_A_B()
 
     # TODO: LOG(debug) << "Computed matrix is:" << setprecision(4);
     # TODO: LOG(debug) << A[0][0] << " " << A[0][1] << " " << A[0][2];
