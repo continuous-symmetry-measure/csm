@@ -1,3 +1,7 @@
+"""
+Classes of molecules, atoms and some related helpers
+"""
+
 from collections import namedtuple
 from openbabel import OBAtom, OBElementTable
 from calculations.normalizations import normalize_coords, de_normalize_coords
@@ -11,6 +15,10 @@ _tbl = OBElementTable()
 ChainedPermutation = namedtuple('ChainedPermutation', ['chain_perm', 'atom_perm'])
 
 def GetAtomicMass(symbol):
+    """ Returns the atomic mass of an element
+    :param symbol: Element's symbol
+    :return: The atomic mass
+    """
     atomicNum = _tbl.GetAtomicNum(symbol)
     atom = OBAtom()
     atom.SetAtomicNum(atomicNum)
@@ -19,10 +27,16 @@ def GetAtomicMass(symbol):
 
 
 def GetAtomicSymbol(atomic_num):
+    """ Returns the element symbol from the atomic number
+    :param atomic_num: Atomic number
+    :return: Element symbol
+    """
     return _tbl.GetSymbol(atomic_num)
 
 
 class Atom:
+    """ A single atom, alogn with its position and neighbors
+    """
     def __init__(self, symbol, pos, useMass=True, chain=''):
         self._symbol = symbol
         self.adjacent = []
@@ -50,6 +64,7 @@ class Atom:
 
 
 class Molecule:
+    """ A molecule, including its atoms and equivalency classes """
     # A Molecule has atoms and equivalency classes
     def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0, chains=None, obmol=None):
         self._atoms = atoms

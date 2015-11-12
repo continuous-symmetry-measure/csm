@@ -5,11 +5,11 @@ import math
 import sys
 
 from arguments import get_arguments
+from calculations.normalizations import normalize_coords, de_normalize_coords
 
 __author__ = 'zmbq'
 
 from input_output.writers import print_all_output
-from calculations.process_results import process_results
 from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations
 from CPP_wrapper import csm
@@ -19,6 +19,18 @@ APPROX_RUN_PER_SEC = 8e4
 
 
 sys.setrecursionlimit(10000)
+
+def process_results(results, csm_args):
+    """
+    Final normalizations and de-normalizations
+    :param results: CSM calculations results
+    :param csm_args: CSM args
+    """
+    results.molecule.set_norm_factor(csm_args['molecule'].norm_factor)
+    masses = [atom.mass for atom in results.molecule.atoms]
+    normalize_coords(results.outAtoms, masses, csm_args['keepCenter'])
+    results.molecule.de_normalize()
+    results.outAtoms = de_normalize_coords(results.outAtoms, results.molecule.norm_factor)
 
 
 def run_csm(args, print_output=True):
