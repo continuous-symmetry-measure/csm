@@ -51,7 +51,7 @@ class Atom:
 
 class Molecule:
     # A Molecule has atoms and equivalency classes
-    def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0, chains=None):
+    def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0, chains=None, obmol=None):
         self._atoms = atoms
         if equivalence_classes:
             self._equivalence_classes = equivalence_classes
@@ -63,6 +63,7 @@ class Molecule:
         else:
             self._chains = None
         self._chained_perms = None
+        self._obmol = obmol
 
     @property
     def atoms(self):
@@ -314,3 +315,22 @@ class Molecule:
                     self._equivalence_classes.pop(i)
         else:  # removeHy
             self.find_equivalence_classes()
+
+    def preprocess(self, removeHy, ignoreHy, keepCenter, **kwargs):
+        """
+        Preprocess a molecule based on the arguments passed to CSM
+        :param removeHy: True if hydrogen atoms should be removed
+        :param ignoreHy: True when hydrogen atoms should be ignored when calculating the equivalence classes
+        :param keepCenter: True when the molecule's CoM shouldn't be moved
+        :param kwargs: Place holder for all other csm_args.
+        You can call it by passing **csm_args
+        """
+        if not removeHy:
+            self.find_equivalence_classes()
+
+        if ignoreHy or removeHy:
+            if self._obmol:
+                self._obmol.DeleteHydrogens()
+            remove_list = ["H", " H"]
+            self.strip_atoms(remove_list, ignoreHy)
+        self.normalize(keepCenter)
