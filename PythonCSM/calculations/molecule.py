@@ -1,3 +1,7 @@
+"""
+Classes of molecules, atoms and some related helpers
+"""
+
 from collections import namedtuple
 from openbabel import OBAtom, OBElementTable
 from calculations.normalizations import normalize_coords, de_normalize_coords
@@ -11,6 +15,10 @@ _tbl = OBElementTable()
 ChainedPermutation = namedtuple('ChainedPermutation', ['chain_perm', 'atom_perm'])
 
 def GetAtomicMass(symbol):
+    """ Returns the atomic mass of an element
+    :param symbol: Element's symbol
+    :return: The atomic mass
+    """
     atomicNum = _tbl.GetAtomicNum(symbol)
     atom = OBAtom()
     atom.SetAtomicNum(atomicNum)
@@ -19,10 +27,16 @@ def GetAtomicMass(symbol):
 
 
 def GetAtomicSymbol(atomic_num):
+    """ Returns the element symbol from the atomic number
+    :param atomic_num: Atomic number
+    :return: Element symbol
+    """
     return _tbl.GetSymbol(atomic_num)
 
 
 class Atom:
+    """ A single atom, alogn with its position and neighbors
+    """
     def __init__(self, symbol, pos, useMass=True, chain=''):
         self._symbol = symbol
         self.adjacent = []
@@ -50,8 +64,9 @@ class Atom:
 
 
 class Molecule:
+    """ A molecule, including its atoms and equivalency classes """
     # A Molecule has atoms and equivalency classes
-    def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0, chains=None):
+    def __init__(self, atoms, equivalence_classes=None, norm_factor=1.0, chains=None, obmol=None):
         self._atoms = atoms
         if equivalence_classes:
             self._equivalence_classes = equivalence_classes
@@ -63,6 +78,7 @@ class Molecule:
         else:
             self._chains = None
         self._chained_perms = None
+        self._obmol = obmol
 
     @property
     def atoms(self):
@@ -314,3 +330,22 @@ class Molecule:
                     self._equivalence_classes.pop(i)
         else:  # removeHy
             self.find_equivalence_classes()
+
+    def preprocess(self, removeHy, ignoreHy, keepCenter, **kwargs):
+        """
+        Preprocess a molecule based on the arguments passed to CSM
+        :param removeHy: True if hydrogen atoms should be removed
+        :param ignoreHy: True when hydrogen atoms should be ignored when calculating the equivalence classes
+        :param keepCenter: True when the molecule's CoM shouldn't be moved
+        :param kwargs: Place holder for all other csm_args.
+        You can call it by passing **csm_args
+        """
+        if not removeHy:
+            self.find_equivalence_classes()
+
+        if ignoreHy or removeHy:
+            if self._obmol:
+                self._obmol.DeleteHydrogens()
+            remove_list = ["H", " H"]
+            self.strip_atoms(remove_list, ignoreHy)
+        self.normalize(keepCenter)

@@ -1,16 +1,17 @@
+"""
+The main entry point of the Python CSM
+"""
 import math
 import sys
+
+from arguments import get_arguments
+from calculations.normalizations import normalize_coords, de_normalize_coords
+
 __author__ = 'zmbq'
 
-"""
-Performs some tests on the CSM C++ wrapper
-"""
 from input_output.writers import print_all_output
-from calculations.preprocess_molecule import preprocess_molecule
-from calculations.process_results import process_results
 from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations
-from arguments import process_arguments, create_parser
 from CPP_wrapper import csm
 
 MINDOUBLE = 1e-8
@@ -19,16 +20,24 @@ APPROX_RUN_PER_SEC = 8e4
 
 sys.setrecursionlimit(10000)
 
+def process_results(results, csm_args):
+    """
+    Final normalizations and de-normalizations
+    :param results: CSM calculations results
+    :param csm_args: CSM args
+    """
+    results.molecule.set_norm_factor(csm_args['molecule'].norm_factor)
+    masses = [atom.mass for atom in results.molecule.atoms]
+    normalize_coords(results.outAtoms, masses, csm_args['keepCenter'])
+    results.molecule.de_normalize()
+    results.outAtoms = de_normalize_coords(results.outAtoms, results.molecule.norm_factor)
+
 
 def run_csm(args, print_output=True):
     try:
-        parser = create_parser()
-        result = parser.parse_args(args)
-        csm_args = process_arguments(result)
-
-        preprocess_molecule(csm_args)
-
-        csm.SetCSMOptions(csm_args)
+        csm_args = get_arguments(args)
+        csm_args['molecule'].preprocess(**csm_args)
+        csm.SetCSMOptions(csm_args)  # Set the default options for the Python/C++ bridge
 
         if csm_args['babelTest']:
             return None

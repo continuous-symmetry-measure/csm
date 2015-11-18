@@ -9,7 +9,7 @@ from calculations.molecule import Molecule
 __author__ = 'zmbq'
 
 
-def create_parser():
+def _create_parser():
     parser = ArgumentParser()
 
     # The first three positional arguments
@@ -59,7 +59,7 @@ def create_parser():
     return parser
 
 
-def check_arguments(processed):
+def _check_arguments(processed):
 
     if processed['sn_max'] and processed['type'] != 'CH':
         raise ValueError("Option --sn_max only applies to chirality")
@@ -91,7 +91,7 @@ def check_arguments(processed):
         raise ValueError("--useChains specified but no chains provided in the molecule file")
 
 
-def open_files(parse_res, result):
+def _open_files(parse_res, result):
 
     # try to open and read the input file
     try:
@@ -104,7 +104,7 @@ def open_files(parse_res, result):
             (atoms, chains) = read_ob_mol(result["obmol"], result)
             if not parse_res.useChains:  # Todo: Print chains
                 chains = []
-            result['molecule'] = Molecule(atoms, chains=chains)
+            result['molecule'] = Molecule(atoms, chains=chains, obmol=result["obmol"])
     except IOError:
         raise ValueError("Failed to open data file " + parse_res.input)
     except ValueError:
@@ -146,7 +146,7 @@ def open_files(parse_res, result):
         result['outPermFile'] = None
 
 
-def process_arguments(parse_res):
+def _process_arguments(parse_res):
 
     result = {}
 
@@ -204,10 +204,22 @@ def process_arguments(parse_res):
         result['format'] = "PDB"
     result['logFileName'] = parse_res.log
 
-    open_files(parse_res, result)
-    check_arguments(result)
+    _open_files(parse_res, result)
+    _check_arguments(result)
 
     if not result['sn_max']:
         result['sn_max'] = 8
 
     return result
+
+def get_arguments(args):
+    """
+    Parse the command line arguments and return a dictionary with all the CSM run options
+    :param args: Command line arguments (sys.args, for example)
+    :return: A dictionary with all the CSM run options.
+    """
+    parser = _create_parser()
+    parsed_args = parser.parse_args(args)
+    csm_args = _process_arguments(parsed_args)
+
+    return csm_args

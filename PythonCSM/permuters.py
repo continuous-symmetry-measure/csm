@@ -2,12 +2,11 @@ import itertools
 import sys
 from timeit import Timer
 from calculations.csm_calculations_data import CSMCalculationsData
-from calculations.preprocess_molecule import preprocess_molecule
 import colorama
 from permutations.permuters import group_permuter, _get_cycle_structs, molecule_permuter, all_circle_permutations
 from permutations.lengths import _len_group_permuter
 from permutations.utils import cycle_decomposition, perm_order
-from arguments import process_arguments, create_parser
+from arguments import _process_arguments, _create_parser
 import numpy as np
 
 __author__ = 'zmbq'
@@ -81,10 +80,10 @@ def compare(perm_size, group_size, add_groups_of_two):
 
 
 def compare_molecule(args):
-    parser = create_parser()
+    parser = _create_parser()
     result = parser.parse_args(args)
-    csm_args = process_arguments(result)
-    preprocess_molecule(csm_args)
+    csm_args = _process_arguments(result)
+    csm_args['molecule'].preprocess(**csm_args)
     csm.SetCSMOptions(csm_args)
 
     csm_perms = list(csm.GetMoleculePermutations())

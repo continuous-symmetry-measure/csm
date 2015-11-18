@@ -2,6 +2,12 @@ __author__ = 'YAEL'
 
 
 class CSMCalculationsData:
+    """ A wrapper class for all the data required during the CSM calculation.
+    This class is passed to the old C++ methods.
+    To avoid duplication, it's also used by the new Python methods.
+
+    Once the C++ code is gone, this class is going to seem strange. It'll need to be removed.
+    """
     # Includes all data passed to/from CPP calculations
     def __init__(self, csm_args=None):
         if csm_args:

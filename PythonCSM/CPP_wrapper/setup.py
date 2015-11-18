@@ -6,7 +6,7 @@ from Cython.Build import cythonize
 import sys
 import numpy
 
-BOOST_ROOT = r'd:\boost\1_57_0\lib64' # Default, Windows only. Override in local_settings for now
+BOOST_ROOT = r'd:\boost\1_59_0\lib64' # Default, Windows only. Override in local_settings for now
 
 try:
     from local_settings import *
