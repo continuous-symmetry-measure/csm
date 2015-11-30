@@ -75,9 +75,9 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
             current_calc_data.perm = perm
             # current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
             current_calc_data = calc_ref_plane(current_calc_data) # Python version
-            # check, if it's a minimal csm, update dir and optimal perm
             if current_calc_data.csm < result_csm:
-                (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], perm[:])
+                (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
+            # check, if it's a minimal csm, update dir and optimal perm
             if csv_writer:
                 csv_writer.writerow([perm, current_calc_data.dir, current_calc_data.csm])
 
