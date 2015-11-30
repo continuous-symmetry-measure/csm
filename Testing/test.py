@@ -5,9 +5,13 @@ __author__ = 'zmbq'
 from helpers import run_test_python
 import config
 import os.path
-
+import logging
 
 class CheckCSMOutput(TestCase):
+    def setUp(self):
+        super().setUp()
+        logging.disable(logging.DEBUG)
+
     def one_test(self, test_dir):
         result = run_test_python(os.path.join(config.TEST_PATH, test_dir))
         self.assertTrue(result)

@@ -14,6 +14,8 @@ from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations
 from CPP_wrapper import csm
 
+import logging
+
 MINDOUBLE = 1e-8
 APPROX_RUN_PER_SEC = 8e4
 
@@ -32,10 +34,23 @@ def process_results(results, csm_args):
     results.molecule.de_normalize()
     results.outAtoms = de_normalize_coords(results.outAtoms, results.molecule.norm_factor)
 
+logger = None
+
+def init_logging(csm_args):
+    global logger
+
+    if 'logFileName' in csm_args:
+        logging.basicConfig(filename=csm_args['logFileName'], level=logging.DEBUG,
+                            format='[%(asctime)-15s] [%(levelname)s] [%(name)s]: %(message)s')
+    else:
+        logging.basicConfig(level=logging.ERROR)
+    logger = logging.getLogger("csm")
+
 
 def run_csm(args, print_output=True):
     try:
         csm_args = get_arguments(args)
+        init_logging(csm_args)
         csm_args['molecule'].preprocess(**csm_args)
         csm.SetCSMOptions(csm_args)  # Set the default options for the Python/C++ bridge
 

@@ -2,13 +2,18 @@ import csv
 
 import math
 
-import numpy
+import numpy as np
+np.set_printoptions(precision=6)
+
 # from permutations.lengths import len_molecule_permuter
 from permutations.lengths import len_molecule_permuter
 from permutations.permuters import molecule_permuter
 from CPP_wrapper.fast_permutations import molecule_permuter
 from calculations.molecule import ChainedPermutation
 from CPP_wrapper import csm
+import logging
+
+logger = logging.getLogger("calculations")
 
 __author__ = 'YAEL'
 
@@ -48,7 +53,7 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     result_csm = MAXDOUBLE
     dir = []
     optimal_perm = []
-    current_calc_data.dir = [0, 0, 0]
+    current_calc_data.dir = np.zeros(3)
     # calculate csm for each valid permutation & remember minimal
 
     csv_writer = None
@@ -68,8 +73,8 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
                                       current_calc_data.opOrder,
                                       current_calc_data.operationType == 'SN'):
             current_calc_data.perm = perm
-            current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
-            # current_calc_data = calc_ref_plane(current_calc_data) # Python version
+            # current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
+            current_calc_data = calc_ref_plane(current_calc_data) # Python version
             # check, if it's a minimal csm, update dir and optimal perm
             if current_calc_data.csm < result_csm:
                 (result_csm, dir, optimal_perm) = (current_calc_data.csm, current_calc_data.dir[:], perm[:])
@@ -103,26 +108,28 @@ def calc_ref_plane(current_calc_data):
     is_improper = current_calc_data.operationType != 'CN'
     is_zero_angle = current_calc_data.operationType == 'CS'
 
-    print('calcRefPlane called')
-    print('Permutation is ' + str(current_calc_data.perm))
-    print("Direction is %lf %lf %lf" % (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2]))
+    logger.debug('***************************** Python ************************')
+    logger.debug('calcRefPlane called')
+    logger.debug('Permutation is ' + str(current_calc_data.perm))
+
+    logger.debug("Direction is %lf %lf %lf" % (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2]))
 
     # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
     # - described on the first page of the paper
-    Q = [numpy.matrix([[atom.pos[0]], [atom.pos[1]], [atom.pos[2]]]) for atom in current_calc_data.molecule.atoms]
-    Q_transpose = [Q[i].transpose() for i in range(size)]
+    def col_vec(list):
+        a = np.array(list)
+        a = a.reshape((3,1))
+        return a
+
+    Q = [col_vec(atom.pos) for atom in current_calc_data.molecule.atoms]
 
     def calc_A_B():
-        cur_perm = [i for i in range(size)]
-
         # A is calculated according to formula (17) in the paper
-        A = numpy.matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
-
         # B is calculated according to formula (12) in the paper
-        B = numpy.matrix([0, 0, 0])
 
-        numpy.set_printoptions(precision=6)
-
+        cur_perm = [i for i in range(size)]
+        A = np.zeros((3, 3,))
+        B = np.zeros((1, 3)) # Row vector for now
 
         # compute matrices according to current perm and its powers (the identity does not contribute anyway)
         for i in range(1, current_calc_data.opOrder):
@@ -131,62 +138,44 @@ def calc_ref_plane(current_calc_data):
             else:
                 theta = 2 * math.pi * i / current_calc_data.opOrder
 
+            if is_improper and (i % 2):
+                multiplier = -1 - math.cos(theta)
+            else:
+                multiplier = 1 - math.cos(theta)
+
             # The i'th power of the permutation
             cur_perm = [current_calc_data.perm[cur_perm[j]] for j in range(size)]
 
-            # Q_tag is Q after applying the i'th permutation on atoms
-            Q_tag = [Q[cur_perm[i]] for i in range(size)]
-            Q_transpose_tag = [Q_tag[i].transpose() for i in range(size)]
-
-            """
-            print("Q_tag:")
-            for j in range(size):
-                print("%d:" % j)
-                print(Q_tag[j])
-
-            for j in range(size):
-                print("%d:" % j)
-                print(Q_transpose_tag[j])
-            """
+            # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
+            Q_ = [Q[p] for p in cur_perm]  # Q'
 
             # A_intermediate is calculated according to the formula (5) in the paper
-            A_intermediate = numpy.matrix([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
-
             for k in range(size):
-                A_intermediate = A_intermediate + (Q_tag[k] * Q_transpose[k]) + (Q[k] * Q_transpose_tag[k])
-                B = B + numpy.cross(Q[k].transpose(), Q_tag[k].transpose())
+                A = A + multiplier * ((Q_[k] @ Q[k].T) + (Q[k] @ Q_[k].T))
+                B = B + math.sin(theta) * np.cross(Q[k].T, Q_[k].T)
 
-            B *= math.sin(theta)
-
-            if is_improper and (i % 2) == 1:
-                A = A + (A_intermediate * (-1 - math.cos(theta)))
-            else:
-                A = A + (A_intermediate * (1 - math.cos(theta)))
-
-            # print("Theta: %lf\tA - intermediate:" % theta)
-            # print(A_intermediate)
-        return A, B
+        return A, B.T  # Return B as a column vector
 
     A,B = calc_A_B()
 
-    # TODO: LOG(debug) << "Computed matrix is:" << setprecision(4);
-    # TODO: LOG(debug) << A[0][0] << " " << A[0][1] << " " << A[0][2];
-    # TODO: LOG(debug) << A[1][0] << " " << A[1][1] << " " << A[1][2];
-    # TODO: LOG(debug) << A[2][0] << " " << A[2][1] << " " << A[2][2];
-    print("Computed matrix is:")
-    print(A)
+    logger.debug("Computed matrix A is:")
+    logger.debug(A)
+    logger.debug("Computed vector B is: %s" % B)
 
     # lambdas - list of 3 eigenvalues of A
     # m - list of 3 eigenvectors of A
-    lambdas, m = numpy.linalg.eig(A)
+    lambdas, m = np.linalg.eig(A)
     # compute square of scalar multiplications of eigen vectors with B
-    m_t_B = [(m[i].transpose() * B).tolist()[0][0] for i in range(3)]
-    m_t_B_2 = [m_t_B[i] ** 2 for i in range(3)]
+    m_t_B = m.T @ B
+    m_t_B_2 = np.power(m_t_B, 2)
+
+    logger.debug("mTb: %s" % m_t_B)
+    logger.debug("mTb^2: %s" % m_t_B_2)
 
     # polynomial is calculated according to formula (13) in the paper
 
     # denominators[i] = (lambda_i - lambda_max)^2
-    denominators = [numpy.polynomial.Polynomial([lambdas[i], -1]) ** 2 for i in range(3)]
+    denominators = [np.polynomial.Polynomial([lambdas[i], -1]) ** 2 for i in range(3)]
     numerator = m_t_B_2[0] * denominators[1] * denominators[2] + \
                 m_t_B_2[1] * denominators[0] * denominators[2] + \
                 m_t_B_2[2] * denominators[0] * denominators[1]
@@ -200,15 +189,13 @@ def calc_ref_plane(current_calc_data):
         raise ValueError("Can't compute the polynomial - division by zero")
 
     # solve polynomial and find maximum eigenvalue and eigen vector
-    # TODO: LOG(debug) << "Coefficients: " << coeffs[0] << ", " << coeffs[1] << ", " << coeffs[2] << ", " << coeffs[3] << ", " << coeffs[4] << ", " << coeffs[5] << ", " << coeffs[6];
-    print("Coefficients: ")
-    print(polynomial)
+    logger.debug("Coefficients: ")
+    logger.debug(polynomial)
 
     roots = polynomial.roots()
 
-    # TODO: LOG(debug) << "rtr: " << roots[0] << " " << roots[1] << " " << roots[2] << " " << roots[3] << " " << roots[4]#  << " " << roots[5];
-    print('roots: ')
-    print(roots)
+    logger.debug('roots: ')
+    logger.debug(roots)
 
     # lambda_max is a real root of the polynomial equation
     # according to the description above the formula (13) in the paper
@@ -217,8 +204,7 @@ def calc_ref_plane(current_calc_data):
         if roots[i].real > lambda_max and math.fabs(roots[i].imag) < ZERO_IM_PART_MAX:
             lambda_max = roots[i].real
 
-    # TODO: LOG(debug) << setprecision(6) << fixed << "lambdas: " << lambdas[1] << " " << lambdas[2] << " " << lambdas[3];
-    print("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
+    logger.debug("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
 
     m_max_B = 0.0
     # dir is calculated below according to formula (14) in the paper.
@@ -239,10 +225,10 @@ def calc_ref_plane(current_calc_data):
             for j in range(3):
                 # error safety
                 if math.fabs(lambdas[j] - lambda_max) < 1e-6:
-                    current_calc_data.dir[i] = m[j][i]
+                    current_calc_data.dir[i] = m[i, j]
                     break
                 else:
-                    current_calc_data.dir[i] += m_t_B[j] / (lambdas[j] - lambda_max) * m[j][i]
+                    current_calc_data.dir[i] += m_t_B[j] / (lambdas[j] - lambda_max) * m[i, j]
             m_max_B = m_max_B + current_calc_data.dir[i] * B[i]
 
     # initialize identity permutation
@@ -264,22 +250,19 @@ def calc_ref_plane(current_calc_data):
         # i'th power of permutation
         cur_perm = [current_calc_data.perm[cur_perm[j]] for j in range(size)]
 
-        Q_tag = [Q[cur_perm[i]] for i in range(size)]
+        Q_ = [Q[cur_perm[i]] for i in range(size)]
 
         for k in range(size):
-            dists += (Q_transpose[k] * Q_tag[k]).tolist()[0][0]
+            dists += Q[k].T @ Q_[k]
         current_calc_data.csm += math.cos(theta) * dists
 
-    # TODO: LOG(debug) << setprecision(6) << fixed << "csm=" << current_calc_data.csm << " lambda_max=" << lambda_max << " m_max_B=" << m_max_B;
-    # TODO: LOG(debug) << setprecision(6) << fixed << "dir: " << current_calc_data.csm[0] << " " << current_calc_data.csm[1] << " " << current_calc_data.csm[2];
-    print("csm=%lf lambda_max=%lf m_max_B=%lf" % (current_calc_data.csm, lambda_max, m_max_B))
-    print("dir: %lf %lf %lf" % (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2]))
+    logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (current_calc_data.csm, lambda_max, m_max_B))
+    logger.debug("dir: %lf %lf %lf" % (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2]))
 
     current_calc_data.csm += (lambda_max - m_max_B) / 2
     current_calc_data.csm = math.fabs(100 * (1.0 - current_calc_data.csm / current_calc_data.opOrder))
 
-    # TODO: LOG(debug) << setprecision(6) << fixed << "dir - csm: " << current_calc_data.csm[0] << " " << current_calc_data.csm[1] << " " << current_calc_data.csm[2] << " - " << current_calc_data.csm;
-    print("dir - csm: %lf %lf %lf - %lf" %
+    logger.debug("dir - csm: %lf %lf %lf - %lf" %
           (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2], current_calc_data.csm))
 
     return current_calc_data

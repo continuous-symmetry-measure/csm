@@ -77,6 +77,21 @@ void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos){
 * Compute the part of the A Matrix relevant to the current permutation
 */
 void computeMatrix(double **parray, int *perm, int size, double(*coef)[3][3], double multiplier) {
+	
+	LOG(debug) << "computeMatrix called. Multiplier " << multiplier;
+	stringstream permstrm;
+	for (int i = 0; i < size; i++)
+	{
+		if (i > 0)
+			permstrm << ", ";
+		permstrm << perm[i];
+	}
+/*	LOG(debug) << "Permutation is " << permstrm.str();
+	LOG(debug) << "Input matrix is: " << setprecision(6);
+	LOG(debug) << (*coef)[0][0] << " " << (*coef)[0][1] << " " << (*coef)[0][2];
+	LOG(debug) << (*coef)[1][0] << " " << (*coef)[1][1] << " " << (*coef)[1][2];
+	LOG(debug) << (*coef)[2][0] << " " << (*coef)[2][1] << " " << (*coef)[2][2] << endl;  */
+
 	int atom;
 	for (atom = 0; atom < size; ++atom) {
 		(*coef)[0][0] += 2.0 * parray[atom][0] * parray[perm[atom]][0] * multiplier;
@@ -88,6 +103,11 @@ void computeMatrix(double **parray, int *perm, int size, double(*coef)[3][3], do
 			parray[atom][2] * parray[perm[atom]][0]) * multiplier;
 		(*coef)[2][1] += (parray[atom][1] * parray[perm[atom]][2] +
 			parray[atom][2] * parray[perm[atom]][1]) * multiplier;
+
+/*		LOG(debug) << "Matrix after atom " << atom << ": ";
+		LOG(debug) << (*coef)[0][0] << " " << (*coef)[0][1] << " " << (*coef)[0][2];
+		LOG(debug) << (*coef)[1][0] << " " << (*coef)[1][1] << " " << (*coef)[1][2];
+		LOG(debug) << (*coef)[2][0] << " " << (*coef)[2][1] << " " << (*coef)[2][2] << endl; */
 	}
 	(*coef)[0][1] = (*coef)[1][0];
 	(*coef)[0][2] = (*coef)[2][0];
@@ -127,7 +147,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	int isImproper = (type != CN) ? true : false;
 	int isZeroAngle = (type == CS) ? true : false;
 
-	LOG(debug) << "calcRefPlane called";
+	LOG(debug) << "***************************** C++ ************************" << endl << "calcRefPlane called";
 	stringstream permstrm;
 	for (int i = 0; i < m->size(); i++)
 	{
@@ -160,11 +180,11 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}
 
 	LOG(debug).unsetf(ios_base::fixed);
-	LOG(debug) << "Computed matrix is:" << setprecision(4);
+	LOG(debug) << "Computed matrix A is:" << setprecision(6);
 	LOG(debug) << matrix[0][0] << " " << matrix[0][1] << " " << matrix[0][2];
 	LOG(debug) << matrix[1][0] << " " << matrix[1][1] << " " << matrix[1][2];
-	LOG(debug) << matrix[2][0] << " " << matrix[2][1] << " " << matrix[2][2];
-	LOG(debug) <<"=========================== Computed vector B is : " <<vec[0]<<" "<<vec[1]<<" "<<vec[0];
+	LOG(debug) << matrix[2][0] << " " << matrix[2][1] << " " << matrix[2][2] << endl;
+	LOG(debug) << "Computed vector B is : " << vec[0] << " " << vec[1] << " " << vec[0] << endl;
 
 	vector<EigenResult> eigens = GetEigens(matrix);
 
@@ -179,6 +199,9 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	}
 	for (i = 0; i < 3; i++)
 		diag[i + 1] = eigens[i].value;
+
+	LOG(debug) << "scalar (mTb): " << scalar[0] << " " << scalar[1] << " " << scalar[2];
+	LOG(debug) << "temp (mTb^2): " << temp[1] << " " << temp[2] << " " << temp[3];
 
 	// build the polynomial
 	coeffs[0] = 1.0;	// x^6
@@ -305,7 +328,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	csm = fabs(100 * (1.0 - csm / options.opOrder));
 	free(curPerm);
 
-	LOG(debug) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm;
+	LOG(debug) << fixed << "dir - csm: " << dir[0] << " " << dir[1] << " " << dir[2] << " - " << csm << endl << endl;
 
 	return csm;
 }
