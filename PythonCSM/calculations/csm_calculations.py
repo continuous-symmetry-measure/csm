@@ -73,8 +73,8 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
                                       current_calc_data.opOrder,
                                       current_calc_data.operationType == 'SN'):
             current_calc_data.perm = perm
-            # current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
-            current_calc_data = calc_ref_plane(current_calc_data) # Python version
+            current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
+            # current_calc_data = calc_ref_plane(current_calc_data) # Python version
             if current_calc_data.csm < result_csm:
                 (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
             # check, if it's a minimal csm, update dir and optimal perm
@@ -91,6 +91,51 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     current_calc_data.csm = result_csm
 
     return csm.CreateSymmetricStructure(current_calc_data)
+
+def create_symmetric_structure(current_calc_data):
+    logger.debug('***************************** Python ************************')
+    logger.debug('createSymmetricStructure called')
+    #####set up various variables:########
+    m_perm=current_calc_data.data
+    m_dmin=current_calc_data.dmin
+    m_dir= current_calc_data.dir
+    m_pos= current_calc_data.molecule.pos
+    m_outAtoms=m_pos
+    m_size = len(current_calc_data.molecule.atoms)
+    is_improper = current_calc_data.operationType != 'CN'
+    is_zero_angle = current_calc_data.operationType == 'CS'
+    #int array curPerm     #set curPerm to 12345...
+    curPerm= np.arrange(m_size)
+    m_tmpMatrix= np.array[[0.0, -dir[2], -dir[1]]], [dir[2], 0.0, -dir[0], [-dir[1], dir[0], 0.0]]
+    m_result = 0.0
+
+
+    #m_angle
+    #3x3 rotation matrix
+
+    ########calculate and apply rotation matrix#########
+    ###for i<OpOrder
+    for i in range(current_calc_data.opOrder):
+        #calculate angle
+        if is_zero_angle:
+            angle=0.0
+        else:
+            angle= 2 * np.pi * i / current_calc_data.opOrder
+        #calculate factor
+        if is_improper and (i%2)==1:
+            factor = -1
+        else:
+            factor = 1
+        #curPerm[j] = perm[curPerm[j]]  #???
+        for  j in  range (m_size):
+            curPerm[j] = m_perm[curPerm[j]]
+        #build rotation matrix
+            
+        #multiply molecule by matrix, add to outAtoms
+        # normalize results, get sume of squares, take square root
+        #return result
+
+
 
 
 def total_number_of_permutations(csm_args):
