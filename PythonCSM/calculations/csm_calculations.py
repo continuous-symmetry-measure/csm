@@ -90,28 +90,27 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     current_calc_data.dir = dir
     current_calc_data.csm = result_csm
 
-    return csm.CreateSymmetricStructure(current_calc_data)
+    # return csm.CreateSymmetricStructure(current_calc_data) #c++
+    return create_symmetric_structure(current_calc_data)
 
 def create_symmetric_structure(current_calc_data):
     logger.debug('***************************** Python ************************')
     logger.debug('createSymmetricStructure called')
     #####set up various variables:########
-    m_perm=current_calc_data.data
-    m_dmin=current_calc_data.dmin
+    m_perm=current_calc_data.perm
+    m_dmin=current_calc_data.dMin
     m_dir= current_calc_data.dir
-    m_pos= current_calc_data.molecule.pos
+    m_pos= current_calc_data.molecule.atoms
     m_outAtoms=m_pos
     m_size = len(current_calc_data.molecule.atoms)
     is_improper = current_calc_data.operationType != 'CN'
     is_zero_angle = current_calc_data.operationType == 'CS'
     #int array curPerm     #set curPerm to 12345...
-    curPerm= np.arrange(m_size)
-    m_tmpMatrix= np.array[[0.0, -dir[2], -dir[1]]], [dir[2], 0.0, -dir[0], [-dir[1], dir[0], 0.0]]
+    curPerm= np.arange(m_size)
+    m_tmpMatrix= np.array([[0.0, -m_dir[2], -m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
     m_result = 0.0
+    rotationMatrix= np.zeros((3, 3))
 
-
-    #m_angle
-    #3x3 rotation matrix
 
     ########calculate and apply rotation matrix#########
     ###for i<OpOrder
@@ -130,10 +129,28 @@ def create_symmetric_structure(current_calc_data):
         for  j in  range (m_size):
             curPerm[j] = m_perm[curPerm[j]]
         #build rotation matrix
-            
+        for a in range(3):
+            for b in range(3):
+                if a==b:
+                    ang = np.cos(angle)
+                else:
+                    ang= 0
+                rotationMatrix[a][b] = ang  + ((factor - np.cos(angle)) * m_dir[a] * m_dir[b] + np.sin(angle) * m_tmpMatrix[a][b])
+
         #multiply molecule by matrix, add to outAtoms
-        # normalize results, get sume of squares, take square root
-        #return result
+        for j in range(m_size):
+            for k in range(3):
+                for l in range(3):
+                    m_outAtoms[j][k] += rotationMatrix[k][l] * m_pos[ curPerm[j]][l]
+
+    # normalize results, get sume of squares, take square root
+    for j in range(m_size):
+        for k in range(3):
+            m_outAtoms[j][k] /= current_calc_data.opOrder
+            m_outAtoms[j][k] *= m_dmin
+            m_result += math.sqrt(m_outAtoms[j][k])
+
+    return m_result
 
 
 
