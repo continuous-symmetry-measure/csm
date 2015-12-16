@@ -90,8 +90,8 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     current_calc_data.dir = dir
     current_calc_data.csm = result_csm
 
-    # return csm.CreateSymmetricStructure(current_calc_data) #c++
-    return create_symmetric_structure(current_calc_data)
+    return csm.CreateSymmetricStructure(current_calc_data) #c++
+    # return create_symmetric_structure(current_calc_data)
 
 def create_symmetric_structure(current_calc_data):
     logger.debug('***************************** Python ************************')
