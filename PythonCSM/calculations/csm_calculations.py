@@ -74,7 +74,7 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
                                       current_calc_data.operationType == 'SN'):
             current_calc_data.perm = perm
             current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
-            # current_calc_data = calc_ref_plane(current_calc_data) # Python version
+            current_calc_data = calc_ref_plane(current_calc_data) # Python version
             if current_calc_data.csm < result_csm:
                 (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
             # check, if it's a minimal csm, update dir and optimal perm
@@ -91,30 +91,31 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     current_calc_data.csm = result_csm
 
     return csm.CreateSymmetricStructure(current_calc_data) #c++
-    # return create_symmetric_structure(current_calc_data)
+    #return create_symmetric_structure(current_calc_data) #python
+
 
 def create_symmetric_structure(current_calc_data):
     logger.debug('***************************** Python ************************')
     logger.debug('createSymmetricStructure called')
-    #####set up various variables:########
-    m_perm=current_calc_data.perm
-    m_dmin=current_calc_data.dMin
-    m_dir= current_calc_data.dir
-    m_pos= current_calc_data.molecule.atoms
-    m_outAtoms=m_pos
-    m_size = len(current_calc_data.molecule.atoms)
+
+    #set up some initial values:
     is_improper = current_calc_data.operationType != 'CN'
     is_zero_angle = current_calc_data.operationType == 'CS'
-    #int array curPerm     #set curPerm to 12345...
-    curPerm= np.arange(m_size)
+
+    curPerm=np.arange(len(current_calc_data.perm)) #array of ints...
+    m_dmin=current_calc_data.dMin #float
+    m_dir= current_calc_data.dir #3val array
+    m_pos=[atom.pos for atom in current_calc_data.molecule.atoms]
+    current_calc_data.outAtoms=list(m_pos)
     m_tmpMatrix= np.array([[0.0, -m_dir[2], -m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
+
     m_result = 0.0
     rotationMatrix= np.zeros((3, 3))
 
 
-    ########calculate and apply rotation matrix#########
+    ########calculate and apply transform matrix#########
     ###for i<OpOrder
-    for i in range(current_calc_data.opOrder):
+    for i in range(1,current_calc_data.opOrder):
         #calculate angle
         if is_zero_angle:
             angle=0.0
@@ -125,32 +126,39 @@ def create_symmetric_structure(current_calc_data):
             factor = -1
         else:
             factor = 1
-        #curPerm[j] = perm[curPerm[j]]  #???
-        for  j in  range (m_size):
-            curPerm[j] = m_perm[curPerm[j]]
+        #set permutation
+        for w in range (len(curPerm)):
+            curPerm[w]=current_calc_data.perm[curPerm[w]]
         #build rotation matrix
-        for a in range(3):
-            for b in range(3):
-                if a==b:
+        for s in range(3):
+            for t in range(3):
+                if s==t:
                     ang = np.cos(angle)
                 else:
                     ang= 0
-                rotationMatrix[a][b] = ang  + ((factor - np.cos(angle)) * m_dir[a] * m_dir[b] + np.sin(angle) * m_tmpMatrix[a][b])
+                rotationMatrix[s][t] = ang  + ((factor - np.cos(angle)) * m_dir[s] * m_dir[t] + np.sin(angle) * m_tmpMatrix[s][t])
 
         #multiply molecule by matrix, add to outAtoms
-        for j in range(m_size):
+        for j in range (len(current_calc_data.outAtoms)):
+            perm_tuple= m_pos[curPerm[j]]
+            result_tuple=[0,0,0]
             for k in range(3):
-                for l in range(3):
-                    m_outAtoms[j][k] += rotationMatrix[k][l] * m_pos[ curPerm[j]][l]
+                rot_tuple= rotationMatrix[k]
+                tempdot= np.dot(perm_tuple, rot_tuple)
+                result_tuple[k]=tempdot
+            stupid_numpy_tuples=np.asarray(result_tuple)
+            current_calc_data.outAtoms[j]=current_calc_data.outAtoms[j]+ stupid_numpy_tuples
 
-    # normalize results, get sume of squares, take square root
-    for j in range(m_size):
-        for k in range(3):
-            m_outAtoms[j][k] /= current_calc_data.opOrder
-            m_outAtoms[j][k] *= m_dmin
-            m_result += math.sqrt(m_outAtoms[j][k])
 
-    return m_result
+
+    # normalize results
+    current_calc_data.outAtoms = [np.multiply(atom_pos, m_dmin/current_calc_data.opOrder) for atom_pos in current_calc_data.outAtoms]
+
+    #intermediate= np.square(atom_pos)
+    #m_result+=np.sum(intermediate)
+    #m_result= np.sqrt(m_result)
+    #m_res= m_result.item()
+    return current_calc_data
 
 
 

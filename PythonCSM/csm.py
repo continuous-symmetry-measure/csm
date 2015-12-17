@@ -30,7 +30,15 @@ def process_results(results, csm_args):
     """
     results.molecule.set_norm_factor(csm_args['molecule'].norm_factor)
     masses = [atom.mass for atom in results.molecule.atoms]
+
+    for atom in results.outAtoms:
+        print (atom)
+    for mass in masses:
+        print (mass)
+
+
     normalize_coords(results.outAtoms, masses, csm_args['keepCenter'])
+
     results.molecule.de_normalize()
     results.outAtoms = de_normalize_coords(results.outAtoms, results.molecule.norm_factor)
 

@@ -30,6 +30,7 @@ def normalize_coords(coords, masses, keep_center):
     for i in range(size):
         tmp = (coords[i][0] - x_avg) ** 2 + (coords[i][1] - y_avg) ** 2 + (coords[i][2] - z_avg) ** 2
         norm += tmp
+        print("Norm: %lf i: %lf temp %lf" % (norm, i, tmp))
 
     # normalize to 1 and not molecule size
     # norm = sqrt(norm / (double)m->size());
