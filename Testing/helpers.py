@@ -140,7 +140,7 @@ def compare_results(expected_filename, results):
 
     # Check permutation
     expected_perm = [int(p)-1 for p in expected['permutation']]
-    if expected_perm!=results.perm:
+    if list(expected_perm)!=list(results.perm):
         print("Expected permutation %s, got %s" % (expected_perm, results.perm), file=sys.stderr)
         ok = False
 

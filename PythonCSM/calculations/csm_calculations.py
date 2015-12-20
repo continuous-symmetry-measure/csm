@@ -94,18 +94,20 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     return create_symmetric_structure(current_calc_data) #python
 
 
+
 def create_symmetric_structure(current_calc_data):
     logger.debug('***************************** Python ************************')
     logger.debug('createSymmetricStructure called')
 
     #set up some initial values:
-    is_improper = current_calc_data.operationType != 'CN'
-    is_zero_angle = current_calc_data.operationType == 'CS'
+    is_improper = current_calc_data.operationType != 'CN' #true
+    is_zero_angle = current_calc_data.operationType == 'CS' #false
 
     curPerm=np.arange(len(current_calc_data.perm)) #array of ints...
     m_dmin=current_calc_data.dMin #float
     m_dir= current_calc_data.dir #3val array
     m_pos=[atom.pos for atom in current_calc_data.molecule.atoms]
+
     current_calc_data.outAtoms=list(m_pos)
     m_tmpMatrix= np.array([[0.0, -m_dir[2], -m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
 
@@ -162,7 +164,6 @@ def create_symmetric_structure(current_calc_data):
 
 
 
-
 def total_number_of_permutations(csm_args):
     if csm_args['type'] != 'CH':
         return len_molecule_permuter(csm_args['molecule'], csm_args['opOrder'], csm_args['type'])
@@ -172,11 +173,53 @@ def total_number_of_permutations(csm_args):
             num_perms += len_molecule_permuter(csm_args['molecule'], i, 'SN')
         return num_perms
 
+def calc_refplane(current_calc_data):
+    hi=0
+    #arguments:
+    #parray
+    #perm
+    #size
+    #coef 3x3
+    #multiplier
+
+    #variables:
+    #copyMat (3x3  mat)
+    #"diag" (1X3 vec)
+    #temp (1x3 vec)
+    #"matrix" (3x3, all zeroes)
+    #"vec" 1x3, all zeroes
+    #cur perm- array of ints 12345..size
+    #doubls csm, dists
+    #bool isimporper
+    #bool is zeroangle
+
+    #step one: calc_A_B
+    #permute permutation
+    #call compute matrix
+    #call compute vector
+
+    #step two:
+    #compute square of scalar multiplications of eigen vectors with b
+
+    #step three:
+    #build polynomial
+
+    #step four:
+    #solve polynomial
+
+    #step five:
+    #reset permutation to 123...size
+
+    #step six:
+    #compute CSM:
+
+
+
 
 def calc_ref_plane(current_calc_data):
-    size = len(current_calc_data.molecule.atoms)
-    is_improper = current_calc_data.operationType != 'CN'
-    is_zero_angle = current_calc_data.operationType == 'CS'
+    size = len(current_calc_data.molecule.atoms) #6 Vmol3
+    is_improper = current_calc_data.operationType != 'CN' #false Vmol3
+    is_zero_angle = current_calc_data.operationType == 'CS' #false Vmol3
 
     logger.debug('***************************** Python ************************')
     logger.debug('calcRefPlane called')
@@ -215,6 +258,30 @@ def calc_ref_plane(current_calc_data):
 
             # The i'th power of the permutation
             cur_perm = [current_calc_data.perm[cur_perm[j]] for j in range(size)]
+
+            #first call:
+            #perm 012345 V :
+            #####theta 1.5707 V #multiplier 0.999 V
+            #####theta 3.14 #multiplier 2.0
+            #####theta 4.71 #multiplier 1.00
+
+            #perm 013452:
+            #####theta 1.5707 V #multiplier 0.999 V
+
+            #perm 014523
+            #####theta 3.14 #multiplier 2.0
+
+            #015234
+            #####theta 4.71 #multiplier 1.00
+
+            #perm 014532
+             #####theta 1.5707 V #multiplier 0.999 V
+
+            #perm 013254
+            #####theta 3.14 #multiplier 2.0
+
+
+
 
             # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
             Q_ = [Q[p] for p in cur_perm]  # Q'
