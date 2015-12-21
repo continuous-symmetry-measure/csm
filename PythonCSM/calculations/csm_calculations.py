@@ -90,12 +90,29 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     current_calc_data.dir = dir
     current_calc_data.csm = result_csm
 
-    #return csm.CreateSymmetricStructure(current_calc_data) #c++
-    return create_symmetric_structure(current_calc_data) #python
+    return csm.CreateSymmetricStructure(current_calc_data) #c++
+    #return create_symmetric_structure(current_calc_data) #python
 
 
 
 def create_symmetric_structure(current_calc_data):
+    def create_rotation_matrix(iOp):
+        rot = np.zeros((3, 3))
+
+        angle = 0.0 if is_zero_angle else 2 * np.pi * iOp / current_calc_data.opOrder
+        factor = -1 if is_improper and (iOp%2) else 1
+
+        # The rotation matrix is calculated similarly to the Rodrigues rotation matrix. The only
+        # difference is that the matrix is also a reflection matrix when factor is -1.
+        #
+        # This is why we took the old C++ code instead of applying the Rodrigues formula directly.
+        for s in range(3):
+            for t in range(3):
+                ang = 0 if s != t else np.cos(angle)
+                rot[s][t] = ang + ((factor - np.cos(angle)) * m_dir[s] * m_dir[t] + np.sin(angle) * W[s][t])
+
+        return rot
+
     logger.debug('***************************** Python ************************')
     logger.debug('createSymmetricStructure called')
 
@@ -103,63 +120,33 @@ def create_symmetric_structure(current_calc_data):
     is_improper = current_calc_data.operationType != 'CN' #true
     is_zero_angle = current_calc_data.operationType == 'CS' #false
 
-    curPerm=np.arange(len(current_calc_data.perm)) #array of ints...
+    cur_perm=np.arange(len(current_calc_data.perm)) #array of ints...
     m_dmin=current_calc_data.dMin #float
     m_dir= current_calc_data.dir #3val array
     m_pos=[atom.pos for atom in current_calc_data.molecule.atoms]
 
-    current_calc_data.outAtoms=list(m_pos)
-    m_tmpMatrix= np.array([[0.0, -m_dir[2], -m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
+    current_calc_data.outAtoms = list(m_pos)
 
-    m_result = 0.0
-    rotationMatrix= np.zeros((3, 3))
+    # The W matrix from the Rodrigues Rotation Formula (http://math.stackexchange.com/a/142831)
+    W = np.array([[0.0, -m_dir[2], -m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
 
-
-    ########calculate and apply transform matrix#########
-    ###for i<OpOrder
     for i in range(1,current_calc_data.opOrder):
-        #calculate angle
-        if is_zero_angle:
-            angle=0.0
-        else:
-            angle= 2 * np.pi * i / current_calc_data.opOrder
-        #calculate factor
-        if is_improper and (i%2)==1:
-            factor = -1
-        else:
-            factor = 1
-        #set permutation
-        for w in range (len(curPerm)):
-            curPerm[w]=current_calc_data.perm[curPerm[w]]
-        #build rotation matrix
-        for s in range(3):
-            for t in range(3):
-                if s==t:
-                    ang = np.cos(angle)
-                else:
-                    ang= 0
-                rotationMatrix[s][t] = ang  + ((factor - np.cos(angle)) * m_dir[s] * m_dir[t] + np.sin(angle) * m_tmpMatrix[s][t])
+        rotation_matrix = create_rotation_matrix(i)
 
-        #multiply molecule by matrix, add to outAtoms
+        # Apply permutation
+        for w in range (len(cur_perm)):
+            cur_perm[w]=current_calc_data.perm[cur_perm[w]]
+
+        # rotate each atom
         for j in range (len(current_calc_data.outAtoms)):
-            perm_tuple= m_pos[curPerm[j]]
-            result_tuple=[0,0,0]
-            for k in range(3):
-                rot_tuple= rotationMatrix[k]
-                tempdot= np.dot(perm_tuple, rot_tuple)
-                result_tuple[k]=tempdot
-            stupid_numpy_tuples=np.asarray(result_tuple)
-            current_calc_data.outAtoms[j]=current_calc_data.outAtoms[j]+ stupid_numpy_tuples
-
-
+            atom_pos = m_pos[cur_perm[j]]
+            rotated_pos = rotation_matrix @ atom_pos
+            current_calc_data.outAtoms[j] += rotated_pos
 
     # normalize results
-    current_calc_data.outAtoms = [np.multiply(atom_pos, m_dmin/current_calc_data.opOrder) for atom_pos in current_calc_data.outAtoms]
+    # We could have normalized the rotation matrix instead, but it's clearer to do this in two steps.
+    current_calc_data.outAtoms = [atom_pos * m_dmin/current_calc_data.opOrder for atom_pos in current_calc_data.outAtoms]
 
-    #intermediate= np.square(atom_pos)
-    #m_result+=np.sum(intermediate)
-    #m_result= np.sqrt(m_result)
-    #m_res= m_result.item()
     return current_calc_data
 
 
@@ -214,10 +201,8 @@ def calc_refplane(current_calc_data):
     #compute CSM:
 
 
-
-
 def calc_ref_plane(current_calc_data):
-    size = len(current_calc_data.molecule.atoms) #6 Vmol3
+    size = len(current_calc_data.molecule.atoms) #4
     is_improper = current_calc_data.operationType != 'CN' #false Vmol3
     is_zero_angle = current_calc_data.operationType == 'CS' #false Vmol3
 
@@ -258,29 +243,6 @@ def calc_ref_plane(current_calc_data):
 
             # The i'th power of the permutation
             cur_perm = [current_calc_data.perm[cur_perm[j]] for j in range(size)]
-
-            #first call:
-            #perm 012345 V :
-            #####theta 1.5707 V #multiplier 0.999 V
-            #####theta 3.14 #multiplier 2.0
-            #####theta 4.71 #multiplier 1.00
-
-            #perm 013452:
-            #####theta 1.5707 V #multiplier 0.999 V
-
-            #perm 014523
-            #####theta 3.14 #multiplier 2.0
-
-            #015234
-            #####theta 4.71 #multiplier 1.00
-
-            #perm 014532
-             #####theta 1.5707 V #multiplier 0.999 V
-
-            #perm 013254
-            #####theta 3.14 #multiplier 2.0
-
-
 
 
             # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
