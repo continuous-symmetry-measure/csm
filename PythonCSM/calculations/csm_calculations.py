@@ -73,8 +73,8 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
                                       current_calc_data.opOrder,
                                       current_calc_data.operationType == 'SN'):
             current_calc_data.perm = perm
-            current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
-            #current_calc_data = calc_ref_plane(current_calc_data) # Python version
+            #current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
+            current_calc_data = calc_ref_plane(current_calc_data) # Python version
             if current_calc_data.csm < result_csm:
                 (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
             # check, if it's a minimal csm, update dir and optimal perm
@@ -94,13 +94,11 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     #return create_symmetric_structure(current_calc_data) #python
 
 
-
 def create_symmetric_structure(current_calc_data):
     def create_rotation_matrix(iOp):
         rot = np.zeros((3, 3))
-
-        angle = 0.0 if is_zero_angle else 2 * np.pi * iOp / current_calc_data.opOrder
-        factor = -1 if is_improper and (iOp%2) else 1
+        angle=0.0 if is_zero_angle else 2 * np.pi * iOp / current_calc_data.opOrder
+        factor = -1 if is_improper and (iOp%2)==1 else 1
 
         # The rotation matrix is calculated similarly to the Rodrigues rotation matrix. The only
         # difference is that the matrix is also a reflection matrix when factor is -1.
@@ -108,8 +106,9 @@ def create_symmetric_structure(current_calc_data):
         # This is why we took the old C++ code instead of applying the Rodrigues formula directly.
         for s in range(3):
             for t in range(3):
-                ang = 0 if s != t else np.cos(angle)
-                rot[s][t] = ang + ((factor - np.cos(angle)) * m_dir[s] * m_dir[t] + np.sin(angle) * W[s][t])
+                ang = np.cos(angle) if s==t else 0
+                rot[s][t] = ang  + ((factor - np.cos(angle)) * m_dir[s] * m_dir[t] + np.sin(angle) * W[s][t])
+
 
         return rot
 
@@ -117,37 +116,44 @@ def create_symmetric_structure(current_calc_data):
     logger.debug('createSymmetricStructure called')
 
     #set up some initial values:
-    is_improper = current_calc_data.operationType != 'CN' #true
-    is_zero_angle = current_calc_data.operationType == 'CS' #false
+    is_improper = current_calc_data.operationType != 'CN'
+    is_zero_angle = current_calc_data.operationType == 'CS'
 
     cur_perm=np.arange(len(current_calc_data.perm)) #array of ints...
-    m_dmin=current_calc_data.dMin #float
-    m_dir= current_calc_data.dir #3val array
-    m_pos=[atom.pos for atom in current_calc_data.molecule.atoms]
 
-    current_calc_data.outAtoms = list(m_pos)
+    m_pos=np.asarray([np.asarray(atom.pos) for atom in current_calc_data.molecule.atoms])
+    current_calc_data.outAtoms=np.copy(m_pos)
 
+    normalization=current_calc_data.dMin/current_calc_data.opOrder
+
+    m_dir= current_calc_data.dir
     # The W matrix from the Rodrigues Rotation Formula (http://math.stackexchange.com/a/142831)
-    W = np.array([[0.0, -m_dir[2], -m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
+    W= np.array([[0.0, -m_dir[2], m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
 
+
+    ########calculate and apply transform matrix#########
+    ###for i<OpOrder
     for i in range(1,current_calc_data.opOrder):
-        rotation_matrix = create_rotation_matrix(i)
 
-        # Apply permutation
+        #get rotation
+        rotation_matrix=create_rotation_matrix(i)
+        rotated_positions = m_pos @ rotation_matrix
+
+        #set permutation
         for w in range (len(cur_perm)):
             cur_perm[w]=current_calc_data.perm[cur_perm[w]]
 
-        # rotate each atom
+        #add correct permuted rotation to atom in outAtoms
         for j in range (len(current_calc_data.outAtoms)):
-            atom_pos = m_pos[cur_perm[j]]
-            rotated_pos = rotation_matrix @ atom_pos
-            current_calc_data.outAtoms[j] += rotated_pos
+            current_calc_data.outAtoms[j] += rotated_positions[cur_perm[j]]
 
-    # normalize results
-    # We could have normalized the rotation matrix instead, but it's clearer to do this in two steps.
-    current_calc_data.outAtoms = [atom_pos * m_dmin/current_calc_data.opOrder for atom_pos in current_calc_data.outAtoms]
+    #apply normalization:
+    current_calc_data.outAtoms *= normalization
 
     return current_calc_data
+
+
+
 
 
 
@@ -202,9 +208,9 @@ def calc_refplane(current_calc_data):
 
 
 def calc_ref_plane(current_calc_data):
-    size = len(current_calc_data.molecule.atoms) #4
-    is_improper = current_calc_data.operationType != 'CN' #false Vmol3
-    is_zero_angle = current_calc_data.operationType == 'CS' #false Vmol3
+    size = len(current_calc_data.molecule.atoms)
+    is_improper = current_calc_data.operationType != 'CN'
+    is_zero_angle = current_calc_data.operationType == 'CS'
 
     logger.debug('***************************** Python ************************')
     logger.debug('calcRefPlane called')
