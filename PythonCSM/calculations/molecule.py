@@ -46,6 +46,7 @@ class Atom:
         else:
             self._mass = 1.0
         self._chain = chain
+        self._equivalency=[]
 
     @property
     def mass(self):
@@ -58,6 +59,13 @@ class Atom:
     @property
     def chain(self):
         return self._chain
+
+    @property
+    def equivalency(self):
+        return self._equivalency
+
+    def add_equivalency(self, index):
+        self._equivalency.append(index)
 
     def __str__(self):
         return "Symbol: %s\tPos: %s\tAdjacent: %s" % (self.symbol, self.pos, self.adjacent)
@@ -79,10 +87,16 @@ class Molecule:
             self._chains = None
         self._chained_perms = None
         self._obmol = obmol
+        self._bondset = set()
+        self.create_bondset()
 
     @property
     def atoms(self):
         return self._atoms
+
+    @property
+    def bondset(self):
+        return self._bondset
 
     @property
     def equivalence_classes(self):
@@ -123,6 +137,11 @@ class Molecule:
         size = len(self._atoms)
         for i in range(size):
             self._atoms[i].pos = denorm_coords[i]
+
+    def create_bondset(self):
+        for i in range(len(self._atoms)):
+            for match in self._atoms[i].adjacent:
+               self._bondset.add((i, match)) #don't bother checking if reverse has been added.
 
     def find_equivalence_classes(self):
         group_num = 0
@@ -194,6 +213,11 @@ class Molecule:
         print("Broken into groups with %d iterations." % num_iters)
 
         self._equivalence_classes = groups
+        for group in groups:
+            for atom_index in group:
+                for equiv_index in group:
+                    self._atoms[atom_index].add_equivalency(equiv_index)
+
 
         if self.chains:
             self.process_chains()
