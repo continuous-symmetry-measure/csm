@@ -75,7 +75,7 @@ void initIndexArrays(Molecule* m, int* posToIdx, int* idxToPos){
 
 /**
 * Compute the part of the A Matrix relevant to the current permutation
-*/
+*/ 
 void computeMatrix(double **parray, int *perm, int size, double(*coef)[3][3], double multiplier) {
 	
 	LOG(debug) << "computeMatrix called. Multiplier " << multiplier;
@@ -132,12 +132,12 @@ void computeVector(double **parray, int *perm, int size, double(*vec)[3], double
 */
 double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	csm_utils::dmatrix copyMat(1, 3, 1, 3);
-	csm_utils::dvector diag(1, 3);
-	csm_utils::dvector temp(1, 3);
+	csm_utils::dvector lambdas(1, 3);
+	csm_utils::dvector mTb_2(1, 3);
 
-	double matrix[3][3] = { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
-	double vec[3] = { 0.0, 0.0, 0.0 };
-	double scalar[3];
+	double matrix_A[3][3] = { { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 }, { 0.0, 0.0, 0.0 } };
+	double vec_B[3] = { 0.0, 0.0, 0.0 };
+	double mTb[3];
 	double maxval, scl, angle;
 	std::vector<double> coeffs(7);
 	int i, j;
@@ -171,80 +171,80 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 			curPerm[j] = perm[curPerm[j]];
 		}
 		if (isImproper && ((i % 2) == 1)) {
-			computeMatrix(m->pos(), curPerm, m->size(), &matrix, -1 - cos(angle));
+			computeMatrix(m->pos(), curPerm, m->size(), &matrix_A, -1 - cos(angle));
 		}
 		else {
-			computeMatrix(m->pos(), curPerm, m->size(), &matrix, 1 - cos(angle));
+			computeMatrix(m->pos(), curPerm, m->size(), &matrix_A, 1 - cos(angle));
 		}
-		computeVector(m->pos(), curPerm, m->size(), &vec, sin(angle));
+		computeVector(m->pos(), curPerm, m->size(), &vec_B, sin(angle));
 	}
 
 	LOG(debug).unsetf(ios_base::fixed);
 	LOG(debug) << "Computed matrix A is:" << setprecision(6);
-	LOG(debug) << matrix[0][0] << " " << matrix[0][1] << " " << matrix[0][2];
-	LOG(debug) << matrix[1][0] << " " << matrix[1][1] << " " << matrix[1][2];
-	LOG(debug) << matrix[2][0] << " " << matrix[2][1] << " " << matrix[2][2] << endl;
-	LOG(debug) << "Computed vector B is : " << vec[0] << " " << vec[1] << " " << vec[0] << endl;
+	LOG(debug) << matrix_A[0][0] << " " << matrix_A[0][1] << " " << matrix_A[0][2];
+	LOG(debug) << matrix_A[1][0] << " " << matrix_A[1][1] << " " << matrix_A[1][2];
+	LOG(debug) << matrix_A[2][0] << " " << matrix_A[2][1] << " " << matrix_A[2][2] << endl;
+	LOG(debug) << "Computed vector B is : " << vec_B[0] << " " << vec_B[1] << " " << vec_B[0] << endl;
 
-	vector<EigenResult> eigens = GetEigens(matrix);
+	vector<EigenResult> eigens = GetEigens(matrix_A);
 
 	// compute square of scalar multiplications of eigen vectors with b
 	for (i = 0; i < 3; i++) {
-		scalar[i] = 0.0;
+		mTb[i] = 0.0;
 		for (j = 0; j < 3; j++) {
-			scalar[i] += vec[j] * eigens[i].vector[j]; // copyVec[j + 1] * copyMat[j+1][i+1];
+			mTb[i] += vec_B[j] * eigens[i].vector[j]; // copyVec[j + 1] * copyMat[j+1][i+1];
 			copyMat[j + 1][i + 1] = eigens[i].vector[j];
 		}
-		temp[i + 1] = scalar[i] * scalar[i];
+		mTb_2[i + 1] = mTb[i] * mTb[i];
 	}
 	for (i = 0; i < 3; i++)
-		diag[i + 1] = eigens[i].value;
+		lambdas[i + 1] = eigens[i].value;
 
-	LOG(debug) << "scalar (mTb): " << scalar[0] << " " << scalar[1] << " " << scalar[2];
-	LOG(debug) << "temp (mTb^2): " << temp[1] << " " << temp[2] << " " << temp[3];
+	LOG(debug) << "scalar (mTb): " << mTb[0] << " " << mTb[1] << " " << mTb[2];
+	LOG(debug) << "temp (mTb^2): " << mTb_2[1] << " " << mTb_2[2] << " " << mTb_2[3];
 
 	// build the polynomial
 	coeffs[0] = 1.0;	// x^6
-	coeffs[1] = -2 * (diag[1] + diag[2] + diag[3]);	// x^5
-	coeffs[2] = diag[1] * diag[1] + diag[2] * diag[2] + diag[3] * diag[3] -
-		temp[1] - temp[2] - temp[3] +
-		4 * (diag[1] * diag[2] + diag[1] * diag[3] + diag[2] * diag[3]); // x^4
-	coeffs[3] = -8 * diag[1] * diag[2] * diag[3] +
-		2 * (temp[1] * diag[2] +
-		temp[1] * diag[3] +
-		temp[2] * diag[1] +
-		temp[2] * diag[3] +
-		temp[3] * diag[1] +
-		temp[3] * diag[2] -
-		diag[1] * diag[3] * diag[3] -
-		diag[1] * diag[1] * diag[2] -
-		diag[1] * diag[1] * diag[3] -
-		diag[1] * diag[2] * diag[2] -
-		diag[2] * diag[2] * diag[3] -
-		diag[2] * diag[3] * diag[3]); // x^3
+	coeffs[1] = -2 * (lambdas[1] + lambdas[2] + lambdas[3]);	// x^5
+	coeffs[2] = lambdas[1] * lambdas[1] + lambdas[2] * lambdas[2] + lambdas[3] * lambdas[3] -
+		mTb_2[1] - mTb_2[2] - mTb_2[3] +
+		4 * (lambdas[1] * lambdas[2] + lambdas[1] * lambdas[3] + lambdas[2] * lambdas[3]); // x^4
+	coeffs[3] = -8 * lambdas[1] * lambdas[2] * lambdas[3] +
+		2 * (mTb_2[1] * lambdas[2] +
+		mTb_2[1] * lambdas[3] +
+		mTb_2[2] * lambdas[1] +
+		mTb_2[2] * lambdas[3] +
+		mTb_2[3] * lambdas[1] +
+		mTb_2[3] * lambdas[2] -
+		lambdas[1] * lambdas[3] * lambdas[3] -
+		lambdas[1] * lambdas[1] * lambdas[2] -
+		lambdas[1] * lambdas[1] * lambdas[3] -
+		lambdas[1] * lambdas[2] * lambdas[2] -
+		lambdas[2] * lambdas[2] * lambdas[3] -
+		lambdas[2] * lambdas[3] * lambdas[3]); // x^3
 	coeffs[4] = 4 *
-		((diag[1] * diag[2] * diag[3] * (diag[1] + diag[2] + diag[3]) -
-		(temp[3] * diag[1] * diag[2] +
-		temp[2] * diag[1] * diag[3] +
-		temp[1] * diag[3] * diag[2]))) -
-		temp[1] * (diag[2] * diag[2] + diag[3] * diag[3]) -
-		temp[2] * (diag[1] * diag[1] + diag[3] * diag[3]) -
-		temp[3] * (diag[1] * diag[1] + diag[2] * diag[2]) +
-		diag[1] * diag[1] * diag[2] * diag[2] +
-		diag[2] * diag[2] * diag[3] * diag[3] +
-		diag[1] * diag[1] * diag[3] * diag[3]; // x^2
+		((lambdas[1] * lambdas[2] * lambdas[3] * (lambdas[1] + lambdas[2] + lambdas[3]) -
+		(mTb_2[3] * lambdas[1] * lambdas[2] +
+		mTb_2[2] * lambdas[1] * lambdas[3] +
+		mTb_2[1] * lambdas[3] * lambdas[2]))) -
+		mTb_2[1] * (lambdas[2] * lambdas[2] + lambdas[3] * lambdas[3]) -
+		mTb_2[2] * (lambdas[1] * lambdas[1] + lambdas[3] * lambdas[3]) -
+		mTb_2[3] * (lambdas[1] * lambdas[1] + lambdas[2] * lambdas[2]) +
+		lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] +
+		lambdas[2] * lambdas[2] * lambdas[3] * lambdas[3] +
+		lambdas[1] * lambdas[1] * lambdas[3] * lambdas[3]; // x^2
 	coeffs[5] = 2 *
-		(temp[1] * diag[2] * diag[3] * (diag[2] + diag[3]) +
-		temp[2] * diag[1] * diag[3] * (diag[1] + diag[3]) +
-		temp[3] * diag[1] * diag[2] * (diag[1] + diag[2]))
+		(mTb_2[1] * lambdas[2] * lambdas[3] * (lambdas[2] + lambdas[3]) +
+		mTb_2[2] * lambdas[1] * lambdas[3] * (lambdas[1] + lambdas[3]) +
+		mTb_2[3] * lambdas[1] * lambdas[2] * (lambdas[1] + lambdas[2]))
 		- 2 *
-		(diag[1] * diag[2] * diag[2] * diag[3] * diag[3] +
-		diag[1] * diag[1] * diag[2] * diag[3] * diag[3] +
-		diag[1] * diag[1] * diag[2] * diag[2] * diag[3]); // x
-	coeffs[6] = -temp[1] * diag[2] * diag[2] * diag[3] * diag[3] -
-		temp[2] * diag[1] * diag[1] * diag[3] * diag[3] -
-		temp[3] * diag[1] * diag[1] * diag[2] * diag[2] +
-		diag[1] * diag[1] * diag[2] * diag[2] * diag[3] * diag[3]; // 1
+		(lambdas[1] * lambdas[2] * lambdas[2] * lambdas[3] * lambdas[3] +
+		lambdas[1] * lambdas[1] * lambdas[2] * lambdas[3] * lambdas[3] +
+		lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] * lambdas[3]); // x
+	coeffs[6] = -mTb_2[1] * lambdas[2] * lambdas[2] * lambdas[3] * lambdas[3] -
+		mTb_2[2] * lambdas[1] * lambdas[1] * lambdas[3] * lambdas[3] -
+		mTb_2[3] * lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] +
+		lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] * lambdas[3] * lambdas[3]; // 1
 
 	// solve polynomial and find maximum eigenvalue and eigen vec
 	LOG(debug) << "Coefficients: " << coeffs[0] << ", " << coeffs[1] << ", " << coeffs[2] << ", " << coeffs[3] << ", " << coeffs[4] << ", " << coeffs[5] << ", " << coeffs[6];
@@ -259,15 +259,15 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 			maxval = roots[i].real();
 	}
 
-	LOG(debug) << fixed << "diag: " << diag[1] << " " << diag[2] << " " << diag[3];
+	LOG(debug) << fixed << "diag: " << lambdas[1] << " " << lambdas[2] << " " << lambdas[3];
 	scl = 0.0;
 	if ((isZeroAngle) || (options.opOrder == 2)) {
 		// If we are in zero angle case, we should pick the direction matching maxval
 		double minDist = MAXDOUBLE;
 		int minarg = 0;
 		for (i = 1; i <= 3; i++) {
-			if (fabs(diag[i] - maxval) < minDist) {
-				minDist = fabs(diag[i] - maxval);
+			if (fabs(lambdas[i] - maxval) < minDist) {
+				minDist = fabs(lambdas[i] - maxval);
 				minarg = i;
 			}
 		}
@@ -280,15 +280,15 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 			dir[i - 1] = 0.0;
 			for (j = 1; j <= 3; j++) {
 				// error safety
-				if (fabs(diag[j] - maxval) < 1e-6) {
+				if (fabs(lambdas[j] - maxval) < 1e-6) {
 					dir[i - 1] = copyMat[i][j];
 					break;
 				}
 				else {
-					dir[i - 1] += scalar[j - 1] / (diag[j] - maxval) * copyMat[i][j];
+					dir[i - 1] += mTb[j - 1] / (lambdas[j] - maxval) * copyMat[i][j];
 				}
 			}
-			scl += dir[i - 1] * vec[i - 1];
+			scl += dir[i - 1] * vec_B[i - 1];
 		}
 	}
 
