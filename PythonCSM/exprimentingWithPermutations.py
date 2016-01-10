@@ -409,24 +409,27 @@ class molecule_permuter:
                 return False
         return True
 
-    def cycle_permuter(self, cycle, Pip):
-        #permutes cycle by atoms
-        first_letter=cycle[0]
-        def recursive_permute(Pip, current_letter, remainder):
-            if not remainder:
-                if self.is_legal(Pip, current_letter, first_letter):
-                    Pip[current_letter]=first_letter
-                    yield Pip
-            else:
-                for index in remainder:
-                    if self.is_legal(Pip, current_letter, index):
-                        Pip[current_letter]=index
-                        carryN= index
-                        carryR= list(remainder)
-                        carryR.remove(index)
-                        yield from recursive_permute(Pip, carryN, carryR)
+    def cycle_permuter(self, cycle, pip):
 
-        yield from recursive_permute(Pip, first_letter, cycle[1:])
+        def recursive_permute(pip, current_atom, remainder):
+            if not remainder:
+                if self.is_legal(pip, current_atom, first_atom):
+                    # Make sure that pip[current_atom] is -1
+                    pip[current_atom] = first_atom
+                    yield pip
+                    # Set pip[current_atom] back to -1
+            else:
+                for next_atom in remainder:
+                    if self.is_legal(pip, current_atom, next_atom):
+                        # Make sure that pip[current_atom] is -1
+                        pip[current_atom] = next_atom
+                        next_remainder = list(remainder)
+                        next_remainder.remove(next_atom)
+                        yield from recursive_permute(pip, next_atom, next_remainder)
+                        # Set pip[current_atom] back to -1
+
+        first_atom = cycle[0]  # First atom of the necklace
+        yield from recursive_permute(pip, first_atom, cycle[1:])
 
 
 
