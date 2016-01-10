@@ -254,73 +254,113 @@ class old_permutations:
 
 
 class permutation:
-    def __init__(self, _mol, opOrder, is_SN):
+    def __init__(self, mol, opOrder=2, is_SN=False):
         self.count=0
-        self.mol=_mol
-        self._circle_cache = {}  # perm_size->all circles of size
-        self._CACHE_LIMIT = 10
-        self.cycle_size=opOrder
-        self.add_cycles_of_two=is_SN
-        self.constrain_set={}
-    def molecule_permuter(self, elements):
-        """
-        Generates all permutations of a molecule
-        :param elements: List of atoms being permuted- only when there are linked chains, is this is not 12345...
-        :return: Generator for all the permutations
-        """
-        def generate(ordered_elements, perm, groups_left):
-            if not groups_left: #finished permuting
-                yield tuple(ordered_elements)
-                return
-            group = groups_left[0]
-            groups_left = groups_left[1:]
-            if len(group) == 1: #no options to permute for this group, continue to next
-                yield from generate(ordered_elements, groups_left)
+        self._mol=mol
+        self._len=len(mol.atoms)
+        self._identityPerm=np.arange(self._len)
+        self._is_SN=is_SN
+        self._opOrder= opOrder
+
+
+    def is_legal_perm(self, PiP, position, index):
+        for adj in self._mol.atoms[index].adjacent:
+            if (self._identityPerm[position], self._identityPerm[adj]) not in self._mol.bondset and PiP[adj]!=-1:
+                return False
+        return True
+
+
+    def cycle_permuter(self, group, PIP):
+
+        Indexes=list(group)
+        Positions=list(Indexes)
+
+        def generate(indexes, positions, pip):
+            if positions==[]:
+                yield pip, indexes
             else:
-                start_elements_order=ordered_elements #this is the order the permutation was in before we called anything
-                for group_perm in self.group_permuter(self, group, perm):
-                    #apply perm to ordered elements
-                    for i in range(len(group_perm)):
-                        ordered_elements[group[i]]=start_elements_order[group_perm[i]]
+                position=positions.pop()
+                for index in indexes:
+                    if self.is_legal_perm(pip, position,index):
+                        carryPip=np.array(pip)
+                        carryPip[position]=self._identityPerm[index]
+                        indexes.remove(index)
+                        yield from generate(indexes, positions, carryPip)
+
+        First_pos= Positions.pop()
+        for perm, remainder in generate(Indexes, Positions, PIP):
+            index=remainder.pop()
+            if self.is_legal_perm(perm, First_pos, index):
+                perm[First_pos]=index
+                yield perm
+
+    def cycle_creator(self, group):
+        cycle_sizes={self._opOrder}
+        if self._is_SN:
+            cycle_sizes.add(2)
+
+        def generate(cycles, left):
+            len_left = len(left)
+            if len_left == 0:
+                yield cycles
+
+            for cycle_size in cycle_sizes:
+                if cycle_size > len_left:
+                    continue
+                rest = left[1:]
+
+                start = (left[0],)
+                for rest in itertools.combinations(rest, cycle_size-1):
+                    cycle = start + rest
+                    new_left = [item for item in left if item not in cycle]
+                    yield from generate(cycles+[cycle], new_left)
+
+        yield from generate([], list(group))
 
 
 
+    def molecule_permuter(self):
+        Blank_perm=np.ones(len(self._mol.atoms)) * -1
+        groups=self._mol.equivalence_classes
+
+        def generate(PIP, groups_left):
+            if not groups_left:
+                yield PIP
+
+            group=groups_left[0]
+            groups_left=groups_left[1:]
+            for cycles in self.cycle_creator(group):
+                for cycle in cycles:
+                    for perm in self.cycle_permuter(cycle, PIP):
+                        PIP=perm
+                        groups_left=groups[1:]
+                        yield from (PIP, groups_left)
+
+        yield from generate(Blank_perm, groups)
+
+    def simple_generator(self):
+        for Perm in self.molecule_permuter():
+            print (Perm)
+
+def test():
+        args_dict = {"useformat": False, "babelBond": False,
+                    "inFileName": "../../test_cases/test3/c_in_1282148276_benzene.mol",
+                    "ignoreSym": False, "useMass": True}
+        def run_test(filename):
+            print("running test")
+            NUMPERM=0
+            file= open(filename, "r")
+            atoms = ior.read_csm_file(file, args_dict)
+            mol= mpy.Molecule(atoms)
+            mol.find_equivalence_classes()
+            p=permutation(mol)
+            p.simple_generator()
+
+        filename=r"C:\Users\devora.witty\Sources\csm\test_cases\molDevBuilt\diamongWithArms.csm"
+        run_test(filename)
 
 
-        perm=np.ones(len(elements)) * -1 #permutation is empty
-        yield from generate(elements, perm, self.mol.equivalence_classes)
-
-    def group_permuter(self, group, perm):
-        """
-        Generates all permutations of an equivalency group
-        :param group: equivalency group being permuted
-        :param perm: the permutation as it has been built so far (starts as array of -1)
-        :return: Generator for all the permutations
-        """
-        def generate():
-            print("hi")
-        print("hi")
-
-    def cycle_permuter(self, cycle, perm):
-        """
-        Generates all permutations of a cycle (within an equivalency group)
-
-        :param cycle: cycle being permuted
-        :param perm: the permutation as it has been built so far (starts as array of -1)
-        :return: Generator for all the permutations
-        """
-        def generate():
-            print("hi")
-        print("hi")
-
-    def cycle_generator(self, group):
-        """
-        Generates all cycles in equivalency group of allowed size
-        :param group: equivalency group cycles are being generated for
-        :return: Generator for all the permutations
-        """
-        def generate():
-            print("hi")
+test()
 
 
 
@@ -373,5 +413,3 @@ def ptester():
     filename= r"C:\Users\devora.witty\Sources\csm\test_cases\molDevBuilt\somekindatree.csm"
     num= run_test(filename)
     print(num)
-
-ptester()
