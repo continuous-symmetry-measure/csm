@@ -360,11 +360,40 @@ def test():
         run_test(filename)
 
 
-test()
+def is_legal(Pip, toi, fromi):
+    if fromi==2 and toi==3:
+        return False
+    return True
+
+def cycle_permuter(cycle, PiP):
+    def recursive_permute(Pip, froms, tos):
+        if froms==[]:
+            yield Pip
+        else:
+            t_index=tos[0]
+            carryT=tos[1:]
+            for f_index in froms:
+                if t_index!=f_index:
+                        carryF=list(froms)
+                        carryF.remove(f_index)
+                        if is_legal(Pip, t_index, f_index):
+                            Pip[t_index]=f_index
+                            yield from recursive_permute(Pip, carryF, carryT)
+                            Pip[t_index]=-1
+    if len(cycle)==1:
+        yield cycle
+    yield from recursive_permute(PiP, cycle, cycle)
 
 
 
 
+def test_perm():
+    Pip=[-1, -1, -1, -1]
+    c=[0,1,2,3]
+    for perm in cycle_permuter(c, Pip):
+        print(perm)
+
+test_perm()
 
 
 
