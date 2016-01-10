@@ -359,41 +359,104 @@ def test():
         filename=r"C:\Users\devora.witty\Sources\csm\test_cases\molDevBuilt\diamongWithArms.csm"
         run_test(filename)
 
+class molecule_permuter:
+    def __init__(self, mol, opOrder, is_SN):
+            self.mol=mol
+            self.cycle_size=opOrder
+            self.add_cycles_of_two=is_SN
+            self.empty_perm=np.ones(len(mol.atoms))*-1
 
-def is_legal(Pip, toi, fromi):
-    if fromi==2 and toi==3:
-        return False
-    return True
+    def is_legal(self, Pip, toi, fromi):
+        #fromi,j->toi,p(j)
+        for adjacent in self.mol.atoms[fromi].adjacent:
+            if  Pip[adjacent]!=-1 and (toi, Pip[adjacent]) not in self.mol.bondset:
+                return False
+        return True
 
-def cycle_permuter(cycle, PiP):
-    def recursive_permute(Pip, froms, tos):
-        if froms==[]:
-            yield Pip
-        else:
-            t_index=tos[0]
-            carryT=tos[1:]
-            for f_index in froms:
-                if t_index!=f_index:
-                        carryF=list(froms)
-                        carryF.remove(f_index)
-                        if is_legal(Pip, t_index, f_index):
-                            Pip[t_index]=f_index
-                            yield from recursive_permute(Pip, carryF, carryT)
-                            Pip[t_index]=-1
-    if len(cycle)==1:
-        yield cycle
-    yield from recursive_permute(PiP, cycle, cycle)
+    def cycle_permuter(self, cycle, PiP):
+        def recursive_permute(Pip, necklace, remainder):
+            if remainder==[]:
+                if self.is_legal(Pip, necklace[-1], necklace[0]):
+                    Pip[necklace[-1]]=necklace[0]
+                    yield Pip
+            else:
+                for index in remainder:
+                    if self.is_legal(Pip, necklace[-1], index):
+                        Pip[necklace[-1]]=index
+                        carryN= list(necklace)
+                        carryN.append(index)
+                        carryR= list(remainder)
+                        carryR.remove(index)
+                        yield from recursive_permute(Pip, carryN, carryR)
+
+        yield from recursive_permute(PiP, [cycle[0]], cycle[1:])
+
+    def testcycle(self):
+        Pip=[-1, -1, -1, -1]
+        Cycle=[0, 1, 2, 3]
+        for perm in self.cycle_permuter(Cycle, Pip):
+            print(perm)
+
+    def group_permuter(self, group, Pip):
+        for perm in self.cycle_permuter(group, Pip):
+            yield perm
+
+    def molecule_permuter(self):
+        def recursive_permute(groups, Pip):
+            if groups==[]:
+                yield Pip
+            else:
+                group=groups[0]
+                groups_left=groups[1:]
+                for perm in self.group_permuter(group, Pip):
+                    yield from recursive_permute(groups_left, perm)
+
+        Pip=self.empty_perm
+        Groups= self.mol.equivalence_classes
+        yield from recursive_permute(Groups, Pip)
 
 
 
 
-def test_perm():
-    Pip=[-1, -1, -1, -1]
-    c=[0,1,2,3]
-    for perm in cycle_permuter(c, Pip):
-        print(perm)
 
-test_perm()
+
+
+def run_tests():
+        args_dict = {"useformat": False, "babelBond": False,
+                    "inFileName": "../../test_cases/test3/c_in_1282148276_benzene.mol",
+                    "ignoreSym": False, "useMass": True}
+        def run_test(filename):
+            print("running test")
+            NUMPERM=0
+            file= open(filename, "r")
+            atoms = ior.read_csm_file(file, args_dict)
+            mol= mpy.Molecule(atoms)
+            mol.find_equivalence_classes()
+            p= molecule_permuter(mol, 4, False)
+            elements=[i for i in range (len(mol.atoms))]
+            Pip=np.ones(len(elements))*-1
+            for perm in p.molecule_permuter():
+                print(perm)
+                NUMPERM +=1
+            return NUMPERM
+
+        filename=r"C:\Users\devora.witty\Sources\csm\test_cases\molDevBuilt\diamongWithArms.csm"
+        num= run_test(filename)
+        print(num)
+
+
+        filename= r"C:\Users\devora.witty\Sources\csm\test_cases\molDevBuilt\diamondwhoseArmsHaveFingers.csm"
+        num= run_test(filename)
+        print(num)
+
+        filename= r"C:\Users\devora.witty\Sources\csm\test_cases\molDevBuilt\somekindatree.csm"
+        num= run_test(filename)
+        print(num)
+
+run_tests()
+
+
+
 
 
 
