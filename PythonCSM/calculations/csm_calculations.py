@@ -70,10 +70,10 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     # Iterate through the permutations that swap chains
     for chained_perm in chained_perms:
         # and apply on each of them all the permutations on elements inside of each chain
-        for perm in mp.molecule_permuter():#molecule_permuter(chained_perm.atom_perm, current_calc_data.molecule.equivalence_classes, current_calc_data.opOrder, current_calc_data.operationType == 'SN'):
+        for perm in mp.molecule_permuter(): # molecule_permuter(chained_perm.atom_perm, current_calc_data.molecule.equivalence_classes, current_calc_data.opOrder, current_calc_data.operationType == 'SN'):
             current_calc_data.perm = perm
-            #current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
-            current_calc_data = calc_ref_plane(current_calc_data) # Python version
+            current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
+            #current_calc_data = calc_ref_plane(current_calc_data) # Python version
             if current_calc_data.csm < result_csm:
                 (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
             # check, if it's a minimal csm, update dir and optimal perm
