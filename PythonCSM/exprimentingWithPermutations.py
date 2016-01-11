@@ -60,16 +60,15 @@ class molecule_permuter:
         def recursive_permute(pip, current_atom, remainder):
             if not remainder:
                 if self.is_legal(pip, current_atom, first_atom):
-                    if pip[current_atom]==-1:
-                        # Make sure that pip[current_atom] is -1
-                        pip[current_atom] = first_atom
-                        yield pip
-                        pip[current_atom]=-1
+                    assert(pip[current_atom]==-1)
+                    pip[current_atom] = first_atom
+                    yield pip
+                    pip[current_atom]=-1
             else:
                 if pip[current_atom]==-1:
                     for next_atom in remainder:
                         if self.is_legal(pip, current_atom, next_atom):
-                            # Make sure that pip[current_atom] is -1
+                            assert(pip[current_atom]==-1)
                             pip[current_atom] = next_atom
                             next_remainder = list(remainder)
                             next_remainder.remove(next_atom)

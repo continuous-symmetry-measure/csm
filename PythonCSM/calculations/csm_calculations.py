@@ -9,7 +9,7 @@ np.set_printoptions(precision=6)
 from permutations.lengths import len_molecule_permuter
 from permutations.permuters import molecule_permuter
 from CPP_wrapper.fast_permutations import molecule_permuter
-from exprimentingWithPermutations import molecule_permuter
+# from exprimentingWithPermutations import molecule_permuter
 from calculations.molecule import ChainedPermutation
 from CPP_wrapper import csm
 import logging
@@ -89,8 +89,8 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     current_calc_data.dir = dir
     current_calc_data.csm = result_csm
 
-    return csm.CreateSymmetricStructure(current_calc_data) #c++
-    #return create_symmetric_structure(current_calc_data) #python
+    #return csm.CreateSymmetricStructure(current_calc_data) #c++
+    return create_symmetric_structure(current_calc_data) #python
 
 
 def create_symmetric_structure(current_calc_data):
