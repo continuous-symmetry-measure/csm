@@ -30,7 +30,7 @@ def compare(perm_size, group_size, add_groups_of_two):
         csm_perms.append(tuple(csm_perm))
 
     our_perms = []
-    for our_perm in fast_permutations.group_permuter(perm_size, group_size, add_groups_of_two):
+    for our_perm in fast_permutations._group_permuter(perm_size, group_size, add_groups_of_two):
         our_perms.append(tuple(our_perm))
 
     allowed_cycles = {1, group_size}
@@ -172,7 +172,7 @@ def big_test():
     def count_cython():
         count = 0
         #for struct in permutations._get_cycle_structs(group_size, cycle_sizes):
-        for perm in fast_permutations.group_permuter(group_size, cycle_size, add_groups_of_two):
+        for perm in fast_permutations._group_permuter(group_size, cycle_size, add_groups_of_two):
             count += 1
         print('Cython count: %d' % count)
 

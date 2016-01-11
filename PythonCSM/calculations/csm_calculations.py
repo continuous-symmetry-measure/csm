@@ -65,11 +65,11 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
         # If no chained permutations specified - the regular permutations will be used
         chained_perms = [ChainedPermutation(1, list(range(len(current_calc_data.molecule.atoms))))]
 
-    mp=MoleculeLegalPermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
+    mp=MoleculePermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
     # Iterate through the permutations that swap chains
     for chained_perm in chained_perms:
         # and apply on each of them all the permutations on elements inside of each chain
-        for perm in mp.permute(): #chained_perm.atom_perm):
+        for perm in mp.permute(chained_perm.atom_perm):
             current_calc_data.perm = perm
             current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
             #current_calc_data = calc_ref_plane(current_calc_data) # Python version
