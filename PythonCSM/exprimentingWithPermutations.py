@@ -5,7 +5,7 @@ import itertools
 import warnings
 
 
-class molecule_permuter:
+class MoleculeLegalPermuter:
     def __init__(self, mol, opOrder, is_SN):
         self.num=0
         self.mol=mol
