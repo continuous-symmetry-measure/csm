@@ -6,10 +6,13 @@ __author__ = 'zmbq'
 
 
 def len_molecule_permuter(molecule, op_order, op_type):
-    result = 1
-    for group in molecule.equivalence_classes:
-        result *= _len_group_permuter(len(group), op_order, op_type == 'SN')
-    return result
+    try:
+        result = 1
+        for group in molecule.equivalence_classes:
+            result *= _len_group_permuter(len(group), op_order, op_type == 'SN')
+        return result
+    except OverflowError:
+        return 1e300
 
 
 def _len_group_permuter(group_size, cycle_size, add_cycles_of_two):

@@ -12,7 +12,7 @@ __author__ = 'zmbq'
 from input_output.writers import print_all_output
 from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations
-from CPP_wrapper import csm
+# from CPP_wrapper import csm
 
 import logging
 
@@ -55,7 +55,7 @@ def run_csm(args, print_output=True):
         csm_args = get_arguments(args)
         init_logging(csm_args)
         csm_args['molecule'].preprocess(**csm_args)
-        csm.SetCSMOptions(csm_args)  # Set the default options for the Python/C++ bridge
+        # csm.SetCSMOptions(csm_args)  # Set the default options for the Python/C++ bridge
 
         if csm_args['babelTest']:
             return None

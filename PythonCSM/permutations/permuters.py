@@ -3,9 +3,9 @@ import warnings
 
 __author__ = 'zmbq'
 
-warnings.warn(
-        'This is the inefficient Python implementation, use CPP_Wrapper.permutations for the efficient  version',
-        RuntimeWarning)
+#warnings.warn(
+#        'This is the inefficient Python implementation, use CPP_Wrapper.permutations for the efficient  version',
+#        RuntimeWarning)
 
 
 class MoleculePermuter:
@@ -134,7 +134,7 @@ class MoleculePermuter:
             yield from self._all_perms_from_cycle_struct(group_size,
                                                          cycle_struct)  # Return all permutations for each cycle structure
 
-    def permute(self, elements):
+    def permute(self):
         """
         Generates all permutations of a molecule
         :param molecule_size: Molecule size
@@ -176,7 +176,7 @@ class MoleculePermuter:
                     ordered_elements = start_elements_order[:]
 
         groups = self._mol.equivalence_classes
-        elements_order = elements  # The starting elements order
+        elements_order = list(range(len(self._mol.atoms)))  # The starting elements order
         yield from generate(elements_order, groups)
 
 
@@ -245,15 +245,14 @@ class MoleculeLegalPermuter:
                     yield pip
                     pip[current_atom] = -1
             else:
-                if pip[current_atom] == -1:
-                    for next_atom in remainder:
-                        if self._is_legal(pip, current_atom, next_atom):
-                            assert (pip[current_atom] == -1)
-                            pip[current_atom] = next_atom
-                            next_remainder = list(remainder)
-                            next_remainder.remove(next_atom)
-                            yield from recursive_permute(pip, next_atom, next_remainder)
-                            pip[current_atom] = -1
+                for next_atom in remainder:
+                    if self._is_legal(pip, current_atom, next_atom):
+                        assert (pip[current_atom] == -1)
+                        pip[current_atom] = next_atom
+                        next_remainder = list(remainder)
+                        next_remainder.remove(next_atom)
+                        yield from recursive_permute(pip, next_atom, next_remainder)
+                        pip[current_atom] = -1
 
         first_atom = cycle[0]  # First atom of the necklace
         yield from recursive_permute(pip, first_atom, cycle[1:])

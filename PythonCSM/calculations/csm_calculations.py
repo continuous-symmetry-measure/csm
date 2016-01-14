@@ -8,9 +8,9 @@ np.set_printoptions(precision=6)
 # from permutations.lengths import len_molecule_permuter
 from permutations.lengths import len_molecule_permuter
 from permutations.permuters import MoleculePermuter, MoleculeLegalPermuter
-from CPP_wrapper.fast_permutations import molecule_permuter
+# from CPP_wrapper.fast_permutations import molecule_permuter
 from calculations.molecule import ChainedPermutation
-from CPP_wrapper import csm
+# from CPP_wrapper import csm
 import logging
 
 logger = logging.getLogger("calculations")
@@ -65,19 +65,24 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
         # If no chained permutations specified - the regular permutations will be used
         chained_perms = [ChainedPermutation(1, list(range(len(current_calc_data.molecule.atoms))))]
 
-    mp=MoleculePermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
+    mp = MoleculeLegalPermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
     # Iterate through the permutations that swap chains
+    count = 0
     for chained_perm in chained_perms:
+        current_calc_data.ep = chained_perm
         # and apply on each of them all the permutations on elements inside of each chain
-        for perm in mp.permute(chained_perm.atom_perm):
+        for perm in mp.permute():
             current_calc_data.perm = perm
-            current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
-            #current_calc_data = calc_ref_plane(current_calc_data) # Python version
+            # current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
+            current_calc_data = calc_ref_plane(current_calc_data) # Python version
             if current_calc_data.csm < result_csm:
                 (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
             # check, if it's a minimal csm, update dir and optimal perm
             if csv_writer:
-                csv_writer.writerow([perm, current_calc_data.dir, current_calc_data.csm])
+                csv_writer.writerow([[p+1 for p in perm], current_calc_data.dir, current_calc_data.csm])
+            count += 1
+
+    print("Gone over %d permutations" % count)
 
     if result_csm == MAXDOUBLE:
         # failed to find csm value for any permutation
