@@ -253,37 +253,36 @@ def _process_split_arguments(parse_res):
     calc_result['type'] = op_names[parse_res.type][0]
     calc_result['op_order'] = op_names[parse_res.type][1]
     calc_result['op_name'] = op_names[parse_res.type][2]
-    mol_result['in_file_name'] = parse_res.input
-    out_result['out_file_name'] = parse_res.output
-
     calc_result['sn_max'] = parse_res.sn_max
+    calc_result['limit_run'] = not parse_res.nolimit
+    calc_result['find_perm'] = parse_res.findperm
+    calc_result['detect_outliers'] = parse_res.detectOutliers
+    if parse_res.approx:
+        calc_result['approx']=True
+        calc_result['find_perm'] = True
+        calc_result['detect_outliers'] = True
 
+    mol_result['in_file_name'] = parse_res.input
     mol_result['ignore_hy'] = parse_res.ignoreHy
     mol_result['remove_hy'] = parse_res.removeHy
     mol_result['ignore_sym'] = parse_res.ignoreSym
-
     mol_result['format'] = parse_res.format
     mol_result['useformat'] = mol_result['format'] is not None
     if not mol_result['format']:
         # get input file extension
         mol_result['format'] = parse_res.input.split(".")[-1]
-
-    out_result['write_openu'] = parse_res.writeOpenu
-    calc_result['limit_run'] = not parse_res.nolimit
     mol_result['babel_bond'] = parse_res.babelbond
     mol_result['use_mass'] = parse_res.useMass
-    out_result['print_norm'] = parse_res.printNorm
-    calc_result['find_perm'] = parse_res.findperm
-    calc_result['detect_outliers'] = parse_res.detectOutliers
     mol_result['use_chains'] = parse_res.useChains
-    if parse_res.approx:
-        calc_result['find_perm'] = True
-        calc_result['detect_outliers'] = True
-    out_result['print_local'] = parse_res.printLocal
     mol_result['keep_center'] = parse_res.keepCenter
     if parse_res.writeOpenu:
         mol_result['format'] = "PDB"
+
+    out_result['write_openu'] = parse_res.writeOpenu
+    out_result['print_norm'] = parse_res.printNorm
+    out_result['print_local'] = parse_res.printLocal
     out_result['log_file_name'] = parse_res.log
+    out_result['out_file_name'] = parse_res.output
 
     _open_files(parse_res, mol_result)
     _check_arguments(mol_result)

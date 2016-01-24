@@ -164,47 +164,6 @@ def total_number_of_permutations(csm_args):
             num_perms += len_molecule_permuter(csm_args['molecule'], i, 'SN')
         return num_perms
 
-def calc_refplane(current_calc_data):
-    hi=0
-    #arguments:
-    #parray
-    #perm
-    #size
-    #coef 3x3
-    #multiplier
-
-    #variables:
-    #copyMat (3x3  mat)
-    #"diag" (1X3 vec)
-    #temp (1x3 vec)
-    #"matrix" (3x3, all zeroes)
-    #"vec" 1x3, all zeroes
-    #cur perm- array of ints 12345..size
-    #doubls csm, dists
-    #bool isimporper
-    #bool is zeroangle
-
-    #step one: calc_A_B
-    #permute permutation
-    #call compute matrix
-    #call compute vector
-
-    #step two:
-    #compute square of scalar multiplications of eigen vectors with b
-
-    #step three:
-    #build polynomial
-
-    #step four:
-    #solve polynomial
-
-    #step five:
-    #reset permutation to 123...size
-
-    #step six:
-    #compute CSM:
-
-
 def calc_ref_plane(current_calc_data):
     size = len(current_calc_data.molecule.atoms)
     is_improper = current_calc_data.operationType != 'CN'

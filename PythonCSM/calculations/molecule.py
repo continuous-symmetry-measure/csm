@@ -64,7 +64,7 @@ class Atom:
     def equivalency(self):
         return self._equivalency
 
-    def add_equivalency(self, index):
+    def add_equivalence(self, index):
         self._equivalency.append(index)
 
     def __str__(self):
@@ -216,7 +216,7 @@ class Molecule:
         for group in groups:
             for atom_index in group:
                 for equiv_index in group:
-                    self._atoms[atom_index].add_equivalency(equiv_index)
+                    self._atoms[atom_index].add_equivalence(equiv_index)
 
 
         if self.chains:

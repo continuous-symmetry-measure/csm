@@ -1,12 +1,11 @@
 from openbabel import OBAtom, OBElementTable, OBAtomAtomIter, OBConversion, OBMol
-from molecule.atom import Atom
+from molecule.atom import Atom, GetAtomicSymbol
 from molecule.normalizations import normalize_coords, de_normalize_coords
-from molecule.readers import read_file
 import logging
 logger = logging.getLogger("csm")
 
 class Molecule:
-    def __init__(self, atoms={}, chains={}, norm_factor=1.0):
+    def __init__(self, atoms={}, chains={}, norm_factor=1.0, obmol=None):
         self._atoms=atoms
         self._chains=chains
         self._bondset=set()
@@ -14,6 +13,7 @@ class Molecule:
         self._norm_factor= norm_factor
         self._flags={}
         self._create_bondset()
+        self._obmol=obmol
     @property
     def atoms(self):
         return self._atoms
@@ -38,6 +38,13 @@ class Molecule:
         if (atom_i, atom_j) in self._bondset:
             return True
         return False
+
+    def atom_cords(self):
+        atoms=[]
+        for atom in self._atoms:
+            atoms.append(atom.pos)
+        return atoms
+
 
     def _create_bondset(self):
         for i in range(len(self._atoms)):
@@ -115,7 +122,7 @@ class Molecule:
         for group in groups:
             for atom_index in group:
                 for equiv_index in group:
-                    self._atoms[atom_index].add_equivalency(equiv_index)
+                    self._atoms[atom_index].add_equivalence(equiv_index)
 
 
         if self.chains:
@@ -202,18 +209,149 @@ class Molecule:
         for i in range(size):
             self._atoms[i].pos = denorm_coords[i]
 
+    def process(self, remove_hy, ignore_hy, keep_center):
+        self.process_equivalency(remove_hy, ignore_hy)
+        self.normalize(keep_center)
+
     @staticmethod
-    def read(in_file_name, format, use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
+    def read_string(string, format,use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
         #note: useMass is used when creating molecule, even though it is actually about creating the normalization
         #second note: keepCenter has only ever been tested as false, it's not at all certain it's still used or still works when true
 
         #step one: get the molecule object
-        mol= read_file(in_file_name, format, babel_bond, ignore_symm, use_mass)
-
-        #step two: create equivalency groups
-        mol.process_equivalency(remove_hy, ignore_hy)
-
-        #step three: save normalization data
-        mol.normalize(keep_center)
+        obm= Molecule.obm_from_string(string, format, babel_bond)
+        mol=Molecule.read_ob_mol(obm, ignore_symm, use_mass)
+        mol.process(remove_hy, ignore_hy, keep_center)
 
         return mol
+
+    @staticmethod
+    def read_file(filename, format=None, use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
+        if format=="csm":
+            mol= Molecule.read_csm_file(filename, ignore_symm, use_mass)
+        else:
+            obm=Molecule.obm_from_non_csm_file(filename, format, babel_bond)
+            mol=Molecule.read_ob_mol(obm, ignore_symm, use_mass)
+        mol.process(remove_hy, ignore_hy, keep_center)
+        return mol
+
+    @staticmethod
+    def obm_from_string(string, format, babel_bond=None):
+        conv = OBConversion()
+        obmol = OBMol()
+        if not conv.SetInFormat(format):
+            raise ValueError("Error setting openbabel format to" + format)
+        if not babel_bond:
+            conv.SetOptions("b", conv.INOPTIONS)
+        conv.ReadString(obmol, string)
+        return obmol
+
+    @staticmethod
+    def obm_from_file(filename, format=None, babel_bond=None):
+        """
+        :param filename: name of file to open
+        :param format: molecule format of file (eg xyz, pdb)
+        :param babelBond:
+        :return:
+        """
+        conv=OBConversion()
+        mol=OBMol()
+        if not format:
+            format = conv.FormatFromExt(filename)
+            if not format:
+                raise ValueError("Error discovering format from filename " + filename)
+        if not conv.SetInFormat(format):
+                raise ValueError("Error setting openbabel format to" + format)
+        if not babel_bond:
+            conv.SetOptions("b", conv.INOPTIONS)
+        if not conv.ReadFile(mol, filename):
+            raise ValueError("Error reading file " + filename + " using OpenBabel")
+        return mol
+
+    @staticmethod
+    def read_ob_mol(obmol, ignore_symm=False, use_mass=False):
+        """
+        :param obmol: OBmol molecule
+        :param args_dict: dictionary of processed command line arguments
+        :return: A list of Atoms and a list of chains
+        """
+        num_atoms = obmol.NumAtoms()
+        atoms = []
+        chains = set()
+        chains_list = []
+        for i in range(num_atoms):
+            obatom = obmol.GetAtom(i + 1)
+            if ignore_symm:
+                symbol = "XX"
+            else:
+                # get symbol by atomic number
+                symbol = GetAtomicSymbol(obatom.GetAtomicNum())
+            position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
+            chain = obatom.GetResidue().GetChain()
+            if chain not in chains:
+                chains.add(chain)
+                chains_list.append(chain)
+            atom = Atom(symbol, position, use_mass, chain)
+            adjacent = []
+            iter = OBAtomAtomIter(obatom)
+            for neighbour_atom in iter:
+                adjacent.append(neighbour_atom.GetIdx() - 1)
+            atom.adjacent = adjacent
+            atoms.append(atom)
+        mol=Molecule(atoms=atoms, chains=chains)
+        return mol
+
+    @staticmethod
+    def read_csm_file(filename, ignore_symm=False, use_mass=False):
+        """
+        :param filename:
+        :param ignore_symm:
+        :param use_mass:
+        :return: A list of Atoms
+        """
+
+        try:
+            size = int(filename.readline())
+        except ValueError:
+            raise ValueError("Input Error: Number of atoms not supplied")
+
+        if size > 0:
+            atoms = []
+        else:
+            return None
+
+        for i in range(size):
+            line = filename.readline().split()
+            try:
+                if ignore_symm:
+                    symbol = "XX"
+                else:
+                    symbol = line[0]
+                position = (float(line[1]), float(line[2]), float(line[3]))
+                atom = Atom(symbol, position, use_mass)
+            except (ValueError, IndexError):
+                raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
+            atoms.append(atom)
+
+        for i in range(size):
+            line = filename.readline().split()
+            try:
+                atom_num = int(line.pop(0))
+            except (ValueError, IndexError):
+                raise ValueError("Input Error: Failed reading connectivity for atom " + str(i+1))
+            if atom_num != i+1:
+                raise ValueError("Input Error: Failed reading connectivity for atom " + str(i+1))
+
+            neighbours = []
+            for neighbour_str in line:
+                try:
+                    neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
+                except ValueError:
+                    raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
+                if neighbour >= size:
+                    raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
+                neighbours.append(neighbour)
+
+            atoms[i].adjacent = neighbours
+
+        return Molecule(atoms)
