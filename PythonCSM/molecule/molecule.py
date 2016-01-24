@@ -171,7 +171,7 @@ class Molecule:
 
         return found
 
-    def process_equivalency(self, remove_hy=False, ignore_hy=False):
+    def _calculate_equivalency(self, remove_hy=False, ignore_hy=False):
         """
         Preprocess a molecule based on the arguments passed to CSM
         :param remove_hy: True if hydrogen atoms should be removed
@@ -209,34 +209,37 @@ class Molecule:
         for i in range(size):
             self._atoms[i].pos = denorm_coords[i]
 
-    def process(self, remove_hy, ignore_hy, keep_center):
-        self.process_equivalency(remove_hy, ignore_hy)
+    def _complete_initialization(self, remove_hy, ignore_hy, keep_center):
+        """
+        Finish creating the molecule after reading the raw data
+        """
+        self._calculate_equivalency(remove_hy, ignore_hy)
         self.normalize(keep_center)
 
     @staticmethod
-    def read_string(string, format,use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
+    def from_string(string, format, use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
         #note: useMass is used when creating molecule, even though it is actually about creating the normalization
         #second note: keepCenter has only ever been tested as false, it's not at all certain it's still used or still works when true
 
         #step one: get the molecule object
-        obm= Molecule.obm_from_string(string, format, babel_bond)
-        mol=Molecule.read_ob_mol(obm, ignore_symm, use_mass)
-        mol.process(remove_hy, ignore_hy, keep_center)
+        obm= Molecule._obm_from_string(string, format, babel_bond)
+        mol=Molecule._read_ob_mol(obm, ignore_symm, use_mass)
+        mol._complete_initialization(remove_hy, ignore_hy, keep_center)
 
         return mol
 
     @staticmethod
-    def read_file(filename, format=None, use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
+    def from_file(filename, format=None, use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
         if format=="csm":
-            mol= Molecule.read_csm_file(filename, ignore_symm, use_mass)
+            mol= Molecule._read_csm_file(filename, ignore_symm, use_mass)
         else:
             obm=Molecule.obm_from_non_csm_file(filename, format, babel_bond)
-            mol=Molecule.read_ob_mol(obm, ignore_symm, use_mass)
-        mol.process(remove_hy, ignore_hy, keep_center)
+            mol=Molecule._read_ob_mol(obm, ignore_symm, use_mass)
+        mol._complete_initialization(remove_hy, ignore_hy, keep_center)
         return mol
 
     @staticmethod
-    def obm_from_string(string, format, babel_bond=None):
+    def _obm_from_string(string, format, babel_bond=None):
         conv = OBConversion()
         obmol = OBMol()
         if not conv.SetInFormat(format):
@@ -247,7 +250,7 @@ class Molecule:
         return obmol
 
     @staticmethod
-    def obm_from_file(filename, format=None, babel_bond=None):
+    def _obm_from_file(filename, format=None, babel_bond=None):
         """
         :param filename: name of file to open
         :param format: molecule format of file (eg xyz, pdb)
@@ -269,7 +272,7 @@ class Molecule:
         return mol
 
     @staticmethod
-    def read_ob_mol(obmol, ignore_symm=False, use_mass=False):
+    def _read_ob_mol(obmol, ignore_symm=False, use_mass=False):
         """
         :param obmol: OBmol molecule
         :param args_dict: dictionary of processed command line arguments
@@ -302,7 +305,7 @@ class Molecule:
         return mol
 
     @staticmethod
-    def read_csm_file(filename, ignore_symm=False, use_mass=False):
+    def _read_csm_file(filename, ignore_symm=False, use_mass=False):
         """
         :param filename:
         :param ignore_symm:
