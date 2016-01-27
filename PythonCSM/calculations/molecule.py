@@ -6,7 +6,6 @@ from collections import namedtuple
 from openbabel import OBAtom, OBElementTable
 from calculations.normalizations import normalize_coords, de_normalize_coords
 # from permutations.permuters import all_circle_permutations
-from CPP_wrapper.fast_permutations import all_circle_permutations
 
 __author__ = 'zmbq'
 

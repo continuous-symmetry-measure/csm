@@ -3,14 +3,14 @@ import csv
 import math
 
 import numpy as np
+from molecule.normalizations import de_normalize_coords
+
 np.set_printoptions(precision=6)
 
 # from permutations.lengths import len_molecule_permuter
 from permutations.lengths import len_molecule_permuter
 from permutations.permuters import MoleculePermuter, MoleculeLegalPermuter
-from CPP_wrapper.fast_permutations import molecule_permuter
 from calculations.molecule import ChainedPermutation
-from CPP_wrapper import csm
 from calculations.csm_calculations_data import CSMCalculationsData
 import logging
 
@@ -45,6 +45,7 @@ def exact_calculation(type, molecule, cppdata=None, perm=None, sn_max=None):
         result = csm.RunSinglePerm(cppdata)
         return result
     result = csm_operation(op_name,op_order, molecule, cppdata, perm, sn_max)
+    result.outAtoms = de_normalize_coords(result.outAtoms, result.molecule.norm_factor)
     return result
 
     # chirality support (currently never hit, but needs to eventually be addressed)
