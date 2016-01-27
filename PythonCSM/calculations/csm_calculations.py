@@ -6,14 +6,13 @@ import numpy as np
 np.set_printoptions(precision=6)
 
 # from permutations.lengths import len_molecule_permuter
-from permutations.lengths import len_molecule_permuter
-from permutations.permuters import MoleculePermuter, MoleculeLegalPermuter
-from CPP_wrapper.fast_permutations import molecule_permuter
+from old_permutations.lengths import len_molecule_permuter
+from old_permutations.permuters import MoleculePermuter, MoleculeLegalPermuter
 from calculations.molecule import ChainedPermutation
 from CPP_wrapper import csm
 import logging
 
-logger = logging.getLogger("calculations")
+logger = logging.getLogger("old_calculations")
 
 __author__ = 'YAEL'
 
@@ -25,8 +24,8 @@ def perform_operation(csm_args, data):
     """
     Performs the csm calculation according to the options specified in csm_args
     :param csm_args: the csm arguments dictionary
-    :param data: current calculations data object
-    :return: the calculations data object with the permutation, csm, dMin and direction values updated
+    :param data: current old_calculations data object
+    :return: the old_calculations data object with the permutation, csm, dMin and direction values updated
     """
     if 'dir' in csm_args:
         result = csm.FindBestPermUsingDir(data)
@@ -43,9 +42,9 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
     Once it finds the optimal permutation , calls the CreateSymmetricStructure on the optimal permutation
-    :param current_calc_data: current calculations data object
+    :param current_calc_data: current old_calculations data object
     :param args: The CSM arguments
-    :return: the calculations data object with the permutation, csm, dMin and direction values updated
+    :return: the old_calculations data object with the permutation, csm, dMin and direction values updated
     """
     op_name = csm_args['opName']
     chained_perms = csm_args['molecule'].chained_perms
@@ -61,23 +60,29 @@ def csm_operation(current_calc_data, csm_args):  # op_name, chains_perms):
         csv_writer = csv.writer(csm_args['outPermFile'], lineterminator='\n')
         csv_writer.writerow(['Permutation', 'Direction', 'CSM'])
 
-    if not chained_perms:
-        # If no chained permutations specified - the regular permutations will be used
-        chained_perms = [ChainedPermutation(1, list(range(len(current_calc_data.molecule.atoms))))]
+    if 'perm' in csm_args:
+        #current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
+        current_calc_data = calc_ref_plane(current_calc_data) # Python version
+        (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), current_calc_data.perm)
 
-    mp=MoleculePermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
-    # Iterate through the permutations that swap chains
-    for chained_perm in chained_perms:
-        # and apply on each of them all the permutations on elements inside of each chain
-        for perm in mp.permute(chained_perm.atom_perm):
-            current_calc_data.perm = perm
-            current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
-            #current_calc_data = calc_ref_plane(current_calc_data) # Python version
-            if current_calc_data.csm < result_csm:
-                (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
-            # check, if it's a minimal csm, update dir and optimal perm
-            if csv_writer:
-                csv_writer.writerow([perm, current_calc_data.dir, current_calc_data.csm])
+    else:
+        if not chained_perms:
+            # If no chained permutations specified - the regular permutations will be used
+            chained_perms = [ChainedPermutation(1, list(range(len(current_calc_data.molecule.atoms))))]
+
+        mp=MoleculePermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
+        # Iterate through the permutations that swap chains
+        for chained_perm in chained_perms:
+            # and apply on each of them all the permutations on elements inside of each chain
+            for perm in mp.permute(chained_perm.atom_perm):
+                current_calc_data.perm = perm
+                #current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
+                current_calc_data = calc_ref_plane(current_calc_data) # Python version
+                if current_calc_data.csm < result_csm:
+                    (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
+                # check, if it's a minimal csm, update dir and optimal perm
+                if csv_writer:
+                    csv_writer.writerow([perm, current_calc_data.dir, current_calc_data.csm])
 
     if result_csm == MAXDOUBLE:
         # failed to find csm value for any permutation
@@ -121,6 +126,8 @@ def create_symmetric_structure(current_calc_data):
 
     m_pos=np.asarray([np.asarray(atom.pos) for atom in current_calc_data.molecule.atoms])
     current_calc_data.outAtoms=np.copy(m_pos)
+    print("in atoms:\n", current_calc_data.outAtoms)
+
 
     normalization=current_calc_data.dMin/current_calc_data.opOrder
 
@@ -135,7 +142,8 @@ def create_symmetric_structure(current_calc_data):
 
         #get rotation
         rotation_matrix=create_rotation_matrix(i)
-        rotated_positions = m_pos @ rotation_matrix
+        print("Rotation matrix:\n",rotation_matrix)
+        #rotated_positions = m_pos @ rotation_matrix
 
         #set permutation
         for w in range (len(cur_perm)):
@@ -143,10 +151,12 @@ def create_symmetric_structure(current_calc_data):
 
         #add correct permuted rotation to atom in outAtoms
         for j in range (len(current_calc_data.outAtoms)):
-            current_calc_data.outAtoms[j] += rotated_positions[cur_perm[j]]
+            current_calc_data.outAtoms[j] += rotation_matrix @ m_pos[cur_perm[j]]
+        print("Out atoms:\n", current_calc_data.outAtoms)
 
     #apply normalization:
     current_calc_data.outAtoms *= normalization
+    print("normalized out atoms:\n", current_calc_data.outAtoms)
 
     return current_calc_data
 

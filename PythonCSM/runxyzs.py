@@ -136,14 +136,14 @@ def check_result(result, validate, mol_index, symm):
             res["message"].append("Dir negative")
 
     if failed:
-        return res
+        return atom_pos_not_match, res
     res["status"]="OK"
-    return res
+    return atom_pos_not_match, res
 
 
 
 
-def runtest(molecule_file, symmetry_file, result_file, directory, name):
+def runtests(molecule_file, symmetry_file, result_file, directory, name):
     molecules = xyz_split(molecule_file)
     validation=split(result_file)
     filename=directory+"\\"+name+".csv"
@@ -159,13 +159,31 @@ def runtest(molecule_file, symmetry_file, result_file, directory, name):
                 result = exact_calculation(symmetry, molecule)
                 test=result.operationType
                 validate=validation[index, symm]
-                res=check_result(result, validate, index, symm)
+                atom_mismatch, res=check_result(result, validate, index, symm)
                 writer.writerow(res)
             except:
                 pass
 
+def test_individual():
+    perm=[0,2,1,4,3] #1 3 2 5 4
+    xyz="5\ni =     1000, time =      400.000, E =        -7.5906338300\nC        -0.2968994084        0.9863571973        0.8607675832\nH        -0.9978665134        0.3281360815        1.2305541488\nH        -0.3453053403        2.0137087783        1.3006660689\nH         0.6682411165        0.3624914912        0.5149041053\nH        -0.1870860670        1.3761929238       -0.1664997023"
+    molecule = Molecule.from_string(xyz, "xyz")
+    symmetry="c2"
+    result = exact_calculation(symmetry, molecule, perm=perm)
+    hi=1
+
+    perm=[0,2,4,1,3] #13524
+    xyz="5\ni =        0, time =        0.000, E =        -7.5473172209\nC         0.0000000000        0.0000000000        0.0000000000\nH         0.0000000000        0.0000000000        1.0890000000\nH         1.0267200000        0.0000000000       -0.3629960000\nH        -0.5133600000       -0.8891650000       -0.3630000000\nH        -0.5133600000        0.8891650000       -0.3630000000"
+    molecule = Molecule.from_string(xyz, "xyz")
+    symmetry="c4"
+    result = exact_calculation(symmetry, molecule, perm=perm)
+    hi=1
+
 
 def run():
+
+    test_individual()
+
     #directory=r'C:\Users\dev\Documents\Chelem\csm'
     directory=r'C:\Users\devora.witty\Sources\csm\Testing'
 
@@ -173,25 +191,25 @@ def run():
     molfile = directory+ r'\mols_for_Itay\input\input_1_methane_csm\methane-test1.xyz'
     symmfile = directory+ r'\mols_for_Itay\expected_output\expected_output_1_methane_csm\sym.txt'
     resfile = directory + r'\mols_for_Itay\expected_output\expected_output_1_methane_csm\csmresults.log'
-    runtest(molfile, symmfile, resfile, directory, name)
+    runtests(molfile, symmfile, resfile, directory, name)
 
     name="biphenyl_test"
     molfile = directory+ r'\mols_for_Itay\input\input_2_biphenyl\biphenyl_test.xyz'
     symmfile = directory+ r'\mols_for_Itay\expected_output\expected_output_2_biphenyls\sym.txt'
     resfile = directory + r'\mols_for_Itay\expected_output\expected_output_2_biphenyls\csmresults.log'
-    runtest(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
     name="cyclopentadiene_test"
     molfile = directory+ r'\mols_for_Itay\input\input_3_cyclopentadiene\cyclopentadiene-test.xyz'
     symmfile = directory+ r'\mols_for_Itay\expected_output\expected_output_3_cyclopentadiene\sym.txt'
     resfile = directory + r'\mols_for_Itay\expected_output\expected_output_3_cyclopentadiene\csmresults.log'
-    runtest(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
     name="4cluster_test"
     molfile = directory+ r'\mols_for_Itay\input\input_4-clusters\W_Au12_optimized_B3P86.xyz'
     symmfile = directory+ r'\mols_for_Itay\expected_output\expected_output_4_clusters\sym.txt'
     resfile = directory + r'\mols_for_Itay\expected_output\expected_output_4_clusters\csmresults.log'
-    runtest(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
 
 run()

@@ -1,6 +1,6 @@
 import sys
 import logging
-from a_input_output.arguments import get_split_arguments, get_arguments
+from input_output.arguments import get_split_arguments, get_arguments
 from molecule.molecule import Molecule
 from a_calculations.csm_calculations_data import CSMCalculationsData
 from a_calculations.csm_calculations import approx_calculation, exact_calculation, local_calculation

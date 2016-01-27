@@ -8,13 +8,13 @@ from molecule.normalizations import de_normalize_coords
 np.set_printoptions(precision=6)
 
 # from permutations.lengths import len_molecule_permuter
-from permutations.lengths import len_molecule_permuter
-from permutations.permuters import MoleculePermuter, MoleculeLegalPermuter
+from old_permutations.lengths import len_molecule_permuter
+from old_permutations.permuters import MoleculePermuter, MoleculeLegalPermuter
 from calculations.molecule import ChainedPermutation
 from calculations.csm_calculations_data import CSMCalculationsData
 import logging
 
-logger = logging.getLogger("calculations")
+logger = logging.getLogger("old_calculations")
 
 __author__ = 'YAEL'
 
@@ -39,11 +39,15 @@ op_names = {
     }
 
 def exact_calculation(type, molecule, cppdata=None, perm=None, sn_max=None):
+    #csm_args = get_arguments(args)
+    #init_logging(csm_args)
+    #csm_args['molecule'].preprocess(**csm_args)
+    #csm.SetCSMOptions(csm_args)  # Set the default options for the Python/C++ bridge
     op_name=op_names[type][0]
     op_order=op_names[type][1]
-    if perm:
-        result = csm.RunSinglePerm(cppdata)
-        return result
+    #if perm: #this code gets handled automatically in csm_operation
+    #    result = csm.RunSinglePerm(cppdata)
+    #    return result
     result = csm_operation(op_name,op_order, molecule, cppdata, perm, sn_max)
     result.outAtoms = de_normalize_coords(result.outAtoms, result.molecule.norm_factor)
     return result
@@ -96,9 +100,9 @@ def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None):
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
     Once it finds the optimal permutation , calls the CreateSymmetricStructure on the optimal permutation
-    :param current_calc_data: current calculations data object
+    :param current_calc_data: current old_calculations data object
     :param args: The CSM arguments
-    :return: the calculations data object with the permutation, csm, dMin and direction values updated
+    :return: the old_calculations data object with the permutation, csm, dMin and direction values updated
     """
     csm_args={"molecule":molecule, "type":op_name, "opOrder":op_order}
     current_calc_data=CSMCalculationsData(csm_args)
@@ -107,21 +111,14 @@ def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None):
     dir = []
     optimal_perm = []
     current_calc_data.dir = np.zeros(3)
-    # calculate csm for each valid permutation & remember minimal
 
     csv_writer = None
     #if csm_args['outPermFile']:
     #    csv_writer = csv.writer(csm_args['outPermFile'], lineterminator='\n')
     #    csv_writer.writerow(['Permutation', 'Direction', 'CSM'])
 
-    #if not chained_perms:
-        # If no chained permutations specified - the regular permutations will be used
-    chained_perms = [ChainedPermutation(1, list(range(len(current_calc_data.molecule.atoms))))]
-
-    mp=MoleculeLegalPermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
-    # Iterate through the permutations that swap chains
-    for chained_perm in chained_perms:
-        # and apply on each of them all the permutations on elements inside of each chain
+    if not perm:
+        mp=MoleculeLegalPermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
         for perm in mp.permute():
             current_calc_data.perm = perm
             #current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
@@ -131,6 +128,13 @@ def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None):
             # check, if it's a minimal csm, update dir and optimal perm
             if csv_writer:
                 csv_writer.writerow([perm, current_calc_data.dir, current_calc_data.csm])
+
+    else: #run single perm
+        current_calc_data.perm = perm
+        current_calc_data = calc_ref_plane(current_calc_data) # Python version
+        (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
+
+
 
     if result_csm == MAXDOUBLE:
         # failed to find csm value for any permutation
@@ -175,6 +179,7 @@ def create_symmetric_structure(current_calc_data):
     m_pos=np.asarray([np.asarray(atom.pos) for atom in current_calc_data.molecule.atoms])
     current_calc_data.outAtoms=np.copy(m_pos)
 
+
     normalization=current_calc_data.dMin/current_calc_data.opOrder
 
     m_dir= current_calc_data.dir
@@ -188,7 +193,7 @@ def create_symmetric_structure(current_calc_data):
 
         #get rotation
         rotation_matrix=create_rotation_matrix(i)
-        rotated_positions = m_pos @ rotation_matrix
+        #rotated_positions = m_pos @ rotation_matrix
 
         #set permutation
         for w in range (len(cur_perm)):
@@ -196,7 +201,7 @@ def create_symmetric_structure(current_calc_data):
 
         #add correct permuted rotation to atom in outAtoms
         for j in range (len(current_calc_data.outAtoms)):
-            current_calc_data.outAtoms[j] += rotated_positions[cur_perm[j]]
+            current_calc_data.outAtoms[j] += rotation_matrix @ m_pos[cur_perm[j]]
 
     #apply normalization:
     current_calc_data.outAtoms *= normalization

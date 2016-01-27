@@ -4,12 +4,12 @@ The main entry point of the Python CSM
 import math
 import sys
 
-from arguments import get_arguments
+from old_arguments import get_arguments
 from calculations.normalizations import normalize_coords, de_normalize_coords
 
 __author__ = 'zmbq'
 
-from input_output.writers import print_all_output
+from old_input_output.writers import print_all_output
 from calculations.csm_calculations_data import CSMCalculationsData
 from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations
 from CPP_wrapper import csm
@@ -25,7 +25,7 @@ sys.setrecursionlimit(10000)
 def process_results(results, csm_args):
     """
     Final normalizations and de-normalizations
-    :param results: CSM calculations results
+    :param results: CSM old_calculations results
     :param csm_args: CSM args
     """
     results.molecule.set_norm_factor(csm_args['molecule'].norm_factor)
@@ -79,29 +79,29 @@ def run_csm(args, print_output=True):
         data = CSMCalculationsData(csm_args)
 
         # Code from the old mainRot.cpp
-        if 'perm' in csm_args:
-            result = csm.RunSinglePerm(data)
+        #if 'perm' in csm_args:
+        #    result = csm.RunSinglePerm(data)
+        #else:
+        if csm_args['type'] != 'CH':
+            result = perform_operation(csm_args, data)
         else:
-            if csm_args['type'] != 'CH':
-                result = perform_operation(csm_args, data)
-            else:
-                # chirality support
-                data.operationType = data.chMinType = "CS"
-                data.opOrder = 2
-                result = perform_operation(csm_args, data)
+            # chirality support
+            data.operationType = data.chMinType = "CS"
+            data.opOrder = 2
+            result = perform_operation(csm_args, data)
 
-                if result.csm > MINDOUBLE:
-                    data.operationType = "SN"
-                    for i in range(2, csm_args['sn_max'] + 1, 2):
-                        data.opOrder = i
-                        ch_result = perform_operation(csm_args, data)
-                        if ch_result.csm < result.csm:
-                            result = ch_result
-                            result.chMinType = 'SN'
-                            result.chMinOrder = ch_result.opOrder
+            if result.csm > MINDOUBLE:
+                data.operationType = "SN"
+                for i in range(2, csm_args['sn_max'] + 1, 2):
+                    data.opOrder = i
+                    ch_result = perform_operation(csm_args, data)
+                    if ch_result.csm < result.csm:
+                        result = ch_result
+                        result.chMinType = 'SN'
+                        result.chMinOrder = ch_result.opOrder
 
-                        if result.csm < MINDOUBLE:
-                            break
+                    if result.csm < MINDOUBLE:
+                        break
 
         if csm_args['printLocal']:
             if csm_args['type'] == 'CH':

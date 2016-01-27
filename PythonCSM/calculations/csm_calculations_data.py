@@ -8,7 +8,7 @@ class CSMCalculationsData:
 
     Once the C++ code is gone, this class is going to seem strange. It'll need to be removed.
     """
-    # Includes all data passed to/from CPP calculations
+    # Includes all data passed to/from CPP old_calculations
     def __init__(self, csm_args=None):
         if csm_args:
             self.molecule = csm_args['molecule']

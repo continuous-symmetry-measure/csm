@@ -1,6 +1,6 @@
 import math
-from permutations.utils import log_fact
-from permutations.utils import log_nCr
+from old_permutations.utils import log_fact
+from old_permutations.utils import log_nCr
 
 __author__ = 'zmbq'
 
