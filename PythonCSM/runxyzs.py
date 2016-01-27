@@ -96,11 +96,12 @@ def check_result(result, validate, mol_index, symm):
     #check the status:
     failed=False
     res["status"]="Failed"
-    res["message"]=""
+    res["message"]=[]
+
     #check csm:
     if abs(r_csm -v_csm)>.0001: #greater than 4 decimal points: the validation stops, hence the result will always be bigger (since it continue for several more decimal points
         failed=True
-        res["message"]+= "CSM does not match "
+        res["message"].append("CSM mismatch")
 
     #chck symmetric structure
     atom_pos_not_match=[]
@@ -112,15 +113,13 @@ def check_result(result, validate, mol_index, symm):
                 atom_pos_not_match.append((i,index,val1,val2))
     if atom_pos_not_match:
         failed=True
-        res["message"]+= "Symmetric structure does not match"
+        res["message"].append("Structure mismatch")
 
-    if failed:
-        return res
-
-    res["status"]="OK"
+    #check perm
     if r_perm != v_perm:
-        res["message"]+="different perm "
+        res["message"].append("Perm mismatch")
 
+    #check dir
     dir_not_match=False
     dir_not_times_minus=False
     for i in range(3):
@@ -132,21 +131,25 @@ def check_result(result, validate, mol_index, symm):
                 dir_not_times_minus=True
     if dir_not_match:
         if dir_not_times_minus:
-            res["message"]+="unexpected dir"
+            res["message"].append("Dir mismatch")
         else:
-            res["message"]+="dir reversed sign"
+            res["message"].append("Dir negative")
 
+    if failed:
+        return res
+    res["status"]="OK"
     return res
 
 
 
 
-def runtest(molecule_file, symmetry_file, result_file):
+def runtest(molecule_file, symmetry_file, result_file, directory, name):
     molecules = xyz_split(molecule_file)
     validation=split(result_file)
-    with open(r'C:\Users\dev\Documents\Chelem\csm\PythonCSM\testing.csv', 'w') as csvfile:
-        fieldnames = ['molecule id','symmetry','status','message','csm result','csm expected','atoms result','atoms expected','dir result','perm result','dir expected','perm expected']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    filename=directory+"\\"+name+".csv"
+    with open(filename, 'w') as csvfile:
+        fieldnames = ['molecule id','symmetry','status','message','csm result','csm expected','atoms result','atoms expected','perm result','perm expected','dir result','dir expected']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator = '\n')
         writer.writeheader()
         for index, symm in validation:
             try:
@@ -163,11 +166,32 @@ def runtest(molecule_file, symmetry_file, result_file):
 
 
 def run():
-    directory=r'C:\Users\dev\Documents\Chelem\csm\mols_for_Itay'
-    molfile = directory+ r'\input\input_1_methane_csm\methane-test1.xyz'
-    symmfile = directory+ r'\expected_output\expected_output_1_methane_csm\sym.txt'
-    resfile = directory + r'\expected_output\expected_output_1_methane_csm\csmresults.log'
-    runtest(molfile, symmfile, resfile)
+    #directory=r'C:\Users\dev\Documents\Chelem\csm'
+    directory=r'C:\Users\devora.witty\Sources\csm\Testing'
+
+    name="methane_test"
+    molfile = directory+ r'\mols_for_Itay\input\input_1_methane_csm\methane-test1.xyz'
+    symmfile = directory+ r'\mols_for_Itay\expected_output\expected_output_1_methane_csm\sym.txt'
+    resfile = directory + r'\mols_for_Itay\expected_output\expected_output_1_methane_csm\csmresults.log'
+    runtest(molfile, symmfile, resfile, directory, name)
+
+    name="biphenyl_test"
+    molfile = directory+ r'\mols_for_Itay\input\input_2_biphenyl\biphenyl_test.xyz'
+    symmfile = directory+ r'\mols_for_Itay\expected_output\expected_output_2_biphenyls\sym.txt'
+    resfile = directory + r'\mols_for_Itay\expected_output\expected_output_2_biphenyls\csmresults.log'
+    runtest(molfile, symmfile, resfile, directory, name)
+
+    name="cyclopentadiene_test"
+    molfile = directory+ r'\mols_for_Itay\input\input_3_cyclopentadiene\cyclopentadiene-test.xyz'
+    symmfile = directory+ r'\mols_for_Itay\expected_output\expected_output_3_cyclopentadiene\sym.txt'
+    resfile = directory + r'\mols_for_Itay\expected_output\expected_output_3_cyclopentadiene\csmresults.log'
+    runtest(molfile, symmfile, resfile, directory, name)
+
+    name="4cluster_test"
+    molfile = directory+ r'\mols_for_Itay\input\input_4-clusters\W_Au12_optimized_B3P86.xyz'
+    symmfile = directory+ r'\mols_for_Itay\expected_output\expected_output_4_clusters\sym.txt'
+    resfile = directory + r'\mols_for_Itay\expected_output\expected_output_4_clusters\csmresults.log'
+    runtest(molfile, symmfile, resfile, directory, name)
 
 
 run()
