@@ -31,6 +31,9 @@ class Molecule:
         # Normalization factor. Defaults to 1.0 if normalize wasn't called
         return self._norm_factor
 
+    def set_norm_factor(self, nf):
+        self._norm_factor=nf
+
     @property
     def chains(self):
         return self._chains

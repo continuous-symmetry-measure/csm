@@ -3,7 +3,7 @@ import csv
 import math
 
 import numpy as np
-from molecule.normalizations import de_normalize_coords
+from molecule.normalizations import de_normalize_coords, normalize_coords
 
 np.set_printoptions(precision=6)
 
@@ -38,6 +38,19 @@ op_names = {
         's8': ('SN', 8, "S8 SYMMETRY")
     }
 
+def process_results(results, molecule, keepCenter=False):
+    """
+    Final normalizations and de-normalizations
+    :param results: CSM old_calculations results
+    :param csm_args: CSM args
+    """
+    results.molecule.set_norm_factor(molecule.norm_factor)
+    masses = [atom.mass for atom in results.molecule.atoms]
+    normalize_coords(results.outAtoms, masses, keepCenter)
+
+    results.molecule.de_normalize()
+    results.outAtoms = de_normalize_coords(results.outAtoms, results.molecule.norm_factor)
+
 def exact_calculation(type, molecule, cppdata=None, perm=None, sn_max=None):
     #csm_args = get_arguments(args)
     #init_logging(csm_args)
@@ -49,7 +62,7 @@ def exact_calculation(type, molecule, cppdata=None, perm=None, sn_max=None):
     #    result = csm.RunSinglePerm(cppdata)
     #    return result
     result = csm_operation(op_name,op_order, molecule, cppdata, perm, sn_max)
-    result.outAtoms = de_normalize_coords(result.outAtoms, result.molecule.norm_factor)
+    process_results(result, molecule)
     return result
 
     # chirality support (currently never hit, but needs to eventually be addressed)
@@ -178,6 +191,7 @@ def create_symmetric_structure(current_calc_data):
 
     m_pos=np.asarray([np.asarray(atom.pos) for atom in current_calc_data.molecule.atoms])
     current_calc_data.outAtoms=np.copy(m_pos)
+    logger.debug("in atoms:\n", current_calc_data.outAtoms)
 
 
     normalization=current_calc_data.dMin/current_calc_data.opOrder
@@ -193,6 +207,7 @@ def create_symmetric_structure(current_calc_data):
 
         #get rotation
         rotation_matrix=create_rotation_matrix(i)
+        logger.debug("Rotation matrix:\n",rotation_matrix)
         #rotated_positions = m_pos @ rotation_matrix
 
         #set permutation
@@ -202,9 +217,11 @@ def create_symmetric_structure(current_calc_data):
         #add correct permuted rotation to atom in outAtoms
         for j in range (len(current_calc_data.outAtoms)):
             current_calc_data.outAtoms[j] += rotation_matrix @ m_pos[cur_perm[j]]
+        logger.debug("Out atoms:\n", current_calc_data.outAtoms)
 
     #apply normalization:
     current_calc_data.outAtoms *= normalization
+    logger.debug("normalized out atoms:\n", current_calc_data.outAtoms)
 
     return current_calc_data
 
