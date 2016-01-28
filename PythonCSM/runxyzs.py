@@ -116,8 +116,10 @@ def check_result(result, validate, mol_index, symm):
         failed = True
         res["message"].append("Structure mismatch")
 
+    res['verify']=[]
     # check perm
     if r_perm != v_perm:
+        res['verify']=True
         res["message"].append("Perm mismatch")
 
     # check dir
@@ -148,7 +150,7 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
     validation = split(result_file)
     filename = directory + "\\" + name + ".csv"
     with open(filename, 'w') as csvfile:
-        fieldnames = ['molecule id', 'symmetry', 'status', 'message', 'csm result', 'csm expected', 'atoms result',
+        fieldnames = ['molecule id', 'symmetry', 'status', 'message', 'verify', 'csm result', 'csm expected', 'atoms result',
                       'atoms expected', 'perm result', 'perm expected', 'dir result', 'dir expected']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator='\n')
         writer.writeheader()
@@ -161,13 +163,18 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
                 test = result.operationType
                 validate = validation[index, symm]
                 atom_mismatch, res = check_result(result, validate, index, symm)
+                if res['verify']:
+                    verify=exact_calculation(symmetry, molecule, perm=[p-1 for p in res['perm expected']])
+                    atom_mismatch2, res2 = check_result(verify, validate, index, symm)
+                    if res2['status']!= 'OK':
+                        res['verify']=res2['message']
                 writer.writerow(res)
             except:
                 pass
     print("done")
 
 
-def test_individual():
+def test_individuals():
     perm = [0, 2, 1, 4, 3]  # 1 3 2 5 4
     xyz = "5\ni =     1000, time =      400.000, E =        -7.5906338300\nC        -0.2968994084        0.9863571973        0.8607675832\nH        -0.9978665134        0.3281360815        1.2305541488\nH        -0.3453053403        2.0137087783        1.3006660689\nH         0.6682411165        0.3624914912        0.5149041053\nH        -0.1870860670        1.3761929238       -0.1664997023"
     molecule = Molecule.from_string(xyz, "xyz")
@@ -186,14 +193,14 @@ def test_individual():
 def run():
     # test_individual()
 
-    # directory=r'C:\Users\dev\Documents\Chelem\csm'
-    directory = r'C:\Users\devora.witty\Sources\csm\Testing'
+    directory=r'C:\Users\dev\Documents\Chelem\csm'
+    #directory = r'C:\Users\devora.witty\Sources\csm\Testing'
 
     name = "methane_test"
     molfile = directory + r'\mols_for_Itay\input\input_1_methane_csm\methane-test1.xyz'
     symmfile = directory + r'\mols_for_Itay\expected_output\expected_output_1_methane_csm\sym.txt'
     resfile = directory + r'\mols_for_Itay\expected_output\expected_output_1_methane_csm\csmresults.log'
-    # runtests(molfile, symmfile, resfile, directory, name)
+    runtests(molfile, symmfile, resfile, directory, name)
 
     name = "biphenyl_test"
     molfile = directory + r'\mols_for_Itay\input\input_2_biphenyl\biphenyl_test.xyz'
