@@ -99,6 +99,11 @@ def check_result(result, validate, mol_index, symm):
     res["status"] = "Failed"
     res["message"] = []
 
+    # check csm:
+    if abs(r_csm - v_csm) > .0001:  # greater than 4 decimal points: the validation stops, hence the result will always be bigger (since it continue for several more decimal points
+        failed = True
+        res["message"].append("CSM mismatch")
+
     # chck symmetric structure
     atom_pos_not_match = []
     for i in range(len(r_atoms)):
@@ -110,6 +115,10 @@ def check_result(result, validate, mol_index, symm):
     if atom_pos_not_match:
         failed = True
         res["message"].append("Structure mismatch")
+
+    # check perm
+    if r_perm != v_perm:
+        res["message"].append("Perm mismatch")
 
     # check dir
     dir_not_match = False
@@ -126,15 +135,6 @@ def check_result(result, validate, mol_index, symm):
             res["message"].append("Dir mismatch")
         else:
             res["message"].append("Dir negative")
-
-    # check perm
-    if r_perm != v_perm:
-        res["message"].append("Perm mismatch")
-
-    # check csm:
-    if abs(r_csm - v_csm) > .0001:  # greater than 4 decimal points: the validation stops, hence the result will always be bigger (since it continue for several more decimal points
-        failed = True
-        res["message"].append("CSM mismatch")
 
     if failed:
         return atom_pos_not_match, res
