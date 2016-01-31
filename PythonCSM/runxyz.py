@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from molecule.molecule import Molecule
 from openbabel import OBAtomAtomIter, OBConversion, OBMol
 from molecule.atom import GetAtomicSymbol, Atom
@@ -5,10 +7,10 @@ from a_calculations.csm_calculations import exact_calculation
 import numpy as np
 import csv
 import re
-
+import logging
 
 def split(filename):
-    mol_dict = {}
+    mol_dict = OrderedDict()
     with open(filename, 'r') as file:
         chunks = file.read().split("MOL_INDEX=")
         for item in chunks:
@@ -159,15 +161,17 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
                 symmetry = symm.lower()
                 xyz = molecules[int(index)]
                 molecule = Molecule.from_string(xyz, "xyz")
-                result = exact_calculation(symmetry, molecule)
-                test = result.operationType
                 validate = validation[index, symm]
+                result = exact_calculation(symmetry, molecule)
                 atom_mismatch, res = check_result(result, validate, index, symm)
                 if res['verify']:
-                    verify=exact_calculation(symmetry, molecule, perm=[p-1 for p in res['perm expected']])
+                    molecule2 = Molecule.from_string(xyz, "xyz")
+                    verify=exact_calculation(symmetry, molecule2, perm=[p-1 for p in res['perm expected']])
                     atom_mismatch2, res2 = check_result(verify, validate, index, symm)
                     if res2['status']!= 'OK':
-                        res['verify']=res2['message']
+                        res['verify']=(res2['message'], res2['csm result'], res2['atoms result'])
+                    else:
+                        res['verify']="Verified"
                 writer.writerow(res)
             except:
                 pass
@@ -193,8 +197,14 @@ def test_individuals():
 def run():
     # test_individual()
 
-    directory=r'C:\Users\dev\Documents\Chelem\csm'
-    #directory = r'C:\Users\devora.witty\Sources\csm\Testing'
+    # Init logging
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(levelname)-8s %(message)s',
+                        datefmt='%a, %d %b %Y %H:%M:%S',
+                        filename='runxyz.log',
+                        filemode='w')
+    #directory=r'C:\Users\dev\Documents\Chelem\csm'
+    directory = r'C:\Users\devora.witty\Sources\csm\Testing'
 
     name = "methane_test"
     molfile = directory + r'\mols_for_Itay\input\input_1_methane_csm\methane-test1.xyz'
@@ -206,19 +216,19 @@ def run():
     molfile = directory + r'\mols_for_Itay\input\input_2_biphenyl\biphenyl_test.xyz'
     symmfile = directory + r'\mols_for_Itay\expected_output\expected_output_2_biphenyls\sym.txt'
     resfile = directory + r'\mols_for_Itay\expected_output\expected_output_2_biphenyls\csmresults.log'
-    runtests(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
     name = "cyclopentadiene_test"
     molfile = directory + r'\mols_for_Itay\input\input_3_cyclopentadiene\cyclopentadiene-test.xyz'
     symmfile = directory + r'\mols_for_Itay\expected_output\expected_output_3_cyclopentadiene\sym.txt'
     resfile = directory + r'\mols_for_Itay\expected_output\expected_output_3_cyclopentadiene\csmresults.log'
-    runtests(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
     name = "4cluster_test"
     molfile = directory + r'\mols_for_Itay\input\input_4-clusters\W_Au12_optimized_B3P86.xyz'
     symmfile = directory + r'\mols_for_Itay\expected_output\expected_output_4_clusters\sym.txt'
     resfile = directory + r'\mols_for_Itay\expected_output\expected_output_4_clusters\csmresults.log'
-    runtests(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
 
 run()

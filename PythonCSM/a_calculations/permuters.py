@@ -134,7 +134,7 @@ class MoleculePermuter:
             yield from self._all_perms_from_cycle_struct(group_size,
                                                          cycle_struct)  # Return all permutations for each cycle structure
 
-    def permute(self, elements):
+    def permute(self):
         """
         Generates all permutations of a molecule
         :param molecule_size: Molecule size
@@ -176,7 +176,7 @@ class MoleculePermuter:
                     ordered_elements = start_elements_order[:]
 
         groups = self._mol.equivalence_classes
-        elements_order = elements  # The starting elements order
+        elements_order = [i for i in range(len(self._mol.atoms))]  # The starting elements order
         yield from generate(elements_order, groups)
 
 

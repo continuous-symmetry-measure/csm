@@ -9,7 +9,7 @@ np.set_printoptions(precision=6)
 
 # from permutations.lengths import len_molecule_permuter
 from old_permutations.lengths import len_molecule_permuter
-from old_permutations.permuters import MoleculePermuter, MoleculeLegalPermuter
+from a_calculations.permuters import MoleculePermuter, MoleculeLegalPermuter
 from calculations.molecule import ChainedPermutation
 from calculations.csm_calculations_data import CSMCalculationsData
 import logging
@@ -21,21 +21,21 @@ __author__ = 'YAEL'
 MAXDOUBLE = 100000000.0
 ZERO_IM_PART_MAX = 1e-3
 
-op_names = {
-        "cs": ('CS', 2, "MIRROR SYMMETRY"),
-        "ci": ('CI', 2, "INVERSION (S2)"),
-        "ch": ('CH', 2, "CHIRALITY"),
-        "c2": ('CN', 2, "C2 SYMMETRY"),
-        'c3': ('CN', 3, "C3 SYMMETRY"),
-        'c4': ('CN', 4, "C4 SYMMETRY"),
-        'c5': ('CN', 5, "C5 SYMMETRY"),
-        'c6': ('CN', 6, "C6 SYMMETRY"),
-        'c7': ('CN', 7, "C7 SYMMETRY"),
-        'c8': ('CN', 8, "C8 SYMMETRY"),
-        's2': ('SN', 2, "S2 SYMMETRY"),
-        's4': ('SN', 4, "S4 SYMMETRY"),
-        's6': ('SN', 6, "S6 SYMMETRY"),
-        's8': ('SN', 8, "S8 SYMMETRY")
+op_dict = {
+        "cs": ( ('CS', 2), "MIRROR SYMMETRY"),
+        "ci": ( ('CI', 2), "INVERSION (S2)"),
+        "ch": ( ('CH', 2), "CHIRALITY"),
+        "c2": ( ('CN', 2), "C2 SYMMETRY"),
+        'c3': ( ('CN', 3), "C3 SYMMETRY"),
+        'c4': ( ('CN', 4), "C4 SYMMETRY"),
+        'c5': ( ('CN', 5), "C5 SYMMETRY"),
+        'c6': ( ('CN', 6), "C6 SYMMETRY"),
+        'c7': ( ('CN', 7), "C7 SYMMETRY"),
+        'c8': ( ('CN', 8), "C8 SYMMETRY"),
+        's2': ( ('SN', 2), "S2 SYMMETRY"),
+        's4': ( ('SN', 4), "S4 SYMMETRY"),
+        's6': ( ('SN', 6), "S6 SYMMETRY"),
+        's8': ( ('SN', 8), "S8 SYMMETRY")
     }
 
 def process_results(results, molecule, keepCenter=False):
@@ -51,18 +51,20 @@ def process_results(results, molecule, keepCenter=False):
     results.molecule.de_normalize()
     results.outAtoms = de_normalize_coords(results.outAtoms, results.molecule.norm_factor)
 
-def exact_calculation(type, molecule, cppdata=None, perm=None, sn_max=None):
+def exact_calculation(type, molecule, cppdata=None, perm=None, sn_max=None, permuter_class=MoleculePermuter, printLocal=False):
     #csm_args = get_arguments(args)
     #init_logging(csm_args)
     #csm_args['molecule'].preprocess(**csm_args)
     #csm.SetCSMOptions(csm_args)  # Set the default options for the Python/C++ bridge
-    op_name=op_names[type][0]
-    op_order=op_names[type][1]
+    (op_name, op_order) = op_dict[type][0]
     #if perm: #this code gets handled automatically in csm_operation
     #    result = csm.RunSinglePerm(cppdata)
     #    return result
-    result = csm_operation(op_name,op_order, molecule, cppdata, perm, sn_max)
+    result = csm_operation(op_name, op_order, molecule, cppdata, perm, sn_max, permuter_class)
     process_results(result, molecule)
+    if printLocal:
+        localCSM=compute_local_csm(op_name, op_order, molecule, result.dir, result.perm)
+
     return result
 
     # chirality support (currently never hit, but needs to eventually be addressed)
@@ -85,30 +87,26 @@ def exact_calculation(type, molecule, cppdata=None, perm=None, sn_max=None):
                 break
     '''
 
-def approx_calculation(type,  molecule, cppdata, dir=None, detect_outliers=False, sn_max=None):
+def approx_calculation(type, molecule, cppdata, dir=None, detect_outliers=False, sn_max=None):
     if dir:
         result = csm.FindBestPermUsingDir(cppdata)
     else:
         result = csm.FindBestPerm(cppdata)
     return result
 
-def local_calculation(type, molecule, cppdata, dir=None, perm=None):
+def local_calculation(type, molecule, cppdata, dir, perm):
     local_res = csm.ComputeLocalCSM(cppdata)
     return local_res
 
-def compute_local_csm(type, molecule, data, m_dir):
-    #WIP NOT COMPLETE
-    is_improper= type!='CN'
-    is_zero_angle= type=='CS'
-    size=len(molecule.atoms)
-    cur_perm = [i for i in range(size)]
-    # The W matrix from the Rodrigues Rotation Formula (http://math.stackexchange.com/a/142831)
-    W= np.array([[0.0, -m_dir[2], m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
-    tempCSM=0.0
 
 
 
-def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None):
+
+
+
+
+
+def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None, permuter_class=MoleculePermuter):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -119,9 +117,11 @@ def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None):
     """
     csm_args={"molecule":molecule, "type":op_name, "opOrder":op_order}
     current_calc_data=CSMCalculationsData(csm_args)
+    logger.debug("csm_op atoms:")
+    logger.debug([atom.pos for atom in current_calc_data.molecule.atoms])
     #chained_perms = molecule.chained_perms
     result_csm = MAXDOUBLE
-    dir = []
+    r_dir = []
     optimal_perm = []
     current_calc_data.dir = np.zeros(3)
 
@@ -131,21 +131,22 @@ def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None):
     #    csv_writer.writerow(['Permutation', 'Direction', 'CSM'])
 
     if not perm:
-        mp=MoleculeLegalPermuter(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
+        mp=permuter_class(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
         for perm in mp.permute():
             current_calc_data.perm = perm
             #current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
             current_calc_data = calc_ref_plane(current_calc_data) # Python version
             if current_calc_data.csm < result_csm:
-                (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
+                (result_csm, r_dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
             # check, if it's a minimal csm, update dir and optimal perm
             if csv_writer:
                 csv_writer.writerow([perm, current_calc_data.dir, current_calc_data.csm])
 
     else: #run single perm
+        logger.debug("SINGLE PERM")
         current_calc_data.perm = perm
         current_calc_data = calc_ref_plane(current_calc_data) # Python version
-        (result_csm, dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
+        (result_csm, r_dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
 
 
 
@@ -155,59 +156,80 @@ def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None):
 
     current_calc_data.dMin = 1.0 - (result_csm / 100 * current_calc_data.opOrder / (current_calc_data.opOrder - 1))
     current_calc_data.perm = optimal_perm
-    current_calc_data.dir = dir
+    current_calc_data.dir = r_dir
     current_calc_data.csm = result_csm
 
     #return csm.CreateSymmetricStructure(current_calc_data) #c++
     return create_symmetric_structure(current_calc_data) #python
 
+def create_rotation_matrix(iOp, op_name, op_order, dir):
+    is_improper= op_name!='CN'
+    is_zero_angle= op_name=='CS'
+    W= np.array([[0.0, -dir[2], dir[1]], [dir[2], 0.0, -dir[0]], [-dir[1], dir[0], 0.0]])
+    rot = np.zeros((3, 3))
+    angle=0.0 if is_zero_angle else 2 * np.pi * iOp / op_order
+    factor = -1 if is_improper and (iOp%2)==1 else 1
+
+    # The rotation matrix is calculated similarly to the Rodrigues rotation matrix. The only
+    # difference is that the matrix is also a reflection matrix when factor is -1.
+    #
+    # This is why we took the old C++ code instead of applying the Rodrigues formula directly.
+    for s in range(3):
+        for t in range(3):
+            ang = np.cos(angle) if s==t else 0
+            rot[s][t] = ang  + ((factor - np.cos(angle)) * dir[s] * dir[t] + np.sin(angle) * W[s][t])
+
+    return rot
+
+
+def compute_local_csm(op_name, op_order, molecule, dir, perm):
+
+    #WIP NOT COMPLETE
+    size=len(molecule.atoms)
+    cur_perm = [i for i in range(size)]
+    localCSM= np.zeros(size)
+
+
+    tempCSM=0.0
+
+    for i in range(op_order):
+        rot=create_rotation_matrix(i, op_name, op_order, dir)
+
+        #set permutation
+        for w in range (len(cur_perm)):
+            cur_perm[w]=perm[cur_perm[w]]
+
+        #apply rotation to each atoms
+        #rotated=
 
 def create_symmetric_structure(current_calc_data):
-    def create_rotation_matrix(iOp):
-        rot = np.zeros((3, 3))
-        angle=0.0 if is_zero_angle else 2 * np.pi * iOp / current_calc_data.opOrder
-        factor = -1 if is_improper and (iOp%2)==1 else 1
-
-        # The rotation matrix is calculated similarly to the Rodrigues rotation matrix. The only
-        # difference is that the matrix is also a reflection matrix when factor is -1.
-        #
-        # This is why we took the old C++ code instead of applying the Rodrigues formula directly.
-        for s in range(3):
-            for t in range(3):
-                ang = np.cos(angle) if s==t else 0
-                rot[s][t] = ang  + ((factor - np.cos(angle)) * m_dir[s] * m_dir[t] + np.sin(angle) * W[s][t])
-
-
-        return rot
 
     logger.debug('***************************** Python ************************')
     logger.debug('createSymmetricStructure called')
 
-    #set up some initial values:
-    is_improper = current_calc_data.operationType != 'CN'
-    is_zero_angle = current_calc_data.operationType == 'CS'
-
+    (op_name, op_order) = (current_calc_data.operationType, current_calc_data.opOrder)
     cur_perm=np.arange(len(current_calc_data.perm)) #array of ints...
 
     m_pos=np.asarray([np.asarray(atom.pos) for atom in current_calc_data.molecule.atoms])
     current_calc_data.outAtoms=np.copy(m_pos)
-    logger.debug("in atoms:\n", current_calc_data.outAtoms)
+    logger.debug("in atoms:")
+    logger.debug(current_calc_data.outAtoms)
 
 
-    normalization=current_calc_data.dMin/current_calc_data.opOrder
+    normalization=current_calc_data.dMin/op_order
 
-    m_dir= current_calc_data.dir
-    # The W matrix from the Rodrigues Rotation Formula (http://math.stackexchange.com/a/142831)
-    W= np.array([[0.0, -m_dir[2], m_dir[1]], [m_dir[2], 0.0, -m_dir[0]], [-m_dir[1], m_dir[0], 0.0]])
+    dir= current_calc_data.dir
+
 
 
     ########calculate and apply transform matrix#########
     ###for i<OpOrder
-    for i in range(1,current_calc_data.opOrder):
+    for i in range(1,op_order):
 
         #get rotation
-        rotation_matrix=create_rotation_matrix(i)
-        logger.debug("Rotation matrix:\n",rotation_matrix)
+        rotation_matrix=create_rotation_matrix(i, op_name, op_order, dir)
+        logger.debug("Rotation matrix:\n")
+        logger.debug(rotation_matrix)
         #rotated_positions = m_pos @ rotation_matrix
 
         #set permutation
@@ -217,11 +239,13 @@ def create_symmetric_structure(current_calc_data):
         #add correct permuted rotation to atom in outAtoms
         for j in range (len(current_calc_data.outAtoms)):
             current_calc_data.outAtoms[j] += rotation_matrix @ m_pos[cur_perm[j]]
-        logger.debug("Out atoms:\n", current_calc_data.outAtoms)
+        logger.debug("Out atoms")
+        logger.debug(current_calc_data.outAtoms)
 
     #apply normalization:
     current_calc_data.outAtoms *= normalization
-    logger.debug("normalized out atoms:\n", current_calc_data.outAtoms)
+    logger.debug("normalized out atoms:")
+    logger.debug(current_calc_data.outAtoms)
 
     return current_calc_data
 
@@ -249,6 +273,8 @@ def calc_ref_plane(current_calc_data):
     logger.debug('Permutation is ' + str(current_calc_data.perm))
 
     logger.debug("Direction is %lf %lf %lf" % (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2]))
+    logger.debug("calcrefplane atoms:")
+    logger.debug([atom.pos for atom in current_calc_data.molecule.atoms])
 
     # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
     # - described on the first page of the paper
