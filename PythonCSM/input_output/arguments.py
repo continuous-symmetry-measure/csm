@@ -228,6 +228,15 @@ def get_arguments(args):
     return csm_args
 
 def _process_split_arguments(parse_res):
+    """
+    Divides the parsed arguments (from argparse) into three dictionaries
+    Args:
+        parse_res: Result of argparse
+
+    Returns:
+        (in_args, calc_args, out_args) - input arguments, calculation arguments and output arguments
+
+    """
 
     mol_result = {}
     calc_result= {}
@@ -258,7 +267,7 @@ def _process_split_arguments(parse_res):
     calc_result['find_perm'] = parse_res.findperm
     calc_result['detect_outliers'] = parse_res.detectOutliers
     if parse_res.approx:
-        calc_result['approx']=True
+        calc_result['approx'] = True
         calc_result['find_perm'] = True
         calc_result['detect_outliers'] = True
 
@@ -277,6 +286,10 @@ def _process_split_arguments(parse_res):
     mol_result['keep_center'] = parse_res.keepCenter
     if parse_res.writeOpenu:
         mol_result['format'] = "PDB"
+    if parse_res.usePerm:
+        mol_result['perm_file_name'] = parse_res.usePerm
+    if parse_res.useDir:
+        mol_result['dir_file_name'] = parse_res.useDir
 
     out_result['write_openu'] = parse_res.writeOpenu
     out_result['print_norm'] = parse_res.printNorm
@@ -294,12 +307,13 @@ def _process_split_arguments(parse_res):
 
     return mol_result, calc_result, out_result
 
+
 def get_split_arguments(args):
     """
     :param args:
     :return:
     """
-    parser=_create_parser()
+    parser =_create_parser()
     parsed_args = parser.parse_args(args)
-    mol_args, calc_args, out_args=_process_split_arguments(parsed_args)
+    mol_args, calc_args, out_args = _process_split_arguments(parsed_args)
     return mol_args, calc_args, out_args

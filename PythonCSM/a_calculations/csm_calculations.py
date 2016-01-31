@@ -1,91 +1,72 @@
 import csv
-
 import math
-
 import numpy as np
+from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
+# from permutations.lengths import len_molecule_permuter
+from old_permutations.lengths import len_molecule_permuter
+from a_calculations.permuters import MoleculePermuter, SinglePermPermuter
+import logging
 
 np.set_printoptions(precision=6)
 
-# from permutations.lengths import len_molecule_permuter
-from old_permutations.lengths import len_molecule_permuter
-from a_calculations.permuters import MoleculePermuter, MoleculeLegalPermuter
-from calculations.molecule import ChainedPermutation
-from calculations.csm_calculations_data import CSMCalculationsData
-import logging
 
 logger = logging.getLogger("old_calculations")
 
 __author__ = 'YAEL'
 
+MINDOUBLE = 1e-8
 MAXDOUBLE = 100000000.0
 ZERO_IM_PART_MAX = 1e-3
 
-op_dict = {
-        "cs": ( ('CS', 2), "MIRROR SYMMETRY"),
-        "ci": ( ('CI', 2), "INVERSION (S2)"),
-        "ch": ( ('CH', 2), "CHIRALITY"),
-        "c2": ( ('CN', 2), "C2 SYMMETRY"),
-        'c3': ( ('CN', 3), "C3 SYMMETRY"),
-        'c4': ( ('CN', 4), "C4 SYMMETRY"),
-        'c5': ( ('CN', 5), "C5 SYMMETRY"),
-        'c6': ( ('CN', 6), "C6 SYMMETRY"),
-        'c7': ( ('CN', 7), "C7 SYMMETRY"),
-        'c8': ( ('CN', 8), "C8 SYMMETRY"),
-        's2': ( ('SN', 2), "S2 SYMMETRY"),
-        's4': ( ('SN', 4), "S4 SYMMETRY"),
-        's6': ( ('SN', 6), "S6 SYMMETRY"),
-        's8': ( ('SN', 8), "S8 SYMMETRY")
-    }
+CSMResult = namedtuple('CSMResult', ('molecule',
+                                     'op_order',
+                                     'op_name',
+                                     'csm',
+                                     'perm',
+                                     'dir',
+                                     'd_min',
+                                     'symmetric_structure',
+                                     'local_csm'))
 
-def process_results(results, molecule, keepCenter=False):
+
+def process_results(results, keepCenter=False):
     """
     Final normalizations and de-normalizations
     :param results: CSM old_calculations results
     :param csm_args: CSM args
     """
-    results.molecule.set_norm_factor(molecule.norm_factor)
+#    results.molecule.set_norm_factor(molecule.norm_factor)
     masses = [atom.mass for atom in results.molecule.atoms]
-    normalize_coords(results.outAtoms, masses, keepCenter)
+    normalize_coords(results.symmetric, masses, keepCenter)
 
     results.molecule.de_normalize()
-    results.outAtoms = de_normalize_coords(results.outAtoms, results.molecule.norm_factor)
+    results.symmetric = de_normalize_coords(results.symmetric, results.molecule.norm_factor)
 
-def exact_calculation(type, molecule, cppdata=None, perm=None, sn_max=None, permuter_class=MoleculePermuter, printLocal=False):
-    #csm_args = get_arguments(args)
-    #init_logging(csm_args)
-    #csm_args['molecule'].preprocess(**csm_args)
-    #csm.SetCSMOptions(csm_args)  # Set the default options for the Python/C++ bridge
-    (op_name, op_order) = op_dict[type][0]
-    #if perm: #this code gets handled automatically in csm_operation
-    #    result = csm.RunSinglePerm(cppdata)
-    #    return result
-    result = csm_operation(op_name, op_order, molecule, cppdata, perm, sn_max, permuter_class)
+
+def exact_calculation(op_name, op_order, molecule, perm=None, calc_local=False, permuter_class=MoleculePermuter):
+    if op_name == 'CH': # Chirality
+        sn_max = op_order
+        # First CS
+        result = csm_operation('CS', 2, molecule, perm, permuter_class)
+        best_op_name, best_op_order = 'CS', 2
+        while result.csm > MINDOUBLE:
+            # Try the Sn's
+            for op_order in range(2, sn_max + 1, 2):
+                result2 = csm_operation('SN', op_order, molecule, perm, permuter_class)
+                if result2.csm < result.csm:
+                    result = result2
+                    best_op_name, best_op_order = 'SN', op_order
+    else:
+        result = csm_operation(op_name, op_order, molecule, perm, permuter_class)
+        best_op_name, best_op_order = op_name, op_order
+
     process_results(result, molecule)
-    if printLocal:
-        localCSM=compute_local_csm(op_name, op_order, molecule, result.dir, result.perm)
+    if calc_local:
+        result.local_csm = compute_local_csm(best_op_name, best_op_order, molecule, result.dir, result.perm)
 
     return result
 
-    # chirality support (currently never hit, but needs to eventually be addressed)
-    '''
-    cppdata.operationType = cppdata.chMinType = "CS"
-    cppdata.opOrder = 2
-    result = perform_operation(csm_args, data)
-
-    if result.csm > MINDOUBLE:
-        data.operationType = "SN"
-        for i in range(2, sn_max + 1, 2):
-            data.opOrder = i
-            ch_result = perform_operation(csm_args, data)
-            if ch_result.csm < result.csm:
-                result = ch_result
-                result.chMinType = 'SN'
-                result.chMinOrder = ch_result.opOrder
-
-            if result.csm < MINDOUBLE:
-                break
-    '''
 
 def approx_calculation(type, molecule, cppdata, dir=None, detect_outliers=False, sn_max=None):
     if dir:
@@ -94,77 +75,52 @@ def approx_calculation(type, molecule, cppdata, dir=None, detect_outliers=False,
         result = csm.FindBestPerm(cppdata)
     return result
 
+
 def local_calculation(type, molecule, cppdata, dir, perm):
     local_res = csm.ComputeLocalCSM(cppdata)
     return local_res
 
 
 
-
-
-
-
-
-
-def csm_operation(op_name, op_order, molecule, cppdata, perm=None, sn_max=None, permuter_class=MoleculePermuter):
+def csm_operation(op_name, op_order, molecule, perm=None, permuter_class=MoleculePermuter):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
     Once it finds the optimal permutation , calls the CreateSymmetricStructure on the optimal permutation
     :param current_calc_data: current old_calculations data object
     :param args: The CSM arguments
-    :return: the old_calculations data object with the permutation, csm, dMin and direction values updated
+    :return: A dictionary with all the results: csm, dMin, perm and direction
     """
-    csm_args={"molecule":molecule, "type":op_name, "opOrder":op_order}
-    current_calc_data=CSMCalculationsData(csm_args)
     logger.debug("csm_op atoms:")
-    logger.debug([atom.pos for atom in current_calc_data.molecule.atoms])
-    #chained_perms = molecule.chained_perms
-    result_csm = MAXDOUBLE
-    r_dir = []
-    optimal_perm = []
-    current_calc_data.dir = np.zeros(3)
+    logger.debug([atom.pos for atom in molecule.atoms])
+    result = CSMResult(molecule=molecule, op_name=op_name, op_order=op_order, csm=MAXDOUBLE)
 
-    csv_writer = None
-    #if csm_args['outPermFile']:
-    #    csv_writer = csv.writer(csm_args['outPermFile'], lineterminator='\n')
-    #    csv_writer.writerow(['Permutation', 'Direction', 'CSM'])
-
-    if not perm:
-        mp=permuter_class(current_calc_data.molecule, current_calc_data.opOrder, current_calc_data.operationType == 'SN')
-        for perm in mp.permute():
-            current_calc_data.perm = perm
-            #current_calc_data = csm.CalcRefPlane(current_calc_data) # C++ version
-            current_calc_data = calc_ref_plane(current_calc_data) # Python version
-            if current_calc_data.csm < result_csm:
-                (result_csm, r_dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
-            # check, if it's a minimal csm, update dir and optimal perm
-            if csv_writer:
-                csv_writer.writerow([perm, current_calc_data.dir, current_calc_data.csm])
-
-    else: #run single perm
+    if perm:
+        permuter = SinglePermPermuter(perm)
         logger.debug("SINGLE PERM")
-        current_calc_data.perm = perm
-        current_calc_data = calc_ref_plane(current_calc_data) # Python version
-        (result_csm, r_dir, optimal_perm) = (current_calc_data.csm, np.copy(current_calc_data.dir), perm[:])
+    else:
+        permuter = permuter_class(molecule, op_order, op_name=='SN')
 
+    for perm in permuter.permute():
+        csm, dir = calc_ref_plane(molecule, op_order, op_name, perm)
+        if csm < result.csm:
+            result.csm = csm
+            result.dir = dir
+            result.perm = perm[:]
+        # TODO: Write permutations while looping
 
-
-    if result_csm == MAXDOUBLE:
+    if result.csm == MAXDOUBLE:
         # failed to find csm value for any permutation
         raise ValueError("Failed to calculate a csm value for %s" % op_name)
 
-    current_calc_data.dMin = 1.0 - (result_csm / 100 * current_calc_data.opOrder / (current_calc_data.opOrder - 1))
-    current_calc_data.perm = optimal_perm
-    current_calc_data.dir = r_dir
-    current_calc_data.csm = result_csm
+    result.d_min = 1.0 - (result.csm / 100 * op_order / (op_order - 1))
 
-    #return csm.CreateSymmetricStructure(current_calc_data) #c++
-    return create_symmetric_structure(current_calc_data) #python
+    result.symmetric_structure = create_symmetric_structure(result)
+
 
 def create_rotation_matrix(iOp, op_name, op_order, dir):
-    is_improper= op_name!='CN'
-    is_zero_angle= op_name=='CS'
+    is_improper = op_name!='CN'
+    is_zero_angle = op_name=='CS'
     W= np.array([[0.0, -dir[2], dir[1]], [dir[2], 0.0, -dir[0]], [-dir[1], dir[0], 0.0]])
     rot = np.zeros((3, 3))
     angle=0.0 if is_zero_angle else 2 * np.pi * iOp / op_order
@@ -202,79 +158,60 @@ def compute_local_csm(op_name, op_order, molecule, dir, perm):
         #apply rotation to each atoms
         #rotated=
 
-def create_symmetric_structure(current_calc_data):
+def create_symmetric_structure(csm_result):
 
     logger.debug('***************************** Python ************************')
     logger.debug('createSymmetricStructure called')
 
-    (op_name, op_order) = (current_calc_data.operationType, current_calc_data.opOrder)
-    cur_perm=np.arange(len(current_calc_data.perm)) #array of ints...
+    cur_perm=np.arange(len(csm_result.perm)) #array of ints...
 
-    m_pos=np.asarray([np.asarray(atom.pos) for atom in current_calc_data.molecule.atoms])
-    current_calc_data.outAtoms=np.copy(m_pos)
+    m_pos=np.asarray([np.asarray(atom.pos) for atom in csm_result.molecule.atoms])
+    symmetric = np.copy(m_pos)
     logger.debug("in atoms:")
-    logger.debug(current_calc_data.outAtoms)
+    logger.debug(symmetric)
 
-
-    normalization=current_calc_data.dMin/op_order
-
-    dir= current_calc_data.dir
-
+    normalization = csm_result.d_min / csm_result.op_order
+    dir = csm_result.dir
 
 
     ########calculate and apply transform matrix#########
     ###for i<OpOrder
-    for i in range(1,op_order):
-
+    for i in range(1, csm_result.op_order):
         #get rotation
-        rotation_matrix=create_rotation_matrix(i, op_name, op_order, dir)
+        rotation_matrix=create_rotation_matrix(i, csm_result.op_name, csm_result.op_order, dir)
         logger.debug("Rotation matrix:\n")
         logger.debug(rotation_matrix)
         #rotated_positions = m_pos @ rotation_matrix
 
         #set permutation
         for w in range (len(cur_perm)):
-            cur_perm[w]=current_calc_data.perm[cur_perm[w]]
+            cur_perm[w]=csm_result.perm[cur_perm[w]]
 
         #add correct permuted rotation to atom in outAtoms
-        for j in range (len(current_calc_data.outAtoms)):
-            current_calc_data.outAtoms[j] += rotation_matrix @ m_pos[cur_perm[j]]
+        for j in range (len(symmetric)):
+            symmetric[j] += rotation_matrix @ m_pos[cur_perm[j]]
         logger.debug("Out atoms")
-        logger.debug(current_calc_data.outAtoms)
+        logger.debug(symmetric)
 
     #apply normalization:
-    current_calc_data.outAtoms *= normalization
+    symmetric *= normalization
     logger.debug("normalized out atoms:")
-    logger.debug(current_calc_data.outAtoms)
+    logger.debug(symmetric)
 
-    return current_calc_data
-
-
+    return symmetric
 
 
-
-
-def total_number_of_permutations(csm_args):
-    if csm_args['type'] != 'CH':
-        return len_molecule_permuter(csm_args['molecule'], csm_args['opOrder'], csm_args['type'])
-    else:
-        num_perms = len_molecule_permuter(csm_args['molecule'], 2, 'SN')
-        for i in range(2, csm_args['sn_max'] + 1, 2):
-            num_perms += len_molecule_permuter(csm_args['molecule'], i, 'SN')
-        return num_perms
-
-def calc_ref_plane(current_calc_data):
-    size = len(current_calc_data.molecule.atoms)
-    is_improper = current_calc_data.operationType != 'CN'
-    is_zero_angle = current_calc_data.operationType == 'CS'
+def calc_ref_plane(molecule, op_order, op_name, perm):
+    size = len(molecule.atoms)
+    is_improper = op_name
+    is_zero_angle = op_name == 'CS'
 
     logger.debug('***************************** Python ************************')
     logger.debug('calcRefPlane called')
-    logger.debug('Permutation is ' + str(current_calc_data.perm))
+    logger.debug('Permutation is ' + str(perm))
 
-    logger.debug("Direction is %lf %lf %lf" % (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2]))
     logger.debug("calcrefplane atoms:")
-    logger.debug([atom.pos for atom in current_calc_data.molecule.atoms])
+    logger.debug([atom.pos for atom in molecule.atoms])
 
     # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
     # - described on the first page of the paper
@@ -283,7 +220,7 @@ def calc_ref_plane(current_calc_data):
         a = a.reshape((3,1))
         return a
 
-    Q = [col_vec(atom.pos) for atom in current_calc_data.molecule.atoms]
+    Q = [col_vec(atom.pos) for atom in molecule.atoms]
 
     def calc_A_B():
         # A is calculated according to formula (17) in the paper
@@ -294,11 +231,11 @@ def calc_ref_plane(current_calc_data):
         B = np.zeros((1, 3)) # Row vector for now
 
         # compute matrices according to current perm and its powers (the identity does not contribute anyway)
-        for i in range(1, current_calc_data.opOrder):
+        for i in range(1, op_order):
             if is_zero_angle:
                 theta = 0.0
             else:
-                theta = 2 * math.pi * i / current_calc_data.opOrder
+                theta = 2 * math.pi * i / op_order
 
             if is_improper and (i % 2):
                 multiplier = -1 - math.cos(theta)
@@ -306,7 +243,7 @@ def calc_ref_plane(current_calc_data):
                 multiplier = 1 - math.cos(theta)
 
             # The i'th power of the permutation
-            cur_perm = [current_calc_data.perm[cur_perm[j]] for j in range(size)]
+            cur_perm = [perm[cur_perm[j]] for j in range(size)]
 
 
             # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
@@ -372,7 +309,7 @@ def calc_ref_plane(current_calc_data):
     m_max_B = 0.0
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
-    if is_zero_angle or current_calc_data.opOrder == 2:
+    if is_zero_angle or op_order == 2:
         # If we are in zero teta case, we should pick the direction matching lambda_max
         min_dist = MAXDOUBLE
         minarg = 0
@@ -381,18 +318,18 @@ def calc_ref_plane(current_calc_data):
             if math.fabs(lambdas[i] - lambda_max) < min_dist:
                 min_dist = math.fabs(lambdas[i] - lambda_max)
                 minarg = i
-        current_calc_data.dir = [m.tolist()[i][minarg] for i in range(3)]
+        dir = [m.tolist()[i][minarg] for i in range(3)]
     else:
         for i in range(3):
-            current_calc_data.dir[i] = 0.0
+            dir[i] = 0.0
             for j in range(3):
                 # error safety
                 if math.fabs(lambdas[j] - lambda_max) < 1e-6:
-                    current_calc_data.dir[i] = m[i, j]
+                    dir[i] = m[i, j]
                     break
                 else:
-                    current_calc_data.dir[i] += m_t_B[j] / (lambdas[j] - lambda_max) * m[i, j]
-            m_max_B = m_max_B + current_calc_data.dir[i] * B[i]
+                    dir[i] += m_t_B[j] / (lambdas[j] - lambda_max) * m[i, j]
+            m_max_B = m_max_B + dir[i] * B[i]
 
     # initialize identity permutation
     cur_perm = [i for i in range(size)]
@@ -401,31 +338,31 @@ def calc_ref_plane(current_calc_data):
     #  - lambda_max is divided by 2 (this appears only in CPP code)
     # - division by N (size) and by d^2 (mean square of Q - the original atom positions) is not
     #   made here but in the normalizations section
-    current_calc_data.csm = 1.0
-    for i in range(1, current_calc_data.opOrder):
+    csm = 1.0
+    for i in range(1, op_order):
         # This can be more efficient - save results of matrix computation
         if is_zero_angle:
             theta = 0.0
         else:
-            theta = 2 * math.pi * i / current_calc_data.opOrder
+            theta = 2 * math.pi * i / op_order
         dists = 0.0
 
         # i'th power of permutation
-        cur_perm = [current_calc_data.perm[cur_perm[j]] for j in range(size)]
+        cur_perm = [perm[cur_perm[j]] for j in range(size)]
 
         Q_ = [Q[cur_perm[i]] for i in range(size)]
 
         for k in range(size):
             dists += Q[k].T @ Q_[k]
-        current_calc_data.csm += math.cos(theta) * dists
+        csm += math.cos(theta) * dists
 
-    logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (current_calc_data.csm, lambda_max, m_max_B))
-    logger.debug("dir: %lf %lf %lf" % (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2]))
+    logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
+    logger.debug("dir: %lf %lf %lf" % (dir[0], dir[1], dir[2]))
 
-    current_calc_data.csm += (lambda_max - m_max_B) / 2
-    current_calc_data.csm = math.fabs(100 * (1.0 - current_calc_data.csm / current_calc_data.opOrder))
+    csm += (lambda_max - m_max_B) / 2
+    csm = math.fabs(100 * (1.0 - csm / op_order))
 
     logger.debug("dir - csm: %lf %lf %lf - %lf" %
-          (current_calc_data.dir[0], current_calc_data.dir[1], current_calc_data.dir[2], current_calc_data.csm))
+          (dir[0], dir[1], dir[2], csm))
 
-    return current_calc_data
+    return csm, dir

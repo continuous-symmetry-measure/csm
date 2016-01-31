@@ -285,3 +285,12 @@ class MoleculeLegalPermuter:
         Groups = self._mol.equivalence_classes
         yield from recursive_permute(Groups, start_perm)
         self._num += 1
+
+
+class SinglePermPermuter:
+    """ A permuter that returns just one permutation, used for when the permutation is specified by the user """
+    def __init__(self, perm):
+        self._perm = perm
+
+    def permute(self):
+        yield self._perm
