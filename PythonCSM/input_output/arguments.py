@@ -42,7 +42,7 @@ def _create_parser():
                         help='Use the atomic masses to define center of mass')
     parser.add_argument('--timeOnly', action='store_true', default=False, help="Only print the time and exit")
     parser.add_argument('--babelTest', action='store_true', default=False, help="Test if the molecule is legal or not")
-    parser.add_argument('--sn_max', type=int, help='The maximal sn to try, relevant only for chirality')
+    parser.add_argument('--sn_max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
     parser.add_argument('--printNorm', action='store_true', default=False, help='Print the normalization factor as well')
     parser.add_argument('--printLocal', action='store_true', default=False,
                         help='Print the local CSM (csm for each atom) in the output file')
@@ -59,173 +59,32 @@ def _create_parser():
     return parser
 
 
-def _check_arguments(processed):
-
-    if processed['sn_max'] and processed['type'] != 'CH':
-        raise ValueError("Option --sn_max only applies to chirality")
-
-    if (processed['findPerm'] and 'perm' in processed) or (processed['findPerm'] and 'dirFile' in processed) \
-            or ('dirFile' in processed and 'perm' in processed):
+def _check_arguments(in_args, calc_args, out_args):
+    if (calc_args['find_perm'] and 'perm' in calc_args) or (calc_args['find_perm'] and 'dir_file_name' in calc_args) \
+            or ('dir_file_name' in calc_args and 'perm' in calc_args):
         raise ValueError("--findperm, --useperm and --usedir are mutually exclusive")
 
-    if processed['removeHy'] and processed['ignoreHy']:
+    if in_args['remove_hy'] and in_args['ignore_hy']:
         raise ValueError("--removeHy and --ignoreHy are mutually exclusive")
 
-    if "perm" in processed:
-
-        if processed['type'] == 'CH':
+    if "perm" in calc_args:
+        if calc_args['type'] == 'CH':
             raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
 
         # In C++ code ignoreSym, ignoreHy and removeHy are used only when usePerm is false
-        if processed["ignoreSym"]:
+        if in_args["ignore_sym"]:
             raise ValueError("--useperm ignores the --ignoreSym option, can't use them together")
-        if processed["ignoreHy"]:
+        if in_args["ignore_hy"]:
             raise ValueError("--useperm ignores the --ignoreHy option, can't use them together")
-        if processed["removeHy"]:
+        if in_args["remove_hy"]:
             raise ValueError("--useperm ignores the --removeHy option, can't use them together")
 
-        if len(processed["perm"]) != len(processed['molecule'].atoms):
-            raise ValueError("Invalid permutation")
+    if calc_args['detect_outliers'] and not calc_args['find_perms']:
+        raise ValueError("--detectOutliers must be used with --findperm")
 
-    if processed['useChains'] and not processed['molecule'].chains:
+    if in_args['use_chains'] and not in_args['molecule'].chains:
         raise ValueError("--useChains specified but no chains provided in the molecule file")
 
-
-def _open_files(parse_res, result):
-
-    # try to open and read the input file
-    try:
-        if result['format'].lower() == "csm":
-            with open(parse_res.input, 'r') as infile:
-                atoms = read_csm_file(infile, result)
-                result['molecule'] = Molecule(atoms)
-        else:
-            result["obmol"] = open_non_csm_file(result)
-            (atoms, chains) = read_ob_mol(result["obmol"], result)
-            if not parse_res.useChains:  # Todo: Print chains
-                chains = []
-            result['molecule'] = Molecule(atoms, chains=chains, obmol=result["obmol"])
-    except IOError:
-        raise ValueError("Failed to open data file " + parse_res.input)
-    except ValueError:
-        raise ValueError("Failed to read molecule from data file")
-
-    # try to open the output file for writing
-    try:
-        result['outFile'] = open(parse_res.output, 'w')
-    except IOError:
-        raise ValueError("Failed to open output file " + parse_res.output + " for writing")
-
-    # try to open the permFile for reading (if exists)
-    if parse_res.useperm:
-        try:
-            with open(parse_res.useperm, 'r') as permfile:
-                perm = read_perm_file(permfile)
-                result['perm'] = perm
-        except IOError:
-            raise ValueError("Failed to open perm file " + parse_res.useperm + " for reading")
-
-    # try to open the dirFile for reading (if exists)
-    if parse_res.usedir:
-        try:
-            with open(parse_res.usedir, 'r') as dirfile:
-                dir = read_dir_file(dirfile)
-                result['dir'] = dir
-        except IOError:
-            raise ValueError("Failed to open dir file " + parse_res.usedir + " for reading")
-        except (ValueError, IndexError):
-            raise ValueError("Can't read legal direction from file " + parse_res.usedir)
-
-    # Try to open the permutation output file
-    if parse_res.outputPerms:
-        try:
-            result['outPermFile'] = open(parse_res.outputPerms, 'w')
-        except IOError:
-            raise ValueError("Failed to open output permutation file " + parse_res.outputPerms + " for writing")
-    else:
-        result['outPermFile'] = None
-
-
-
-
-
-def _process_arguments(parse_res):
-
-    result = {}
-
-    op_names = {
-        "cs": ('CS', 2, "MIRROR SYMMETRY"),
-        "ci": ('CI', 2, "INVERSION (S2)"),
-        "ch": ('CH', 2, "CHIRALITY"),
-        "c2": ('CN', 2, "C2 SYMMETRY"),
-        'c3': ('CN', 3, "C3 SYMMETRY"),
-        'c4': ('CN', 4, "C4 SYMMETRY"),
-        'c5': ('CN', 5, "C5 SYMMETRY"),
-        'c6': ('CN', 6, "C6 SYMMETRY"),
-        'c7': ('CN', 7, "C7 SYMMETRY"),
-        'c8': ('CN', 8, "C8 SYMMETRY"),
-        's2': ('SN', 2, "S2 SYMMETRY"),
-        's4': ('SN', 4, "S4 SYMMETRY"),
-        's6': ('SN', 6, "S6 SYMMETRY"),
-        's8': ('SN', 8, "S8 SYMMETRY")
-    }
-
-    result['type'] = op_names[parse_res.type][0]
-    result['opOrder'] = op_names[parse_res.type][1]
-    result['opName'] = op_names[parse_res.type][2]
-    result['inFileName'] = parse_res.input
-    result['outFileName'] = parse_res.output
-
-    result['sn_max'] = parse_res.sn_max
-
-    result['ignoreHy'] = parse_res.ignoreHy
-    result['removeHy'] = parse_res.removeHy
-    result['ignoreSym'] = parse_res.ignoreSym
-
-    result['format'] = parse_res.format
-    result['useformat'] = result['format'] is not None
-    if not result['format']:
-        # get input file extension
-        result['format'] = parse_res.input.split(".")[-1]
-
-    result['writeOpenu'] = parse_res.writeOpenu
-    result['limitRun'] = not parse_res.nolimit
-    result['babelBond'] = parse_res.babelbond
-    result['useMass'] = parse_res.useMass
-    result['timeOnly'] = parse_res.timeOnly
-    result['printNorm'] = parse_res.printNorm
-    result['findPerm'] = parse_res.findperm
-    result['detectOutliers'] = parse_res.detectOutliers
-    result['useChains'] = parse_res.useChains
-    if parse_res.approx:
-        result['findPerm'] = True
-        result['detectOutliers'] = True
-    result['babelTest'] = parse_res.babelTest
-    result['printLocal'] = parse_res.printLocal
-    result['keepCenter'] = parse_res.keepCenter
-    if parse_res.writeOpenu:
-        result['format'] = "PDB"
-    result['logFileName'] = parse_res.log
-
-    #_open_files(parse_res, result)
-    _check_arguments(result)
-
-    if not result['sn_max']:
-        result['sn_max'] = 8
-
-    return result
-
-def get_arguments(args):
-    """
-    Parse the command line arguments and return a dictionary with all the CSM run options
-    :param args: Command line arguments (sys.args, for example)
-    :return: A dictionary with all the CSM run options.
-    """
-    parser = _create_parser()
-    parsed_args = parser.parse_args(args)
-    csm_args = _process_arguments(parsed_args)
-
-    return csm_args
 
 def _process_split_arguments(parse_res):
     """
@@ -238,9 +97,9 @@ def _process_split_arguments(parse_res):
 
     """
 
-    mol_result = {}
-    calc_result= {}
-    out_result= {}
+    mol_args = {}
+    calc_args = {}
+    out_args = {}
 
     op_names = {
         "cs": ('CS', 2, "MIRROR SYMMETRY"),
@@ -259,53 +118,46 @@ def _process_split_arguments(parse_res):
         's8': ('SN', 8, "S8 SYMMETRY")
     }
 
-    calc_result['type'] = op_names[parse_res.type][0]
-    calc_result['op_order'] = op_names[parse_res.type][1]
-    calc_result['op_name'] = op_names[parse_res.type][2]
-    calc_result['sn_max'] = parse_res.sn_max
-    calc_result['limit_run'] = not parse_res.nolimit
-    calc_result['find_perm'] = parse_res.findperm
-    calc_result['detect_outliers'] = parse_res.detectOutliers
+    calc_args['op_type'] = op_names[parse_res.type][0]
+    calc_args['op_order'] = op_names[parse_res.type][1]
+    calc_args['op_name'] = op_names[parse_res.type][2]
+    calc_args['sn_max'] = parse_res.sn_max
+    calc_args['limit_run'] = not parse_res.nolimit
+    calc_args['find_perm'] = parse_res.findperm
+    calc_args['detect_outliers'] = parse_res.detectOutliers
     if parse_res.approx:
-        calc_result['approx'] = True
-        calc_result['find_perm'] = True
-        calc_result['detect_outliers'] = True
+        calc_args['find_perm'] = True
+        calc_args['detect_outliers'] = True
 
-    mol_result['in_file_name'] = parse_res.input
-    mol_result['ignore_hy'] = parse_res.ignoreHy
-    mol_result['remove_hy'] = parse_res.removeHy
-    mol_result['ignore_sym'] = parse_res.ignoreSym
-    mol_result['format'] = parse_res.format
-    mol_result['useformat'] = mol_result['format'] is not None
-    if not mol_result['format']:
+    mol_args['in_file_name'] = parse_res.input
+    mol_args['ignore_hy'] = parse_res.ignoreHy
+    mol_args['remove_hy'] = parse_res.removeHy
+    mol_args['ignore_sym'] = parse_res.ignoreSym
+    mol_args['format'] = parse_res.format
+    mol_args['useformat'] = mol_args['format'] is not None
+    if not mol_args['format']:
         # get input file extension
-        mol_result['format'] = parse_res.input.split(".")[-1]
-    mol_result['babel_bond'] = parse_res.babelbond
-    mol_result['use_mass'] = parse_res.useMass
-    mol_result['use_chains'] = parse_res.useChains
-    mol_result['keep_center'] = parse_res.keepCenter
+        mol_args['format'] = parse_res.input.split(".")[-1]
+    mol_args['babel_bond'] = parse_res.babelbond
+    mol_args['use_mass'] = parse_res.useMass
+    mol_args['use_chains'] = parse_res.useChains
+    mol_args['keep_center'] = parse_res.keepCenter
     if parse_res.writeOpenu:
-        mol_result['format'] = "PDB"
-    if parse_res.usePerm:
-        mol_result['perm_file_name'] = parse_res.usePerm
-    if parse_res.useDir:
-        mol_result['dir_file_name'] = parse_res.useDir
+        mol_args['format'] = "PDB"
+    if parse_res.useperm:
+        mol_args['perm_file_name'] = parse_res.useperm
+    if parse_res.usedir:
+        mol_args['dir_file_name'] = parse_res.usedir
 
-    out_result['write_openu'] = parse_res.writeOpenu
-    out_result['print_norm'] = parse_res.printNorm
-    out_result['print_local'] = parse_res.printLocal
-    out_result['log_file_name'] = parse_res.log
-    out_result['out_file_name'] = parse_res.output
+    out_args['write_openu'] = parse_res.writeOpenu
+    out_args['print_norm'] = parse_res.printNorm
+    out_args['print_local'] = parse_res.printLocal
+    out_args['log_file_name'] = parse_res.log
+    out_args['out_file_name'] = parse_res.output
 
-    _open_files(parse_res, mol_result)
-    _check_arguments(mol_result)
-    _check_arguments(calc_result)
-    _check_arguments(out_result)
+    _check_arguments(mol_args, calc_args, out_args)
 
-    if not calc_result['sn_max']:
-        calc_result['sn_max'] = 8
-
-    return mol_result, calc_result, out_result
+    return mol_args, calc_args, out_args
 
 
 def get_split_arguments(args):

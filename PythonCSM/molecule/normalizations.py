@@ -15,9 +15,9 @@ def normalize_coords(coords, masses, keep_center):
 
     x_avg = y_avg = z_avg = 0.0
 
+    size = len(masses)
     if not keep_center:
         mass_sum = 0
-        size = len(masses)
         for i in range(size):
             x_avg += coords[i][0] * masses[i]
             y_avg += coords[i][1] * masses[i]

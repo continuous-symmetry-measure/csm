@@ -1,8 +1,10 @@
 import logging
 import sys
-from input_output.arguments import get_split_arguments, get_arguments
+
+from a_calculations.permuters import MoleculeLegalPermuter
+from input_output.arguments import get_split_arguments
 from a_calculations.csm_calculations_data import CSMCalculationsData
-from a_calculations.csm_calculations import approx_calculation, exact_calculation, local_calculation
+from a_calculations.csm_calculations import exact_calculation
 from input_output.readers import read_inputs
 
 APPROX_RUN_PER_SEC = 8e4
@@ -10,7 +12,7 @@ sys.setrecursionlimit(10000)
 
 logger = None
 
-def init_logging(log_file_name=None):
+def init_logging(log_file_name=None, *args, **kwargs):
     global logger
 
     if log_file_name:
@@ -21,57 +23,23 @@ def init_logging(log_file_name=None):
     logger = logging.getLogger("csm")
 
 
-
-def run_csm(args={}, print_output=True):
+def run_csm(args={}):
     # Read inputs
     in_args, calc_args, out_args = get_split_arguments(args)
-    mol, perm, dir = read_inputs(**in_args)
+    calc_args['molecule'], calc_args['perm'], calc_args['dir'] = read_inputs(**in_args)
+    calc_args['permuter_class'] = MoleculeLegalPermuter
 
-    # backwards compatibility
-    csm_args = get_arguments(args)
-    csm_args['molecule'] = mol
-    csm_args['dir'] = dir
-    csm_args['perm'] = perm
-    # csm.SetCSMOptions(csm_args)
-    cppdata = CSMCalculationsData(csm_args)
-    calc_args['cppdata'] = cppdata
-
+    print("Running calculation with arguments: ", calc_args)
     # logging:
     init_logging(**out_args)
 
     # run actual calculation
-    # approx:
-    if calc_args['approx']:
-        approx_calculation(**calc_args)
-    # local:
-
-    # exact:
-
-
-
-
-    # print results
-    # opName, csm, scalingfactor=dmin, dir, equivalence classes, molecule, localCSM, chMinOrder, perm
-    '''
-            if csm_args['printLocal']:
-            if csm_args['type'] == 'CH':
-                data.opOrder = result.chMinOrder
-            local_res = csm.ComputeLocalCSM(data)
-            result.localCSM = local_res.localCSM
-
-        process_results(result, csm_args)
-
-        if print_output:
-            print_all_output(result, csm_args)
-
-        return result
-    finally:
-        try:
-            csm_args['outFile'].close()
-            csm_args['outPermFile'].close()
-        except:
-            pass
-    '''
+    if calc_args['find_perm']:
+        raise NotImplementedError("No approx yet")
+#        result = approx_calculation(**calc_args)
+    else:
+        result = exact_calculation(**calc_args)
+    print(result)
 
 if __name__ == '__main__':
     results = run_csm(args=sys.argv[1:])

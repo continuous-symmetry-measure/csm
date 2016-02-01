@@ -2,18 +2,21 @@ from openbabel import OBAtom, OBElementTable, OBAtomAtomIter, OBConversion, OBMo
 from molecule.atom import Atom, GetAtomicSymbol
 from molecule.normalizations import normalize_coords, de_normalize_coords
 import logging
+
 logger = logging.getLogger("csm")
+
 
 class Molecule:
     def __init__(self, atoms={}, chains={}, norm_factor=1.0, obmol=None):
-        self._atoms=atoms
-        self._chains=chains
-        self._bondset=set()
-        self._equivalence_classes=[]
-        self._norm_factor= norm_factor
-        self._flags={}
+        self._atoms = atoms
+        self._chains = chains
+        self._bondset = set()
+        self._equivalence_classes = []
+        self._norm_factor = norm_factor
+        self._flags = {}
         self._create_bondset()
-        self._obmol=obmol
+        self._obmol = obmol
+
     @property
     def atoms(self):
         return self._atoms
@@ -32,27 +35,27 @@ class Molecule:
         return self._norm_factor
 
     def set_norm_factor(self, nf):
-        self._norm_factor=nf
+        self._norm_factor = nf
 
     @property
     def chains(self):
         return self._chains
+
     def has_bond(self, atom_i, atom_j):
         if (atom_i, atom_j) in self._bondset:
             return True
         return False
 
     def atom_cords(self):
-        atoms=[]
+        atoms = []
         for atom in self._atoms:
             atoms.append(atom.pos)
         return atoms
 
-
     def _create_bondset(self):
         for i in range(len(self._atoms)):
             for match in self._atoms[i].adjacent:
-               self._bondset.add((i, match))
+                self._bondset.add((i, match))
 
     def _find_equivalence_classes(self):
         group_num = 0
@@ -127,7 +130,6 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-
         if self.chains:
             self.process_chains()
 
@@ -141,7 +143,8 @@ class Molecule:
             for elem in group:
                 sub_groups[self.atoms[elem].chain].append(elem)  # put an atom into a suitable chain sub_group
             for chain in sub_groups:
-                if len(sub_groups[chain]) == len(group)/len(self._chains):  # check that all chains are the same length
+                if len(sub_groups[chain]) == len(group) / len(
+                        self._chains):  # check that all chains are the same length
                     divided_groups.append(sub_groups[chain])
                 else:
                     raise ValueError("Illegal chains molecule structure")
@@ -220,25 +223,27 @@ class Molecule:
         self.normalize(keep_center)
 
     @staticmethod
-    def from_string(string, format, initialize=True, use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
-        #note: useMass is used when creating molecule, even though it is actually about creating the normalization
-        #second note: keepCenter has only ever been tested as false, it's not at all certain it's still used or still works when true
+    def from_string(string, format, initialize=True, use_chains=False, babel_bond=False, ignore_hy=False,
+                    remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
+        # note: useMass is used when creating molecule, even though it is actually about creating the normalization
+        # second note: keepCenter has only ever been tested as false, it's not at all certain it's still used or still works when true
 
-        #step one: get the molecule object
-        obm= Molecule._obm_from_string(string, format, babel_bond)
-        mol=Molecule._read_ob_mol(obm, ignore_symm, use_mass)
+        # step one: get the molecule object
+        obm = Molecule._obm_from_string(string, format, babel_bond)
+        mol = Molecule._from_obm(obm, ignore_symm, use_mass)
         if initialize:
             mol._complete_initialization(remove_hy, ignore_hy, keep_center)
 
         return mol
 
     @staticmethod
-    def from_file(filename, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
-        if format=="csm":
-            mol= Molecule._read_csm_file(filename, ignore_symm, use_mass)
+    def from_file(in_file_name, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
+                  remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False, *args, **kwargs):
+        if format == "csm":
+            mol = Molecule._read_csm_file(in_file_name, ignore_symm, use_mass)
         else:
-            obm=Molecule.obm_from_non_csm_file(filename, format, babel_bond)
-            mol=Molecule._read_ob_mol(obm, ignore_symm, use_mass)
+            obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
+            mol = Molecule._from_obm(obm, ignore_symm, use_mass)
         if initialize:
             mol._complete_initialization(remove_hy, ignore_hy, keep_center)
         return mol
@@ -262,14 +267,14 @@ class Molecule:
         :param babelBond:
         :return:
         """
-        conv=OBConversion()
-        mol=OBMol()
+        conv = OBConversion()
+        mol = OBMol()
         if not format:
             format = conv.FormatFromExt(filename)
             if not format:
                 raise ValueError("Error discovering format from filename " + filename)
         if not conv.SetInFormat(format):
-                raise ValueError("Error setting openbabel format to" + format)
+            raise ValueError("Error setting openbabel format to" + format)
         if not babel_bond:
             conv.SetOptions("b", conv.INOPTIONS)
         if not conv.ReadFile(mol, filename):
@@ -277,7 +282,7 @@ class Molecule:
         return mol
 
     @staticmethod
-    def _read_ob_mol(obmol, ignore_symm=False, use_mass=False):
+    def _from_obm(obmol, ignore_symm=False, use_mass=False):
         """
         :param obmol: OBmol molecule
         :param args_dict: dictionary of processed command line arguments
@@ -306,7 +311,7 @@ class Molecule:
                 adjacent.append(neighbour_atom.GetIdx() - 1)
             atom.adjacent = adjacent
             atoms.append(atom)
-        mol=Molecule(atoms=atoms, chains=chains)
+        mol = Molecule(atoms=atoms, chains=chains)
         return mol
 
     @staticmethod
@@ -338,7 +343,7 @@ class Molecule:
                 position = (float(line[1]), float(line[2]), float(line[3]))
                 atom = Atom(symbol, position, use_mass)
             except (ValueError, IndexError):
-                raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
+                raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
             atoms.append(atom)
 
         for i in range(size):
@@ -346,18 +351,18 @@ class Molecule:
             try:
                 atom_num = int(line.pop(0))
             except (ValueError, IndexError):
-                raise ValueError("Input Error: Failed reading connectivity for atom " + str(i+1))
-            if atom_num != i+1:
-                raise ValueError("Input Error: Failed reading connectivity for atom " + str(i+1))
+                raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
+            if atom_num != i + 1:
+                raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
 
             neighbours = []
             for neighbour_str in line:
                 try:
                     neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
                 except ValueError:
-                    raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
+                    raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
                 if neighbour >= size:
-                    raise ValueError("Input Error: Failed reading input for atom " + str(i+1))
+                    raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
                 neighbours.append(neighbour)
 
             atoms[i].adjacent = neighbours
