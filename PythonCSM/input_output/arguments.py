@@ -53,7 +53,7 @@ def _create_parser():
     parser.add_argument('--keepCenter', action='store_true', default=False,
                         help='Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass')
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
-    parser.add_argument('--outputPerms', action='store',
+    parser.add_argument('--outputPerms', action='store', default=None,
                         help='Writes all enumerated permutations to file')
     parser.add_argument('--useChains', action='store_true', default=False,
                         help='Use chains specified in the PDB file in order to calculate permutations')
@@ -173,6 +173,7 @@ def _process_split_arguments(parse_res):
     out_args['print_local'] = parse_res.printLocal
     out_args['log_file_name'] = parse_res.log
     out_args['out_file_name'] = parse_res.output
+    out_args['perms_csv_name'] = parse_res.outputPerms
 
     _check_arguments(mol_args, calc_args, out_args)
 

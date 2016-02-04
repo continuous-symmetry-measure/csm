@@ -3,8 +3,6 @@ import math
 import numpy as np
 from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
-# from permutations.lengths import len_molecule_permuter
-from old_permutations.lengths import len_molecule_permuter
 from a_calculations.permuters import MoleculePermuter, SinglePermPermuter
 import logging
 
@@ -31,6 +29,9 @@ CSMState = recordclass('CSMState', ('molecule',
                                     'local_csm'))
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
+# When this property is set by an outside caller, it is called every permutation iteration with the current CSMState
+# This is useful for writing all permutations to file during the calculation
+csm_state_tracer_func = None
 
 def process_results(results, keepCenter=False):
     """
@@ -70,19 +71,6 @@ def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, 
     return best_result
 
 
-#def approx_calculation(type, molecule, cppdata, dir=None, detect_outliers=False, sn_max=None):
-#    if dir:
-#        result = csm.FindBestPermUsingDir(cppdata)
-#    else:
-#        result = csm.FindBestPerm(cppdata)
-#    return result
-
-
-#def local_calculation(type, molecule, cppdata, dir, perm):
-#    local_res = csm.ComputeLocalCSM(cppdata)
-#    return local_res
-
-
 def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=MoleculePermuter):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
@@ -95,6 +83,7 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     logger.debug("csm_op atoms:")
     logger.debug([atom.pos for atom in molecule.atoms])
     best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
+    traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
     if perm:
         permuter = SinglePermPermuter(perm)
@@ -104,6 +93,12 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
 
     for perm in permuter.permute():
         csm, dir = calc_ref_plane(molecule, perm, op_order, op_type)
+        if csm_state_tracer_func:
+            traced_state.csm = csm
+            traced_state.perm = perm
+            traced_state.dir = dir
+            csm_state_tracer_func(traced_state)
+
         if csm < best_csm.csm:
             best_csm.csm = csm
             best_csm.dir = dir
@@ -119,6 +114,7 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     best_csm.symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
                                                               best_csm.op_order, best_csm.d_min)
     return best_csm
+
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
     is_improper = op_type != 'CN'

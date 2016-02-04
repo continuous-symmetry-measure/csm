@@ -1,10 +1,11 @@
+import csv
 import logging
 import sys
 
 from a_calculations.permuters import MoleculeLegalPermuter
 from input_output.arguments import get_split_arguments
-from a_calculations.csm_calculations_data import CSMCalculationsData
 from a_calculations.csm_calculations import exact_calculation
+from a_calculations import csm_calculations
 from input_output.readers import read_inputs
 from input_output.writers import print_results
 
@@ -31,9 +32,17 @@ def run_csm(args={}):
     calc_args['molecule'], calc_args['perm'], calc_args['dir'] = read_inputs(**in_args)
     calc_args['permuter_class'] = MoleculeLegalPermuter
 
-    print("Running calculation with arguments: ", calc_args)
     # logging:
     init_logging(**out_args)
+
+    # Outputing permutations
+    if out_args['perms_csv_name']:
+        csv_file = open(out_args['perms_csv_name'], 'w')
+        perm_writer = csv.writer(csv_file, lineterminator='\n')
+        perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
+        csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm], state.dir, state.csm])
+    else:
+        csv_file = None
 
     # run actual calculation
     if calc_args['find_perm']:
@@ -41,6 +50,9 @@ def run_csm(args={}):
 #        result = approx_calculation(**calc_args)
     else:
         result = exact_calculation(**calc_args)
+
+    if csv_file:
+        csv_file.close()
 
     print_results(result, in_args, calc_args, out_args)
 
