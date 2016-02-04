@@ -318,8 +318,8 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
                 minarg = i
         dir = [m.tolist()[i][minarg] for i in range(3)]
     else:
+        dir = np.zeros(3)
         for i in range(3):
-            dir[i] = 0.0
             for j in range(3):
                 # error safety
                 if math.fabs(lambdas[j] - lambda_max) < 1e-6:

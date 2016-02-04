@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from input_output.arguments import get_operation_data
 
 from molecule.molecule import Molecule
 from openbabel import OBAtomAtomIter, OBConversion, OBMol
@@ -8,6 +9,7 @@ import numpy as np
 import csv
 import re
 import logging
+import os.path
 
 def split(filename):
     mol_dict = OrderedDict()
@@ -79,7 +81,7 @@ def check_result(result, validate, mol_index, symm):
     v_csm = float(validate["csm"])
     r_dir = result.dir
     v_dir = [float(i) for i in validate["dir"].split()]
-    r_atoms = result.outAtoms
+    r_atoms = result.symmetric_structure
     v_mol = Molecule.from_string(validate["out_atoms"], "xyz", False)
     v_atoms = np.asarray([np.asarray(atom.pos) for atom in v_mol.atoms])
 
@@ -150,31 +152,29 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
     print(name)
     molecules = xyz_split(molecule_file)
     validation = split(result_file)
-    filename = directory + "\\" + name + ".csv"
+    filename = os.path.join(directory, name + ".csv")
     with open(filename, 'w') as csvfile:
         fieldnames = ['molecule id', 'symmetry', 'status', 'message', 'verify', 'csm result', 'csm expected', 'atoms result',
                       'atoms expected', 'perm result', 'perm expected', 'dir result', 'dir expected']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator='\n')
         writer.writeheader()
         for index, symm in validation:
-            try:
-                symmetry = symm.lower()
-                xyz = molecules[int(index)]
-                molecule = Molecule.from_string(xyz, "xyz")
-                validate = validation[index, symm]
-                result = exact_calculation(symmetry, molecule)
-                atom_mismatch, res = check_result(result, validate, index, symm)
-                if res['verify']:
-                    molecule2 = Molecule.from_string(xyz, "xyz")
-                    verify=exact_calculation(symmetry, molecule2, perm=[p-1 for p in res['perm expected']])
-                    atom_mismatch2, res2 = check_result(verify, validate, index, symm)
-                    if res2['status']!= 'OK':
-                        res['verify']=(res2['message'], res2['csm result'], res2['atoms result'])
-                    else:
-                        res['verify']="Verified"
-                writer.writerow(res)
-            except:
-                pass
+            oursymm = 'CS' if symm=='MI' else symm  # CS is marked as MI (Mirror)
+            operation = get_operation_data(oursymm)
+            xyz = molecules[int(index)]
+            molecule = Molecule.from_string(xyz, "xyz")
+            validate = validation[index, symm]
+            result = exact_calculation(operation.type, operation.order, molecule)
+            atom_mismatch, res = check_result(result, validate, index, symm)
+            if res['verify']:
+                molecule2 = Molecule.from_string(xyz, "xyz")
+                verify = exact_calculation(operation.type, operation.order, molecule2, perm=[p-1 for p in res['perm expected']])
+                atom_mismatch2, res2 = check_result(verify, validate, index, symm)
+                if res2['status']!= 'OK':
+                    res['verify']=(res2['message'], res2['csm result'], res2['atoms result'])
+                else:
+                    res['verify']="Verified"
+            writer.writerow(res)
     print("done")
 
 
@@ -204,12 +204,12 @@ def run():
                         filename='runxyz.log',
                         filemode='w')
     #directory=r'C:\Users\dev\Documents\Chelem\csm'
-    directory = r'C:\Users\devora.witty\Sources\csm\Testing'
+    directory = r'../test_cases/inbal'
 
     name = "methane_test"
-    molfile = directory + r'\mols_for_Itay\input\input_1_methane_csm\methane-test1.xyz'
-    symmfile = directory + r'\mols_for_Itay\expected_output\expected_output_1_methane_csm\sym.txt'
-    resfile = directory + r'\mols_for_Itay\expected_output\expected_output_1_methane_csm\csmresults.log'
+    molfile = os.path.join(directory, 'input/input_1_methane_csm/methane-test1.xyz')
+    symmfile = os.path.join(directory, 'expected_output/expected_output_1_methane_csm/sym.txt')
+    resfile = os.path.join(directory,  'expected_output/expected_output_1_methane_csm/csmresults.log')
     runtests(molfile, symmfile, resfile, directory, name)
 
     name = "biphenyl_test"
@@ -231,4 +231,5 @@ def run():
     #runtests(molfile, symmfile, resfile, directory, name)
 
 
-run()
+if __name__ == '__main__':
+    run()
