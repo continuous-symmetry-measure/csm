@@ -3,7 +3,7 @@ import sys
 from tempfile import NamedTemporaryFile, mkstemp
 
 __author__ = 'zmbq'
-import csm_main
+import csm
 
 """
 Helper functions for running CSM tests
@@ -184,7 +184,7 @@ def run_test(test_dir):
 
 def run_csm_python(test_dir, output_path):
     args = get_python_test_args(test_dir, output_path)
-    return csm_main.run_csm(args)
+    return csm.run_csm(args)
 
 def run_test_python(test_dir):
     try:

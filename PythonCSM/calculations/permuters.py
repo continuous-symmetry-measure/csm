@@ -1,11 +1,6 @@
 import itertools
-import warnings
 
 __author__ = 'zmbq'
-
-warnings.warn(
-        'This is the inefficient Python implementation, use CPP_Wrapper.permutations for the efficient  version',
-        RuntimeWarning)
 
 
 class MoleculePermuter:
@@ -134,7 +129,7 @@ class MoleculePermuter:
             yield from self._all_perms_from_cycle_struct(group_size,
                                                          cycle_struct)  # Return all permutations for each cycle structure
 
-    def permute(self, elements):
+    def permute(self):
         """
         Generates all permutations of a molecule
         :param molecule_size: Molecule size
@@ -176,7 +171,7 @@ class MoleculePermuter:
                     ordered_elements = start_elements_order[:]
 
         groups = self._mol.equivalence_classes
-        elements_order = elements  # The starting elements order
+        elements_order = [i for i in range(len(self._mol.atoms))]  # The starting elements order
         yield from generate(elements_order, groups)
 
 
@@ -285,3 +280,12 @@ class MoleculeLegalPermuter:
         Groups = self._mol.equivalence_classes
         yield from recursive_permute(Groups, start_perm)
         self._num += 1
+
+
+class SinglePermPermuter:
+    """ A permuter that returns just one permutation, used for when the permutation is specified by the user """
+    def __init__(self, perm):
+        self._perm = perm
+
+    def permute(self):
+        yield self._perm

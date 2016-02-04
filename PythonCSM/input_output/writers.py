@@ -1,6 +1,5 @@
 __author__ = 'YAEL'
 
-from calculations.molecule import Atom
 from openbabel import OBConversion
 
 

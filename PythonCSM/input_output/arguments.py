@@ -2,11 +2,7 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
-import csv
-
 from collections import namedtuple
-from old_input_output.readers import read_dir_file, read_perm_file, read_csm_file, open_non_csm_file, read_ob_mol
-from molecule.molecule import Molecule
 
 __author__ = 'zmbq'
 

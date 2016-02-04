@@ -4,7 +4,7 @@ from input_output.arguments import get_operation_data
 from molecule.molecule import Molecule
 from openbabel import OBAtomAtomIter, OBConversion, OBMol
 from molecule.atom import GetAtomicSymbol, Atom
-from a_calculations.csm_calculations import exact_calculation
+from calculations.csm_calculations import exact_calculation
 import numpy as np
 import csv
 import re
