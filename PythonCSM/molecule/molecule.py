@@ -41,6 +41,10 @@ class Molecule:
     def chains(self):
         return self._chains
 
+    @property
+    def obmol(self):
+        return self._obmol
+
     def has_bond(self, atom_i, atom_j):
         if (atom_i, atom_j) in self._bondset:
             return True
@@ -311,60 +315,61 @@ class Molecule:
                 adjacent.append(neighbour_atom.GetIdx() - 1)
             atom.adjacent = adjacent
             atoms.append(atom)
-        mol = Molecule(atoms=atoms, chains=chains)
+        mol = Molecule(atoms=atoms, chains=chains, obmol=obmol)
         return mol
 
     @staticmethod
-    def _read_csm_file(filename, ignore_symm=False, use_mass=False):
+    def _read_csm_file(filename, ignore_symbol=False, use_mass=False):
         """
-        :param filename:
-        :param ignore_symm:
-        :param use_mass:
+        :param filename: Name of CSM file
+        :param ignore_symbol: When true, the atom's symbol is not read
+        :param use_mass: Use the atom's mass
         :return: A list of Atoms
         """
 
-        try:
-            size = int(filename.readline())
-        except ValueError:
-            raise ValueError("Input Error: Number of atoms not supplied")
-
-        if size > 0:
-            atoms = []
-        else:
-            return None
-
-        for i in range(size):
-            line = filename.readline().split()
+        with open(filename, 'r') as f:
             try:
-                if ignore_symm:
-                    symbol = "XX"
-                else:
-                    symbol = line[0]
-                position = (float(line[1]), float(line[2]), float(line[3]))
-                atom = Atom(symbol, position, use_mass)
-            except (ValueError, IndexError):
-                raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-            atoms.append(atom)
+                size = int(f.readline())
+            except ValueError:
+                raise ValueError("Input Error: Number of atoms not supplied")
 
-        for i in range(size):
-            line = filename.readline().split()
-            try:
-                atom_num = int(line.pop(0))
-            except (ValueError, IndexError):
-                raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
-            if atom_num != i + 1:
-                raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
+            if size > 0:
+                atoms = []
+            else:
+                return None
 
-            neighbours = []
-            for neighbour_str in line:
+            for i in range(size):
+                line = f.readline().split()
                 try:
-                    neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
-                except ValueError:
+                    if ignore_symbol:
+                        symbol = "XX"
+                    else:
+                        symbol = line[0]
+                    position = (float(line[1]), float(line[2]), float(line[3]))
+                    atom = Atom(symbol, position, use_mass)
+                except (ValueError, IndexError):
                     raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                if neighbour >= size:
-                    raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                neighbours.append(neighbour)
+                atoms.append(atom)
 
-            atoms[i].adjacent = neighbours
+            for i in range(size):
+                line = f.readline().split()
+                try:
+                    atom_num = int(line.pop(0))
+                except (ValueError, IndexError):
+                    raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
+                if atom_num != i + 1:
+                    raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
+
+                neighbours = []
+                for neighbour_str in line:
+                    try:
+                        neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
+                    except ValueError:
+                        raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
+                    if neighbour >= size:
+                        raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
+                    neighbours.append(neighbour)
+
+                atoms[i].adjacent = neighbours
 
         return Molecule(atoms)

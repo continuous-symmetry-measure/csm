@@ -6,11 +6,13 @@ from input_output.arguments import get_split_arguments
 from a_calculations.csm_calculations_data import CSMCalculationsData
 from a_calculations.csm_calculations import exact_calculation
 from input_output.readers import read_inputs
+from input_output.writers import print_results
 
 APPROX_RUN_PER_SEC = 8e4
 sys.setrecursionlimit(10000)
 
 logger = None
+
 
 def init_logging(log_file_name=None, *args, **kwargs):
     global logger
@@ -39,7 +41,8 @@ def run_csm(args={}):
 #        result = approx_calculation(**calc_args)
     else:
         result = exact_calculation(**calc_args)
-    print(result)
+
+    print_results(result, in_args, calc_args, out_args)
 
 if __name__ == '__main__':
     results = run_csm(args=sys.argv[1:])

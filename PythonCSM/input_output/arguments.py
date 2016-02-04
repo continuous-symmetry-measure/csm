@@ -143,7 +143,7 @@ def _process_split_arguments(parse_res):
     calc_args['sn_max'] = parse_res.sn_max
     calc_args['limit_run'] = not parse_res.nolimit
     calc_args['find_perm'] = parse_res.findperm
-    calc_args['detect_outliers'] = parse_res.detectOutlierss
+    calc_args['detect_outliers'] = parse_res.detectOutliers
     if parse_res.approx:
         calc_args['find_perm'] = True
         calc_args['detect_outliers'] = True
