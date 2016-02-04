@@ -6,3 +6,11 @@ activate.ps1
 wheels/
 .idea/
 __pycache__/
+*.pyc
+cmake/
+msvc/
+build/
+*.log
+*.sdf
+*.suo
+env/
