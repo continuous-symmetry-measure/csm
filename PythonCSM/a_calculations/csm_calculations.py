@@ -203,15 +203,14 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
 
 def calc_ref_plane(molecule, perm, op_order, op_type):
     size = len(molecule.atoms)
-    is_improper = op_type
+    is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
 
-    logger.debug('***************************** Python ************************')
-    logger.debug('calcRefPlane called')
+    logger.debug('************* calc_ref_plane Python ************************')
     logger.debug('Permutation is ' + str(perm))
 
-    logger.debug("calcrefplane atoms:")
-    logger.debug([atom.pos for atom in molecule.atoms])
+#    logger.debug("calcrefplane atoms:")
+#    logger.debug([atom.pos for atom in molecule.atoms])
 
     # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
     # - described on the first page of the paper
