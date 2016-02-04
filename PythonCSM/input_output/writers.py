@@ -1,87 +1,84 @@
 __author__ = 'YAEL'
 
-from calculations.molecule import Atom
 from openbabel import OBConversion
 
 
-def print_all_output(output_obj, args_dict):
+def print_results(result, in_args, calc_args, out_args):
     """
-    Prints all the outputs
-    :param output_obj: Object with all calculations outputs
-    :param args_dict: Dictionary with all processed arguments
+    Prints the CSM calculation results
+    :param result: The result of the CSM calculation (a CSMState)
+    :param in_args: Input arguments to CSM
+    :param calc_args: Calculation arguments to CSM
+    :param out_args: Output arguments to CSM
     """
-    f = args_dict['outFile']
-    f.write("%s: %.4lf\n" % (args_dict['opName'], abs(output_obj.csm)))
-    f.write("SCALING FACTOR: %7lf\n" % output_obj.dMin)
+    with open(out_args['out_file_name'], 'w', encoding='utf-8') as f:
+        f.write("%s: %.4lf\n" % (calc_args['op_name'], abs(result.csm)))
+        f.write("SCALING FACTOR: %7lf\n" % result.d_min)
 
-    # print CSM, initial molecule, resulting structure and direction according to format specified
+        # print CSM, initial molecule, resulting structure and direction according to format specified
 
-    if args_dict['format'].lower() == "csm":
-        print_output(output_obj, args_dict)
-    else:
-        print_output_format(output_obj, args_dict)
-
-    # print norm
-
-    if args_dict['printNorm']:
-        print("NORMALIZATION FACTOR: %7lf" % output_obj.molecule.norm_factor)
-        print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % output_obj.dMin)
-        print("DIRECTIONAL COSINES: %lf %lf %lf" % (output_obj.dir[0], output_obj.dir[1], output_obj.dir[2]))
-        print("NUMBER OF EQUIVALENCE GROUPS: %d" % len(output_obj.molecule.equivalence_classes))
-
-    # print local CSM
-
-    if args_dict['printLocal']:
-        sum = 0
-        f.write("\nLocal CSM: \n")
-        size = len(output_obj.molecule.atoms)
-        for i in range(size):
-            sum += output_obj.localCSM[i]
-            f.write("%s %7lf\n" % (output_obj.molecule.atoms[i].symbol, output_obj.localCSM[i]))
-        f.write("\nsum: %7lf\n" % sum)
-
-    # print chirality
-
-    if args_dict['type'] == 'CH':
-        if output_obj.chMinType == 'CS':
-            f.write("\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n")
+        if in_args['format'].lower() == "csm":
+            print_output(f, result, calc_args)
         else:
-            f.write("\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n" % output_obj.chMinOrder)
+            print_output_ob(f, result, in_args, calc_args, out_args)
 
-    # print permutation
+        # print norm
 
-    f.write("\n PERMUTATION:\n\n")
-    for i in output_obj.perm:
-        f.write("%d " % (i + 1))
-    f.write("\n")
+        if out_args['print_norm']:
+            print("NORMALIZATION FACTOR: %7lf" % result.molecule.norm_factor)
+            print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % result.d_min)
+            print("DIRECTIONAL COSINES: %lf %lf %lf" % (result.dir[0], result.dir[1], result.dir[2]))
+            print("NUMBER OF EQUIVALENCE GROUPS: %d" % len(result.molecule.equivalence_classes))
 
-    f.close()
+        # print local CSM
+
+        if out_args['print_local']:
+            sum = 0
+            f.write("\nLocal CSM: \n")
+            size = len(result.molecule.atoms)
+            for i in range(size):
+                sum += result.localCSM[i]
+                f.write("%s %7lf\n" % (result.molecule.atoms[i].symbol, result.localCSM[i]))
+            f.write("\nsum: %7lf\n" % sum)
+
+        # print chirality
+        if calc_args['op_type'] == 'CH':
+            if result.op_type == 'CS':
+                f.write("\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n")
+            else:
+                f.write("\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n" % result.op_order)
+
+        # print permutation
+        f.write("\n PERMUTATION:\n\n")
+        for i in result.perm:
+            f.write("%d " % (i + 1))
+        f.write("\n")
 
 
-def print_output(output_obj, args_dict):
+def print_output(f, result, calc_args):
     """
     Prints output in CSM format
-    :param output_obj: Object with all calculations outputs
-    :param args_dict: Dictionary with all processed arguments
+    :param f: File to print to
+    :param result: The result of the CSM calculation (a CSMState)
+    :param calc_args: Calculation arguments to CSM
     """
 
-    f = args_dict['outFile']
-    print("%s: %.6lf" % (args_dict['opName'], abs(output_obj.csm)))
-    size = len(output_obj.molecule.atoms)
+    print("%s: %.6lf" % (calc_args['op_name'], abs(result.csm)))
+    size = len(result.molecule.atoms)
 
     # print initial molecule
 
     f.write("\n INITIAL STRUCTURE COORDINATES\n%i\n\n" % size)
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
-                (output_obj.molecule.atoms[i].symbol,
-                 output_obj.molecule.atoms[i].pos[0],
-                 output_obj.molecule.atoms[i].pos[1],
-                 output_obj.molecule.atoms[i].pos[2]))
+                (result.molecule.atoms[i].symbol,
+                 result.molecule.atoms[i].pos[0],
+                 result.molecule.atoms[i].pos[1],
+                 result.molecule.atoms[i].pos[2]))
 
     for i in range(size):
         f.write("%d " % (i + 1))
-        for j in output_obj.molecule.atoms[i].adjacent:
+        for j in result.molecule.atoms[i].adjacent:
             f.write("%d " % (j + 1))
         f.write("\n")
 
@@ -91,69 +88,66 @@ def print_output(output_obj, args_dict):
 
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
-                (output_obj.molecule.atoms[i].symbol,
-                 output_obj.outAtoms[i][0],
-                 output_obj.outAtoms[i][1],
-                 output_obj.outAtoms[i][2]))
+                (result.molecule.atoms[i].symbol,
+                 result.symmetric_structure[i][0],
+                 result.symmetric_structure[i][1],
+                 result.symmetric_structure[i][2]))
 
     for i in range(size):
         f.write("%d " % (i + 1))
-        for j in output_obj.molecule.atoms[i].adjacent:
+        for j in result.molecule.atoms[i].adjacent:
             f.write("%d " % (j + 1))
         f.write("\n")
 
     # print dir
 
     f.write("\n DIRECTIONAL COSINES:\n\n")
-    f.write("%lf %lf %lf\n" % (output_obj.dir[0], output_obj.dir[1], output_obj.dir[2]))
+    f.write("%lf %lf %lf\n" % (result.dir[0], result.dir[1], result.dir[2]))
 
 
-def print_output_format(output_obj, args_dict):
+def print_output_ob(f, result, in_args, calc_args, out_args):
     """
     Prints output using Open Babel
-    :param output_obj: Object with all calculations outputs
-    :param args_dict: Dictionary with all processed arguments
+    :param f: File to write to
+    :param result: The result of the CSM calculation (a CSMState)
+    :param in_args: Input arguments to CSM
+    :param calc_args: Calculation arguments to CSM
+    :param out_args: Output arguments to CSM
     """
-    f = args_dict['outFile']
-
-    # comment from C++:
-    # TODO - should we print the centered molecule, or the original one (and, accordingly, the symmetric struct)
-
     # print initial molecule
-
     f.write("\n INITIAL STRUCTURE COORDINATES\n")
 
-    num_atoms = args_dict['obmol'].NumAtoms()
+    num_atoms = result.molecule.obmol.NumAtoms()
     # update coordinates
     for i in range(num_atoms):
-        atom = args_dict['obmol'].GetAtom(i + 1)
-        atom.SetVector(output_obj.molecule.atoms[i].pos[0],
-                       output_obj.molecule.atoms[i].pos[1],
-                       output_obj.molecule.atoms[i].pos[2])
+        atom = result.molecule.obmol.GetAtom(i + 1)
+        atom.SetVector(result.molecule.atoms[i].pos[0],
+                       result.molecule.atoms[i].pos[1],
+                       result.molecule.atoms[i].pos[2])
 
-    write_ob_molecule(args_dict['obmol'], args_dict['format'], f)
+    write_ob_molecule(result.molecule.obmol, in_args['format'], f)
 
     # print resulting structure coordinates
 
     # update coordinates
     for i in range(num_atoms):
-        atom = args_dict['obmol'].GetAtom(i + 1)
-        atom.SetVector(output_obj.outAtoms[i][0],
-                       output_obj.outAtoms[i][1],
-                       output_obj.outAtoms[i][2])
+        atom = result.molecule.obmol.GetAtom(i + 1)
+        atom.SetVector(result.symmetric_structure[i][0],
+                       result.symmetric_structure[i][1],
+                       result.symmetric_structure[i][2])
 
     f.write("\n RESULTING STRUCTURE COORDINATES\n")
-    write_ob_molecule(args_dict['obmol'], args_dict['format'], f)
+    write_ob_molecule(result.molecule.obmol, in_args['format'], f)
 
     # print dir
 
     f.write("\n DIRECTIONAL COSINES:\n\n")
-    f.write("%lf %lf %lf\n" % (output_obj.dir[0], output_obj.dir[1], output_obj.dir[2]))
+    f.write("%lf %lf %lf\n" % (result.dir[0], result.dir[1], result.dir[2]))
 
-    if args_dict['writeOpenu']:
-        print("SV* %.4lf *SV\n" % abs(output_obj.csm))
+    if out_args['write_openu']:
+        print("SV* %.4lf *SV\n" % abs(result.csm))
     else:
-        print("%s: %.4lf\n" % (args_dict['opName'], abs(output_obj.csm)))
+        print("%s: %.4lf\n" % (calc_args['op_name'], abs(result.csm)))
 
 
 
@@ -208,23 +202,3 @@ def print_equivalence_classes(groups, f):
             f.write("%d, " % j)
         f.write('\n')
 
-
-
-if __name__ == '__main__':
-    f = open("../testFiles/output.txt", "w")
-
-    a1 = Atom("H", (2.0, 3.0, 5.225))
-    a2 = Atom("H", (1.4, 3.0, 5.225))
-    a3 = Atom("O", (2.0, 7.40, 5.225))
-
-    a1.adjacent = [[2], [0, 2], []]
-    a2.adjacent = [[2], [0, 2], [1]]
-    a3.adjacent = [[], [2], []]
-
-    atoms = [a1, a2, a3]
-    outAtoms = [(2.0, 3.0, 5), (2.0, 3.0, 5), (2.0, 3.0, 5)]
-    dir = [1.0, 2.0, 3.0]
-    out = {'csm': 4.56, 'dMin': 3, 'atoms': atoms, 'outAtoms': outAtoms, 'dir': dir, 'groupNum': 2, 'norm': 2.3,
-           'localCSM': [23.3, 2.4, -0.21]}
-    print_output(out,
-                 {'outFile': f, 'opName': 'C4 SYMMETRY', 'printNorm': True, 'printLocal': True})

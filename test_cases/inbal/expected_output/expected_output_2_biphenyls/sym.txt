@@ -1,0 +1,11 @@
+ csm cs __IN__ __OUT__ -formatxyz -useperm  permutation_cs1.txt
+ csm cs __IN__ __OUT__ -formatxyz -useperm  permutation_cs2.txt
+ csm cs __IN__ __OUT__ -formatxyz -useperm  permutation_cs3.txt
+ csm cs __IN__ __OUT__ -formatxyz -useperm  permutation_cs4.txt
+ csm cs __IN__ __OUT__ -formatxyz -useperm  permutation_cs5.txt
+ csm cs __IN__ __OUT__ -formatxyz -useperm  permutation_cs6.txt
+ csm ci __IN__ __OUT__ -formatxyz -useperm  permutation_ci1.txt
+ csm ci __IN__ __OUT__ -formatxyz -useperm  permutation_ci2.txt
+ csm s4 __IN__ __OUT__ -formatxyz -useperm  permutation_s4-1.txt
+ csm s4 __IN__ __OUT__ -formatxyz -useperm  permutation_s4-2.txt
+ csm s4 __IN__ __OUT__ -formatxyz -useperm  permutation_s4-3.txt

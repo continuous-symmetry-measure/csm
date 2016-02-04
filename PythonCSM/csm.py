@@ -1,127 +1,60 @@
-"""
-The main entry point of the Python CSM
-"""
-import math
+import csv
+import logging
 import sys
 
-from arguments import get_arguments
-from calculations.normalizations import normalize_coords, de_normalize_coords
+from calculations.permuters import MoleculeLegalPermuter
+from input_output.arguments import get_split_arguments
+from calculations.csm_calculations import exact_calculation
+from calculations import csm_calculations
+from input_output.readers import read_inputs
+from input_output.writers import print_results
 
-__author__ = 'zmbq'
-
-from input_output.writers import print_all_output
-from calculations.csm_calculations_data import CSMCalculationsData
-from calculations.csm_calculations import perform_operation, MAXDOUBLE, total_number_of_permutations
-# from CPP_wrapper import csm
-
-import logging
-
-MINDOUBLE = 1e-8
 APPROX_RUN_PER_SEC = 8e4
-
-
 sys.setrecursionlimit(10000)
-
-def process_results(results, csm_args):
-    """
-    Final normalizations and de-normalizations
-    :param results: CSM calculations results
-    :param csm_args: CSM args
-    """
-    results.molecule.set_norm_factor(csm_args['molecule'].norm_factor)
-    masses = [atom.mass for atom in results.molecule.atoms]
-
-
-    normalize_coords(results.outAtoms, masses, csm_args['keepCenter'])
-
-    results.molecule.de_normalize()
-    results.outAtoms = de_normalize_coords(results.outAtoms, results.molecule.norm_factor)
 
 logger = None
 
-def init_logging(csm_args):
+
+def init_logging(log_file_name=None, *args, **kwargs):
     global logger
 
-    if 'logFileName' in csm_args:
-        logging.basicConfig(filename=csm_args['logFileName'], level=logging.DEBUG,
+    if log_file_name:
+        logging.basicConfig(filename=log_file_name, level=logging.DEBUG,
                             format='[%(asctime)-15s] [%(levelname)s] [%(name)s]: %(message)s')
     else:
         logging.basicConfig(level=logging.ERROR)
     logger = logging.getLogger("csm")
 
 
-def run_csm(args, print_output=True):
-    try:
-        csm_args = get_arguments(args)
-        init_logging(csm_args)
-        csm_args['molecule'].preprocess(**csm_args)
-        # csm.SetCSMOptions(csm_args)  # Set the default options for the Python/C++ bridge
+def run_csm(args={}):
+    # Read inputs
+    in_args, calc_args, out_args = get_split_arguments(args)
+    calc_args['molecule'], calc_args['perm'], calc_args['dir'] = read_inputs(**in_args)
+    calc_args['permuter_class'] = MoleculeLegalPermuter
 
-        if csm_args['babelTest']:
-            return None
+    # logging:
+    init_logging(**out_args)
 
-        if not csm_args['findPerm']:
-            if 'perm' not in csm_args and 'dir' not in csm_args:
-                total_perms = total_number_of_permutations(csm_args)
-                time = 1.0 * total_perms / 3600 / APPROX_RUN_PER_SEC
-                if math.isnan(time):
-                    # time is NaN
-                    time = MAXDOUBLE
-                print("Going to enumerate over %d permutations" % total_perms)
-                print("Entire run should take approx. %.2lf hours on a 2.0Ghz Computer" % time)
-            else:
-                print("Using 1 permutation")
-                print("Run should be instantaneous")
+    # Outputing permutations
+    if out_args['perms_csv_name']:
+        csv_file = open(out_args['perms_csv_name'], 'w')
+        perm_writer = csv.writer(csv_file, lineterminator='\n')
+        perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
+        csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm], state.dir, state.csm])
+    else:
+        csv_file = None
 
-            if csm_args['timeOnly']:
-                return None
+    # run actual calculation
+    if calc_args['find_perm']:
+        raise NotImplementedError("No approx yet")
+#        result = approx_calculation(**calc_args)
+    else:
+        result = exact_calculation(**calc_args)
 
-        data = CSMCalculationsData(csm_args)
+    if csv_file:
+        csv_file.close()
 
-        # Code from the old mainRot.cpp
-        if 'perm' in csm_args:
-            result = csm.RunSinglePerm(data)
-        else:
-            if csm_args['type'] != 'CH':
-                result = perform_operation(csm_args, data)
-            else:
-                # chirality support
-                data.operationType = data.chMinType = "CS"
-                data.opOrder = 2
-                result = perform_operation(csm_args, data)
-
-                if result.csm > MINDOUBLE:
-                    data.operationType = "SN"
-                    for i in range(2, csm_args['sn_max'] + 1, 2):
-                        data.opOrder = i
-                        ch_result = perform_operation(csm_args, data)
-                        if ch_result.csm < result.csm:
-                            result = ch_result
-                            result.chMinType = 'SN'
-                            result.chMinOrder = ch_result.opOrder
-
-                        if result.csm < MINDOUBLE:
-                            break
-
-        if csm_args['printLocal']:
-            if csm_args['type'] == 'CH':
-                data.opOrder = result.chMinOrder
-            local_res = csm.ComputeLocalCSM(data)
-            result.localCSM = local_res.localCSM
-
-        process_results(result, csm_args)
-
-        if print_output:
-            print_all_output(result, csm_args)
-
-        return result
-    finally:
-        try:
-            csm_args['outFile'].close()
-            csm_args['outPermFile'].close()
-        except:
-            pass
-
+    print_results(result, in_args, calc_args, out_args)
 
 if __name__ == '__main__':
-    results = run_csm(sys.argv[1:])
+    results = run_csm(args=sys.argv[1:])

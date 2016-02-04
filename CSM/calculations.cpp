@@ -343,46 +343,62 @@ double createSymmetricStructure(Molecule* m, double **outAtoms, int *perm, doubl
 	double angle;
 	double res = 0.0;
 
+	LOG(debug) << "in atoms:" << endl;
 	for (i = 0; i < m->size(); i++) {
 		// initialize with identity operation
 		curPerm[i] = i;
 		for (j = 0; j < 3; j++) {
 			outAtoms[i][j] = m->pos()[i][j];
+			LOG(debug) << outAtoms[i][j];
 		}
 	}
 
 	for (i = 1; i < options.opOrder; i++) {
+		LOG(debug) << "=====================\n i:" << i << endl;
 		angle = isZeroAngle ? 0.0 : (2 * M_PI * i / options.opOrder);
 		int factor = ((isImproper && (i % 2) == 1) ? (-1) : 1);
+		
+		LOG(debug) << "perm is:";
 		for (j = 0; j < m->size(); j++) {	
 			curPerm[j] = perm[curPerm[j]];
+			LOG(debug) << curPerm[j];
 		}
+		LOG(debug) << endl;
+
+		LOG(debug) << "rotation matrix:" << endl;
 		for (j = 0; j < 3; j++) {
 			for (k = 0; k < 3; k++) {
 				rotaionMatrix[j][k] =
 					((j == k) ? cos(angle) : 0) +
 					(factor - cos(angle)) * dir[j] * dir[k] +
 					sin(angle) * tmpMatrix[j][k];
+				LOG(debug) << rotaionMatrix[j][k];
 			}
+			LOG(debug) << endl;
 		}
 
+		LOG(debug) << "out atoms:" << endl;
 		for (j = 0; j < m->size(); j++) {
 			for (k = 0; k < 3; k++) {
 				for (l = 0; l < 3; l++) {
-					outAtoms[j][k] += rotaionMatrix[k][l] * m->pos()[curPerm[j]][l];
-					
+					outAtoms[j][k] += rotaionMatrix[k][l] * m->pos()[curPerm[j]][l];		
 				}
+				LOG(debug) << outAtoms[j][k];
 			}
+			LOG(debug) << endl;
 		}
 	}
 
+
+	LOG(debug) << "normalized out atoms:" << endl;
 	for (j = 0; j < m->size(); j++) {
 		for (k = 0; k < 3; k++) {
 			outAtoms[j][k] /= options.opOrder;
 			outAtoms[j][k] *= dMin;
 			res += SQR(outAtoms[j][k]);
-			
+			LOG(debug) << outAtoms[j][k];
 		}
+		LOG(debug) << endl;
 	}
 
 	free(curPerm);
