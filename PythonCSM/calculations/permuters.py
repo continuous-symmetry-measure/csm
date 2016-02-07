@@ -182,46 +182,13 @@ class MoleculeLegalPermuter:
     The pip is created stage by stage-- each equivalency group is divided into cycles which are then permuted aotm by atom
     '''
     def __init__(self, mol, opOrder, is_SN):
-        self._num = 0
+        self._perm_count = 0
         self._mol = mol
-        self._op_order = opOrder
-        self._add_cycles_of_two = is_SN
+        self._cycle_lengths=(1, opOrder)
+        if is_SN:
+            self._cycle_lengths=(1, 2, opOrder)
+        self._max_length=max(self._cycle_lengths)
         self._empty_perm = [-1] * (len(mol.atoms))
-
-    def _get_cycle_structs(self, group):
-        """
-        Generates a list of cycles in a permutation. The cycles cover the entire permutation,
-        and are only of sizes in cycle_sizes
-        :param perm_size: Permutation size
-        :param cycle_sizes: Allowed cycle sizes
-        :return: A generator of a list of cycles covering the entire permtutation
-
-        """
-        def generate(cycles, left):
-            len_left = len(left)
-            if len_left == 0:
-                yield cycles
-
-            for cycle_size in cycle_sizes:
-                if cycle_size > len_left:
-                    continue
-                rest = left[1:]
-
-                # if cycle_size==1:
-                #    yield group
-                #    continue
-
-                start = (left[0],)
-                for rest in itertools.combinations(rest, cycle_size - 1):
-                    cycle = start + rest
-                    new_left = [item for item in left if item not in cycle]
-                    yield from generate(cycles + [cycle], new_left)
-
-
-        cycle_sizes = {1, self._op_order}
-        if self._add_cycles_of_two:
-            cycle_sizes.add(2)
-        return generate([], list(group))
 
     def _is_legal(self, pip, toi, fromi):
         # fromi,j->toi,p(j)
@@ -230,45 +197,44 @@ class MoleculeLegalPermuter:
                 return False
         return True
 
-    def _cycle_permuter(self, cycle, pip):
-
-        def recursive_permute(pip, current_atom, remainder):
-            if not remainder:
-                if self._is_legal(pip, current_atom, first_atom):
-                    assert (pip[current_atom] == -1)
-                    pip[current_atom] = first_atom
-                    yield pip
-                    pip[current_atom] = -1
-            else:
-                if pip[current_atom] == -1:
-                    for next_atom in remainder:
-                        if self._is_legal(pip, current_atom, next_atom):
-                            assert (pip[current_atom] == -1)
-                            pip[current_atom] = next_atom
-                            next_remainder = list(remainder)
-                            next_remainder.remove(next_atom)
-                            yield from recursive_permute(pip, next_atom, next_remainder)
-                            pip[current_atom] = -1
-
-        first_atom = cycle[0]  # First atom of the necklace
-        yield from recursive_permute(pip, first_atom, cycle[1:])
-
     def _group_permuter(self, group, pip):
-        def generate(cycles, pip):
-            if not cycles:
-                yield pip
-            else:
-                cycle = cycles[0]
-                for perm in self._cycle_permuter(cycle, pip):
-                    yield from generate(cycles[1:], perm)
+        def do_switch(to, fro):
+            if self._is_legal(pip, to,fro):
+                assert pip[to]==-1
+                pip[to]=fro
+                return True
+            return False
 
-        for cycles in self._get_cycle_structs(group):
-            yield from generate(cycles, pip)
+        def recursive_permute(pip, curr_atom, cycle_head, cycle_length, remainder):
+            #if we have a legally completed cycle:
+            if cycle_length in self._cycle_lengths:
+                if not remainder: #if the pip is complete
+                    if do_switch(curr_atom, cycle_head):
+                        yield pip
+                        pip[curr_atom]=-1
+                else:
+                    #close the cycle and continue
+                    if do_switch(curr_atom, cycle_head):
+                        yield from recursive_permute(pip, remainder[0], remainder[0], 1, remainder[1:])
+                        pip[curr_atom]=-1
+
+            #yield from permutations using a longer cycle (if applicable)
+            if cycle_length < self._max_length:
+                for next_atom in remainder:
+                    if do_switch(curr_atom, next_atom):
+                        next_remainder = list(remainder)
+                        next_remainder.remove(next_atom)
+                        yield from recursive_permute(pip, next_atom, cycle_head, cycle_length+1, next_remainder)
+                        pip[curr_atom] = -1
+
+        yield from recursive_permute(pip, group[0], group[0], 1, group[1:])
+
 
     def permute(self):
         # permutes molecule by groups
         def recursive_permute(groups, pip):
             if not groups:
+                self._perm_count += 1
                 yield pip
             else:
                 group = groups[0]
@@ -279,7 +245,7 @@ class MoleculeLegalPermuter:
         start_perm = self._empty_perm
         Groups = self._mol.equivalence_classes
         yield from recursive_permute(Groups, start_perm)
-        self._num += 1
+
 
 
 class SinglePermPermuter:
@@ -289,3 +255,8 @@ class SinglePermPermuter:
 
     def permute(self):
         yield self._perm
+
+
+if __name__ == '__main__':
+    print("Testing permuters")
+    #TODO: add testing code here?
