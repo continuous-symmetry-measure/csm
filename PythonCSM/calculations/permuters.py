@@ -206,18 +206,19 @@ class MoleculeLegalPermuter:
                 return True
             return False
 
+        def undo_switch(to, fro):
+            assert pip[to] == fro
+            pip[to] = -1
+
         def recursive_permute(pip, curr_atom, cycle_head, cycle_length, remainder):
             # if we have a legally completed cycle:
             if cycle_length in self._cycle_lengths:
-                if not remainder:  # if the pip is complete
-                    if do_switch(curr_atom, cycle_head):
+                if do_switch(curr_atom, cycle_head):
+                    if not remainder: #perm has been completed
                         yield pip
-                        pip[curr_atom] = -1
-                else:
-                    # close the cycle and continue
-                    if do_switch(curr_atom, cycle_head):
+                    else: #cycle has been completed, start a new cycle with remaining atoms
                         yield from recursive_permute(pip, remainder[0], remainder[0], 1, remainder[1:])
-                        pip[curr_atom] = -1
+                    undo_switch(curr_atom, cycle_head)
 
             # yield from permutations using a longer cycle (if applicable)
             if cycle_length < self._max_length:
@@ -226,7 +227,7 @@ class MoleculeLegalPermuter:
                         next_remainder = list(remainder)
                         next_remainder.remove(next_atom)
                         yield from recursive_permute(pip, next_atom, cycle_head, cycle_length + 1, next_remainder)
-                        pip[curr_atom] = -1
+                        undo_switch(curr_atom, next_atom)
 
         yield from recursive_permute(pip, group[0], group[0], 1, group[1:])
 
@@ -237,10 +238,8 @@ class MoleculeLegalPermuter:
                 self._perm_count += 1
                 yield pip
             else:
-                group = groups[0]
-                groups_left = groups[1:]
-                for perm in self._group_permuter(group, pip):
-                    yield from recursive_permute(groups_left, perm)
+                for perm in self._group_permuter(groups[0], pip):
+                    yield from recursive_permute(groups[1:], perm)
 
         Groups = self._mol.equivalence_classes
         yield from recursive_permute(Groups, list(self._empty_perm))
@@ -279,20 +278,19 @@ class MoleculeLegalInvertedPermuter:
                 return True
             return False
 
+        def undo_switch(to, fro):
+            assert pip[to] == fro and qip[fro] == to
+            pip[to] = -1
+            qip[fro] = -1
+
         def recursive_permute(pip, qip, curr_atom, cycle_head, cycle_length, remainder):
-            # if we have a legally completed cycle:
             if cycle_length in self._cycle_lengths:
-                if not remainder:  # if the pip is complete
-                    if do_switch(curr_atom, cycle_head):
+                if do_switch(curr_atom, cycle_head):
+                    if not remainder:
                         yield pip, qip
-                        pip[curr_atom] = -1
-                        qip[cycle_head] = -1
-                else:
-                    # close the cycle and continue
-                    if do_switch(curr_atom, cycle_head):
+                    else:
                         yield from recursive_permute(pip, qip, remainder[0], remainder[0], 1, remainder[1:])
-                        pip[curr_atom] = -1
-                        qip[cycle_head] = -1
+                    undo_switch(curr_atom, cycle_head)
 
             # yield from permutations using a longer cycle (if applicable)
             if cycle_length < self._max_length:
@@ -301,8 +299,7 @@ class MoleculeLegalInvertedPermuter:
                         next_remainder = list(remainder)
                         next_remainder.remove(next_atom)
                         yield from recursive_permute(pip, qip, next_atom, cycle_head, cycle_length + 1, next_remainder)
-                        pip[curr_atom] = -1
-                        qip[next_atom] = -1
+                        undo_switch(curr_atom, next_atom)
 
         yield from recursive_permute(pip, qip, group[0], group[0], 1, group[1:])
 
@@ -313,10 +310,8 @@ class MoleculeLegalInvertedPermuter:
                 self._perm_count += 1
                 yield pip
             else:
-                group = groups[0]
-                groups_left = groups[1:]
-                for perm, inv in self._group_permuter(group, pip, qip):
-                    yield from recursive_permute(groups_left, perm, inv)
+                for perm, inv in self._group_permuter(groups[0], pip, qip):
+                    yield from recursive_permute(groups[1:], perm, inv)
 
         (pip, qip) = (list(self._empty_perm), list(self._empty_perm))
         groups = self._mol.equivalence_classes
