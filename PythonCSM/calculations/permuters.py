@@ -286,6 +286,8 @@ class MoleculeLegalInvertedPermuter:
             self.q[fro] = -1
 
         def _is_legal(self, to, fro):
+            for i in range(len(self.mol.atoms[fro].adjacent):
+                if self.p
             for adjacent in self.mol.atoms[fro].adjacent:
                 if self.p[adjacent] and (to, self.p[adjacent]) not in self.mol.bondset:
                     return False
