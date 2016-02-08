@@ -126,7 +126,7 @@ def compare_files(file1, file2):
 
 def compare_results(expected_filename, results):
     expected = parse_output(read_file(expected_filename))
-
+    print("entered compare results")
     ok = True
     # Check symmetry
     if abs(expected['symmetry'] - results.csm) > 1e-4:
@@ -134,8 +134,8 @@ def compare_results(expected_filename, results):
         ok = False
 
     # Check scale
-    if abs(expected['scaling'] - results.dMin) > 1e-4:
-        print("Expected scaling of %f, got %f" % (expected['scaling'], results.dMin), file=sys.stderr)
+    if abs(expected['scaling'] - results.d_min) > 1e-4:
+        print("Expected scaling of %f, got %f" % (expected['scaling'], results.d_min), file=sys.stderr)
         ok = False
 
     # Check permutation
@@ -153,7 +153,7 @@ def compare_results(expected_filename, results):
     if diff > 1e-5 and diff_neg > 1e-5: # Try inversed
         print("Expected direction %s, got %s" % (expected['direction'], results.dir), file=sys.stderr)
         ok = False
-
+    print("exited compare results")
     return ok
 
 

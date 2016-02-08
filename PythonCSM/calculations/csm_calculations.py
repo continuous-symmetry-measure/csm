@@ -3,7 +3,7 @@ import math
 import numpy as np
 from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
-from calculations.permuters import MoleculePermuter, SinglePermPermuter
+from calculations.permuters import MoleculePermuter, SinglePermPermuter, MoleculeLegalPermuter, MoleculeLegalInvertedPermuter, OldMoleculeLegalPermuter
 import logging
 from recordclass import recordclass
 
@@ -51,12 +51,17 @@ def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, 
         sn_max = op_order
         # First CS
         best_result = csm_operation('CS', 2, molecule, perm, permuter_class)
+        best_result.op_type='CS'
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
                 result = csm_operation('SN', op_order, molecule, perm, permuter_class)
                 if result.csm < best_result.csm:
                     best_result = result
+                    best_result.op_type='SN'
+                    best_result.op_order=op_order
+                if best_result.csm > MINDOUBLE:
+                    break
 
     else:
         best_result = csm_operation(op_type, op_order, molecule, perm, permuter_class)
@@ -87,9 +92,11 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
         permuter = SinglePermPermuter(perm)
         logger.debug("SINGLE PERM")
     else:
+        permuter_class=OldMoleculeLegalPermuter
         permuter = permuter_class(molecule, op_order, op_type == 'SN')
 
     for perm in permuter.permute():
+        print(perm)
         csm, dir = calc_ref_plane(molecule, perm, op_order, op_type)
         if csm_state_tracer_func:
             traced_state.csm = csm
@@ -159,7 +166,7 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
     logger.debug('create_symmetric_structure called')
 
     cur_perm = np.arange(len(perm))  # array of ints...
-
+    size = len(perm)
     m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
     symmetric = np.copy(m_pos)
     logger.debug("in atoms:")

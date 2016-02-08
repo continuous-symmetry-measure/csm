@@ -15,7 +15,7 @@ def _create_parser():
                         choices=('c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 's2', 's4', 's6', 's8', 'cs', 'ci', 'ch'),
                         help='The type of operation')
     parser.add_argument('input', help='Input file')
-    parser.add_argument('output', help='Output file')
+    parser.add_argument('output', default='output.txt', help='Output file')
 
     # Optional arguments (their names start with --)
     parser.add_argument('--ignoreHy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')

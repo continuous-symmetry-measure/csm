@@ -27,34 +27,37 @@ def init_logging(log_file_name=None, *args, **kwargs):
 
 
 def run_csm(args={}):
-    # Read inputs
-    in_args, calc_args, out_args = get_split_arguments(args)
-    calc_args['molecule'], calc_args['perm'], calc_args['dir'] = read_inputs(**in_args)
-    calc_args['permuter_class'] = MoleculeLegalPermuter
+    try:
+        # Read inputs
+        in_args, calc_args, out_args = get_split_arguments(args)
+        calc_args['molecule'], calc_args['perm'], calc_args['dir'] = read_inputs(**in_args)
+        calc_args['permuter_class'] = MoleculeLegalPermuter
 
-    # logging:
-    init_logging(**out_args)
+        # logging:
+        init_logging(**out_args)
 
-    # Outputing permutations
-    if out_args['perms_csv_name']:
-        csv_file = open(out_args['perms_csv_name'], 'w')
-        perm_writer = csv.writer(csv_file, lineterminator='\n')
-        perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-        csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm], state.dir, state.csm])
-    else:
-        csv_file = None
+        # Outputing permutations
+        if out_args['perms_csv_name']:
+            csv_file = open(out_args['perms_csv_name'], 'w')
+            perm_writer = csv.writer(csv_file, lineterminator='\n')
+            perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
+            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm], state.dir, state.csm])
+        else:
+            csv_file = None
 
-    # run actual calculation
-    if calc_args['find_perm']:
-        raise NotImplementedError("No approx yet")
-#        result = approx_calculation(**calc_args)
-    else:
-        result = exact_calculation(**calc_args)
+        # run actual calculation
+        if calc_args['find_perm']:
+            raise NotImplementedError("No approx yet")
+    #        result = approx_calculation(**calc_args)
+        else:
+            result = exact_calculation(**calc_args)
 
-    if csv_file:
-        csv_file.close()
+        print_results(result, in_args, calc_args, out_args)
+        return result
 
-    print_results(result, in_args, calc_args, out_args)
+    finally:
+        if csv_file:
+            csv_file.close()
 
 if __name__ == '__main__':
     results = run_csm(args=sys.argv[1:])
