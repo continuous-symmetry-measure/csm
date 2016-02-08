@@ -5,7 +5,6 @@ from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
 from calculations.permuters import MoleculePermuter, SinglePermPermuter
 import logging
-
 from recordclass import recordclass
 
 np.set_printoptions(precision=6)
@@ -52,14 +51,13 @@ def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, 
         sn_max = op_order
         # First CS
         best_result = csm_operation('CS', 2, molecule, perm, permuter_class)
-
-        best_op_type, best_op_order = 'CS', 2
-        while best_result.csm > MINDOUBLE:
-            # Try the Sn's
+        if best_result.csm > MINDOUBLE:
+            # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
                 result = csm_operation('SN', op_order, molecule, perm, permuter_class)
                 if result.csm < best_result.csm:
                     best_result = result
+
     else:
         best_result = csm_operation(op_type, op_order, molecule, perm, permuter_class)
 
@@ -146,8 +144,7 @@ def compute_local_csm(molecule, perm, dir, op_type, op_order):
         rot = create_rotation_matrix(i, op_type, op_order, dir)
 
         # set permutation
-        for w in range(len(cur_perm)):
-            cur_perm[w] = perm[cur_perm[w]]
+        cur_perm = [perm[cur_perm[j]] for j in range(size)]
 
         # apply rotation to each atoms
         rotated = rot @ m_pos[cur_perm[i]]
@@ -180,8 +177,7 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
         # rotated_positions = m_pos @ rotation_matrix
 
         # set permutation
-        for w in range(len(cur_perm)):
-            cur_perm[w] = perm[cur_perm[w]]
+        cur_perm = [perm[cur_perm[j]] for j in range(size)]
 
         # add correct permuted rotation to atom in outAtoms
         for j in range(len(symmetric)):

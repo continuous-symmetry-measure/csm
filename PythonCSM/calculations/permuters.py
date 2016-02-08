@@ -179,7 +179,7 @@ class MoleculeLegalPermuter:
     '''
     This class builds a permutation atom by atom, checking with each atom whether its new position creates an illegal permutation (one where an atom is not connected ot its neighbors)
     To that end, the class uses a list called pip (perm in progress)
-    The pip is created stage by stage-- each equivalency group is divided into cycles which are then permuted aotm by atom
+    The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
     '''
 
     def __init__(self, mol, opOrder, is_SN):
@@ -191,14 +191,20 @@ class MoleculeLegalPermuter:
         self._max_length = max(self._cycle_lengths)
         self._empty_perm = [-1] * (len(mol.atoms))
 
-    def _is_legal(self, pip, toi, fromi):
+    def _is_legal(self, pip, to, fro):
         # fromi,j->toi,p(j)
-        for adjacent in self._mol.atoms[fromi].adjacent:
-            if pip[adjacent] != -1 and (toi, pip[adjacent]) not in self._mol.bondset:
+        for adjacent in self._mol.atoms[fro].adjacent:
+            if pip[adjacent] and (to, pip[adjacent]) not in self._mol.bondset:
                 return False
         return True
 
     def _group_permuter(self, group, pip):
+        '''
+        permutes a single equivalency group within a molecule.
+        recursively builds legal cycles within the group, atom-by-atom and cycle-by-cycle
+        :return: perms-in-progress, with legal permutations of the group provided
+        '''
+
         def do_switch(to, fro):
             if self._is_legal(pip, to, fro):
                 assert pip[to] == -1
@@ -211,13 +217,13 @@ class MoleculeLegalPermuter:
             pip[to] = -1
 
         def recursive_permute(pip, curr_atom, cycle_head, cycle_length, remainder):
-            # if we have a legally completed cycle:
-            if cycle_length in self._cycle_lengths:
-                if do_switch(curr_atom, cycle_head):
-                    if not remainder: #perm has been completed
+            if cycle_length in self._cycle_lengths:  # if we have an allowed cycle length
+                if do_switch(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
+                    if not remainder:  # perm has been completed
                         yield pip
-                    else: #cycle has been completed, start a new cycle with remaining atoms
+                    else:  # cycle has been completed, start a new cycle with remaining atoms
                         yield from recursive_permute(pip, remainder[0], remainder[0], 1, remainder[1:])
+                    # roll back changes
                     undo_switch(curr_atom, cycle_head)
 
             # yield from permutations using a longer cycle (if applicable)
@@ -227,6 +233,7 @@ class MoleculeLegalPermuter:
                         next_remainder = list(remainder)
                         next_remainder.remove(next_atom)
                         yield from recursive_permute(pip, next_atom, cycle_head, cycle_length + 1, next_remainder)
+                        # roll back changes
                         undo_switch(curr_atom, next_atom)
 
         yield from recursive_permute(pip, group[0], group[0], 1, group[1:])
@@ -249,73 +256,86 @@ class MoleculeLegalInvertedPermuter:
     '''
     This class builds a permutation atom by atom, checking with each atom whether its new position creates an illegal permutation
     (one where an atom is not connected ot its neighbors)
-    To that end, the class uses a list called pip (perm in progress)
-    The pip is created stage by stage-- each equivalency group is divided into cycles which are then permuted aotm by atom
+    To that end, the class uses a class called pip (perm in progress)
+    The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
     '''
+
+    class pip:
+        '''
+        class contains:
+        permutation in progress p
+        inverse permutation in progress q
+        and the molecule being permuted
+        '''
+        def __init__(self, mol):
+            self.p = [-1] * len(mol.atoms)
+            self.q = [-1] * len(mol.atoms)
+            self.mol = mol
+
+        def switch(self, to, fro, mol):
+            if self._is_legal(to, fro):
+                assert self.p[to] == -1 and self.q[fro] == -1
+                self.p[to] = fro
+                self.q[fro] = to
+                return True
+            return False
+
+        def unswitch(self, to, fro):
+            assert self.p[to] == fro and self.q[fro] == to
+            self.p[to] = -1
+            self.q[fro] = -1
+
+        def _is_legal(self, to, fro):
+            for adjacent in self.mol.atoms[fro].adjacent:
+                if self.p[adjacent] and (to, self.p[adjacent]) not in self.mol.bondset:
+                    return False
+            for adjacent in self.mol.atoms[to].adjacent:
+                if self.q[adjacent] and (fro, self.q[adjacent]) not in self.mol.bondset:
+                    return False
+            return True
 
     def __init__(self, mol, op_order, is_SN):
         self._perm_count = 0
-        self._mol = mol
+        self._groups = mol.equivalence_classes
+        self._pip= self.pip(mol)
         self._cycle_lengths = (1, op_order)
         if is_SN:
             self._cycle_lengths = (1, 2, op_order)
         self._max_length = op_order
-        self._empty_perm = [-1] * (len(mol.atoms))
 
-    def _is_legal(self, pip, toi, fromi):
-        # fromi,j->toi,p(j)
-        for adjacent in self._mol.atoms[fromi].adjacent:
-            if pip[adjacent] != -1 and (toi, pip[adjacent]) not in self._mol.bondset:
-                return False
-        return True
-
-    def _group_permuter(self, group, pip, qip):
-        def do_switch(to, fro):
-            if self._is_legal(pip, to, fro) and self._is_legal(qip, fro, to):
-                assert pip[to] == -1 and qip[fro] == -1
-                pip[to] = fro
-                qip[fro] = to
-                return True
-            return False
-
-        def undo_switch(to, fro):
-            assert pip[to] == fro and qip[fro] == to
-            pip[to] = -1
-            qip[fro] = -1
-
-        def recursive_permute(pip, qip, curr_atom, cycle_head, cycle_length, remainder):
-            if cycle_length in self._cycle_lengths:
-                if do_switch(curr_atom, cycle_head):
-                    if not remainder:
-                        yield pip, qip
-                    else:
-                        yield from recursive_permute(pip, qip, remainder[0], remainder[0], 1, remainder[1:])
-                    undo_switch(curr_atom, cycle_head)
+    def _group_permuter(self, group, pip):
+        def recursive_permute(pip, curr_atom, cycle_head, cycle_length, remainder):
+            if cycle_length in self._cycle_lengths:  # if we have an allowed cycle length:
+                if pip.switch(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
+                    if not remainder:  # perm has been completed
+                        yield pip
+                    else:  # cycle has been completed, start a new cycle with remaining atoms
+                        yield from recursive_permute(pip, remainder[0], remainder[0], 1, remainder[1:])
+                    pip.unswitch(curr_atom, cycle_head)
 
             # yield from permutations using a longer cycle (if applicable)
             if cycle_length < self._max_length:
                 for next_atom in remainder:
-                    if do_switch(curr_atom, next_atom):
+                    if pip.switch(curr_atom, next_atom):
                         next_remainder = list(remainder)
                         next_remainder.remove(next_atom)
-                        yield from recursive_permute(pip, qip, next_atom, cycle_head, cycle_length + 1, next_remainder)
-                        undo_switch(curr_atom, next_atom)
+                        yield from recursive_permute(pip, next_atom, cycle_head, cycle_length + 1, next_remainder)
+                        pip.unswitch(curr_atom, next_atom)
 
-        yield from recursive_permute(pip, qip, group[0], group[0], 1, group[1:])
+        yield from recursive_permute(pip, group[0], group[0], 1, group[1:])
 
     def permute(self):
         # permutes molecule by groups
-        def recursive_permute(groups, pip, qip):
+        def recursive_permute(groups, pip):
             if not groups:
                 self._perm_count += 1
                 yield pip
             else:
-                for perm, inv in self._group_permuter(groups[0], pip, qip):
-                    yield from recursive_permute(groups[1:], perm, inv)
+                for perm in self._group_permuter(groups[0], pip):
+                    yield from recursive_permute(groups[1:], perm)
 
-        (pip, qip) = (list(self._empty_perm), list(self._empty_perm))
-        groups = self._mol.equivalence_classes
-        yield from recursive_permute(groups, pip, qip)
+        for pip in recursive_permute(self._groups, self._pip):
+            yield pip.p
 
 
 class SinglePermPermuter:
