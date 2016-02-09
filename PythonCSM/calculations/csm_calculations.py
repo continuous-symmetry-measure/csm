@@ -3,7 +3,7 @@ import math
 import numpy as np
 from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
-from calculations.permuters import MoleculePermuter, SinglePermPermuter, MoleculeLegalPermuter, MoleculeLegalInvertedPermuter, OldMoleculeLegalPermuter
+from calculations.permuters import MoleculePermuter, SinglePermPermuter, MoleculeLegalPermuter, OldMoleculeLegalPermuter, is_legal_perm
 import logging
 from recordclass import recordclass
 
@@ -46,7 +46,7 @@ def process_results(results, keepCenter=False):
     results.symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
 
 
-def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, permuter_class=MoleculePermuter, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, permuter_class=MoleculeLegalPermuter, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         sn_max = op_order
         # First CS
@@ -74,7 +74,7 @@ def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, 
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=MoleculePermuter):
+def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=MoleculeLegalPermuter):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -92,11 +92,9 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
         permuter = SinglePermPermuter(perm)
         logger.debug("SINGLE PERM")
     else:
-        permuter_class=OldMoleculeLegalPermuter
         permuter = permuter_class(molecule, op_order, op_type == 'SN')
 
     for perm in permuter.permute():
-        print(perm)
         csm, dir = calc_ref_plane(molecule, perm, op_order, op_type)
         if csm_state_tracer_func:
             traced_state.csm = csm

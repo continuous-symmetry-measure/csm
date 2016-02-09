@@ -2,7 +2,7 @@ import csv
 import logging
 import sys
 
-from calculations.permuters import MoleculeLegalPermuter
+from calculations.permuters import MoleculeLegalPermuter, OldMoleculeLegalPermuter, MoleculePermuter, is_legal_perm
 from input_output.arguments import get_split_arguments
 from calculations.csm_calculations import exact_calculation
 from calculations import csm_calculations
@@ -25,13 +25,13 @@ def init_logging(log_file_name=None, *args, **kwargs):
         logging.basicConfig(level=logging.ERROR)
     logger = logging.getLogger("csm")
 
-
 def run_csm(args={}):
+    csv_file = None
     try:
         # Read inputs
         in_args, calc_args, out_args = get_split_arguments(args)
         calc_args['molecule'], calc_args['perm'], calc_args['dir'] = read_inputs(**in_args)
-        calc_args['permuter_class'] = MoleculeLegalPermuter
+        calc_args['permuter_class'] = MoleculePermuter
 
         # logging:
         init_logging(**out_args)
@@ -41,9 +41,9 @@ def run_csm(args={}):
             csv_file = open(out_args['perms_csv_name'], 'w')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
             perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm], state.dir, state.csm])
-        else:
-            csv_file = None
+            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm],
+                                                                                         state.dir,
+                                                                                         state.csm])
 
         # run actual calculation
         if calc_args['find_perm']:

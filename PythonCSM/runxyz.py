@@ -1,3 +1,4 @@
+from calculations.permuters import is_legal_perm
 from collections import OrderedDict
 from input_output.arguments import get_operation_data
 
@@ -159,22 +160,27 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator='\n')
         writer.writeheader()
         for index, symm in validation:
+            print (index, symm, '...', end='')
             oursymm = 'CS' if symm=='MI' else symm  # CS is marked as MI (Mirror)
             operation = get_operation_data(oursymm)
             xyz = molecules[int(index)]
-            molecule = Molecule.from_string(xyz, "xyz")
+            molecule = Molecule.from_string(xyz, "xyz", babel_bond=True)
             validate = validation[index, symm]
             result = exact_calculation(operation.type, operation.order, molecule)
             atom_mismatch, res = check_result(result, validate, index, symm)
             if res['verify']:
-                molecule2 = Molecule.from_string(xyz, "xyz")
-                verify = exact_calculation(operation.type, operation.order, molecule2, perm=[p-1 for p in res['perm expected']])
+                molecule2 = Molecule.from_string(xyz, "xyz", babel_bond=True)
+                expected_perm=[p-1 for p in res['perm expected']]
+                verify = exact_calculation(operation.type, operation.order, molecule2,expected_perm)
                 atom_mismatch2, res2 = check_result(verify, validate, index, symm)
                 if res2['status']!= 'OK':
                     res['verify']=(res2['message'], res2['csm result'], res2['atoms result'])
                 else:
                     res['verify']="Verified"
+                if not is_legal_perm(expected_perm, molecule2):
+                    res['verify']+="illegal original perm"
             writer.writerow(res)
+            print()
     print("done")
 
 
@@ -188,7 +194,7 @@ def test_individuals():
 
     perm = [0, 2, 4, 1, 3]  # 13524
     xyz = "5\ni =        0, time =        0.000, E =        -7.5473172209\nC         0.0000000000        0.0000000000        0.0000000000\nH         0.0000000000        0.0000000000        1.0890000000\nH         1.0267200000        0.0000000000       -0.3629960000\nH        -0.5133600000       -0.8891650000       -0.3630000000\nH        -0.5133600000        0.8891650000       -0.3630000000"
-    molecule = Molecule.from_string(xyz, "xyz")
+    molecule = Molecule.from_string(xyz, "xyz", babel_bond=True)
     symmetry = "c4"
     result = exact_calculation(symmetry, molecule, perm=perm)
     hi = 1
@@ -213,21 +219,21 @@ def run():
     runtests(molfile, symmfile, resfile, directory, name)
 
     name = "biphenyl_test"
-    molfile = directory + r'\mols_for_Itay\input\input_2_biphenyl\biphenyl_test.xyz'
-    symmfile = directory + r'\mols_for_Itay\expected_output\expected_output_2_biphenyls\sym.txt'
-    resfile = directory + r'\mols_for_Itay\expected_output\expected_output_2_biphenyls\csmresults.log'
+    molfile = os.path.join(directory, r'/input/input_2_biphenyl/biphenyl_test.xyz')
+    symmfile = os.path.join(directory, r'/expected_output/expected_output_2_biphenyls/sym.txt')
+    resfile = os.path.join(directory, r'/expected_output/expected_output_2_biphenyls/csmresults.log')
     #runtests(molfile, symmfile, resfile, directory, name)
 
     name = "cyclopentadiene_test"
-    molfile = directory + r'\mols_for_Itay\input\input_3_cyclopentadiene\cyclopentadiene-test.xyz'
-    symmfile = directory + r'\mols_for_Itay\expected_output\expected_output_3_cyclopentadiene\sym.txt'
-    resfile = directory + r'\mols_for_Itay\expected_output\expected_output_3_cyclopentadiene\csmresults.log'
+    molfile = os.path.join(directory, r'input/input_3_cyclopentadiene/cyclopentadiene-test.xyz')
+    symmfile = os.path.join(directory, r'expected_output/expected_output_3_cyclopentadiene/sym.txt')
+    resfile = os.path.join(directory, r'expected_output/expected_output_3_cyclopentadiene/csmresults.log')
     #runtests(molfile, symmfile, resfile, directory, name)
 
     name = "4cluster_test"
-    molfile = directory + r'\mols_for_Itay\input\input_4-clusters\W_Au12_optimized_B3P86.xyz'
-    symmfile = directory + r'\mols_for_Itay\expected_output\expected_output_4_clusters\sym.txt'
-    resfile = directory + r'\mols_for_Itay\expected_output\expected_output_4_clusters\csmresults.log'
+    molfile = os.path.join(directory, r'/input/input_4-clusters/W_Au12_optimized_B3P86.xyz')
+    symmfile = os.path.join(directory, r'/expected_output/expected_output_4_clusters/sym.txt')
+    resfile = os.path.join(directory, r'/expected_output/expected_output_4_clusters/csmresults.log')
     #runtests(molfile, symmfile, resfile, directory, name)
 
 
