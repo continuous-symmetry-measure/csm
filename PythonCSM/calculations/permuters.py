@@ -311,25 +311,25 @@ class MoleculeLegalPermuter:
             self.q = [-1] * len(mol.atoms)
             self.mol = mol
 
-        def switch(self, to, fro):
-            if self._is_legal(to, fro):
-                assert self.p[to] == -1 and self.q[fro] == -1
-                self.p[to] = fro
-                self.q[fro] = to
+        def switch(self, origin, destination):
+            if self._is_legal(origin, destination):
+                assert self.p[origin] == -1 and self.q[destination] == -1
+                self.p[origin] = destination
+                self.q[destination] = origin
                 return True
             return False
 
-        def unswitch(self, to, fro):
-            assert self.p[to] == fro and self.q[fro] == to
-            self.p[to] = -1
-            self.q[fro] = -1
+        def unswitch(self, origin, destination):
+            assert self.p[origin] == destination and self.q[destination] == origin
+            self.p[origin] = -1
+            self.q[destination] = -1
 
-        def _is_legal(self, to, fro):
-            for adjacent in self.mol.atoms[fro].adjacent:
-                if self.p[adjacent] != -1 and (to, self.p[adjacent]) not in self.mol.bondset:
+        def _is_legal(self, origin, destination):
+            for adjacent in self.mol.atoms[destination].adjacent:
+                if self.p[adjacent] != -1 and (origin, self.p[adjacent]) not in self.mol.bondset:
                     return False
-            for adjacent in self.mol.atoms[to].adjacent:
-                if self.q[adjacent] != -1 and (fro, self.q[adjacent]) not in self.mol.bondset:
+            for adjacent in self.mol.atoms[origin].adjacent:
+                if self.q[adjacent] != -1 and (destination, self.q[adjacent]) not in self.mol.bondset:
                     return False
             return True
 
