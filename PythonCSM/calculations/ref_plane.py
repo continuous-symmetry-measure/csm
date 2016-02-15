@@ -11,15 +11,16 @@ import math
 
 from numpy.polynomial import Polynomial
 
-logger = logging.getLogger("csm")
+# logger = logging.getLogger("csm")
+
 
 def calc_ref_plane(molecule, perm, op_order, op_type):
     size = len(molecule.atoms)
     is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
 
-    logger.debug('************* calc_ref_plane Python ************************')
-    logger.debug('Permutation is ' + str(perm))
+    #logger.debug('************* calc_ref_plane Python ************************')
+    #logger.debug('Permutation is ' + str(perm))
 
 #    logger.debug("calcrefplane atoms:")
 #    logger.debug([atom.pos for atom in molecule.atoms])
@@ -68,9 +69,9 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
 
     A, B = calc_A_B()
 
-    logger.debug("Computed matrix A is:")
-    logger.debug(A)
-    logger.debug("Computed vector B is: %s" % B)
+    #logger.debug("Computed matrix A is:")
+    #logger.debug(A)
+    #logger.debug("Computed vector B is: %s" % B)
 
     # lambdas - list of 3 eigenvalues of A
     # m - list of 3 eigenvectors of A
@@ -80,8 +81,8 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     m_t_B_2 = np.power(m_t_B, 2)
     m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
 
-    logger.debug("mTb: %s" % m_t_B)
-    logger.debug("mTb^2: %s" % m_t_B_2)
+    #logger.debug("mTb: %s" % m_t_B)
+    #logger.debug("mTb^2: %s" % m_t_B_2)
 
     def build_polynomial():
         # The polynomial is described in equation 13.
@@ -133,16 +134,16 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
         polynomial = Polynomial(coeffs)
 
         # solve polynomial and find maximum eigenvalue and eigen vector
-        logger.debug("Coefficients: ")
-        logger.debug(polynomial)
+        # logger.debug("Coefficients: ")
+        # logger.debug(polynomial)
 
         return polynomial
 
     polynomial = build_polynomial()
     roots = polynomial.roots()
 
-    logger.debug('roots: ')
-    logger.debug(roots)
+    # logger.debug('roots: ')
+    # logger.debug(roots)
 
     # lambda_max is a real root of the polynomial equation
     # according to the description above the formula (13) in the paper
@@ -151,7 +152,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
         if roots[i].real > lambda_max and math.fabs(roots[i].imag) < ZERO_IM_PART_MAX:
             lambda_max = roots[i].real
 
-    logger.debug("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
+    # logger.debug("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
 
     def calculate_dir():
         m_max_B = 0.0
@@ -208,14 +209,14 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
                 dists += Q[k].T @ Q_[k]
             csm += math.cos(theta) * dists
 
-        logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
-        logger.debug("dir: %lf %lf %lf" % (dir[0], dir[1], dir[2]))
+        # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
+        # logger.debug("dir: %lf %lf %lf" % (dir[0], dir[1], dir[2]))
 
         csm += (lambda_max - m_max_B) / 2
         csm = math.fabs(100 * (1.0 - csm / op_order))
 
-        logger.debug("dir - csm: %lf %lf %lf - %lf" %
-                     (dir[0], dir[1], dir[2], csm))
+        # logger.debug("dir - csm: %lf %lf %lf - %lf" %
+        #             (dir[0], dir[1], dir[2], csm))
         return csm
 
     csm = calculate_csm()
