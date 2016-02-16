@@ -11,6 +11,25 @@ import csv
 import re
 import logging
 import os.path
+import glob
+
+
+opcode_data = {
+    "cs": ('CS', 2, "MIRROR SYMMETRY"),
+    "ci": ('CI', 2, "INVERSION (S2)"),
+    "ch": ('CH', 2, "CHIRALITY"),
+    "c2": ('CN', 2, "C2 SYMMETRY"),
+    'c3': ('CN', 3, "C3 SYMMETRY"),
+    'c4': ('CN', 4, "C4 SYMMETRY"),
+    'c5': ('CN', 5, "C5 SYMMETRY"),
+    'c6': ('CN', 6, "C6 SYMMETRY"),
+    'c7': ('CN', 7, "C7 SYMMETRY"),
+    'c8': ('CN', 8, "C8 SYMMETRY"),
+    's2': ('SN', 2, "S2 SYMMETRY"),
+    's4': ('SN', 4, "S4 SYMMETRY"),
+    's6': ('SN', 6, "S6 SYMMETRY"),
+    's8': ('SN', 8, "S8 SYMMETRY")
+}
 
 def split(filename):
     mol_dict = OrderedDict()
@@ -164,12 +183,12 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
             oursymm = 'CS' if symm=='MI' else symm  # CS is marked as MI (Mirror)
             operation = get_operation_data(oursymm)
             xyz = molecules[int(index)]
-            molecule = Molecule.from_string(xyz, "xyz", babel_bond=True)
+            molecule = Molecule.from_string(xyz, "xyz")
             validate = validation[index, symm]
             result = exact_calculation(operation.type, operation.order, molecule)
             atom_mismatch, res = check_result(result, validate, index, symm)
             if res['verify']:
-                molecule2 = Molecule.from_string(xyz, "xyz", babel_bond=True)
+                molecule2 = Molecule.from_string(xyz, "xyz")
                 expected_perm=[p-1 for p in res['perm expected']]
                 verify = exact_calculation(operation.type, operation.order, molecule2,expected_perm)
                 atom_mismatch2, res2 = check_result(verify, validate, index, symm)
@@ -184,20 +203,11 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
     print("done")
 
 
-def test_individuals():
-    perm = [0, 2, 1, 4, 3]  # 1 3 2 5 4
-    xyz = "5\ni =     1000, time =      400.000, E =        -7.5906338300\nC        -0.2968994084        0.9863571973        0.8607675832\nH        -0.9978665134        0.3281360815        1.2305541488\nH        -0.3453053403        2.0137087783        1.3006660689\nH         0.6682411165        0.3624914912        0.5149041053\nH        -0.1870860670        1.3761929238       -0.1664997023"
-    molecule = Molecule.from_string(xyz, "xyz")
-    symmetry = "c2"
-    # result = exact_calculation(symmetry, molecule, perm=perm)
-    hi = 1
+def test_individuals(molfile, symmfile, permfile, resfile):
 
-    perm = [0, 2, 4, 1, 3]  # 13524
-    xyz = "5\ni =        0, time =        0.000, E =        -7.5473172209\nC         0.0000000000        0.0000000000        0.0000000000\nH         0.0000000000        0.0000000000        1.0890000000\nH         1.0267200000        0.0000000000       -0.3629960000\nH        -0.5133600000       -0.8891650000       -0.3630000000\nH        -0.5133600000        0.8891650000       -0.3630000000"
-    molecule = Molecule.from_string(xyz, "xyz", babel_bond=True)
-    symmetry = "c4"
-    result = exact_calculation(symmetry, molecule, perm=perm)
-    hi = 1
+    for filename in glob.glob('*.txt'):
+        result = exact_calculation(symmetry, molecule, perm=perm)
+
 
 
 def run():
@@ -216,7 +226,7 @@ def run():
     molfile = os.path.join(directory, 'input/input_1_methane_csm/methane-test1.xyz')
     symmfile = os.path.join(directory, 'expected_output/expected_output_1_methane_csm/sym.txt')
     resfile = os.path.join(directory,  'expected_output/expected_output_1_methane_csm/csmresults.log')
-    runtests(molfile, symmfile, resfile, directory, name)
+    #test_individuals(molfile, symmfile, resfile, directory, name)
 
     name = "biphenyl_test"
     molfile = os.path.join(directory, r'/input/input_2_biphenyl/biphenyl_test.xyz')
@@ -228,7 +238,7 @@ def run():
     molfile = os.path.join(directory, r'input/input_3_cyclopentadiene/cyclopentadiene-test.xyz')
     symmfile = os.path.join(directory, r'expected_output/expected_output_3_cyclopentadiene/sym.txt')
     resfile = os.path.join(directory, r'expected_output/expected_output_3_cyclopentadiene/csmresults.log')
-    #runtests(molfile, symmfile, resfile, directory, name)
+    runtests(molfile, symmfile, resfile, directory, name)
 
     name = "4cluster_test"
     molfile = os.path.join(directory, r'/input/input_4-clusters/W_Au12_optimized_B3P86.xyz')

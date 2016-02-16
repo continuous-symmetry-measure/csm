@@ -40,10 +40,11 @@ def run_csm(args={}):
         if out_args['perms_csv_name']:
             csv_file = open(out_args['perms_csv_name'], 'w')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
-            perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
+            perm_writer.writerow(['Permutation', 'Direction', 'CSM', "legal"])
             csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm],
                                                                                          state.dir,
-                                                                                         state.csm])
+                                                                                         state.csm,
+                                                                                         is_legal_perm(state.perm, calc_args['molecule'])])
 
         # run actual calculation
         if calc_args['find_perm']:

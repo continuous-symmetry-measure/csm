@@ -32,11 +32,9 @@ setup(
     ext_modules=cythonize(
         [Extension(
             "*",
-            ["*.pyx"],
+            ["fast_calculations.pyx"],
             language='c++',
-            include_dirs=['../../CSM', numpy.get_include()],
-            library_dirs=library_dirs,
-            libraries=libraries,
+            include_dirs=[numpy.get_include()],
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args)]
     )

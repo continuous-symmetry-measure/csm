@@ -8,14 +8,12 @@ import logging
 import numpy as np
 from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
+from CPP_wrapper.fast_calculations import cross
 
 from numpy.polynomial import Polynomial
 
 # logger = logging.getLogger("csm")
 
-
-def apply_perm(curr_perm, perm, size):
-    return [perm[curr_perm, j] for j in range(size)]
 
 
 def calc_ref_plane(molecule, perm, op_order, op_type):
@@ -46,6 +44,9 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
 
     Q = [col_vec(atom.pos) for atom in molecule.atoms]
 
+#    def cross(a,b):
+#        return np.array([a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]).T
+
     def calc_A_B():
         # A is calculated according to formula (17) in the paper
         # B is calculated according to formula (12) in the paper
@@ -69,7 +70,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
             # A_intermediate is calculated according to the formula (5) in the paper
             for k in range(size):
                 A = A + multiplier * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
-                B = B + math.sin(theta[i]) * np.cross(Q[k].T, Q[cur_perm[k]].T)
+                B = B + math.sin(theta[i]) * cross(Q[k], Q[cur_perm[k]])
 
         return A, B.T  # Return B as a column vector
 
