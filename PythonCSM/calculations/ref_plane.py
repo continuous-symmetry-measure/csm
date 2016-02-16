@@ -58,12 +58,12 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
             cur_perm = [perm[cur_perm[j]] for j in range(size)]
 
             # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
-            Q_ = [Q[p] for p in cur_perm]  # Q'
+            # Q_ = [Q[p] for p in cur_perm]  # Q'
 
             # A_intermediate is calculated according to the formula (5) in the paper
             for k in range(size):
-                A = A + multiplier * ((Q_[k] @ Q[k].T) + (Q[k] @ Q_[k].T))
-                B = B + math.sin(theta) * np.cross(Q[k].T, Q_[k].T)
+                A = A + multiplier * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
+                B = B + math.sin(theta) * np.cross(Q[k].T, Q[cur_perm[k]].T)
 
         return A, B.T  # Return B as a column vector
 
@@ -88,10 +88,9 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
         # The polynomial is described in equation 13.
         # The following code calculates the polynomial's coefficients quickly, and is taken
         # from the old C CSM code more or less untouched.
-        coeffs = [0, 0, 0, 0, 0, 0,
-                  1.0]  # A polynomial of the 6th degree. coeffs[6] is for x^6, xoeefs[5] for x^5 , etc..
-        coeffs[5] = -2 * (lambdas[0] + lambdas[1] + lambdas[2])
-        coeffs[4] = lambdas[0] * lambdas[0] + lambdas[1] * lambdas[1] + lambdas[2] * lambdas[2] - \
+        coeffs = [1.0, 0, 0, 0, 0, 0, 0]  # A polynomial of the 6th degree. coeffs[0] is for x^6, xoeefs[1] for x^5 , etc..
+        coeffs[1] = -2 * (lambdas[0] + lambdas[1] + lambdas[2])
+        coeffs[2] = lambdas[0] * lambdas[0] + lambdas[1] * lambdas[1] + lambdas[2] * lambdas[2] - \
                     m_t_B_2[0] - m_t_B_2[1] - m_t_B_2[2] + \
                     4 * (lambdas[0] * lambdas[1] + lambdas[0] * lambdas[2] + lambdas[1] * lambdas[2])
         coeffs[3] = -8 * lambdas[0] * lambdas[1] * lambdas[2] + \
@@ -107,7 +106,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
                          lambdas[0] * lambdas[1] * lambdas[1] -
                          lambdas[1] * lambdas[1] * lambdas[2] -
                          lambdas[1] * lambdas[2] * lambdas[2])
-        coeffs[2] = 4 * \
+        coeffs[4] = 4 * \
                     ((lambdas[0] * lambdas[1] * lambdas[2] * (lambdas[0] + lambdas[1] + lambdas[2]) -
                       (m_t_B_2[2] * lambdas[0] * lambdas[1] +
                        m_t_B_2[1] * lambdas[0] * lambdas[2] +
@@ -118,7 +117,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
                     lambdas[0] * lambdas[0] * lambdas[1] * lambdas[1] + \
                     lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] + \
                     lambdas[0] * lambdas[0] * lambdas[2] * lambdas[2]
-        coeffs[1] = 2 * \
+        coeffs[5] = 2 * \
                     (m_t_B_2[0] * lambdas[1] * lambdas[2] * (lambdas[1] + lambdas[2]) +
                      m_t_B_2[1] * lambdas[0] * lambdas[2] * (lambdas[0] + lambdas[2]) +
                      m_t_B_2[2] * lambdas[0] * lambdas[1] * (lambdas[0] + lambdas[1])) \
@@ -126,21 +125,17 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
                       (lambdas[0] * lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] +
                        lambdas[0] * lambdas[0] * lambdas[1] * lambdas[2] * lambdas[2] +
                        lambdas[0] * lambdas[0] * lambdas[1] * lambdas[1] * lambdas[2])
-        coeffs[0] = -m_t_B_2[0] * lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] - \
+        coeffs[6] = -m_t_B_2[0] * lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] - \
                     m_t_B_2[1] * lambdas[0] * lambdas[0] * lambdas[2] * lambdas[2] - \
                     m_t_B_2[2] * lambdas[0] * lambdas[0] * lambdas[1] * lambdas[1] + \
                     lambdas[0] * lambdas[0] * lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2]
 
-        polynomial = Polynomial(coeffs)
+        return coeffs
 
-        # solve polynomial and find maximum eigenvalue and eigen vector
-        # logger.debug("Coefficients: ")
-        # logger.debug(polynomial)
-
-        return polynomial
-
-    polynomial = build_polynomial()
-    roots = polynomial.roots()
+    coeffs = build_polynomial()
+    roots = np.roots(coeffs)
+    #polynomial = build_polynomial()
+    #roots = polynomial.roots()
 
     # logger.debug('roots: ')
     # logger.debug(roots)
@@ -203,10 +198,10 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
             # i'th power of permutation
             cur_perm = [perm[cur_perm[j]] for j in range(size)]
 
-            Q_ = [Q[cur_perm[i]] for i in range(size)]
+            # Q_ = [Q[cur_perm[i]] for i in range(size)]
 
             for k in range(size):
-                dists += Q[k].T @ Q_[k]
+                dists += Q[k].T @ Q[cur_perm[k]]
             csm += math.cos(theta) * dists
 
         # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
