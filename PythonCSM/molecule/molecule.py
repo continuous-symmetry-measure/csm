@@ -17,7 +17,7 @@ class Molecule:
         self._flags = {}
         self._create_bondset()
         self._obmol = obmol
-        self._Q=self.create_Q()
+        self._Q=self._calc_Q()
 
     @property
     def Q(self):
@@ -216,14 +216,19 @@ class Molecule:
         size = len(self._atoms)
         for i in range(size):
             self._atoms[i].pos = norm_coords[i]
-        self.create_Q()
+        self._Q = self._calc_Q()
 
-    def create_Q(self):
+    def _calc_Q(self):
         def col_vec(list):
             a = np.array(list)
             a = a.reshape((3, 1))
             return a
-        self._Q=[col_vec(atom.pos) for atom in self.atoms]
+
+        # Q = np.zeros((len(self.atoms), 3), dtype=np.float64)
+        # for i, atom in enumerate(self.atoms):
+        #    Q[i, :] = atom.pos
+        # return Q
+        return [col_vec(atom.pos) for atom in self.atoms]
 
     def de_normalize(self):
         coords = [atom.pos for atom in self._atoms]

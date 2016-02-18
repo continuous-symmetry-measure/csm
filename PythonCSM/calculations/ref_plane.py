@@ -6,10 +6,10 @@
 #
 import logging
 import numpy as np
-from CPP_wrapper.fast_calculations import untyped_cross as cross
 from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
 # from CPP_wrapper.fast_calculations import cross
+from CPP_wrapper import fast_calculations as cpp
 
 from numpy.polynomial import Polynomial
 
@@ -19,7 +19,6 @@ from numpy.polynomial import Polynomial
 def python_cross(a, b):
     return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
                      a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
-
 
 def calc_A_B(op_order, is_improper, theta, perms, size, Q):
     # A is calculated according to formula (17) in the paper
@@ -44,7 +43,7 @@ def calc_A_B(op_order, is_improper, theta, perms, size, Q):
         # A_intermediate is calculated according to the formula (5) in the paper
         for k in range(size):
             A = A + multiplier * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
-            B = B + math.sin(theta[i]) * cross(Q[k], Q[cur_perm[k]])
+            B = B + math.sin(theta[i]) * cpp.cross(Q[k], Q[cur_perm[k]])
 
     return A, B.T  # Return B as a column vector
 
@@ -177,7 +176,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     # - described on the first page of the paper
     Q = molecule.Q
 
-    A, B = calc_A_B(op_order, is_improper, theta, perms, size, Q)
+    A, B = cpp.calc_A_B(op_order, is_improper, theta, perms, size, Q)
 
     # logger.debug("Computed matrix A is:")
     # logger.debug(A)

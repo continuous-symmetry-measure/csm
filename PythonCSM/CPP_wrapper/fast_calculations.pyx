@@ -8,25 +8,35 @@ from calculations.constants import MAXDOUBLE, ZERO_IM_PART_MAX
 DTYPE = np.float64
 ctypedef np.float64_t DTYPE_t
 
+ITYPE = np.int
+ctypedef np.int_t ITYPE_t
+
 cimport cython
 @cython.boundscheck(False)
 def cross(np.ndarray[DTYPE_t, ndim=2] a, np.ndarray[DTYPE_t, ndim=2] b):
-    return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
-                     a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
+    cdef double *pa = <double *>a.data
+    cdef double *pb = <double *>b.data
+    return np.array([pa[1] * pb[2] - pa[2] * pb[1],
+                     pa[2] * pb[0] - pa[0] * pb[2],
+                     pa[0] * pb[1] - pa[1] * pb[0]]).T
 
-def untyped_cross(a, b):
-    return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
-                     a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
 
-
-def calc_A_B(op_order, is_improper, theta, perms, size, Q):
+def calc_A_B(int op_order,
+             int is_improper,
+             np.ndarray[DTYPE_t, ndim=1] theta,
+             np.ndarray[ITYPE_t, ndim=2] perms,
+             int size,
+             Q):
     # A is calculated according to formula (17) in the paper
     # B is calculated according to formula (12) in the paper
 
     A = np.zeros((3, 3,))
-    B = np.zeros((1, 3))  # Row vector for now
+    B = np.zeros((1, 3,))  # Row vector for now
 
     # compute matrices according to current perm and its powers (the identity does not contribute anyway)
+    cdef int i
+    cdef int k
+
     for i in range(1, op_order):
         if is_improper and (i % 2):
             multiplier = -1 - math.cos(theta[i])
