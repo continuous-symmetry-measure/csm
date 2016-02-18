@@ -10,22 +10,11 @@ ctypedef np.float64_t DTYPE_t
 
 cimport cython
 @cython.boundscheck(False)
-def cross_pyx(np.ndarray[DTYPE_t, ndim=2] a, np.ndarray[DTYPE_t, ndim=1] b):
-    assert a.dtype == DTYPE and b.dtype == DTYPE
-    cdef DTYPE_t a0 = a[0][0]
-    cdef DTYPE_t a1 = a[1][0]
-    cdef DTYPE_t a2 = a[2][0]
-    cdef DTYPE_t b0 = b[0][0]
-    cdef DTYPE_t b1 = b[1][0]
-    cdef DTYPE_t b2 = b[2][0]
-    cdef DTYPE_t x = a1*b2 - a2*b1
-    cdef DTYPE_t y = a2*b0 - a0*b2
-    cdef DTYPE_t z = a0*b1 - a1*b0
+def cross(np.ndarray[DTYPE_t, ndim=2] a, np.ndarray[DTYPE_t, ndim=2] b):
+    return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
+                     a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
 
-    return np.array([x,y,z], dtype=DTYPE).T
-    return np.array([a[1][0]*b[2][0]-a[2][0]*b[1][0], a[2][0]*b[0][0]-a[0][0]*b[2][0], a[0][0]*b[1][0]-a[1][0]*b[0][0]]).T
-
-def cross(a, b):
+def untyped_cross(a, b):
     return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
                      a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
 

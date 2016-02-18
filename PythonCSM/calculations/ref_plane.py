@@ -6,6 +6,7 @@
 #
 import logging
 import numpy as np
+from CPP_wrapper.fast_calculations import untyped_cross as cross
 from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
 # from CPP_wrapper.fast_calculations import cross
@@ -15,7 +16,7 @@ from numpy.polynomial import Polynomial
 
 # logger = logging.getLogger("csm")
 
-def cross(a, b):
+def python_cross(a, b):
     return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
                      a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
 
