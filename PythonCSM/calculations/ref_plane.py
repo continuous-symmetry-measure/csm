@@ -63,7 +63,7 @@ def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
         for k in range(size):
             #A = A + multiplier[i] * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
             A= A + multiplier[i] * (python_outer_product(Q[cur_perm[k]], Q[k]) + python_outer_product(Q[k], Q[cur_perm[k]]))
-            B = B + sintheta[i] * python_cross(Q[k], Q[cur_perm[k]])
+            B = B + sintheta[i] * np.cross(Q[k], Q[cur_perm[k]])
 
     return A, B.T  # Return B as a column vector
 

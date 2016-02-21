@@ -14,12 +14,12 @@ ctypedef np.int_t ITYPE_t
 
 cimport cython
 @cython.boundscheck(False)
-def cross(np.ndarray[DTYPE_t, ndim=2] a, np.ndarray[DTYPE_t, ndim=2] b):
+def cross(np.ndarray[DTYPE_t, ndim=1] a, np.ndarray[DTYPE_t, ndim=1] b):
     cdef double *pa = <double *>a.data
     cdef double *pb = <double *>b.data
     return np.array([pa[1] * pb[2] - pa[2] * pb[1],
                      pa[2] * pb[0] - pa[0] * pb[2],
-                     pa[0] * pb[1] - pa[1] * pb[0]]).T
+                     pa[0] * pb[1] - pa[1] * pb[0]])
 
 def PolynomialRoots(coeffs):
     cdef double coeffs_v[7]
