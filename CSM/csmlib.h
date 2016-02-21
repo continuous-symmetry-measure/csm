@@ -124,4 +124,10 @@ std::vector< std::vector<int> > GetMoleculePermutations();
 
 csm_calculation_data CalcRefPlane (csm_calculation_data input);
 csm_calculation_data CreateSymmetricStructure (csm_calculation_data input);
+
+extern "C" 
+{
+	int rpoly(double *op, int degree, double *zeror, double *zeroi);
+}
+
 #endif
