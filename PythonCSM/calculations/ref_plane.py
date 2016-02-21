@@ -17,10 +17,34 @@ from numpy.polynomial import Polynomial
 # logger = logging.getLogger("csm")
 
 def python_cross(a, b):
+    return np.array([a[1] * b[2] - a[2] * b[1], a[2] * b[0]- a[0] * b[2],
+                     a[0] * b[1] - a[1] * b[0]])
     return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
                      a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
 
-def calc_A_B(op_order, is_improper, theta, perms, size, Q):
+def python_outer_product(a,b):
+    '''
+    :param a: vector of length 3
+    :param b: vector of length 3
+    :return: 3x3 matrix of a@b's outer product
+    '''
+    return np.array([[a[0]*b[0], a[0]*b[1], a[0] * b[2]], [a[1]*b[0], a[1]*b[1], a[1] * b[2]], [a[2]*b[0], a[2]*b[1], a[2] * b[2]]])
+    return np.array([[a[0][0]*b[0][0], a[0][0]*b[1][0], a[0][0] * b[2][0]], [a[1][0]*b[0][0], a[1][0]*b[1][0], a[1][0] * b[2][0]], [a[2][0]*b[0][0], a[2][0]*b[1][0], a[2][0] * b[2][0]]])
+
+def python_inner_product(a,b):
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+    return a[0][0]*b[0][0] + a[1][0]*b[1][0] + a[2][0]*b[2][0]
+
+def python_matrix_by_vector(mat,v):
+    x= mat[0][0]*v[0] + mat[0][1]*v[1] + mat[0][2]*v[2]
+    y= mat[1][0]*v[0] + mat[1][1]*v[1] + mat[1][2]*v[2]
+    z= mat[2][0]*v[0] + mat[2][1]*v[1] + mat[2][2]*v[2]
+    #x= mat[0][0]*v[0][0] + mat[0][1]*v[1][0] + mat[0][2]*v[2][0]
+    #y= mat[1][0]*v[0][0] + mat[1][1]*v[1][0] + mat[1][2]*v[2][0]
+    #z= mat[2][0]*v[0][0] + mat[2][1]*v[1][0] + mat[2][2]*v[2][0]
+    return np.array([x,y,z])
+
+def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
     # A is calculated according to formula (17) in the paper
     # B is calculated according to formula (12) in the paper
 
@@ -29,11 +53,6 @@ def calc_A_B(op_order, is_improper, theta, perms, size, Q):
 
     # compute matrices according to current perm and its powers (the identity does not contribute anyway)
     for i in range(1, op_order):
-        if is_improper and (i % 2):
-            multiplier = -1 - math.cos(theta[i])
-        else:
-            multiplier = 1 - math.cos(theta[i])
-
         # The i'th power of the permutation
         cur_perm = perms[i]
 
@@ -42,8 +61,9 @@ def calc_A_B(op_order, is_improper, theta, perms, size, Q):
 
         # A_intermediate is calculated according to the formula (5) in the paper
         for k in range(size):
-            A = A + multiplier * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
-            B = B + math.sin(theta[i]) * cpp.cross(Q[k], Q[cur_perm[k]])
+            #A = A + multiplier[i] * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
+            A= A + multiplier[i] * (python_outer_product(Q[cur_perm[k]], Q[k]) + python_outer_product(Q[k], Q[cur_perm[k]]))
+            B = B + sintheta[i] * python_cross(Q[k], Q[cur_perm[k]])
 
     return A, B.T  # Return B as a column vector
 
@@ -125,7 +145,7 @@ def calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B, B):
     return dir, m_max_B
 
 
-def calculate_csm(op_order, perms, size, Q, theta, lambda_max, m_max_B):
+def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B):
     # initialize identity permutation
 
     # CSM is computed according to formula (15) in the paper with some changes according to CPP code:
@@ -142,8 +162,8 @@ def calculate_csm(op_order, perms, size, Q, theta, lambda_max, m_max_B):
         # Q_ = [Q[cur_perm[i]] for i in range(size)]
 
         for k in range(size):
-            dists += Q[k].T @ Q[cur_perm[k]]
-        csm += math.cos(theta[i]) * dists
+            dists += python_inner_product( Q[k], Q[cur_perm[k]])
+        csm += costheta[i] * dists
 
     # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
     # logger.debug("dir: %lf %lf %lf" % (dir[0], dir[1], dir[2]))
@@ -162,10 +182,19 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     is_zero_angle = op_type == 'CS'
 
     # pre-caching:
-    theta = np.zeros(op_order)
+    multiplicand= 2 * math.pi /op_order
+    costheta = np.zeros(op_order)
+    sintheta = np.zeros(op_order)
+    multiplier=np.zeros(op_order)
     if not is_zero_angle:
         for i in range(1, op_order):
-            theta[i] = 2 * math.pi * i / op_order
+            x= multiplicand * i
+            costheta[i] = math.cos(x)
+            sintheta[i] = math.sin(x)
+            if is_improper and (i % 2):
+                multiplier[i] = -1 - costheta[i]
+            else:
+                multiplier[i] = 1 - costheta[i]
 
     perms = np.empty([op_order, size], dtype=np.int)
     perms[0] = [i for i in range(size)]
@@ -176,7 +205,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     # - described on the first page of the paper
     Q = molecule.Q
 
-    A, B = cpp.calc_A_B(op_order, is_improper, theta, perms, size, Q)
+    A, B = calc_A_B(op_order, multiplier, sintheta, perms, size, Q)
 
     # logger.debug("Computed matrix A is:")
     # logger.debug(A)
@@ -186,9 +215,10 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     # m - list of 3 eigenvectors of A
     lambdas, m = np.linalg.eig(A)
     # compute square of scalar multiplications of eigen vectors with B
-    m_t_B = m.T @ B
+    #m_t_B = m.T @ B
+    m_t_B=python_matrix_by_vector(m.T, B)
     m_t_B_2 = np.power(m_t_B, 2)
-    m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
+    #m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
 
     # logger.debug("mTb: %s" % m_t_B)
     # logger.debug("mTb^2: %s" % m_t_B_2)
@@ -214,6 +244,6 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
 
     dir, m_max_B = calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B,B)
 
-    csm = calculate_csm(op_order, perms, size, Q, theta, lambda_max, m_max_B)
+    csm = calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B)
 
     return csm, dir

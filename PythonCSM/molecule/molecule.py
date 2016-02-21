@@ -221,7 +221,7 @@ class Molecule:
     def _calc_Q(self):
         def col_vec(list):
             a = np.array(list)
-            a = a.reshape((3, 1))
+            #a = a.reshape((3, 1))
             return a
 
         # Q = np.zeros((len(self.atoms), 3), dtype=np.float64)
