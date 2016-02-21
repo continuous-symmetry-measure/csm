@@ -56,3 +56,4 @@ cdef extern from "csmlib.h":
     csm_calculation_data ComputeLocalCSM (csm_calculation_data input) except +;
     csm_calculation_data CalcRefPlane (csm_calculation_data input) except +;
     csm_calculation_data CreateSymmetricStructure (csm_calculation_data input) except +;
+    int rpoly(double *coeffs, int degree, double *zeror, double *zeroi);

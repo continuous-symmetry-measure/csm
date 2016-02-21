@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 cimport numpy as np
+cimport csmlib
 
 from calculations.constants import MAXDOUBLE, ZERO_IM_PART_MAX
 
@@ -19,6 +20,22 @@ def cross(np.ndarray[DTYPE_t, ndim=2] a, np.ndarray[DTYPE_t, ndim=2] b):
     return np.array([pa[1] * pb[2] - pa[2] * pb[1],
                      pa[2] * pb[0] - pa[0] * pb[2],
                      pa[0] * pb[1] - pa[1] * pb[0]]).T
+
+def PolynomialRoots(coeffs):
+    cdef double coeffs_v[7]
+    cdef double zeror[7]
+    cdef double zeroi[7]
+
+    cdef int i
+    for i in range(7):
+        coeffs_v[i] = coeffs[i]
+
+    csmlib.rpoly(coeffs_v, 6, zeror, zeroi)
+    result = []
+    for i in range(7):
+        result.append(complex(zeror[i], zeroi[i]))
+
+    return result
 
 
 def calc_A_B(int op_order,

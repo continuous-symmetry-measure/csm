@@ -226,7 +226,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
 
 
     coeffs = build_polynomial(lambdas, m_t_B_2)
-    roots = np.roots(coeffs)
+    roots = cpp.PolynomialRoots(coeffs)
     # polynomial = build_polynomial()
     # roots = polynomial.roots()
 

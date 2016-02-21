@@ -6,7 +6,7 @@ from Cython.Build import cythonize
 import sys
 import numpy
 
-BOOST_ROOT = r'd:\boost\1_59_0\lib64' # Default, Windows only. Override in local_settings for now
+BOOST_ROOT = r'd:\boost\1_59_0\lib64'   # Default, Windows only. Override in local_settings for now
 
 try:
     from local_settings import *
@@ -16,9 +16,9 @@ except:
 extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
-    library_dirs = ['../../openbabel-files/Windows/lib/x64/Release', '../../CSM/cmake/RelWithDebInfo', BOOST_ROOT]
+    library_dirs = ['../../openbabel-files/Windows/lib/x64/Release', '../../CSM/cmake/Release', BOOST_ROOT]
     libraries = ['csmlib']
-    extra_compiler_args = ['/Ox']  # Debug info, no optimization
+    extra_compiler_args = ['/Ox']
 elif sys.platform in ['linux', 'linux2']:
     library_dirs = ['../../openbabel-files/unix/lib', '../../CSM/cmake']
     libraries = ['csmlib', 'boost_log', 'boost_log_setup', 'boost_system', 'boost_thread', 'boost_filesystem', 'boost_date_time', 'pthread']
@@ -33,7 +33,9 @@ setup(
             "*",
             ["fast_calculations.pyx"],
             language='c++',
-            include_dirs=[numpy.get_include()],
+            include_dirs=[numpy.get_include(), '../../CSM'],
+            libraries=libraries,
+            library_dirs=library_dirs,
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args)]
     )
