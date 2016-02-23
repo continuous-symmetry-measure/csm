@@ -43,34 +43,9 @@ cdef _calc_B(np.ndarray[DTYPE_t, ndim=1, mode="c"] B, int size, np.ndarray[DTYPE
 
 @cython.boundscheck(False)
 def calc_B(np.ndarray[DTYPE_t, ndim=1, mode="c"] B not None, int size, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q not None, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q_ not None, double sintheta):
-    #csmlib.print_array(B.data, 3)
-    #csmlib.calc_B(<double*>B.data, size, <double**>Q.data, <double**>Q_.data, sintheta)
     _calc_B(B, size, Q, Q_, sintheta)
-    #cdef int k
-    #for k in range(size):
-    #    fast_cross_add(sintheta, Q[k], Q_[k], B)
 
 
-    #csmlib.calc_B(out, size, q, qq, sintheta)
-
-def old_calc_B(np.ndarray[DTYPE_t, ndim=1] B, int size, np.ndarray[DTYPE_t, ndim=2]Q, np.ndarray[ITYPE_t, ndim=1]cur_perm, double sintheta):
-    csmlib.testFunc(size)
-    print("passed testfunc")
-    cdef int k
-    for k in range(size):
-        B+=sintheta*cross(Q[k], Q[cur_perm[k]])
-
-''''
-cdef fast_cross_add(np.ndarray[DTYPE_t, ndim=1] a, np.ndarray[DTYPE_t, ndim=1] b, np.ndarray[DTYPE_t, ndim=1] B):
-    cdef double *pa = <double *>a.data
-    cdef double *pb = <double *>b.data
-    cdef double *out = <double *>o.data
-    out[0] += pa[1] * pb[2] - pa[2] * pb[1]
-    out[1] +=pa[2] * pb[0] - pa[0] * pb[2]
-    out[2] +=pa[0] * pb[1] - pa[1] * pb[0]
-@cython.boundscheck(False)
-
-'''
 
 def outer_product_sum(np.ndarray[DTYPE_t, ndim=1] a_in, np.ndarray[DTYPE_t, ndim=1] b_in):
     '''

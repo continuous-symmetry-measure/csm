@@ -26,18 +26,13 @@ def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
     for i in range(1, op_order):
         # The i'th power of the permutation
         cur_perm = perms[i]
-
         # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
         Q_ = np.array([  Q[p] for p in cur_perm  ],  dtype=np.float64, order="c")  # Q'
         # A_intermediate is calculated according to the formula (5) in the paper, as follows:
         # the cross product of Qi, Q_i plus the cross product of Q_i, Qi, summed.
         A+=multiplier[i] * (Q.T.dot(Q_)+Q_.T.dot(Q))
-
+        #B is the sum of the cross products of Q[k] and Q_[k], times sintheta. it is calculated in c++
         cpp.calc_B(B, size, Q, Q_, sintheta[i])
-        # A_intermediate is calculated according to the formula (5) in the paper
-        #for k in range(size):
-            #A+= multiplier[i] * (cpp.outer_product_sum(Q[cur_perm[k]], Q[k]))
-            #B+= sintheta[i]*cpp.cross(Q[k], Q[cur_perm[k]])
 
     return A, B.T  # Return B as a column vector
 
@@ -154,13 +149,9 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B):
     return csm
 
 
-def calc_ref_plane(molecule, perm, op_order, op_type):
-
-    size = len(molecule.atoms)
+def pre_caching(op_type, op_order):
     is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
-
-    # pre-caching:
     multiplicand= 2 * math.pi /op_order
     costheta = np.zeros(op_order)
     sintheta = np.zeros(op_order)
@@ -175,20 +166,32 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
             else:
                 multiplier[i] = 1 - costheta[i]
 
+    return sintheta, costheta, multiplier, is_zero_angle
+
+def perm_caching(perm, size, op_order):
     perms = np.empty([op_order, size], dtype=np.int)
     perms[0] = [i for i in range(size)]
     for i in range(1, op_order):
         perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
+    return perms
+
+
+
+def calc_ref_plane(molecule, perm, op_order, op_type):
+    size = len(molecule.atoms)
+
+    # pre-caching:
+    #a variety of values dependent on i in loop 1 to op_Order are calculated in advance
+    #and reused in the several such loops in the code
+    sintheta, costheta, multiplier, is_zero_angle= pre_caching(op_type, op_order)
+    perms = perm_caching(perm, size, op_order)
+
 
     # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
     # - described on the first page of the paper
     Q = molecule.Q
 
     A, B = calc_A_B(op_order, multiplier, sintheta, perms, size, Q)
-
-    # logger.debug("Computed matrix A is:")
-    # logger.debug(A)
-    # logger.debug("Computed vector B is: %s" % B)
 
     # lambdas - list of 3 eigenvalues of A
     # m - list of 3 eigenvectors of A
@@ -203,14 +206,8 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     # logger.debug("mTb^2: %s" % m_t_B_2)
 
 
-
     coeffs = build_polynomial(lambdas, m_t_B_2)
     roots = cpp.PolynomialRoots(coeffs)
-    # polynomial = build_polynomial()
-    # roots = polynomial.roots()
-
-    # logger.debug('roots: ')
-    # logger.debug(roots)
 
     # lambda_max is a real root of the polynomial equation
     # according to the description above the formula (13) in the paper
