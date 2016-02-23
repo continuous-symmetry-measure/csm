@@ -37,6 +37,7 @@ def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
     return A, B.T  # Return B as a column vector
 
 
+
 def build_polynomial(lambdas, m_t_B_2):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
@@ -195,7 +196,11 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
 
     # lambdas - list of 3 eigenvalues of A
     # m - list of 3 eigenvectors of A
-    lambdas, m = np.linalg.eig(A)
+    m = np.zeros((3, 3,), dtype=np.float64, order="c")
+    lambdas = np.zeros((3,), dtype=np.float64, order="c")
+    #lambdas, m = np.linalg.eig(A)
+    cpp.get_eigen(A, m, lambdas)
+
     # compute square of scalar multiplications of eigen vectors with B
     m_t_B= m.T@B
     m_t_B_2 = np.power(m_t_B, 2)

@@ -15,7 +15,7 @@
 #include <string>
 #include "options.h"
 #include "Molecule.h"
-
+#include "math_wrappers.h"
 
 // A representation of one atom in Python
 struct python_atom
@@ -122,14 +122,13 @@ csm_calculation_data ComputeLocalCSM (csm_calculation_data input);
 std::vector< std::vector<int> > GetPermuterPermutations(int size, int groupSize, bool addGroupsOfTwo);
 std::vector< std::vector<int> > GetMoleculePermutations();
 
-void cross_add(double * pa, double * pb, double * out, double sintheta);
-void calc_B(double * B, int size, double Q[][3], double Q_[][3], double sintheta);
-void print_array(double * pa, int size);
-void print_matrix(double **pa, int size);
-
-
 csm_calculation_data CalcRefPlane (csm_calculation_data input);
 csm_calculation_data CreateSymmetricStructure (csm_calculation_data input);
+
+
+void cross_add(double * pa, double * pb, double * out, double sintheta);
+void calc_B(double * B, int size, double Q[][3], double Q_[][3], double sintheta);
+void GetEigens(const double matrix[3][3], double vecs[3][3], double vals[3]);
 
 extern "C" 
 {

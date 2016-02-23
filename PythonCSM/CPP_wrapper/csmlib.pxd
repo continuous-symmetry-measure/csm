@@ -61,4 +61,6 @@ cdef extern from "csmlib.h":
     #the new code (needs to be imported to its own library eventually)
     int rpoly(double *coeffs, int degree, double *zeror, double *zeroi);
     void calc_B(double * B, int size, double Q[][3], double Q_[][3], double sintheta);
+    void GetEigens(const double matrix[3][3], double vecs[3][3], double vals[3]);
+
 
