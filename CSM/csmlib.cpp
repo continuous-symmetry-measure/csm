@@ -349,3 +349,35 @@ csm_calculation_data CreateSymmetricStructure (csm_calculation_data input) {
 	csm_calculation_data output = cpp_input.get_csm_data();
 	return output;
 }
+
+void cross_add(double * pa, double * pb, double * out, double sintheta)
+{
+	out[0] += sintheta* (pa[1] * pb[2] - pa[2] * pb[1]);
+	out[1] += sintheta* (pa[2] * pb[0] - pa[0] * pb[2]);
+	out[2] += sintheta* (pa[0] * pb[1] - pa[1] * pb[0]);
+}
+
+void calc_B(double * B, int size, double Q[][3], double Q_[][3], double sintheta)
+{
+	for (int k = 0; k < size; k++)
+	{
+		cross_add (Q[k], Q_[k], B, sintheta);
+	}
+
+}
+
+void print_array(double * pa, int size)
+{
+	for (int k = 0; k < size; k++)
+	{
+		cout << pa[size];
+	}
+}
+
+void print_matrix(double ** pa, int size)
+{
+	for (int k = 0; k < size; k++)
+	{
+		cout << pa[size][size];
+	}
+}

@@ -221,14 +221,14 @@ class Molecule:
     def _calc_Q(self):
         def col_vec(list):
             a = np.array(list)
-            #a = a.reshape((3, 1))
+            a = a.reshape((3, 1))
             return a
 
         # Q = np.zeros((len(self.atoms), 3), dtype=np.float64)
         # for i, atom in enumerate(self.atoms):
         #    Q[i, :] = atom.pos
         # return Q
-        return [col_vec(atom.pos) for atom in self.atoms]
+        return np.array([np.array((atom.pos),  dtype=np.float64, order="c") for atom in self.atoms],  dtype=np.float64, order="c")
 
     def de_normalize(self):
         coords = [atom.pos for atom in self._atoms]

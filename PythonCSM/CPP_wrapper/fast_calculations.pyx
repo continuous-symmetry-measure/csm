@@ -13,6 +13,9 @@ ITYPE = np.int
 ctypedef np.int_t ITYPE_t
 
 cimport cython
+
+
+
 @cython.boundscheck(False)
 def cross(np.ndarray[DTYPE_t, ndim=1] a, np.ndarray[DTYPE_t, ndim=1] b):
     cdef double *pa = <double *>a.data
@@ -20,6 +23,105 @@ def cross(np.ndarray[DTYPE_t, ndim=1] a, np.ndarray[DTYPE_t, ndim=1] b):
     return np.array([pa[1] * pb[2] - pa[2] * pb[1],
                      pa[2] * pb[0] - pa[0] * pb[2],
                      pa[0] * pb[1] - pa[1] * pb[0]])
+
+#@cython.boundscheck(False)
+cdef inline fast_cross_add(double sintheta, np.ndarray[DTYPE_t, ndim=1] a, np.ndarray[DTYPE_t, ndim=1] b, np.ndarray[DTYPE_t, ndim=1] o):
+    cdef double *pa = <double *>a.data
+    cdef double *pb = <double *>b.data
+    cdef double *out = <double *>o.data
+    csmlib.cross_add(pa, pb, out, sintheta)
+    #out[0]+= sintheta* (pa[1] * pb[2] - pa[2] * pb[1])
+    #out[1]+= sintheta* (pa[2] * pb[0] - pa[0] * pb[2])
+    #out[2]+= sintheta* (pa[0] * pb[1] - pa[1] * pb[0])
+
+cdef _calc_B(np.ndarray[DTYPE_t, ndim=1, mode="c"] B, int size, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q_, double sintheta):
+    #cdef double *pB = <double *>B.data
+    #cdef double **pQ = <double *[3]>Q.data
+    #cdef double *[3]pQ_ = <double *[3]>Q_.data
+    csmlib.calc_B(<double *>B.data, size, <double (*)[3]>Q.data, <double (*)[3]>Q_.data, sintheta)
+
+
+@cython.boundscheck(False)
+def calc_B(np.ndarray[DTYPE_t, ndim=1, mode="c"] B not None, int size, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q not None, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q_ not None, double sintheta):
+    #csmlib.print_array(B.data, 3)
+    #csmlib.calc_B(<double*>B.data, size, <double**>Q.data, <double**>Q_.data, sintheta)
+    _calc_B(B, size, Q, Q_, sintheta)
+    #cdef int k
+    #for k in range(size):
+    #    fast_cross_add(sintheta, Q[k], Q_[k], B)
+
+
+    #csmlib.calc_B(out, size, q, qq, sintheta)
+
+def old_calc_B(np.ndarray[DTYPE_t, ndim=1] B, int size, np.ndarray[DTYPE_t, ndim=2]Q, np.ndarray[ITYPE_t, ndim=1]cur_perm, double sintheta):
+    csmlib.testFunc(size)
+    print("passed testfunc")
+    cdef int k
+    for k in range(size):
+        B+=sintheta*cross(Q[k], Q[cur_perm[k]])
+
+''''
+cdef fast_cross_add(np.ndarray[DTYPE_t, ndim=1] a, np.ndarray[DTYPE_t, ndim=1] b, np.ndarray[DTYPE_t, ndim=1] B):
+    cdef double *pa = <double *>a.data
+    cdef double *pb = <double *>b.data
+    cdef double *out = <double *>o.data
+    out[0] += pa[1] * pb[2] - pa[2] * pb[1]
+    out[1] +=pa[2] * pb[0] - pa[0] * pb[2]
+    out[2] +=pa[0] * pb[1] - pa[1] * pb[0]
+@cython.boundscheck(False)
+
+'''
+
+def outer_product_sum(np.ndarray[DTYPE_t, ndim=1] a_in, np.ndarray[DTYPE_t, ndim=1] b_in):
+    '''
+    :param a: vector of length 3
+    :param b: vector of length 3
+    :return: 3x3 matrix of (a@b's outer product + b@a's outer product)
+    '''
+    cdef double *a = <double *>a_in.data
+    cdef double *b = <double *>b_in.data
+    return np.array([[a[0]*b[0]+a[0]*b[0], a[0]*b[1]+a[1]*b[0], a[0] * b[2]+a[2] * b[0]],
+                     [a[1]*b[0]+a[0]*b[1], a[1]*b[1]+a[1]*b[1], a[1] * b[2]+a[2] * b[1]],
+                     [a[2]*b[0]+a[0]*b[2], a[2]*b[1]+a[1]*b[2], a[2] * b[2]+a[2] * b[2]]])
+
+
+def inner_product(np.ndarray[DTYPE_t, ndim=1] a_in, np.ndarray[DTYPE_t, ndim=1] b_in):
+    cdef double *a = <double *>a_in.data
+    cdef double *b = <double *>b_in.data
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+def matrix_by_vector( mat_in,  v_in):
+    #cdef double **mat = <double **>mat_in.data
+    #cdef double *v = <double *>v_in.data
+    mat=mat_in
+    v=v_in
+    x= mat[0][0]*v[0] + mat[0][1]*v[1] + mat[0][2]*v[2]
+    y= mat[1][0]*v[0] + mat[1][1]*v[1] + mat[1][2]*v[2]
+    z= mat[2][0]*v[0] + mat[2][1]*v[1] + mat[2][2]*v[2]
+    return np.array([x,y,z])
+
+def add_matrices(np.ndarray[DTYPE_t, ndim=2] m_in, np.ndarray[DTYPE_t, ndim=2] n_in):
+    cdef double **m = <double **>m_in.data
+    cdef double **n = <double **>n_in.data
+    m_in= np.array([[m[0][0]+n[0][0], m[0][1]+n[0][1], m[0][2]+n[0][2]], [m[1][0]+n[1][0], m[1][1]+n[1][1], m[1][2]+n[0][2]], [m[2][0]+n[2][0], m[2][1]+n[2][1], m[2][2]+n[2][2]]])
+
+def add_vectors(np.ndarray[DTYPE_t, ndim=1] a_in_out, np.ndarray[DTYPE_t, ndim=1] b_in):
+    '''
+    :param a_in_out: one of the vectors to be added, and also received the result
+    :param b_in: the vector to be added to A
+    :return: a_in_out + b_in
+    '''
+    cdef double *a = <double *>a_in_out.data
+    cdef double *b = <double *>b_in.data
+    a_in_out= np.array([a[0]+b[0], a[1]+b[1], a[2]+b[2]])
+
+def multiply_matrix_by_scalar(m,s):
+    hi=1
+
+
+def mutiply_vector_by_scalar(np.ndarray[DTYPE_t, ndim=1] v, double s):
+    cdef double *a = <double *>v.data
+    return np.array([s*a[0], s*a[1], s*a[2]])
 
 def PolynomialRoots(coeffs):
     cdef double coeffs_v[7]

@@ -8,7 +8,6 @@ import logging
 import numpy as np
 from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
-# from CPP_wrapper.fast_calculations import cross
 from CPP_wrapper import fast_calculations as cpp
 
 from numpy.polynomial import Polynomial
@@ -16,40 +15,12 @@ from numpy.polynomial import Polynomial
 
 # logger = logging.getLogger("csm")
 
-def python_cross(a, b):
-    return np.array([a[1] * b[2] - a[2] * b[1], a[2] * b[0]- a[0] * b[2],
-                     a[0] * b[1] - a[1] * b[0]])
-    return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
-                     a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
-
-def python_outer_product(a,b):
-    '''
-    :param a: vector of length 3
-    :param b: vector of length 3
-    :return: 3x3 matrix of a@b's outer product
-    '''
-    return np.array([[a[0]*b[0], a[0]*b[1], a[0] * b[2]], [a[1]*b[0], a[1]*b[1], a[1] * b[2]], [a[2]*b[0], a[2]*b[1], a[2] * b[2]]])
-    return np.array([[a[0][0]*b[0][0], a[0][0]*b[1][0], a[0][0] * b[2][0]], [a[1][0]*b[0][0], a[1][0]*b[1][0], a[1][0] * b[2][0]], [a[2][0]*b[0][0], a[2][0]*b[1][0], a[2][0] * b[2][0]]])
-
-def python_inner_product(a,b):
-    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
-    return a[0][0]*b[0][0] + a[1][0]*b[1][0] + a[2][0]*b[2][0]
-
-def python_matrix_by_vector(mat,v):
-    x= mat[0][0]*v[0] + mat[0][1]*v[1] + mat[0][2]*v[2]
-    y= mat[1][0]*v[0] + mat[1][1]*v[1] + mat[1][2]*v[2]
-    z= mat[2][0]*v[0] + mat[2][1]*v[1] + mat[2][2]*v[2]
-    #x= mat[0][0]*v[0][0] + mat[0][1]*v[1][0] + mat[0][2]*v[2][0]
-    #y= mat[1][0]*v[0][0] + mat[1][1]*v[1][0] + mat[1][2]*v[2][0]
-    #z= mat[2][0]*v[0][0] + mat[2][1]*v[1][0] + mat[2][2]*v[2][0]
-    return np.array([x,y,z])
-
 def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
     # A is calculated according to formula (17) in the paper
     # B is calculated according to formula (12) in the paper
 
     A = np.zeros((3, 3,))
-    B = np.zeros((1, 3))  # Row vector for now
+    B = np.zeros((3,), dtype=np.float64, order="c")  # Row vector for now
 
     # compute matrices according to current perm and its powers (the identity does not contribute anyway)
     for i in range(1, op_order):
@@ -57,13 +28,16 @@ def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
         cur_perm = perms[i]
 
         # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
-        # Q_ = [Q[p] for p in cur_perm]  # Q'
+        Q_ = np.array([  Q[p] for p in cur_perm  ],  dtype=np.float64, order="c")  # Q'
+        # A_intermediate is calculated according to the formula (5) in the paper, as follows:
+        # the cross product of Qi, Q_i plus the cross product of Q_i, Qi, summed.
+        A+=multiplier[i] * (Q.T.dot(Q_)+Q_.T.dot(Q))
 
+        cpp.calc_B(B, size, Q, Q_, sintheta[i])
         # A_intermediate is calculated according to the formula (5) in the paper
-        for k in range(size):
-            #A = A + multiplier[i] * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
-            A= A + multiplier[i] * (python_outer_product(Q[cur_perm[k]], Q[k]) + python_outer_product(Q[k], Q[cur_perm[k]]))
-            B = B + sintheta[i] * np.cross(Q[k], Q[cur_perm[k]])
+        #for k in range(size):
+            #A+= multiplier[i] * (cpp.outer_product_sum(Q[cur_perm[k]], Q[k]))
+            #B+= sintheta[i]*cpp.cross(Q[k], Q[cur_perm[k]])
 
     return A, B.T  # Return B as a column vector
 
@@ -159,10 +133,14 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B):
         # i'th power of permutation
         cur_perm = perms[i]
 
-        # Q_ = [Q[cur_perm[i]] for i in range(size)]
+        Q_ = np.array([  Q[p] for p in cur_perm  ])
 
-        for k in range(size):
-            dists += python_inner_product( Q[k], Q[cur_perm[k]])
+        #sum of the inner products of Q an Q_
+        dists=np.einsum('ij,ij', Q, Q_)
+        #dists=np.dot(Q.flat,Q_.flat)
+
+        #for k in range(size):
+        #    dists += cpp.inner_product( Q[k], Q[cur_perm[k]])
         csm += costheta[i] * dists
 
     # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
@@ -177,6 +155,7 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B):
 
 
 def calc_ref_plane(molecule, perm, op_order, op_type):
+
     size = len(molecule.atoms)
     is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
@@ -216,7 +195,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     lambdas, m = np.linalg.eig(A)
     # compute square of scalar multiplications of eigen vectors with B
     #m_t_B = m.T @ B
-    m_t_B=python_matrix_by_vector(m.T, B)
+    m_t_B=cpp.matrix_by_vector(m.T, B)
     m_t_B_2 = np.power(m_t_B, 2)
     #m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
 

@@ -57,3 +57,8 @@ cdef extern from "csmlib.h":
     csm_calculation_data CalcRefPlane (csm_calculation_data input) except +;
     csm_calculation_data CreateSymmetricStructure (csm_calculation_data input) except +;
     int rpoly(double *coeffs, int degree, double *zeror, double *zeroi);
+
+    void calc_B(double * B, int size, double Q[][3], double Q_[][3], double sintheta);
+    void cross_add(double * pa, double * pb, double * out, double sintheta);
+    void print_array(double * pa, int size);
+    void print_matrix(double ** pa, int size);

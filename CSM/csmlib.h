@@ -122,12 +122,18 @@ csm_calculation_data ComputeLocalCSM (csm_calculation_data input);
 std::vector< std::vector<int> > GetPermuterPermutations(int size, int groupSize, bool addGroupsOfTwo);
 std::vector< std::vector<int> > GetMoleculePermutations();
 
+void cross_add(double * pa, double * pb, double * out, double sintheta);
+void calc_B(double * B, int size, double Q[][3], double Q_[][3], double sintheta);
+void print_array(double * pa, int size);
+void print_matrix(double **pa, int size);
+
+
 csm_calculation_data CalcRefPlane (csm_calculation_data input);
 csm_calculation_data CreateSymmetricStructure (csm_calculation_data input);
 
 extern "C" 
 {
-	int rpoly(double *op, int degree, double *zeror, double *zeroi);
+	int rpoly(double *op, int degree, double *zerodor, double *zeroi);
 }
 
 #endif
