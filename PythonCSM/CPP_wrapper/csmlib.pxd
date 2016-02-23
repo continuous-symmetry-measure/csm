@@ -46,19 +46,19 @@ cdef extern from "csmlib.h":
         int opOrder;
 
 cdef extern from "csmlib.h":
+
+    #old code we can get rid of
     void SetCSMOptions(python_cpp_bridge options) except +;
     vector[vector[int]] GetPermuterPermutations(int size, int groupSize, bool addGroupsOfTwo);
     vector[vector[int]] GetMoleculePermutations();
-
     csm_calculation_data RunSinglePerm(csm_calculation_data input) except +;
     csm_calculation_data FindBestPermUsingDir (csm_calculation_data input) except +;
     csm_calculation_data FindBestPerm (csm_calculation_data input) except +;
     csm_calculation_data ComputeLocalCSM (csm_calculation_data input) except +;
     csm_calculation_data CalcRefPlane (csm_calculation_data input) except +;
     csm_calculation_data CreateSymmetricStructure (csm_calculation_data input) except +;
-    int rpoly(double *coeffs, int degree, double *zeror, double *zeroi);
 
+    #the new code (needs to be imported to its own library eventually)
+    int rpoly(double *coeffs, int degree, double *zeror, double *zeroi);
     void calc_B(double * B, int size, double Q[][3], double Q_[][3], double sintheta);
-    void cross_add(double * pa, double * pb, double * out, double sintheta);
-    void print_array(double * pa, int size);
-    void print_matrix(double ** pa, int size);
+

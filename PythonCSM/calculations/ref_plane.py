@@ -197,8 +197,7 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     # m - list of 3 eigenvectors of A
     lambdas, m = np.linalg.eig(A)
     # compute square of scalar multiplications of eigen vectors with B
-    #m_t_B = m.T @ B
-    m_t_B=cpp.matrix_by_vector(m.T, B)
+    m_t_B= m.T@B
     m_t_B_2 = np.power(m_t_B, 2)
     #m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
 
