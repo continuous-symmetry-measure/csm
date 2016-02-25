@@ -12,8 +12,6 @@
 #include <sstream>
 #include <iomanip>
 #include "groupPermuter.h"
-#include <Eigen/Dense>
-#include <Eigen/Eigenvalues>
 
 using namespace std;
 
@@ -368,19 +366,18 @@ void calc_B(double * B, int size, double Q[][3], double Q_[][3], double sintheta
 
 }
 
-void GetEigens(const double matrix[3][3], double vecs[3][3], double vals[3])
+void print_array(double * pa, int size)
 {
-	Eigen::Matrix3d m;
-	for (int i = 0; i < 3; i++)
-		for (int j = 0; j < 3; j++)
-			m(i, j) = matrix[i][j];
-
-	Eigen::EigenSolver<Eigen::Matrix3d> solver(m, true);
-
-	for (int i = 0; i < 3; i++)
+	for (int k = 0; k < size; k++)
 	{
-		vals[i] = solver.eigenvalues()[i].real();
-		for (int j = 0; j < 3; j++)
-			vecs[i][j] = solver.eigenvectors().col(i)[j].real();
+		cout << pa[size];
+	}
+}
+
+void print_matrix(double ** pa, int size)
+{
+	for (int k = 0; k < size; k++)
+	{
+		cout << pa[size][size];
 	}
 }
