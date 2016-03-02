@@ -5,7 +5,7 @@ from calculations.constants import MINDOUBLE, MAXDOUBLE
 from calculations.ref_plane import calc_ref_plane
 from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
-from calculations.permuters import MoleculePermuter, SinglePermPermuter, MoleculeLegalPermuter, OldMoleculeLegalPermuter, is_legal_perm
+from calculations.permuters import SinglePermPermuter, MoleculeLegalPermuter
 import logging
 from recordclass import recordclass
 
@@ -92,18 +92,18 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     else:
         permuter = permuter_class(molecule, op_order, op_type == 'SN')
 
-    for perm in permuter.permute():
-        csm, dir = calc_ref_plane(molecule, perm, op_order, op_type)
+    for pip in permuter.permute():
+        csm, dir = calc_ref_plane(molecule, pip.perm, op_order, op_type)
         if csm_state_tracer_func:
             traced_state.csm = csm
-            traced_state.perm = perm
+            traced_state.perm = pip.perm
             traced_state.dir = dir
             csm_state_tracer_func(traced_state)
 
         if csm < best_csm.csm:
             best_csm.csm = csm
             best_csm.dir = dir
-            best_csm.perm = perm[:]
+            best_csm.perm = pip.perm[:]
             # TODO: Write permutations while looping
 
     if best_csm.csm == MAXDOUBLE:

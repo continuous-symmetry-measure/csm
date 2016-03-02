@@ -8,8 +8,6 @@ import logging
 import numpy as np
 from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
-# from CPP_wrapper.fast_calculations import cross
-
 from numpy.polynomial import Polynomial
 
 
