@@ -90,10 +90,11 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
         permuter = SinglePermPermuter(perm)
         logger.debug("SINGLE PERM")
     else:
-        permuter = permuter_class(molecule, op_order, op_type == 'SN')
+        permuter = permuter_class(molecule, op_order, op_type)
 
     for pip in permuter.permute():
-        csm, dir = calc_ref_plane(molecule, pip.perm, op_order, op_type)
+        #print("A",pip.A,"B", pip.B)
+        csm, dir = calc_ref_plane(molecule, pip, op_order, op_type)
         if csm_state_tracer_func:
             traced_state.csm = csm
             traced_state.perm = pip.perm

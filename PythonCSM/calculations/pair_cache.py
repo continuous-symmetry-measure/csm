@@ -4,7 +4,7 @@ def cross_product(a, b):
     :param b: length 3 vector
     :return: length 3 vector, cross product of a and b
     '''
-    out=[3]
+    out=[0,0,0]
     out[0] = a[1] * b[2] - a[2] * b[1]
     out[1] = a[2] * b[0] - a[0] * b[2]
     out[2] = a[0] * b[1] - a[1] * b[0]
@@ -25,7 +25,7 @@ def outer_product_sum(a, b):
     :param b: length 3 vector
     :return: 3 x3 matrix, the outer sum of a and b plus the outer sum of b and a
     '''
-    out=[3][3]
+    out=[[0,0,0],[0,0,0],[0,0,0]]
     for i in range(3):
         for j in range(3):
             out[i][j]=a[i]*b[j] + b[i]*a[j]
@@ -51,14 +51,14 @@ class PairFacts:
 
 
 class PairCache:
-    def __init__(self, molecule):
-        self.mol=molecule
+    def __init__(self,mol):
+        self.mol=mol
         self.pairfacts={}
 
     def calc_i_j(self, i, j):
-        cross= cross_product(i,j)
-        inner=inner_product(i,j)
-        outer=outer_product_sum(i,j)
+        cross= cross_product(self.mol.Q[i],self.mol.Q[j])
+        inner=inner_product(self.mol.Q[i],self.mol.Q[j])
+        outer=outer_product_sum(self.mol.Q[i],self.mol.Q[j])
         self.pairfacts[(i,j)]=PairFacts(inner, outer, cross)
 
     def inner_product(self, i,j):
@@ -67,7 +67,7 @@ class PairCache:
         self.calc_i_j(i,j,)
         return self.pairfacts[(i,j)].inner
 
-    def outer_product(self, i,j):
+    def outer_product_sum(self, i,j):
         if (i,j) in self.pairfacts:
             return self.pairfacts[(i,j)].outer
         self.calc_i_j(i,j,)

@@ -154,7 +154,7 @@ def calculate_csm(op_order, perms, size, Q, theta, lambda_max, m_max_B):
     return csm
 
 
-def calc_ref_plane(molecule, perm, op_order, op_type):
+def calc_ref_plane(molecule, pip, op_order, op_type):
     size = len(molecule.atoms)
     is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
@@ -165,16 +165,18 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
         for i in range(1, op_order):
             theta[i] = 2 * math.pi * i / op_order
 
-    perms = np.empty([op_order, size], dtype=np.int)
-    perms[0] = [i for i in range(size)]
-    for i in range(1, op_order):
-        perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
+    #perms = np.empty([op_order, size], dtype=np.int)
+    #perms[0] = [i for i in range(size)]
+    #for i in range(1, op_order):
+    #    perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
+    perms=pip.perms
 
     # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
     # - described on the first page of the paper
     Q = molecule.Q
 
     A, B = calc_A_B(op_order, is_improper, theta, perms, size, Q)
+    print("A\n", A, "\nB\n", B)
 
     # logger.debug("Computed matrix A is:")
     # logger.debug(A)
