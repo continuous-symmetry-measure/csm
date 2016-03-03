@@ -18,7 +18,7 @@ def cross(a, b):
                      a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
 
 
-def calc_A_B(op_order, is_improper, theta, perms, size, Q):
+def calc_A_B(op_order, sintheta, multiplier, perms, size, Q):
     # A is calculated according to formula (17) in the paper
     # B is calculated according to formula (12) in the paper
 
@@ -27,10 +27,7 @@ def calc_A_B(op_order, is_improper, theta, perms, size, Q):
 
     # compute matrices according to current perm and its powers (the identity does not contribute anyway)
     for i in range(1, op_order):
-        if is_improper and (i % 2):
-            multiplier = -1 - math.cos(theta[i])
-        else:
-            multiplier = 1 - math.cos(theta[i])
+
 
         # The i'th power of the permutation
         cur_perm = perms[i]
@@ -40,8 +37,8 @@ def calc_A_B(op_order, is_improper, theta, perms, size, Q):
 
         # A_intermediate is calculated according to the formula (5) in the paper
         for k in range(size):
-            A = A + multiplier * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
-            B = B + math.sin(theta[i]) * cross(Q[k], Q[cur_perm[k]])
+            A = A + multiplier[i] * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
+            B = B + sintheta[i] * cross(Q[k], Q[cur_perm[k]])
 
     return A, B.T  # Return B as a column vector
 
@@ -123,7 +120,7 @@ def calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B, B):
     return dir, m_max_B
 
 
-def calculate_csm(op_order, perms, size, Q, theta, lambda_max, m_max_B):
+def calculate_csm(op_order, p, size, Q, costheta, lambda_max, m_max_B, cache):
     # initialize identity permutation
 
     # CSM is computed according to formula (15) in the paper with some changes according to CPP code:
@@ -133,15 +130,16 @@ def calculate_csm(op_order, perms, size, Q, theta, lambda_max, m_max_B):
     csm = 1.0
     for i in range(1, op_order):
         dists = 0.0
-
+        #dists=cache.inner_sum()
         # i'th power of permutation
-        cur_perm = perms[i]
+        cur_perm = p.perms[i]
 
         # Q_ = [Q[cur_perm[i]] for i in range(size)]
 
         for k in range(size):
-            dists += Q[k].T @ Q[cur_perm[k]]
-        csm += math.cos(theta[i]) * dists
+            #dists += Q[k].T @ Q[cur_perm[k]]
+            dists+= cache.inner_product(k, cur_perm[k])
+        csm += costheta[i] * dists
 
     # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
     # logger.debug("dir: %lf %lf %lf" % (dir[0], dir[1], dir[2]))
@@ -154,29 +152,41 @@ def calculate_csm(op_order, perms, size, Q, theta, lambda_max, m_max_B):
     return csm
 
 
-def calc_ref_plane(molecule, pip, op_order, op_type):
+def calc_ref_plane(molecule, p, op_order, op_type):
     size = len(molecule.atoms)
     is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
 
     # pre-caching:
-    theta = np.zeros(op_order)
-    if not is_zero_angle:
-        for i in range(1, op_order):
-            theta[i] = 2 * math.pi * i / op_order
+    sintheta = np.zeros(op_order)
+    costheta = np.zeros(op_order)
+    multiplier = np.zeros(op_order)
+
+    for i in range(1, op_order):
+        if not is_zero_angle:
+            theta = 2 * math.pi * i / op_order
+        cos=math.cos(theta)
+        costheta[i]=cos
+        sintheta[i]=math.sin(theta)
+        if is_improper and (i % 2):
+            multiplier[i] = -1 - cos
+        else:
+            multiplier[i] = 1 - cos
+
 
     #perms = np.empty([op_order, size], dtype=np.int)
     #perms[0] = [i for i in range(size)]
     #for i in range(1, op_order):
-    #    perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
-    perms=pip.perms
+    #    perms[i] = [p.perm[perms[i - 1][j]] for j in range(size)]
 
+    perms=p.perms
+    #print("########perms#########\n", perms)
     # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
     # - described on the first page of the paper
     Q = molecule.Q
 
-    A, B = calc_A_B(op_order, is_improper, theta, perms, size, Q)
-    print("A\n", A, "\nB\n", B)
+    A, B = calc_A_B(op_order, sintheta, multiplier, perms, size, Q)
+    #A,B=p.A, p.B
 
     # logger.debug("Computed matrix A is:")
     # logger.debug(A)
@@ -214,6 +224,6 @@ def calc_ref_plane(molecule, pip, op_order, op_type):
 
     dir, m_max_B = calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B,B)
 
-    csm = calculate_csm(op_order, perms, size, Q, theta, lambda_max, m_max_B)
+    csm = calculate_csm(op_order, p, size, Q, costheta, lambda_max, m_max_B, molecule.cache)
 
     return csm, dir

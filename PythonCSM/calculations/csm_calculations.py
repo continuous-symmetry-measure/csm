@@ -2,6 +2,7 @@ import csv
 import math
 import numpy as np
 from calculations.constants import MINDOUBLE, MAXDOUBLE
+from calculations.pair_cache import PairCache
 from calculations.ref_plane import calc_ref_plane
 from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
@@ -92,8 +93,10 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     else:
         permuter = permuter_class(molecule, op_order, op_type)
 
+    i=0
     for pip in permuter.permute():
-        #print("A",pip.A,"B", pip.B)
+        i+=1
+        #print("#######cached perms#######\n", pip.perms)
         csm, dir = calc_ref_plane(molecule, pip, op_order, op_type)
         if csm_state_tracer_func:
             traced_state.csm = csm
@@ -106,6 +109,9 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
             best_csm.dir = dir
             best_csm.perm = pip.perm[:]
             # TODO: Write permutations while looping
+
+        if i>20000:
+            break
 
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation

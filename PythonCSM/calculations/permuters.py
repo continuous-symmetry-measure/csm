@@ -47,6 +47,8 @@ class PQPermInProgress:
         self.p = [-1] * size
         self.q = [-1] * size
         self.permchecker = permchecker(mol)
+        self.A=1
+        self.B=1
 
     @property
     def perm(self):
@@ -65,17 +67,9 @@ class PQPermInProgress:
         self.p[origin] = -1
         self.q[destination] = -1
 
-    def close_cycle(self):
-        return 1
-
-    def unclose_cycle(self, ABPip):
+    def calc_partial_AB(self, group, cache):
         pass
 
-class ABPartial:
-    def __init__(self, ABPip):
-        self.perms=np.copy(ABPip.perms)
-        self.A=np.copy(ABPip.A)
-        self.B=np.copy(ABPip.B)
 
 class ABPermInProgress:
     def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker):
@@ -83,16 +77,13 @@ class ABPermInProgress:
         self.p = [-1] * size
         self.q = [-1] * size
         self.permchecker = permchecker(mol)
-        self.perms = np.empty([op_order, size], dtype=np.int)
+        self.perms = -1 * np.ones([op_order, size], dtype=np.int)
         self.perms[0] = [i for i in range(size)]  # identity perm
-        self.A = np.zeros((3, 3,))
-        self.B = np.zeros((3,1,))
         self.mol = mol
-        self.cache=PairCache(mol)
         self.op_order = op_order
+        self.A = np.zeros((3, 3,))
+        self.B = np.zeros((3, 1,))
         self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self.precalculate(op_type, op_order)
-        # these are all used to calculate intermediate values:
-        self._current_cycle = list()
 
     @property
     def perm(self):
@@ -103,7 +94,6 @@ class ABPermInProgress:
             assert self.p[origin] == -1 and self.q[destination] == -1
             self.p[origin] = destination
             self.q[destination] = origin
-            self._current_cycle.append(destination)  # check that it's this and not origin
             return True
         return False
 
@@ -111,66 +101,38 @@ class ABPermInProgress:
         assert self.p[origin] == destination and self.q[destination] == origin
         self.p[origin] = -1
         self.q[destination] = -1
-        self._current_cycle.pop()  # check that this is correct syntax
-
-    def close_cycle(self):
-        ABPip=ABPartial(self)
-        self.partial_calc_AB()
-        return ABPip
-
-    def unclose_cycle(self, ABPip):
-        self.perms=np.copy(ABPip.perms)
-        self.A=np.copy(ABPip.A)
-        self.B=np.copy(ABPip.B)
-        pass
 
     def precalculate(self, op_type, op_order):
         is_improper = op_type != 'CN'
         is_zero_angle = op_type == 'CS'
-        multiplicand = 2 * math.pi / op_order
-        costheta = np.zeros(op_order)
         sintheta = np.zeros(op_order)
+        costheta = np.zeros(op_order)
         multiplier = np.zeros(op_order)
-
         for i in range(1, op_order):
-            x = 0
             if not is_zero_angle:
-                x = multiplicand * i
-            costheta[i] = math.cos(x)
-            sintheta[i] = math.sin(x)
+                theta = 2 * math.pi * i / op_order
+            cos = math.cos(theta)
+            costheta[i] = cos
+            sintheta[i] = math.sin(theta)
             if is_improper and (i % 2):
-                multiplier[i] = -1 - costheta[i]
+                multiplier[i] = -1 - cos
             else:
-                multiplier[i] = 1 - costheta[i]
+                multiplier[i] = 1 - cos
         return sintheta, costheta, multiplier, is_zero_angle
 
-    def perm_cycle_cache(self):
-        cycle = self._current_cycle
-        # to permuate an array
-        # permuted_array[index]=array[perm[index]]
-        cycle_perm = [-1] * len(cycle)
-        basis_perm = cycle
-
-        for i in range(1, self.op_order):
-            j = 0  # the cycle indices go from 0 to len cycle
-            for index in (cycle):  # whereas the values within the cycle can be any number within size of molecule
-                cycle_perm[j] = basis_perm[cycle[j]]  # hence, the mini cycle is built from 0 to cycle size
-                self.perms[i][index] = basis_perm[cycle[j]]  # whereas the overall perm is built using the actual index value
-                j += 1
-            #yield cycle_perm  # this mini-cycle is used in calc_AB
-
-    def partial_calc_AB(self):
-        self.perm_cycle_cache()
-        #opi=1 #the index of the op order
-        #for cycle_perm in self.perm_cycle_cache():  # there are range(1, op_order) perms
-        #    for j in range(len(cycle_perm)):
-        #        k=cycle_perm[j] #the index we're dealing with
-        #        self._temp_A += self.multiplier[opi] * self.cache.outer_product_sum(k, cycle_perm[i])
-        #        self._temp_B += self.sintheta[opi] * self.cache.cross(k, cycle_perm[i])
-        #        opi += 1
-        #self.A += self._temp_A
-        #self.B += self._temp_B
-
+    def calc_partial_AB(self, group, cache):
+        '''
+        :param group: the group that was just permuted. repreents the indexes in self.perm that need to have A,B calculated
+        '''
+        # permuted_array=array[perm[i]]
+        # perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
+        for iop in range(1, self.op_order):
+            for i in range(len(group)):
+                index = group[i]
+                permuted_index=self.perms[iop - 1][self.p[index]]
+                self.perms[iop][index] = permuted_index
+                self.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
+                self.B+=self.sintheta[iop]*cache.cross(index, permuted_index)
 
 class MoleculeLegalPermuter:
     """
@@ -188,6 +150,7 @@ class MoleculeLegalPermuter:
         if op_type == 'SN':
             self._cycle_lengths = (1, 2, op_order)
         self._max_length = op_order
+        self.cache=mol.cache
 
     def _group_permuter(self, group, pip):
         """
@@ -212,16 +175,13 @@ class MoleculeLegalPermuter:
             if cycle_length in self._cycle_lengths:
                 # Yes it can, close it
                 if pip.switch(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
-                    ABPip=pip.close_cycle()
                     if not remainder:  # perm has been completed
                         yield pip
                     else:
                         # cycle has been completed, start a new cycle with remaining atoms
                         # As explained below, the first atom of the next cycle can be chosen arbitrarily
                         yield from recursive_permute(pip, remainder[0], remainder[0], 1, remainder[1:])
-                    pip.unclose_cycle(ABPip)
                     pip.unswitch(curr_atom, cycle_head)  # Undo the last switch
-
             # We now have a partial cycle of length cycle_length (we already checked it as a full cycle
             # above), now we try to extend it
             if cycle_length < self._max_length:
@@ -245,7 +205,12 @@ class MoleculeLegalPermuter:
                 yield pip
             else:
                 for perm in self._group_permuter(groups[0], pip):
+                    #saved_A=np.copy(perm.A)
+                    #saved_B=np.copy(perm.B)
+                    perm.calc_partial_AB(groups[0], self.cache)
                     yield from recursive_permute(groups[1:], perm)
+                    #perm.A=np.copy(saved_A)
+                    #perm.B=np.copy(saved_B)
 
         for pip in recursive_permute(self._groups, self._pip):
             yield pip

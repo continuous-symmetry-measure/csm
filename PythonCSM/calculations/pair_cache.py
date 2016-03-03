@@ -1,14 +1,15 @@
+import numpy as np
 def cross_product(a, b):
     '''
     :param a: length 3 vector
     :param b: length 3 vector
     :return: length 3 vector, cross product of a and b
     '''
-    out=[0,0,0]
+    out=np.zeros((3, 1,))
     out[0] = a[1] * b[2] - a[2] * b[1]
     out[1] = a[2] * b[0] - a[0] * b[2]
     out[2] = a[0] * b[1] - a[1] * b[0]
-    return out
+    return np.array(out)
 
 def inner_product(a,b):
     '''
@@ -25,11 +26,11 @@ def outer_product_sum(a, b):
     :param b: length 3 vector
     :return: 3 x3 matrix, the outer sum of a and b plus the outer sum of b and a
     '''
-    out=[[0,0,0],[0,0,0],[0,0,0]]
+    out= np.zeros((3, 3,))
     for i in range(3):
         for j in range(3):
             out[i][j]=a[i]*b[j] + b[i]*a[j]
-    return out
+    return np.array(out)
 
 
 class PairFacts:
@@ -54,6 +55,7 @@ class PairCache:
     def __init__(self,mol):
         self.mol=mol
         self.pairfacts={}
+        self._inner_sum=None
 
     def calc_i_j(self, i, j):
         cross= cross_product(self.mol.Q[i],self.mol.Q[j])
@@ -78,3 +80,11 @@ class PairCache:
             return self.pairfacts[(i,j)].cross
         self.calc_i_j(i,j,)
         return self.pairfacts[(i,j)].cross
+
+    def inner_sum(self):
+        if not self._inner_sum:
+            sum=0
+            for key in self.pairfacts:
+                sum+=self.pairfacts[key].inner
+            self._inner_sum=sum
+        return self._inner_sum

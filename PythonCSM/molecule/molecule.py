@@ -1,3 +1,4 @@
+from calculations.pair_cache import PairCache
 from openbabel import OBAtom, OBElementTable, OBAtomAtomIter, OBConversion, OBMol
 from molecule.atom import Atom, GetAtomicSymbol
 from molecule.normalizations import normalize_coords, de_normalize_coords
@@ -18,6 +19,7 @@ class Molecule:
         self._create_bondset()
         self._obmol = obmol
         self._Q=self.create_Q()
+        self.cache=PairCache(self)
 
     @property
     def Q(self):
