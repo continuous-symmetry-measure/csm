@@ -75,6 +75,62 @@ class PQPermInProgress:
     def precalculate(self, op_type, op_order):
         is_improper = op_type != 'CN'
         is_zero_angle = op_type == 'CS'
+        sintheta = np.zeros(op_order)
+        costheta = np.zeros(op_order)
+        multiplier = np.zeros(op_order)
+
+        for i in range(1, op_order):
+            if not is_zero_angle:
+                theta = 2 * math.pi * i / op_order
+            cos=math.cos(theta)
+            costheta[i]=cos
+            sintheta[i]=math.sin(theta)
+            if is_improper and (i % 2):
+                multiplier[i] = -1 - cos
+            else:
+                multiplier[i] = 1 - cos
+        return sintheta, costheta, multiplier, is_zero_angle
+
+class PermCachePIP:
+    def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker):
+        size = len(mol.atoms)
+        self.type="PC"
+        self.size=size
+        self.p = [-1] * size
+        self.q = [-1] * size
+        self.permchecker = permchecker(mol)
+        self.perms = -1 * np.ones([op_order, size], dtype=np.int)
+        self.perms[0] = [i for i in range(size)]  # identity perm
+        self.mol = mol
+        self.op_order = op_order
+        self.A = np.zeros((3, 3,))
+        self._B = np.zeros((3,), dtype=np.float64, order="c")
+        self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self.precalculate(op_type, op_order)
+
+    @property
+    def perm(self):
+        return self.p
+
+    @property
+    def B(self):
+        return self._B
+
+    def switch(self, origin, destination):
+        if self.permchecker.is_legal(self, origin, destination):
+            assert self.p[origin] == -1 and self.q[destination] == -1
+            self.p[origin] = destination
+            self.q[destination] = origin
+            return True
+        return False
+
+    def unswitch(self, origin, destination):
+        assert self.p[origin] == destination and self.q[destination] == origin
+        self.p[origin] = -1
+        self.q[destination] = -1
+
+    def precalculate(self, op_type, op_order):
+        is_improper = op_type != 'CN'
+        is_zero_angle = op_type == 'CS'
         # pre-caching:
         sintheta = np.zeros(op_order)
         costheta = np.zeros(op_order)
@@ -92,6 +148,19 @@ class PQPermInProgress:
                 multiplier[i] = 1 - cos
         return sintheta, costheta, multiplier, is_zero_angle
 
+    def calc_partial_AB(self, group, cache):
+        '''
+        :param group: the group that was just permuted. repreents the indexes in self.perm that need to have A,B calculated
+        '''
+        # permuted_array=array[perm[i]]
+        # perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
+        for iop in range(1, self.op_order):
+            for i in range(len(group)):
+                index = group[i]
+                permuted_index=self.perms[iop - 1][self.p[index]]
+                self.perms[iop][index] = permuted_index
+                #self.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
+                #self._B+=self.sintheta[iop]*cache.cross(index, permuted_index)
 
 class ABPermInProgress:
     def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker):
@@ -172,7 +241,7 @@ class MoleculeLegalPermuter:
     The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
     """
 
-    def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker, pipclass=PQPermInProgress):
+    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=PermCachePIP):
         self._perm_count = 0
         self._groups = mol.equivalence_classes
         self._pip = pipclass(mol, op_order, op_type, permchecker)

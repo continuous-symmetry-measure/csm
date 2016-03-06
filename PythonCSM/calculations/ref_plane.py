@@ -17,10 +17,10 @@ def cross(a, b):
     return np.array([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
                      a[0] * b[1] - a[1] * b[0]])
 
-def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
+def calc_A_B(mol,op_order, multiplier, sintheta, perms, size):
     # A is calculated according to formula (17) in the paper
     # B is calculated according to formula (12) in the paper
-
+    #Q = mol.Q
     A = np.zeros((3, 3,))
     B = np.zeros((3,), dtype=np.float64, order="c")  # Row vector for now
 
@@ -29,13 +29,14 @@ def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
         # The i'th power of the permutation
         cur_perm = perms[i]
         # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
-        Q_ = np.array([  Q[p] for p in cur_perm  ],  dtype=np.float64, order="c")  # Q'
+        #Q_ = np.array([  Q[p] for p in cur_perm  ],  dtype=np.float64, order="c")  # Q'
         # A_intermediate is calculated according to the formula (5) in the paper, as follows:
         # the cross product of Qi, Q_i plus the cross product of Q_i, Qi, summed.
-        A+=multiplier[i] * (Q.T.dot(Q_)+Q_.T.dot(Q))
+        #A+=multiplier[i] * (Q.T.dot(Q_)+Q_.T.dot(Q))
         #B is the sum of the cross products of Q[k] and Q_[k], times sintheta. it is calculated in c++
         for k in range(size):
-            B = B + sintheta[i] * cross(Q[k], Q[cur_perm[k]])
+            A += multiplier[i] * mol.cache.outer_product_sum(k, cur_perm[k])
+            B += sintheta[i] * mol.cache.cross(k, cur_perm[k])
 
     return A, B.T  # Return B as a column vector
 
@@ -149,55 +150,27 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B, cache
     #             (dir[0], dir[1], dir[2], csm))
     return csm
 
-def pre_caching(op_order, op_type, size, p, Q):
-    is_improper = op_type != 'CN'
-    is_zero_angle = op_type == 'CS'
-    # pre-caching:
-    sintheta = np.zeros(op_order)
-    costheta = np.zeros(op_order)
-    multiplier = np.zeros(op_order)
-
-    for i in range(1, op_order):
-        if not is_zero_angle:
-            theta = 2 * math.pi * i / op_order
-        cos=math.cos(theta)
-        costheta[i]=cos
-        sintheta[i]=math.sin(theta)
-        if is_improper and (i % 2):
-            multiplier[i] = -1 - cos
-        else:
-            multiplier[i] = 1 - cos
-
-
+def pre_caching(molecule, op_order, size, p):
     perm=p.perm
     perms = np.empty([op_order, size], dtype=np.int)
     perms[0] = [i for i in range(size)]
     for i in range(1, op_order):
         perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
-    #print("########perms#########\n", perms)
-    # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
-    # - described on the first page of the paper
-
-
-    A, B = calc_A_B(op_order, p.multiplier, p.sintheta, perms, size, Q)
-    return perms, A,B, is_zero_angle, costheta, sintheta
+    A, B = calc_A_B(molecule, op_order, p.multiplier, p.sintheta, perms, size)
+    return perms, A,B, p.is_zero_angle, p.costheta, p.sintheta
 
 def pre_caching_AB(p):
     return p.perms, p.A, p.B, p.is_zero_angle,p.costheta, p.sintheta
 
 def calc_ref_plane(molecule, p, op_order, op_type):
-    Q = molecule.Q
     size = len(molecule.atoms)
-
-    #the precalc option:
     if p.type=="AB":
         perms, A,B, is_zero_angle,costheta, sintheta = pre_caching_AB(p)
-        #print(A,B)
-        A, B = calc_A_B(op_order, p.multiplier, p.sintheta, p.perms, size, Q)
-        #print(A,B)
-    #the non precalc option:
+    elif p.type=="PC":
+        perms,is_zero_angle,costheta, sintheta=p.perms,p.is_zero_angle,p.costheta, p.sintheta
+        A, B = calc_A_B(molecule, op_order, p.multiplier, p.sintheta, perms, size)
     else:
-        perms, A,B, is_zero_angle,costheta, sintheta=pre_caching(op_order, op_type, size, p, Q)
+        perms, A,B, is_zero_angle,costheta, sintheta=pre_caching(molecule, op_order, size, p)
 
 
 
@@ -238,6 +211,6 @@ def calc_ref_plane(molecule, p, op_order, op_type):
 
     dir, m_max_B = calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B,B)
 
-    csm = calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B, molecule.cache)
+    csm = calculate_csm(op_order, perms, size, molecule.Q, costheta, lambda_max, m_max_B, molecule.cache)
 
     return csm, dir
