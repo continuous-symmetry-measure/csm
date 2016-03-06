@@ -221,11 +221,7 @@ class Molecule:
         self.create_Q()
 
     def create_Q(self):
-        def col_vec(list):
-            a = np.array(list)
-            a = a.reshape((3, 1))
-            return a
-        self._Q=[col_vec(atom.pos) for atom in self.atoms]
+        self._Q=np.array([np.array(atom.pos) for atom in self.atoms])
 
     def de_normalize(self):
         coords = [atom.pos for atom in self._atoms]

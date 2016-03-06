@@ -14,33 +14,31 @@ from numpy.polynomial import Polynomial
 # logger = logging.getLogger("csm")
 
 def cross(a, b):
-    return np.array([a[1][0] * b[2][0] - a[2][0] * b[1][0], a[2][0] * b[0][0] - a[0][0] * b[2][0],
-                     a[0][0] * b[1][0] - a[1][0] * b[0][0]]).T
+    return np.array([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
+                     a[0] * b[1] - a[1] * b[0]])
 
-
-def calc_A_B(op_order, sintheta, multiplier, perms, size, Q):
+def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
     # A is calculated according to formula (17) in the paper
     # B is calculated according to formula (12) in the paper
 
     A = np.zeros((3, 3,))
-    B = np.zeros((1, 3))  # Row vector for now
+    B = np.zeros((3,), dtype=np.float64, order="c")  # Row vector for now
 
     # compute matrices according to current perm and its powers (the identity does not contribute anyway)
     for i in range(1, op_order):
-
-
         # The i'th power of the permutation
         cur_perm = perms[i]
-
         # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
-        # Q_ = [Q[p] for p in cur_perm]  # Q'
-
-        # A_intermediate is calculated according to the formula (5) in the paper
+        Q_ = np.array([  Q[p] for p in cur_perm  ],  dtype=np.float64, order="c")  # Q'
+        # A_intermediate is calculated according to the formula (5) in the paper, as follows:
+        # the cross product of Qi, Q_i plus the cross product of Q_i, Qi, summed.
+        A+=multiplier[i] * (Q.T.dot(Q_)+Q_.T.dot(Q))
+        #B is the sum of the cross products of Q[k] and Q_[k], times sintheta. it is calculated in c++
         for k in range(size):
-            A = A + multiplier[i] * ((Q[cur_perm[k]] @ Q[k].T) + (Q[k] @ Q[cur_perm[k]].T))
             B = B + sintheta[i] * cross(Q[k], Q[cur_perm[k]])
 
     return A, B.T  # Return B as a column vector
+
 
 
 def build_polynomial(lambdas, m_t_B_2):
@@ -134,11 +132,11 @@ def calculate_csm(op_order, p, size, Q, costheta, lambda_max, m_max_B, cache):
         # i'th power of permutation
         cur_perm = p.perms[i]
 
-        # Q_ = [Q[cur_perm[i]] for i in range(size)]
-
+        #Q_ = [Q[cur_perm[i]] for i in range(size)]
+        #dists=np.einsum('ij,ij', Q, Q_)
         for k in range(size):
-            #dists += Q[k].T @ Q[cur_perm[k]]
-            dists+= cache.inner_product(k, cur_perm[k])
+            dists += Q[k].T @ Q[cur_perm[k]]
+            #dists+= cache.inner_product(k, cur_perm[k])
         csm += costheta[i] * dists
 
     # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
@@ -185,7 +183,7 @@ def calc_ref_plane(molecule, p, op_order, op_type):
     # - described on the first page of the paper
     Q = molecule.Q
 
-    A, B = calc_A_B(op_order, sintheta, multiplier, perms, size, Q)
+    A, B = calc_A_B(op_order, multiplier, sintheta, perms, size, Q)
     #A,B=p.A, p.B
 
     # logger.debug("Computed matrix A is:")
@@ -198,7 +196,7 @@ def calc_ref_plane(molecule, p, op_order, op_type):
     # compute square of scalar multiplications of eigen vectors with B
     m_t_B = m.T @ B
     m_t_B_2 = np.power(m_t_B, 2)
-    m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
+    #m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
 
     # logger.debug("mTb: %s" % m_t_B)
     # logger.debug("mTb^2: %s" % m_t_B_2)
