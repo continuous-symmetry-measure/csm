@@ -48,7 +48,7 @@ class PQPermInProgress:
         self.q = [-1] * size
         self.permchecker = permchecker(mol)
         self.A=1
-        self.B=1
+        self._B=1
         self.type="PQ"
         self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self.precalculate(op_type, op_order)
 
@@ -106,12 +106,16 @@ class ABPermInProgress:
         self.mol = mol
         self.op_order = op_order
         self.A = np.zeros((3, 3,))
-        self.B = np.zeros((3, 1,))
+        self._B = np.zeros((3,), dtype=np.float64, order="c")
         self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self.precalculate(op_type, op_order)
 
     @property
     def perm(self):
         return self.p
+
+    @property
+    def B(self):
+        return self._B
 
     def switch(self, origin, destination):
         if self.permchecker.is_legal(self, origin, destination):
@@ -158,7 +162,7 @@ class ABPermInProgress:
                 permuted_index=self.perms[iop - 1][self.p[index]]
                 self.perms[iop][index] = permuted_index
                 self.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
-                self.B+=self.sintheta[iop]*cache.cross(index, permuted_index)
+                self._B+=self.sintheta[iop]*cache.cross(index, permuted_index)
 
 class MoleculeLegalPermuter:
     """
@@ -168,7 +172,7 @@ class MoleculeLegalPermuter:
     The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
     """
 
-    def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker, pipclass=ABPermInProgress):
+    def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker, pipclass=PQPermInProgress):
         self._perm_count = 0
         self._groups = mol.equivalence_classes
         self._pip = pipclass(mol, op_order, op_type, permchecker)
@@ -232,12 +236,12 @@ class MoleculeLegalPermuter:
                 yield pip
             else:
                 for perm in self._group_permuter(groups[0], pip):
-                    #saved_A=np.copy(perm.A)
-                    #saved_B=np.copy(perm.B)
+                    saved_A=np.copy(perm.A)
+                    saved_B=np.copy(perm._B)
                     perm.calc_partial_AB(groups[0], self.cache)
                     yield from recursive_permute(groups[1:], perm)
-                    #perm.A=np.copy(saved_A)
-                    #perm.B=np.copy(saved_B)
+                    perm.A=np.copy(saved_A)
+                    perm._B=np.copy(saved_B)
 
         for pip in recursive_permute(self._groups, self._pip):
             yield pip

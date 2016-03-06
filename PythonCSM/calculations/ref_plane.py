@@ -150,25 +150,24 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B, cache
     return csm
 
 def pre_caching(op_order, op_type, size, p, Q):
-    #is_improper = op_type != 'CN'
-    #is_zero_angle = op_type == 'CS'
+    is_improper = op_type != 'CN'
+    is_zero_angle = op_type == 'CS'
     # pre-caching:
-    #sintheta = np.zeros(op_order)
-    #costheta = np.zeros(op_order)
-    #multiplier = np.zeros(op_order)
+    sintheta = np.zeros(op_order)
+    costheta = np.zeros(op_order)
+    multiplier = np.zeros(op_order)
 
-    #for i in range(1, op_order):
-     #   if not is_zero_angle:
-      #      theta = 2 * math.pi * i / op_order
-       # cos=math.cos(theta)
-       # costheta[i]=cos
-       # sintheta[i]=math.sin(theta)
-       # if is_improper and (i % 2):
-       #     multiplier[i] = -1 - cos
-       # else:
-       #     multiplier[i] = 1 - cos
+    for i in range(1, op_order):
+        if not is_zero_angle:
+            theta = 2 * math.pi * i / op_order
+        cos=math.cos(theta)
+        costheta[i]=cos
+        sintheta[i]=math.sin(theta)
+        if is_improper and (i % 2):
+            multiplier[i] = -1 - cos
+        else:
+            multiplier[i] = 1 - cos
 
-    #print ("cachedPQ",sintheta, costheta, multiplier, is_zero_angle)
 
     perm=p.perm
     perms = np.empty([op_order, size], dtype=np.int)
@@ -181,7 +180,7 @@ def pre_caching(op_order, op_type, size, p, Q):
 
 
     A, B = calc_A_B(op_order, p.multiplier, p.sintheta, perms, size, Q)
-    return perms, A,B, p.is_zero_angle, p.costheta, p.sintheta
+    return perms, A,B, is_zero_angle, costheta, sintheta
 
 def pre_caching_AB(p):
     return p.perms, p.A, p.B, p.is_zero_angle,p.costheta, p.sintheta

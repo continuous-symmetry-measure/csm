@@ -5,7 +5,7 @@ def cross_product(a, b):
     :param b: length 3 vector
     :return: length 3 vector, cross product of a and b
     '''
-    out=np.zeros((3, 1,))
+    out=np.zeros((3,), dtype=np.float64, order="c")
     out[0] = a[1] * b[2] - a[2] * b[1]
     out[1] = a[2] * b[0] - a[0] * b[2]
     out[2] = a[0] * b[1] - a[1] * b[0]
