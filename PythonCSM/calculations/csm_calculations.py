@@ -110,7 +110,7 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
             best_csm.perm = pip.perm[:]
             # TODO: Write permutations while looping
 
-        #if i>20000:
+        #if i>40000:
         #    break
 
     if best_csm.csm == MAXDOUBLE:

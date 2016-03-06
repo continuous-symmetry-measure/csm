@@ -49,6 +49,8 @@ class PQPermInProgress:
         self.permchecker = permchecker(mol)
         self.A=1
         self.B=1
+        self.type="PQ"
+        self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self.precalculate(op_type, op_order)
 
     @property
     def perm(self):
@@ -70,10 +72,32 @@ class PQPermInProgress:
     def calc_partial_AB(self, group, cache):
         pass
 
+    def precalculate(self, op_type, op_order):
+        is_improper = op_type != 'CN'
+        is_zero_angle = op_type == 'CS'
+        # pre-caching:
+        sintheta = np.zeros(op_order)
+        costheta = np.zeros(op_order)
+        multiplier = np.zeros(op_order)
+
+        for i in range(1, op_order):
+            if not is_zero_angle:
+                theta = 2 * math.pi * i / op_order
+            cos=math.cos(theta)
+            costheta[i]=cos
+            sintheta[i]=math.sin(theta)
+            if is_improper and (i % 2):
+                multiplier[i] = -1 - cos
+            else:
+                multiplier[i] = 1 - cos
+        return sintheta, costheta, multiplier, is_zero_angle
+
 
 class ABPermInProgress:
     def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker):
         size = len(mol.atoms)
+        self.type="AB"
+        self.size=size
         self.p = [-1] * size
         self.q = [-1] * size
         self.permchecker = permchecker(mol)
@@ -105,15 +129,17 @@ class ABPermInProgress:
     def precalculate(self, op_type, op_order):
         is_improper = op_type != 'CN'
         is_zero_angle = op_type == 'CS'
+        # pre-caching:
         sintheta = np.zeros(op_order)
         costheta = np.zeros(op_order)
         multiplier = np.zeros(op_order)
+
         for i in range(1, op_order):
             if not is_zero_angle:
                 theta = 2 * math.pi * i / op_order
-            cos = math.cos(theta)
-            costheta[i] = cos
-            sintheta[i] = math.sin(theta)
+            cos=math.cos(theta)
+            costheta[i]=cos
+            sintheta[i]=math.sin(theta)
             if is_improper and (i % 2):
                 multiplier[i] = -1 - cos
             else:
@@ -146,6 +172,7 @@ class MoleculeLegalPermuter:
         self._perm_count = 0
         self._groups = mol.equivalence_classes
         self._pip = pipclass(mol, op_order, op_type, permchecker)
+        print(self._pip.type)
         self._cycle_lengths = (1, op_order)
         if op_type == 'SN':
             self._cycle_lengths = (1, 2, op_order)
