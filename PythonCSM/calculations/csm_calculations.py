@@ -9,6 +9,7 @@ from molecule.normalizations import de_normalize_coords, normalize_coords
 from calculations.permuters import SinglePermPermuter, MoleculeLegalPermuter
 import logging
 from recordclass import recordclass
+from CPP_wrapper.permuters import MoleculeLegalPermuter as CythonPermuter
 
 np.set_printoptions(precision=6)
 
@@ -45,7 +46,7 @@ def process_results(results, keepCenter=False):
     results.symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
 
 
-def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, permuter_class=MoleculeLegalPermuter, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, permuter_class=CythonPermuter, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         sn_max = op_order
         # First CS
@@ -73,7 +74,7 @@ def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, 
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=MoleculeLegalPermuter):
+def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=CythonPermuter):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -93,9 +94,7 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     else:
         permuter = permuter_class(molecule, op_order, op_type)
 
-    i=0
     for pip in permuter.permute():
-        i+=1
         #print("#######cached perms#######\n", pip.perms)
         csm, dir = calc_ref_plane(molecule, pip, op_order, op_type)
         if csm_state_tracer_func:
@@ -109,9 +108,6 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
             best_csm.dir = dir
             best_csm.perm = pip.perm[:]
             # TODO: Write permutations while looping
-
-        #if i>40000:
-        #    break
 
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation

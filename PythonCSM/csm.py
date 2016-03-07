@@ -8,6 +8,7 @@ from calculations.csm_calculations import exact_calculation
 from calculations import csm_calculations
 from input_output.readers import read_inputs
 from input_output.writers import print_results
+from CPP_wrapper.permuters import MoleculeLegalPermuter as CythonPermuter
 
 APPROX_RUN_PER_SEC = 8e4
 sys.setrecursionlimit(10000)
@@ -31,7 +32,7 @@ def run_csm(args={}):
         # Read inputs
         in_args, calc_args, out_args = get_split_arguments(args)
         calc_args['molecule'], calc_args['perm'], calc_args['dir'] = read_inputs(**in_args)
-        calc_args['permuter_class'] = MoleculeLegalPermuter
+        calc_args['permuter_class'] = CythonPermuter
 
         # logging:
         init_logging(**out_args)

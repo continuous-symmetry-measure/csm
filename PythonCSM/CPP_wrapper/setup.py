@@ -32,7 +32,7 @@ setup(
     ext_modules=cythonize(
         [Extension(
             "*",
-            ["fast_calculations.pyx"],
+            ["permuters.pyx"],
             language='c++',
             include_dirs=[numpy.get_include()],
             extra_compile_args=extra_compile_args,
