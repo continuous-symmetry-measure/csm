@@ -279,6 +279,7 @@ class MoleculeLegalPermuter:
     """
 
     def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=ABPermInProgress):
+        print(mol.equivalence_classes)
         self._perm_count = 0
         self._groups = mol.equivalence_classes
         self._pip = pipclass(mol, op_order, op_type, permchecker)
@@ -310,14 +311,18 @@ class MoleculeLegalPermuter:
 
             # Check if this can be a complete cycle
             if cycle_length in self._cycle_lengths:
-                # Yes it can, close it
+                # Yes it can, attempt to close it
                 if pip.switch(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
+                    built_cycle.append(cycle_head)
+                    saved_calc=pip.close_cycle(built_cycle, self.cache)
                     if not remainder:  # perm has been completed
                         yield pip
                     else:
                         # cycle has been completed, start a new cycle with remaining atoms
                         # As explained below, the first atom of the next cycle can be chosen arbitrarily
                         yield from recursive_permute(pip=pip, curr_atom=remainder[0], cycle_head=remainder[0], built_cycle=list(), cycle_length=1, remainder=remainder[1:])
+                    pip.unclose_cycle(saved_calc)
+                    built_cycle.remove(cycle_head)
                     pip.unswitch(curr_atom, cycle_head)  # Undo the last switch
             # We now have a partial cycle of length cycle_length (we already checked it as a full cycle
             # above), now we try to extend it
@@ -327,7 +332,9 @@ class MoleculeLegalPermuter:
                     if pip.switch(curr_atom, next_atom):
                         next_remainder = list(remainder)
                         next_remainder.remove(next_atom)
+                        built_cycle.append(next_atom)
                         yield from recursive_permute(pip, next_atom, cycle_head, built_cycle, cycle_length + 1, next_remainder)
+                        built_cycle.remove(next_atom)
                         pip.unswitch(curr_atom, next_atom)
 
         # Start the recursion. It doesn't matter which atom is the first in the cycle, as the cycle's starting points are\
@@ -342,9 +349,9 @@ class MoleculeLegalPermuter:
                 yield pip
             else:
                 for perm in self._group_permuter(groups[0], pip):
-                    saved_calc=pip.close_cycle(groups[0], self.cache)
+                    #saved_calc=pip.close_cycle(groups[0], self.cache)
                     yield from recursive_permute(groups[1:], perm)
-                    pip.unclose_cycle(saved_calc)
+                    #pip.unclose_cycle(saved_calc)
 
         for pip in recursive_permute(self._groups, self._pip):
             yield pip
