@@ -199,12 +199,15 @@ class ABPip:
         # permuted_array=array[perm[i]]
         # perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
         for iop in range(1, self.op_order):
-            for i in range(len(group)):
-                index = group[i]
+            dists=0.0
+            for j in range(len(group)):
+                index = group[j]
                 permuted_index=self.perms[iop - 1][self.p[index]]
                 self._calc.perms[iop][index] = permuted_index
                 self._calc.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
                 self._calc.B+=self.sintheta[iop]*cache.cross(index, permuted_index)
+                dists+= cache.inner_product(index, permuted_index)
+            self._calc.CSM+=self.costheta[iop]*dists
 
 
 
