@@ -129,6 +129,7 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B, cache
     csm = 1.0
     for i in range(1, op_order):
         dists = 0.0
+        #dists=cache.inner_sum()
         # i'th power of permutation
         cur_perm = perms[i]
 
@@ -136,12 +137,13 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B, cache
         #dists=np.einsum('ij,ij', Q, Q_)
         for k in range(size):
             dists += Q[k].T @ Q[cur_perm[k]]
+            #dists+= cache.inner_product(k, cur_perm[k])
         csm += costheta[i] * dists
+
     # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
     # logger.debug("dir: %lf %lf %lf" % (dir[0], dir[1], dir[2]))
 
-
-
+    csm += (lambda_max - m_max_B) / 2
     # logger.debug("dir - csm: %lf %lf %lf - %lf" %
     #             (dir[0], dir[1], dir[2], csm))
     return csm
@@ -162,6 +164,9 @@ def calc_ref_plane(molecule, p, op_order, op_type):
     size = len(molecule.atoms)
     if p.type=="AB":
         perms, A,B, is_zero_angle,costheta, sintheta = pre_caching_AB(p)
+    elif p.type=="PC":
+        perms,is_zero_angle,costheta, sintheta=p.perms,p.is_zero_angle,p.costheta, p.sintheta
+        A, B = calc_A_B(molecule, op_order, p.multiplier, p.sintheta, perms, size)
     else:
         perms, A,B, is_zero_angle,costheta, sintheta=pre_caching(molecule, op_order, size, p)
 
@@ -204,12 +209,6 @@ def calc_ref_plane(molecule, p, op_order, op_type):
 
     dir, m_max_B = calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B,B)
 
-    #either finish calculating or simply calculate CSM
-    if p.type=="AB":
-        csm=p.CSM+ ((lambda_max - m_max_B) / 2)
-    else:
-        csm = calculate_csm(op_order, perms, size, molecule.Q, costheta, lambda_max, m_max_B, molecule.cache)
-
-    #normalize CSM
+    csm = calculate_csm(op_order, perms, size, molecule.Q, costheta, lambda_max, m_max_B, molecule.cache)
     csm = math.fabs(100 * (1.0 - csm / op_order))
     return csm, dir
