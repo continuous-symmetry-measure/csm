@@ -163,6 +163,26 @@ class PermCachePIP:
                 #self._B+=self.sintheta[iop]*cache.cross(index, permuted_index)
 
 class ABPermInProgress:
+    class PartialCalculation:
+        def __init__(self,A,B,CSM,perms):
+            self.A=np.copy(A)
+            self.B=np.copy(B)
+            self.CSM=CSM
+            self.perms=np.copy(perms)
+
+        @classmethod
+        def copyconstruct(cls,partcalc):
+            return cls(partcalc.A,partcalc.B,partcalc.CSM,partcalc.perms)
+
+        @classmethod
+        def initialConstructor(cls, op_order, size):
+            perms = -1 * np.ones([op_order, size], dtype=np.int)
+            perms[0] = [i for i in range(size)]  # identity perm
+            A = np.zeros((3, 3,))
+            B = np.zeros((3,), dtype=np.float64, order="c")
+            CSM=1.0
+            return cls(A,B,CSM,perms)
+
     def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker):
         size = len(mol.atoms)
         self.type="AB"
@@ -170,13 +190,10 @@ class ABPermInProgress:
         self.p = [-1] * size
         self.q = [-1] * size
         self.permchecker = permchecker(mol)
-        self.perms = -1 * np.ones([op_order, size], dtype=np.int)
-        self.perms[0] = [i for i in range(size)]  # identity perm
         self.mol = mol
         self.op_order = op_order
-        self.A = np.zeros((3, 3,))
-        self._B = np.zeros((3,), dtype=np.float64, order="c")
         self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self.precalculate(op_type, op_order)
+        self._calc=self.PartialCalculation.initialConstructor(op_order,size)
 
     @property
     def perm(self):
@@ -184,7 +201,19 @@ class ABPermInProgress:
 
     @property
     def B(self):
-        return self._B
+        return self._calc.B
+
+    @property
+    def A(self):
+        return self._calc.A
+
+    @property
+    def perms(self):
+        return self._calc.perms
+
+    @property
+    def CSM(self):
+        return self._calc.CSM
 
     def switch(self, origin, destination):
         if self.permchecker.is_legal(self, origin, destination):
@@ -230,8 +259,8 @@ class ABPermInProgress:
                 index = group[i]
                 permuted_index=self.perms[iop - 1][self.p[index]]
                 self.perms[iop][index] = permuted_index
-                self.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
-                self._B+=self.sintheta[iop]*cache.cross(index, permuted_index)
+                self._calc.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
+                self._calc.B+=self.sintheta[iop]*cache.cross(index, permuted_index)
 
 class MoleculeLegalPermuter:
     """
@@ -241,7 +270,7 @@ class MoleculeLegalPermuter:
     The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
     """
 
-    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=PQPermInProgress):
+    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=ABPermInProgress):
         self._perm_count = 0
         self._groups = mol.equivalence_classes
         self._pip = pipclass(mol, op_order, op_type, permchecker)
@@ -305,12 +334,10 @@ class MoleculeLegalPermuter:
                 yield pip
             else:
                 for perm in self._group_permuter(groups[0], pip):
-                    saved_A=np.copy(perm.A)
-                    saved_B=np.copy(perm._B)
+                    saved_calc=pip.PartialCalculation.copyconstruct(pip._calc)
                     perm.calc_partial_AB(groups[0], self.cache)
                     yield from recursive_permute(groups[1:], perm)
-                    perm.A=np.copy(saved_A)
-                    perm._B=np.copy(saved_B)
+                    pip._calc=saved_calc
 
         for pip in recursive_permute(self._groups, self._pip):
             yield pip
