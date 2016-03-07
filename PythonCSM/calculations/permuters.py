@@ -294,7 +294,7 @@ class MoleculeLegalPermuter:
         Generates permutations with cycles of a legal sizes
         """
 
-        def recursive_permute(pip, curr_atom, cycle_head, cycle_length, remainder):
+        def recursive_permute(pip, curr_atom, cycle_head, built_cycle, cycle_length, remainder):
             """
             Genereates the cycles recursively
             :param pip:  Permutation in Progress
@@ -317,7 +317,7 @@ class MoleculeLegalPermuter:
                     else:
                         # cycle has been completed, start a new cycle with remaining atoms
                         # As explained below, the first atom of the next cycle can be chosen arbitrarily
-                        yield from recursive_permute(pip, remainder[0], remainder[0], 1, remainder[1:])
+                        yield from recursive_permute(pip=pip, curr_atom=remainder[0], cycle_head=remainder[0], built_cycle=list(), cycle_length=1, remainder=remainder[1:])
                     pip.unswitch(curr_atom, cycle_head)  # Undo the last switch
             # We now have a partial cycle of length cycle_length (we already checked it as a full cycle
             # above), now we try to extend it
@@ -327,12 +327,12 @@ class MoleculeLegalPermuter:
                     if pip.switch(curr_atom, next_atom):
                         next_remainder = list(remainder)
                         next_remainder.remove(next_atom)
-                        yield from recursive_permute(pip, next_atom, cycle_head, cycle_length + 1, next_remainder)
+                        yield from recursive_permute(pip, next_atom, cycle_head, built_cycle, cycle_length + 1, next_remainder)
                         pip.unswitch(curr_atom, next_atom)
 
         # Start the recursion. It doesn't matter which atom is the first in the cycle, as the cycle's starting points are\
         # meaningless: 1<--2, 2<--3, 3<--1 is the same as 2<--3, 3<--1, 1<--2.
-        yield from recursive_permute(pip, group[0], group[0], 1, group[1:])
+        yield from recursive_permute(pip=pip, curr_atom=group[0], cycle_head=group[0], built_cycle=list(), cycle_length=1, remainder=group[1:])
 
     def permute(self):
         # permutes molecule by groups
