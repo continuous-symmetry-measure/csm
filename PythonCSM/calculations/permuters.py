@@ -248,7 +248,7 @@ class ABPermInProgress:
                 multiplier[i] = 1 - cos
         return sintheta, costheta, multiplier, is_zero_angle
 
-    def calc_partial_AB(self, group, cache):
+    def partial_calculate(self, group, cache):
         '''
         :param group: the group that was just permuted. repreents the indexes in self.perm that need to have A,B calculated
         '''
@@ -261,6 +261,14 @@ class ABPermInProgress:
                 self.perms[iop][index] = permuted_index
                 self._calc.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
                 self._calc.B+=self.sintheta[iop]*cache.cross(index, permuted_index)
+
+    def close_cycle(self,group, cache):
+        pc= self.PartialCalculation.copyconstruct(self._calc)
+        self.partial_calculate(group, cache)
+        return pc
+
+    def unclose_cycle(self, calc):
+        self._calc=calc
 
 class MoleculeLegalPermuter:
     """
@@ -334,10 +342,9 @@ class MoleculeLegalPermuter:
                 yield pip
             else:
                 for perm in self._group_permuter(groups[0], pip):
-                    saved_calc=pip.PartialCalculation.copyconstruct(pip._calc)
-                    perm.calc_partial_AB(groups[0], self.cache)
+                    saved_calc=pip.close_cycle(groups[0], self.cache)
                     yield from recursive_permute(groups[1:], perm)
-                    pip._calc=saved_calc
+                    pip.unclose_cycle(saved_calc)
 
         for pip in recursive_permute(self._groups, self._pip):
             yield pip
