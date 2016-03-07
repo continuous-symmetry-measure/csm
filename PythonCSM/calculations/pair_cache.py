@@ -44,7 +44,6 @@ class PairCache:
         for i in range (size):
             for j in range(size):
                 self.calc_i_j(i,j)
-        hi=1
 
     def calc_i_j(self, i, j):
         self._cross[i][j]= cross_product(self.mol.Q[i],self.mol.Q[j])
