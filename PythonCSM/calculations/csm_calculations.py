@@ -116,7 +116,6 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation
         raise ValueError("Failed to calculate a csm value for %s" % op_type)
-    best_csm.csm = math.fabs(100 * (1.0 - best_csm.csm / op_order))
     best_csm.d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
 
     best_csm.symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,

@@ -148,9 +148,6 @@ class ABPip:
     def CSM(self):
         return self._calc.CSM
 
-    def add_CSM(self, val):
-        self._calc.CSM+=val
-
     def switch(self, origin, destination):
         if self.permchecker.is_legal(self, origin, destination):
             assert self.p[origin] == -1 and self.q[destination] == -1
@@ -219,7 +216,7 @@ class MoleculeLegalPermuter:
     The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
     """
 
-    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=ABPip):
+    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=PQPip):
         self._perm_count = 0
         self._groups = mol.equivalence_classes
         self._pip = pipclass(mol, op_order, op_type, permchecker)

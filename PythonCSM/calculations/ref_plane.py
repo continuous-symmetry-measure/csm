@@ -136,9 +136,7 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B, cache
         #dists=np.einsum('ij,ij', Q, Q_)
         for k in range(size):
             dists += Q[k].T @ Q[cur_perm[k]]
-            #dists+= cache.inner_product(k, cur_perm[k])
         csm += costheta[i] * dists
-
     # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
     # logger.debug("dir: %lf %lf %lf" % (dir[0], dir[1], dir[2]))
 
@@ -206,9 +204,12 @@ def calc_ref_plane(molecule, p, op_order, op_type):
 
     dir, m_max_B = calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B,B)
 
+    #either finish calculating or simply calculate CSM
     if p.type=="AB":
-        p.add_CSM((lambda_max - m_max_B) / 2)
-        return p.CSM, dir
+        csm=p.CSM+ ((lambda_max - m_max_B) / 2)
     else:
         csm = calculate_csm(op_order, perms, size, molecule.Q, costheta, lambda_max, m_max_B, molecule.cache)
+
+    #normalize CSM
+    csm = math.fabs(100 * (1.0 - csm / op_order))
     return csm, dir
