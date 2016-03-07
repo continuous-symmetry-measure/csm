@@ -33,58 +33,29 @@ def outer_product_sum(a, b):
     return np.array(out)
 
 
-class PairFacts:
-    def __init__(self,inner_product, outer_product, cross):
-        self._inner=inner_product
-        self._outer=outer_product
-        self._cross=cross
-    @property
-    def cross(self):
-        return self._cross
-
-    @property
-    def inner(self):
-        return self._inner
-
-    @property
-    def outer(self):
-        return self._outer
-
 
 class PairCache:
     def __init__(self,mol):
         self.mol=mol
-        self.pairfacts={}
-        self._inner_sum=None
+        size=len(mol.atoms)
+        self._cross=np.empty((size,size,3),dtype=np.float64)
+        self._inner=np.empty((size,size),dtype=np.float64)
+        self._outer=np.zeros((size,size,3,3,),dtype=np.float64)
+        for i in range (size):
+            for j in range(size):
+                self.calc_i_j(i,j)
+        hi=1
 
     def calc_i_j(self, i, j):
-        cross= cross_product(self.mol.Q[i],self.mol.Q[j])
-        inner=inner_product(self.mol.Q[i],self.mol.Q[j])
-        outer=outer_product_sum(self.mol.Q[i],self.mol.Q[j])
-        self.pairfacts[(i,j)]=PairFacts(inner, outer, cross)
+        self._cross[i][j]= cross_product(self.mol.Q[i],self.mol.Q[j])
+        self._inner[i][j]=inner_product(self.mol.Q[i],self.mol.Q[j])
+        self._outer[i][j]=outer_product_sum(self.mol.Q[i],self.mol.Q[j])
 
     def inner_product(self, i,j):
-        if (i,j) in self.pairfacts:
-            return self.pairfacts[(i,j)].inner
-        self.calc_i_j(i,j,)
-        return self.pairfacts[(i,j)].inner
+        return self._inner[i][j]
 
     def outer_product_sum(self, i,j):
-        if (i,j) in self.pairfacts:
-            return self.pairfacts[(i,j)].outer
-        self.calc_i_j(i,j,)
-        return self.pairfacts[(i,j)].outer
+        return self._outer[i][j]
 
     def cross(self,i,j):
-        if (i,j) in self.pairfacts:
-            return self.pairfacts[(i,j)].cross
-        self.calc_i_j(i,j,)
-        return self.pairfacts[(i,j)].cross
-
-    def inner_sum(self):
-        if not self._inner_sum:
-            sum=0
-            for key in self.pairfacts:
-                sum+=self.pairfacts[key].inner
-            self._inner_sum=sum
-        return self._inner_sum
+        return self._cross[i][j]

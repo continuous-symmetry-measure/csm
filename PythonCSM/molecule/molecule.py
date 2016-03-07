@@ -18,12 +18,15 @@ class Molecule:
         self._flags = {}
         self._create_bondset()
         self._obmol = obmol
-        self._Q=self.create_Q()
-        self.cache=PairCache(self)
+        self.create_Q()
 
     @property
     def Q(self):
         return self._Q
+
+    @property
+    def cache(self):
+        return self._cache
 
     @property
     def atoms(self):
@@ -221,7 +224,9 @@ class Molecule:
         self.create_Q()
 
     def create_Q(self):
-        self._Q=np.array([np.array(atom.pos) for atom in self.atoms])
+        self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
+        self._cache=PairCache(self)
+
 
     def de_normalize(self):
         coords = [atom.pos for atom in self._atoms]
