@@ -1,3 +1,5 @@
+# cython: profile=True
+
 import itertools
 
 import math
@@ -5,6 +7,7 @@ import math
 import numpy as np
 cimport numpy as np
 
+from molecule.molecule import Molecule
 
 __author__ = 'Devora'
 
@@ -15,12 +18,32 @@ ITYPE = np.int
 ctypedef np.int_t ITYPE_t
 
 
-class TruePermChecker:
+cdef class PermChecker:
+    def __init__(self):
+        pass
+
+    def is_legal(self, pip, origin, destination):
+        return False
+
+
+class TruePermChecker(PermChecker):
     def __init__(self, mol):
         pass
 
     def is_legal(self, pip, origin, destination):
         return True
+
+
+class LegalPermChecker(PermChecker):
+    def __init__(self, mol):
+        self.mol = mol
+
+    def is_legal(self, pip, origin, destination):
+        for adjacent in self.mol.atoms[destination].adjacent:
+            if pip.p[adjacent] != -1 and (origin, pip.p[adjacent]) not in self.mol.bondset:
+                return False
+        return True
+
 
 cdef class PartialCalculation:
     cdef public np.ndarray A
@@ -36,9 +59,10 @@ cdef class PartialCalculation:
 
 cdef class TemplatePermInProgress:
     cdef int _size
-    cdef np.ndarray p
+    cdef public np.ndarray p
     cdef int op_order
     cdef public np.ndarray sintheta, costheta, multiplier
+    cdef PermChecker permchecker
 
     def __init__(self, mol, op_order, op_type, permchecker):
         self._size=len(mol.atoms)
@@ -60,13 +84,14 @@ cdef class TemplatePermInProgress:
     cpdef unswitch(self, origin, destination):
         self.p[origin] = -1
 
-    def _precalculate(self, op_type, op_order):
+    cdef _precalculate(self, op_type, op_order):
         is_improper = op_type != 'CN'
         is_zero_angle = op_type == 'CS'
         sintheta = np.zeros(op_order, dtype=np.float64)
         costheta = np.zeros(op_order, dtype=np.float64)
         multiplier = np.zeros(op_order, dtype=np.float64)
 
+        cdef int i
         for i in range(1, op_order):
             if not is_zero_angle:
                 theta = 2 * math.pi * i / op_order
@@ -88,9 +113,11 @@ cdef class TemplatePermInProgress:
 
 cdef class _CythonABPermInProgress(TemplatePermInProgress):
     cdef PartialCalculation _calc
+    cdef public str type
     def __init__(self, mol, op_order, op_type, permchecker):
         super().__init__(mol, op_order, op_type, permchecker)
         self._calc=self.initialConstructor(op_order,self._size)
+        self.type="AB_Cython"
 
     property CSM:
             def __get__(self):
@@ -150,3 +177,87 @@ class CythonABPermInProgress(_CythonABPermInProgress):
     def __init__(self, mol, op_order, op_type, permchecker):
         super().__init__(mol, op_order, op_type, permchecker)
         self.type="AB_Cython"
+
+
+cdef class _CythonPermuter:
+    """
+    This class builds a permutation atom by atom, checking with each atom whether its new position creates an illegal permutation
+    (as defined by the permchecker class)
+    To that end, the class uses a class called pip (perm in progress)
+    The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
+    """
+
+    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=None):
+        self._groups = mol.equivalence_classes
+        self._pip = _CythonABPermInProgress(mol, op_order, op_type, permchecker)
+        print(self._pip.type)
+        self._cycle_lengths = (1, op_order)
+        if op_type == 'SN':
+            self._cycle_lengths = (1, 2, op_order)
+        self._max_length = op_order
+        self.cache=mol.cache
+
+    def _cycle_recursive_permute(self,pip, curr_atom, cycle_head, built_cycle, cycle_length, remainder):
+            """
+            Genereates the cycles recursively
+            :param pip:  Permutation in Progress
+            :param curr_atom: Next atom to add to the cycle
+            :param cycle_head: The first (and last) atom of the cycle
+            :param cycle_length: Length of cycle
+            :param remainder: The free atoms in the group
+            :return: Yields permutations (PermInProgresses)
+
+            To start the recursion, current_atom and cycle_head are the same, meaning we have a cycle of length 1
+            curr_atom<---curr_atom
+            """
+
+            # Check if this can be a complete cycle
+            if cycle_length in self._cycle_lengths:
+                # Yes it can, attempt to close it
+                if pip.switch(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
+                    built_cycle.append(cycle_head)
+                    saved_calc=pip.close_cycle(built_cycle, self.cache)
+                    if not remainder:  # perm has been completed
+                        yield pip
+                    else:
+                        # cycle has been completed, start a new cycle with remaining atoms
+                        # As explained below, the first atom of the next cycle can be chosen arbitrarily
+                        yield from self._cycle_recursive_permute(pip=pip, curr_atom=remainder[0], cycle_head=remainder[0], built_cycle=list(), cycle_length=1, remainder=remainder[1:])
+                    pip.unclose_cycle(saved_calc)
+                    built_cycle.remove(cycle_head)
+                    pip.unswitch(curr_atom, cycle_head)  # Undo the last switch
+            # We now have a partial cycle of length cycle_length (we already checked it as a full cycle
+            # above), now we try to extend it
+            if cycle_length < self._max_length:
+                for next_atom in remainder:
+                    # Go over all the possibilities for the next atom in the cycle
+                    if pip.switch(curr_atom, next_atom):
+                        next_remainder = list(remainder)
+                        next_remainder.remove(next_atom)
+                        built_cycle.append(next_atom)
+                        yield from self._cycle_recursive_permute(pip, next_atom, cycle_head, built_cycle, cycle_length + 1, next_remainder)
+                        built_cycle.remove(next_atom)
+                        pip.unswitch(curr_atom, next_atom)
+
+    def _group_permuter(self, group, pip):
+        """
+        Generates permutations with cycles of a legal sizes
+        """
+        # Start the recursion. It doesn't matter which atom is the first in the cycle, as the cycle's starting points are\
+        # meaningless: 1<--2, 2<--3, 3<--1 is the same as 2<--3, 3<--1, 1<--2.
+        yield from self._cycle_recursive_permute(pip=pip, curr_atom=group[0], cycle_head=group[0], built_cycle=list(), cycle_length=1, remainder=group[1:])
+
+
+    def _recursive_permute(self,groups, pip):
+            if not groups:
+                yield pip
+            else:
+                for perm in self._group_permuter(groups[0], pip):
+                    #saved_calc=pip.close_cycle(groups[0], self.cache)
+                    yield from self._recursive_permute(groups[1:], perm)
+                    #pip.unclose_cycle(saved_calc)
+
+    def permute(self):
+        # permutes molecule by groups
+        for pip in self._recursive_permute(self._groups, self._pip):
+            yield pip
