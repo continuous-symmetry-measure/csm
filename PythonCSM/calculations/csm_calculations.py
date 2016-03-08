@@ -6,10 +6,9 @@ from calculations.pair_cache import PairCache
 from calculations.ref_plane import calc_ref_plane
 from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
-from calculations.permuters import SinglePermPermuter, MoleculeLegalPermuter
+from calculations.permuters import SinglePermPermuter, MoleculeLegalPermuter, CythonPermuter
 import logging
 from recordclass import recordclass
-from CPP_wrapper.permuters import MoleculeLegalPermuter as CythonPermuter
 
 np.set_printoptions(precision=6)
 
@@ -46,7 +45,7 @@ def process_results(results, keepCenter=False):
     results.symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
 
 
-def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, permuter_class=CythonPermuter, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, permuter_class=MoleculeLegalPermuter, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         sn_max = op_order
         # First CS
@@ -74,7 +73,7 @@ def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, 
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=CythonPermuter):
+def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=MoleculeLegalPermuter):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.

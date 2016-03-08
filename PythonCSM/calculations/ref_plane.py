@@ -91,11 +91,11 @@ def build_polynomial(lambdas, m_t_B_2):
     return coeffs
 
 
-def calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B, B):
+def calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B, B):
     m_max_B = 0.0
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
-    if is_zero_angle or op_order == 2:
+    if op_type == 'CS' or op_order == 2:
         # If we are in zero teta case, we should pick the direction matching lambda_max
         min_dist = MAXDOUBLE
         minarg = 0
@@ -155,20 +155,19 @@ def pre_caching(molecule, op_order, size, p):
     for i in range(1, op_order):
         perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
     A, B = calc_A_B(molecule, op_order, p.multiplier, p.sintheta, perms, size)
-    return perms, A,B, p.is_zero_angle, p.costheta, p.sintheta
+    return perms, A,B, p.costheta, p.sintheta
 
 def pre_caching_AB(p):
-    return p.perms, p.A, p.B, p.is_zero_angle,p.costheta, p.sintheta
+    return
 
 def calc_ref_plane(molecule, p, op_order, op_type):
     size = len(molecule.atoms)
-    if p.type=="AB"or p.type=="AB_cython":
-        perms, A,B, is_zero_angle,costheta, sintheta = pre_caching_AB(p)
-    elif p.type=="PC":
-        perms,is_zero_angle,costheta, sintheta=p.perms,p.is_zero_angle,p.costheta, p.sintheta
-        A, B = calc_A_B(molecule, op_order, p.multiplier, p.sintheta, perms, size)
+    if p.type=="AB":
+        perms, A,B,costheta, sintheta = p.perms, p.A, p.B,p.costheta, p.sintheta
+    elif p.type=="AB_Cython":
+        perms, A, B,costheta, sintheta = p.perms, p.A, p.B,p.costheta, p.sintheta
     else:
-        perms, A,B, is_zero_angle,costheta, sintheta=pre_caching(molecule, op_order, size, p)
+        perms, A,B,costheta, sintheta=pre_caching(molecule, op_order, size, p)
 
 
 
@@ -207,8 +206,8 @@ def calc_ref_plane(molecule, p, op_order, op_type):
 
     # logger.debug("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
 
-    dir, m_max_B = calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B,B)
-    if p.type=="AB" or p.type=="AB_cython":
+    dir, m_max_B = calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B,B)
+    if p.type=="AB" or p.type=="AB_Cython":
         csm=p.CSM + (lambda_max - m_max_B) / 2
     else:
         csm = calculate_csm(op_order, perms, size, molecule.Q, costheta, lambda_max, m_max_B, molecule.cache)
