@@ -41,6 +41,8 @@ class TruePermChecker:
     def is_legal(self, pip, origin, destination):
         return True
 
+
+
 cdef _partial_calculate(self, group, cache):
         '''
         :param group: the group that was just permuted. represents the indexes in self.perm that need to have A,B calculated

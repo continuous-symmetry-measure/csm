@@ -40,16 +40,13 @@ class TruePermChecker:
         return True
 
 
-class PQPermInProgress:
-    def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker):
-        size = len(mol.atoms)
-        self.p = [-1] * size
-        self.q = [-1] * size
-        self.permchecker = permchecker(mol)
-        self.A=1
-        self._B=1
-        self.type="PQ"
-        self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self.precalculate(op_type, op_order)
+class TemplatePermInProgress:
+    def __init__(self, mol, op_order, op_type, permchecker):
+        self.size=len(mol.atoms)
+        self.p=[-1] * self.size
+        self.permchecker=permchecker(mol)
+        self.op_order=op_order
+        self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self._precalculate(op_type, op_order)
 
     @property
     def perm(self):
@@ -57,21 +54,14 @@ class PQPermInProgress:
 
     def switch(self, origin, destination):
         if self.permchecker.is_legal(self, origin, destination):
-            assert self.p[origin] == -1 and self.q[destination] == -1
-            self.p[origin] = destination
-            self.q[destination] = origin
+            self.p[origin]=destination
             return True
         return False
 
     def unswitch(self, origin, destination):
-        assert self.p[origin] == destination and self.q[destination] == origin
         self.p[origin] = -1
-        self.q[destination] = -1
 
-    def calc_partial_AB(self, group, cache):
-        pass
-
-    def precalculate(self, op_type, op_order):
+    def _precalculate(self, op_type, op_order):
         is_improper = op_type != 'CN'
         is_zero_angle = op_type == 'CS'
         sintheta = np.zeros(op_order)
@@ -90,8 +80,34 @@ class PQPermInProgress:
                 multiplier[i] = 1 - cos
         return sintheta, costheta, multiplier, is_zero_angle
 
+    def close_cycle(self, group, cache):
+        return None
 
-class ABPermInProgress:
+    def unclose_cycle(self, calc):
+        pass
+
+
+
+
+class PQPermInProgress(TemplatePermInProgress):
+    def __init__(self, mol, op_order, op_type, permchecker):
+        super(PQPermInProgress, self).__init__(mol, op_order, op_type, permchecker)
+        self.q = [-1] * self.size
+        self.type="PQ"
+
+    def switch(self, origin, destination):
+        if super(PQPermInProgress, self).switch(origin, destination):
+            self.q[destination] = origin
+            return True
+        return False
+
+    def unswitch(self, origin, destination):
+        super(PQPermInProgress, self).unswitch(origin, destination)
+        self.q[destination] = -1
+
+
+
+class ABPermInProgress(PQPermInProgress):
     class PartialCalculation:
         def __init__(self,A,B,CSM,perms):
             self.A=np.copy(A)
@@ -112,21 +128,10 @@ class ABPermInProgress:
             CSM=1.0
             return cls(A,B,CSM,perms)
 
-    def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker):
-        size = len(mol.atoms)
+    def __init__(self, mol, op_order, op_type, permchecker):
+        super(ABPermInProgress, self).__init__(mol, op_order, op_type, permchecker)
         self.type="AB"
-        self.size=size
-        self.p = [-1] * size
-        self.q = [-1] * size
-        self.permchecker = permchecker(mol)
-        self.mol = mol
-        self.op_order = op_order
-        self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self.precalculate(op_type, op_order)
-        self._calc=self.PartialCalculation.initialConstructor(op_order,size)
-
-    @property
-    def perm(self):
-        return self.p
+        self._calc=self.PartialCalculation.initialConstructor(op_order,self.size)
 
     @property
     def B(self):
@@ -144,42 +149,9 @@ class ABPermInProgress:
     def CSM(self):
         return self._calc.CSM
 
-    def switch(self, origin, destination):
-        if self.permchecker.is_legal(self, origin, destination):
-            assert self.p[origin] == -1 and self.q[destination] == -1
-            self.p[origin] = destination
-            self.q[destination] = origin
-            return True
-        return False
-
-    def unswitch(self, origin, destination):
-        assert self.p[origin] == destination and self.q[destination] == origin
-        self.p[origin] = -1
-        self.q[destination] = -1
-
-    def precalculate(self, op_type, op_order):
-        is_improper = op_type != 'CN'
-        is_zero_angle = op_type == 'CS'
-        # pre-caching:
-        sintheta = np.zeros(op_order)
-        costheta = np.zeros(op_order)
-        multiplier = np.zeros(op_order)
-
-        for i in range(1, op_order):
-            if not is_zero_angle:
-                theta = 2 * math.pi * i / op_order
-            cos=math.cos(theta)
-            costheta[i]=cos
-            sintheta[i]=math.sin(theta)
-            if is_improper and (i % 2):
-                multiplier[i] = -1 - cos
-            else:
-                multiplier[i] = 1 - cos
-        return sintheta, costheta, multiplier, is_zero_angle
-
-    def partial_calculate(self, group, cache):
+    def _partial_calculate(self, group, cache):
         '''
-        :param group: the group that was just permuted. repreents the indexes in self.perm that need to have A,B calculated
+        :param group: the cycle that was just permuted. represents the indexes in self.perm that need to have A,B calculated
         '''
         # permuted_array=array[perm[i]]
         # perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
@@ -196,7 +168,7 @@ class ABPermInProgress:
 
     def close_cycle(self,group, cache):
         pc= self.PartialCalculation.copyconstruct(self._calc)
-        self.partial_calculate(group, cache)
+        self._partial_calculate(group, cache)
         return pc
 
     def unclose_cycle(self, calc):
@@ -210,10 +182,10 @@ class MoleculeLegalPermuter:
     The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
     """
 
-    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=ABPermInProgress):
+    def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker, pipclass=PQPermInProgress):
         self._perm_count = 0
         self._groups = mol.equivalence_classes
-        self._pip = pipclass(mol, op_order, op_type, permchecker)
+        self._pip = pipclass(mol, op_order, op_type, PQPermChecker)
         print(self._pip.type)
         self._cycle_lengths = (1, op_order)
         if op_type == 'SN':
