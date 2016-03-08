@@ -89,7 +89,7 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=CythonP
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
     if perm:
-        permuter = SinglePermPermuter(perm)
+        permuter = SinglePermPermuter(perm, molecule, op_order, op_type)
         logger.debug("SINGLE PERM")
     else:
         permuter = permuter_class(molecule, op_order, op_type)

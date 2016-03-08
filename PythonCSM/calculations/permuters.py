@@ -42,8 +42,8 @@ class TruePermChecker:
 
 class TemplatePermInProgress:
     def __init__(self, mol, op_order, op_type, permchecker):
-        self.size=len(mol.atoms)
-        self.p=[-1] * self.size
+        self._size=len(mol.atoms)
+        self.p=[-1] * self._size
         self.permchecker=permchecker(mol)
         self.op_order=op_order
         self.sintheta, self.costheta, self.multiplier, self.is_zero_angle = self._precalculate(op_type, op_order)
@@ -92,7 +92,7 @@ class TemplatePermInProgress:
 class PQPermInProgress(TemplatePermInProgress):
     def __init__(self, mol, op_order, op_type, permchecker):
         super(PQPermInProgress, self).__init__(mol, op_order, op_type, permchecker)
-        self.q = [-1] * self.size
+        self.q = [-1] * self._size
         self.type="PQ"
 
     def switch(self, origin, destination):
@@ -131,7 +131,7 @@ class ABPermInProgress(PQPermInProgress):
     def __init__(self, mol, op_order, op_type, permchecker):
         super(ABPermInProgress, self).__init__(mol, op_order, op_type, permchecker)
         self.type="AB"
-        self._calc=self.PartialCalculation.initialConstructor(op_order,self.size)
+        self._calc=self.PartialCalculation.initialConstructor(op_order,self._size)
 
     @property
     def B(self):
@@ -182,10 +182,10 @@ class MoleculeLegalPermuter:
     The pip is created stage by stage-- each equivalency group is built atom-by-atom (into legal cycles)
     """
 
-    def __init__(self, mol, op_order, op_type, permchecker=PQPermChecker, pipclass=PQPermInProgress):
+    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, pipclass=ABPermInProgress):
         self._perm_count = 0
         self._groups = mol.equivalence_classes
-        self._pip = pipclass(mol, op_order, op_type, PQPermChecker)
+        self._pip = pipclass(mol, op_order, op_type, permchecker)
         print(self._pip.type)
         self._cycle_lengths = (1, op_order)
         if op_type == 'SN':
@@ -263,12 +263,14 @@ class MoleculeLegalPermuter:
 class SinglePermPermuter:
     """ A permuter that returns just one permutation, used for when the permutation is specified by the user """
 
-    class SinglePermInProgress:
-        def __init__(self, perm):
-            self.perm = perm
+    class SinglePermInProgress(TemplatePermInProgress):
+        def __init__(self, mol, perm, op_order, op_type):
+            super(SinglePermPermuter.SinglePermInProgress, self).__init__(mol, op_order, op_type, None)
+            self.p=perm
+            self.type="SP"
 
-    def __init__(self, perm):
-        self._perm = self.SinglePermInProgress(perm)
+    def __init__(self, perm, mol, op_order, op_type):
+        self._perm = self.SinglePermInProgress(mol, perm, op_order, op_type)
 
     def permute(self):
         yield self._perm
