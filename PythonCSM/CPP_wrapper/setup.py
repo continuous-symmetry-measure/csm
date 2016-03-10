@@ -19,7 +19,7 @@ if sys.platform == 'win32':
     library_dirs = ['../../openbabel-files/Windows/lib/x64/Release', '../../CSM/cmake/RelWithDebInfo', BOOST_ROOT]
     libraries = ['csmlib']
     # extra_compiler_args = ['/Zi', '/Od']  # Debug info, no optimization
-    extra_link_args = ['/debug']
+    # extra_link_args = ['/debug']
 elif sys.platform in ['linux', 'linux2']:
     library_dirs = ['../../openbabel-files/unix/lib', '../../CSM/cmake']
     libraries = ['csmlib', 'boost_log', 'boost_log_setup', 'boost_system', 'boost_thread', 'boost_filesystem', 'boost_date_time', 'pthread']
