@@ -1,16 +1,16 @@
 # cython: profile=True
 # cython: language-level=3
-# # cython: boundscheck=False, wraparound=False
+# cython: boundscheck=False, wraparound=False, nonecheck=False
 import ctypes
 
 include "misc.pxi"
 
-from copy import deepcopy
-
-import numpy as np
 cimport numpy as np
+import numpy as np
 cimport cython
 import math
+from libc.stdlib cimport malloc, free
+from libc.string cimport memcpy
 
 cdef class Matrix3D:
     cdef double buf[3][3]
@@ -32,10 +32,27 @@ cdef class Matrix3D:
                 copy.buf[i][j] = self.buf[i][j]
         return copy
 
+    cdef add_mul(Matrix3D self, Matrix3D add, double mult):
+        """
+        The equivalent of self += add * mul
+        """
+        cdef int i, j
+        for i in range(3):
+            for j in range(3):
+                self.buf[i][j] += add.buf[i][j] * mult
+
+    def _check_indices(self, indices):
+        if indices[0] < 0 or indices[0] > 2:
+            raise ValueError("First index out of range")
+        if indices[1] < 0 or indices[1] > 2:
+            raise ValueError("Second index out of range")
+
     def __getitem__(Matrix3D self, indices):
+        self._check_indices(indices)
         return self.buf[indices[0]][indices[1]]
 
     def __setitem__(Matrix3D self, indices, v):
+        self._check_indices(indices)
         self.buf[indices[0]][indices[1]] = v
 
     def __add__(Matrix3D first, Matrix3D second):
@@ -88,10 +105,24 @@ cdef class Vector3D:
             copy.buf[i] = self.buf[i]
         return copy
 
+    cdef add_mul(Vector3D self, Vector3D add, double mult):
+        """
+        The equivalent of self += add * mul
+        """
+        cdef int i
+        for i in range(3):
+            self.buf[i] += add.buf[i] * mult
+
+    def _check_index(self, index):
+        if index<0 or index>2:
+            raise ValueError("index out of range")
+
     def __getitem__(Vector3D self, index):
+        self._check_index(index)
         return self.buf[index]
 
     def __setitem__(Vector3D self, index, value):
+        self._check_index(index)
         self.buf[index] = value
 
     def __add__(Vector3D first, Vector3D second):
@@ -122,26 +153,87 @@ cdef class Vector3D:
         return self
 
 
-class Factory:
-    def matrix(self):
-        # return np.zeros((3,3,), dtype=np.double)
-        return Matrix3D()
+cdef class PermsHolder:
+    cdef long *buffer
+    cdef int molecule_size
+    cdef int op_order
+    cdef int buf_size
 
-    def vector(self):
-        # return np.zeros((3,), dtype=np.double)
-        return Vector3D()
+    def __cinit__(PermsHolder self, int molecule_size, int op_order):
+        self.op_order = op_order
+        self.molecule_size = molecule_size
+        self.buf_size = op_order * molecule_size * sizeof(long)
+        self.buffer = <long *>malloc(self.buf_size)
 
-    def perms(self, perm_size, num_perms):
-        return np.zeros((num_perms, perm_size, ), dtype=np.int64)
+    def __dealloc(PermsHolder self):
+        if self.buffer:
+            free(self.buffer)
+            self.buffer = <long *>0
+
+    cdef public PermsHolder copy(PermsHolder self):
+        copy = PermsHolder(self.molecule_size, self.op_order)
+        memcpy(copy.buffer, self.buffer, self.buf_size)
+        return copy
+
+    cdef inline get_index(PermsHolder self, int op_order, int offset):
+        return (op_order * self.molecule_size + offset)
+
+    cdef public inline long get_perm_value(PermsHolder self, int op_order, int offset):
+        return self.buffer[self.get_index(op_order, offset)]
+
+    cdef public inline void set_perm_value(PermsHolder self, int op_order, int offset, int value):
+        self.buffer[self.get_index(op_order, offset)] = value
+
+    def _check_indices(PermsHolder self, indices):
+        if indices[0]<0 or indices[0] >= self.op_order:
+            raise ValueError("op_order index out of range")
+        if indices[1]<0 or indices[1] >= self.molecule_size:
+            raise ValueError("offset out of range")
+
+    def __getitem__(PermsHolder self, indices):
+        self._check_indices(indices)
+        return self.get_perm_value(indices[0], indices[1])
+
+    def __setitem__(PermsHolder self, indices, value):
+        self._check_indices(indices)
+        self.set_perm_value(indices[0], indices[1], value)
+
+    def set_perm(PermsHolder self, int op_order, long[:] perm):
+        if len(perm)!=self.molecule_size:
+            raise ValueError("Wrong length of perm")
+
+        cdef int i
+        for i in range(len(perm)):
+            self.set_perm_value(op_order, i, perm[i])
+
+
+    def get_perm(PermsHolder self, int op_order):
+        """
+        Returns a permutation as a Python array
+        """
+        if op_order<0 or op_order>=self.op_order:
+            raise ValueError("op_order out of range")
+        cdef array.array a = int_array(self.molecule_size)
+
+        cdef int i
+        for i in range(self.molecule_size):
+            a[i] = self.get_perm_value(op_order, i)
+
+        return a
 
 
 
-class Cache:
-    def __init__(self, size, factory):
+cdef class Cache:
+    cdef _matrices
+    cdef _vectors
+    cdef _counter
+    cdef public cosines
+    cdef public sines
+
+    def __init__(self, size):
         self._matrices = []
         self._vectors = []
         self._counter = 0
-        self._factory = factory
         self.cosines = np.zeros((size, ), dtype=np.double)
         self.sines = np.zeros((size,), dtype=np.double)
 
@@ -155,7 +247,7 @@ class Cache:
             angle += angle_inc
 
     def create_matrix(self):
-        m = self._factory.matrix()
+        m = Matrix3D()
         for i in range(3):
             for j in range(3):
                 m[i, j] = self._counter
@@ -163,72 +255,63 @@ class Cache:
         return m
 
     def create_vector(self):
-        v = self._factory.vector()
+        v = Vector3D()
         for i in range(3):
             v[i] = self._counter
             self._counter -= 0.53
         return v
 
-    def get_matrix(self, num):
+    cpdef public Matrix3D get_matrix(self, num):
         return self._matrices[num]
 
-    def get_vector(self, num):
+    cpdef public Vector3D get_vector(self, num):
         return self._vectors[num]
-
 
 cdef class CalcState:
     cdef public Matrix3D A
     cdef public Vector3D B
-    cdef public perms
+    cdef public PermsHolder perms
     cdef public int op_order
     cdef public int molecule_size
 
-    cdef long *perm_buf
-
-    def __init__(self, molecule_size, op_order, factory):
+    def __init__(self, int molecule_size, int op_order, allocate=True):
         self.op_order = op_order
         self.molecule_size = molecule_size
-        self.perm_buf = <long *>0
-        if factory:
-            self.A = factory.matrix()
-            self.B = factory.vector()
-            self.perms = factory.perms(molecule_size, op_order)
-            self.set_pointers()
+        if allocate:
+            self.A = Matrix3D()
+            self.B = Vector3D()
+            self.perms = PermsHolder(molecule_size, op_order)
 
-    cdef set_pointers(CalcState self):
-        cdef long ptr = self.perms.ctypes.data
-        self.perm_buf = <long *>ptr
 
-    def __deepcopy__(self, memo):
-        copy = CalcState(self.molecule_size, self.op_order, None)
+    cpdef public CalcState copy(CalcState self):
+        cdef CalcState copy = CalcState(self.molecule_size, self.op_order, None)
         copy.A = self.A.copy()
         copy.B = self.B.copy()
-        copy.perms = np.copy(self.perms)
-        copy.set_pointers()
-
+        copy.perms = self.perms.copy()
         return copy
 
-    cdef inline int get_perm_offset(CalcState self, int perm, int index):
-        offset = perm * self.molecule_size + index
-        return offset
 
-    cdef inline long get_perm_value(CalcState self, int perm, int index):
-        cdef int offset = self.get_perm_offset(perm, index)
-        return self.perm_buf[offset]
+cdef inline fix_perm(CalcState state, int from_index, int op_order):
+    cdef int zero_perm_index = state.perms.get_perm_value(0, from_index)
+    cdef int to_index = state.perms.get_perm_value(op_order-1, zero_perm_index)
+    state.perms.set_perm_value(op_order, from_index, to_index)
 
-    cdef inline void set_perm_value(CalcState self, int perm, int index, int value):
-        self.perm_buf[self.get_perm_offset(perm, index)] = value
-
-
-def one_iter(CalcState state, group, cache):
+def one_iter(CalcState state, group, Cache cache):
     cdef int i, j
-    cdef int from_index, to_index
+
     for i in range(1, state.op_order):
         for j in range(len(group)):
-            # print(i,j)
-            from_index = group[j]
-            zero_index = state.get_perm_value(0, from_index)
-            to_index = state.get_perm_value(i-1, zero_index)
-            state.set_perm_value(i, from_index, to_index)
-            state.A += cache.get_matrix(j) * cache.cosines[j]
-            state.B += cache.get_vector(j) * cache.sines[j]
+            fix_perm(state, group[j], i)
+            state.A.add_mul(cache.get_matrix(j), cache.cosines[j])
+            state.B.add_mul(cache.get_vector(j), cache.sines[j])
+
+
+cdef class ArrayHolder:
+    cdef array
+    cdef long *ptr
+
+    def __init__(ArrayHolder self, allocate=True):
+        self.array = np.zeros((4, 12,), dtype=np.int)
+        cdef long ptr = self.array.__array_interface__['data'][0]
+        self.ptr = <long *>ptr
+
