@@ -4,9 +4,9 @@ from copy import deepcopy
 from CythonPlayground.playground import CalcState, Factory, Cache, one_iter
 import numpy as np
 
-OP_ORDER = 4
-MOLECULE_SIZE = 12
-NUM_ITERS = 100000
+OP_ORDER = 6
+MOLECULE_SIZE = 15
+NUM_ITERS = 200000
 
 
 def init_state(molecule_size, op_order, factory):
