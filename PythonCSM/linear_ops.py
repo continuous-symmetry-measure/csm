@@ -37,7 +37,7 @@ def run_arrayholder():
         holder = ArrayHolder()
 
 if __name__=='__main__':
-    timer = timeit.Timer(run)
+    timer = timeit.Timer(run_arrayholder)
     print(timer.timeit(number=1))
 
 

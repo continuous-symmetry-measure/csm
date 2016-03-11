@@ -311,7 +311,9 @@ cdef class ArrayHolder:
     cdef long *ptr
 
     def __init__(ArrayHolder self, allocate=True):
-        self.array = np.zeros((4, 12,), dtype=np.int)
-        cdef long ptr = self.array.__array_interface__['data'][0]
-        self.ptr = <long *>ptr
+        cdef np.ndarray[np.int_t, ndim=2] array
+        array = np.zeros((4, 12,), dtype=np.int)
+        array[0,5] = 12
+        self.array = array
+        self.ptr = <long *>&array[0,0]
 
