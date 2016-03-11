@@ -1,6 +1,7 @@
 # cython: profile=True
 # cython: language-level=3
-# cython: boundscheck=False, wraparound=False
+# # cython: boundscheck=False, wraparound=False
+import ctypes
 
 include "misc.pxi"
 
@@ -185,18 +186,17 @@ cdef class CalcState:
     cdef long *perm_buf
 
     def __init__(self, molecule_size, op_order, factory):
+        self.op_order = op_order
+        self.molecule_size = molecule_size
+        self.perm_buf = <long *>0
         if factory:
             self.A = factory.matrix()
             self.B = factory.vector()
             self.perms = factory.perms(molecule_size, op_order)
             self.set_pointers()
-        self.op_order = op_order
-        self.molecule_size = molecule_size
-        self.perm_buf = <long *>0
-
 
     cdef set_pointers(CalcState self):
-        cdef long ptr = self.perms.__array_interface__['data'][0]
+        cdef long ptr = self.perms.ctypes.data
         self.perm_buf = <long *>ptr
 
     def __deepcopy__(self, memo):
@@ -208,21 +208,24 @@ cdef class CalcState:
 
         return copy
 
-    cdef long *get_perm_value_ptr(CalcState self, int perm, int index):
-        return &self.perm_buf[perm * self.molecule_size + index]
+    cdef inline int get_perm_offset(CalcState self, int perm, int index):
+        offset = perm * self.molecule_size + index
+        return offset
 
     cdef inline long get_perm_value(CalcState self, int perm, int index):
-        return self.get_perm_value_ptr(perm, index)[0]
+        cdef int offset = self.get_perm_offset(perm, index)
+        return self.perm_buf[offset]
 
     cdef inline void set_perm_value(CalcState self, int perm, int index, int value):
-        self.get_perm_value_ptr(perm, index)[0] = value
+        self.perm_buf[self.get_perm_offset(perm, index)] = value
 
 
-def one_iter(state, group, cache):
+def one_iter(CalcState state, group, cache):
     cdef int i, j
     cdef int from_index, to_index
     for i in range(1, state.op_order):
         for j in range(len(group)):
+            # print(i,j)
             from_index = group[j]
             zero_index = state.get_perm_value(0, from_index)
             to_index = state.get_perm_value(i-1, zero_index)

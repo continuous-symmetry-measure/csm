@@ -6,7 +6,7 @@ import numpy as np
 
 OP_ORDER = 6
 MOLECULE_SIZE = 15
-NUM_ITERS = 200000
+NUM_ITERS = 100000
 
 
 def init_state(molecule_size, op_order, factory):
