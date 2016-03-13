@@ -9,11 +9,12 @@ DTYPE = np.float64
 ctypedef np.float64_t DTYPE_t
 
 
-cpdef build_polynomial(lambdas, m_t_B_2):
+cdef build_polynomial(double [3] lambdas, m_t_B_2):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
     # from the old C CSM code more or less untouched.
-    coeffs = [1.0, 0, 0, 0, 0, 0, 0]  # A polynomial of the 6th degree. coeffs[0] is for x^6, xoeefs[1] for x^5 , etc..
+    cdef double coeffs[7]   # A polynomial of the 6th degree. coeffs[0] is for x^6, xoeefs[1] for x^5 , etc..
+    coeffs[0]=1.0
     coeffs[1] = -2 * (lambdas[0] + lambdas[1] + lambdas[2])
     coeffs[2] = lambdas[0] * lambdas[0] + lambdas[1] * lambdas[1] + lambdas[2] * lambdas[2] - \
                 m_t_B_2[0] - m_t_B_2[1] - m_t_B_2[2] + \
@@ -86,7 +87,7 @@ def calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B, B):
     return dir, m_max_B
 
 
-def PolynomialRoots(coeffs):
+cdef PolynomialRoots(coeffs):
     cdef double coeffs_v[7]
     cdef double zeror[7]
     cdef double zeroi[7]
@@ -96,8 +97,34 @@ def PolynomialRoots(coeffs):
         coeffs_v[i] = coeffs[i]
 
     csmlib.rpoly(coeffs_v, 6, zeror, zeroi)
-    result = []
+    cdef complex result[7]
     for i in range(7):
-        result.append(complex(zeror[i], zeroi[i]))
+        result[i]=complex(zeror[i], zeroi[i])
 
     return result
+
+
+cpdef get_lambda_max(lambdas, m_t_B_2):
+    cdef double coeffs[7]
+    cdef double clambdas[3]
+    clambdas[0]=lambdas[0]
+    clambdas[1]=lambdas[1]
+    clambdas[2]=lambdas[2]
+    coeffs= build_polynomial(clambdas, m_t_B_2)
+    cdef complex roots[7]
+    roots = PolynomialRoots(coeffs)
+    # polynomial = build_polynomial()
+    # roots = polynomial.roots()
+
+    # logger.debug('roots: ')
+    # logger.debug(roots)
+
+    # lambda_max is a real root of the polynomial equation
+    # according to the description above the formula (13) in the paper
+    lambda_max = -MAXDOUBLE
+    cdef int i
+    for i in range(len(roots)):
+        if roots[i].real > lambda_max and math.fabs(roots[i].imag) < ZERO_IM_PART_MAX:
+            lambda_max = roots[i].real
+
+    return lambda_max

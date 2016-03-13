@@ -9,7 +9,7 @@ import numpy as np
 from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
 from numpy.polynomial import Polynomial
-from CPP_wrapper.permuters import PolynomialRoots, build_polynomial
+from CPP_wrapper.permuters import get_lambda_max
 
 
 # logger = logging.getLogger("csm")
@@ -184,21 +184,7 @@ def calc_ref_plane(molecule, p, op_order, op_type):
     # logger.debug("mTb^2: %s" % m_t_B_2)
 
 
-
-    coeffs = build_polynomial(lambdas, m_t_B_2)
-    roots = PolynomialRoots(coeffs)
-    # polynomial = build_polynomial()
-    # roots = polynomial.roots()
-
-    # logger.debug('roots: ')
-    # logger.debug(roots)
-
-    # lambda_max is a real root of the polynomial equation
-    # according to the description above the formula (13) in the paper
-    lambda_max = -MAXDOUBLE
-    for i in range(len(roots)):
-        if roots[i].real > lambda_max and math.fabs(roots[i].imag) < ZERO_IM_PART_MAX:
-            lambda_max = roots[i].real
+    lambda_max=get_lambda_max(lambdas, m_t_B_2)
 
     # logger.debug("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
 
