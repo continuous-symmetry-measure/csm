@@ -91,6 +91,17 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     else:
         permuter = permuter_class(molecule, op_order, op_type)
 
+    permutation_loop(permuter, molecule, op_order, op_type, traced_state, best_csm)
+
+    if best_csm.csm == MAXDOUBLE:
+        # failed to find csm value for any permutation
+        raise ValueError("Failed to calculate a csm value for %s" % op_type)
+    best_csm.d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
+    best_csm.symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
+                                                              best_csm.op_order, best_csm.d_min)
+    return best_csm
+
+def permutation_loop(permuter, molecule, op_order, op_type, traced_state, best_csm):
     for pip in permuter.permute():
         csm, dir = calc_ref_plane(molecule, pip, op_order, op_type)
         if csm_state_tracer_func:
@@ -104,15 +115,6 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
             best_csm.dir = dir
             best_csm.perm = pip.perm[:]
             # TODO: Write permutations while looping
-
-    if best_csm.csm == MAXDOUBLE:
-        # failed to find csm value for any permutation
-        raise ValueError("Failed to calculate a csm value for %s" % op_type)
-    best_csm.d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
-    best_csm.symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
-                                                              best_csm.op_order, best_csm.d_min)
-    return best_csm
-
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
     is_improper = op_type != 'CN'
