@@ -25,10 +25,6 @@ class Molecule:
         return self._Q
 
     @property
-    def cache(self):
-        return self._cache
-
-    @property
     def atoms(self):
         return self._atoms
 
@@ -225,7 +221,6 @@ class Molecule:
 
     def create_Q(self):
         self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
-        self._cache=PairCache(self)
 
 
     def de_normalize(self):

@@ -4,6 +4,9 @@ import math
 import numpy as np
 
 from CPP_wrapper.permuters import _CythonPermuter
+
+from calculations.pair_cache import PairCache
+
 __author__ = 'Devora'
 
 
@@ -192,7 +195,7 @@ class MoleculeLegalPermuter:
         if op_type == 'SN':
             self._cycle_lengths = (1, 2, op_order)
         self._max_length = op_order
-        self.cache=mol.cache
+        self.cache=PairCache(mol)
 
     def _group_permuter(self, group, pip):
         """
