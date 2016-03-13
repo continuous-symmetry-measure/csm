@@ -162,10 +162,8 @@ def pre_caching_AB(p):
 
 def calc_ref_plane(molecule, p, op_order, op_type):
     size = len(molecule.atoms)
-    if p.type=="AB":
+    if p.type[:2]=="AB":
         perms, A,B,costheta, sintheta = p.perms, p.A, p.B,p.costheta, p.sintheta
-    elif p.type=="AB_Cython":
-        perms, A, B,costheta, sintheta = p.perms, p.A, p.B,p.costheta, p.sintheta
     else:
         perms, A,B,costheta, sintheta=pre_caching(molecule, op_order, size, p)
 
@@ -207,7 +205,7 @@ def calc_ref_plane(molecule, p, op_order, op_type):
     # logger.debug("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
 
     dir, m_max_B = calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B,B)
-    if p.type=="AB" or p.type=="AB_Cython":
+    if p.type[:2]=="AB":
         csm=p.CSM + (lambda_max - m_max_B) / 2
     else:
         csm = calculate_csm(op_order, perms, size, molecule.Q, costheta, lambda_max, m_max_B, molecule.cache)
