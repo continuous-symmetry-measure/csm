@@ -11,6 +11,7 @@ cimport cython
 import math
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
+from libcpp.vector cimport vector
 
 cdef class Matrix3D:
     cdef double buf[3][3]
@@ -228,8 +229,8 @@ cdef class Cache:
     cdef _matrices
     cdef _vectors
     cdef _counter
-    cdef public cosines
-    cdef public sines
+    cdef double[:] cosines
+    cdef double[:] sines
 
     def __init__(self, size):
         self._matrices = []
