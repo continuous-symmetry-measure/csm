@@ -14,7 +14,7 @@ except:
 extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
-    extra_compiler_args = ['/Ox']  # Debug info, no optimization
+    extra_compile_args = ['/Ox']  # Debug info, no optimization
 elif sys.platform in ['linux', 'linux2']:
     extra_compile_args = ['-fPIC', '-O3']
 elif sys.platform == 'darwin':
