@@ -32,7 +32,7 @@ setup(
     ext_modules=cythonize(
         [Extension(
             "*",
-            ["permuters.pyx"],
+            ["permuters.pyx", "cache.pyx"],
             language='c++',
             include_dirs=[numpy.get_include()],
             extra_compile_args=extra_compile_args,

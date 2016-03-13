@@ -134,23 +134,23 @@ class ABPermInProgress(PQPermInProgress):
     def __init__(self, mol, op_order, op_type, permchecker):
         super().__init__(mol, op_order, op_type, permchecker)
         self.type="AB"
-        self._calc=self.PartialCalculation.initialConstructor(op_order,self._size)
+        self._state=self.PartialCalculation.initialConstructor(op_order,self._size)
 
     @property
     def B(self):
-        return self._calc.B
+        return self._state.B
 
     @property
     def A(self):
-        return self._calc.A
+        return self._state.A
 
     @property
     def perms(self):
-        return self._calc.perms
+        return self._state.perms
 
     @property
     def CSM(self):
-        return self._calc.CSM
+        return self._state.CSM
 
     def _partial_calculate(self, group, cache):
         '''
@@ -162,20 +162,20 @@ class ABPermInProgress(PQPermInProgress):
             dists=0.0
             for j in range(len(group)):
                 index = group[j]
-                permuted_index=self._calc.perms[iop - 1][self.p[index]]
-                self._calc.perms[iop][index] = permuted_index
-                self._calc.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
-                self._calc.B+=self.sintheta[iop]*cache.cross(index, permuted_index)
+                permuted_index=self._state.perms[iop - 1][self.p[index]]
+                self._state.perms[iop][index] = permuted_index
+                self._state.A+=self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
+                self._state.B+=self.sintheta[iop]*cache.cross(index, permuted_index)
                 dists += cache.inner_product(index, permuted_index)
-            self._calc.CSM += self.costheta[iop] * dists
+            self._state.CSM += self.costheta[iop] * dists
 
     def close_cycle(self,group, cache):
-        pc= self.PartialCalculation.copyconstruct(self._calc)
+        pc= self.PartialCalculation.copyconstruct(self._state)
         self._partial_calculate(group, cache)
         return pc
 
     def unclose_cycle(self, calc):
-        self._calc=calc
+        self._state=calc
 
 
 class MoleculeLegalPermuter:

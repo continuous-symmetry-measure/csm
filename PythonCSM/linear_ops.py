@@ -9,7 +9,7 @@ import numpy as np
 
 OP_ORDER = 4
 MOLECULE_SIZE = 12
-NUM_ITERS = 5000000
+NUM_ITERS = 500000
 
 
 def init_state(molecule_size, op_order):

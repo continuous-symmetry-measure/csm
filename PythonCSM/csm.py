@@ -1,6 +1,7 @@
 import csv
 import logging
 import sys
+import timeit
 
 from calculations.permuters import MoleculeLegalPermuter, CythonPermuter
 from input_output.arguments import get_split_arguments
@@ -60,4 +61,6 @@ def run_csm(args={}):
             csv_file.close()
 
 if __name__ == '__main__':
-    results = run_csm(args=sys.argv[1:])
+    timer = timeit.Timer(lambda: run_csm(args=sys.argv[1:]))
+    time = timer.timeit(number=1)
+    print(time)
