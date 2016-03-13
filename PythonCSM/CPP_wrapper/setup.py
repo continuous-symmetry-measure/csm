@@ -16,7 +16,7 @@ except:
 extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
-    library_dirs = ['../../openbabel-files/Windows/lib/x64/Release', '../../CSM/cmake/RelWithDebInfo', BOOST_ROOT]
+    library_dirs = ['../../openbabel-files/Windows/lib/x64/Release', '../../CSM/cmake/Release', BOOST_ROOT]
     libraries = ['csmlib']
     # extra_compiler_args = ['/Zi', '/Od']  # Debug info, no optimization
     # extra_link_args = ['/debug']
@@ -32,9 +32,11 @@ setup(
     ext_modules=cythonize(
         [Extension(
             "*",
-            ["permuters.pyx", "cache.pyx"],
+            ["permuters.pyx", "cache.pyx", "fast_calculations.pyx"],
             language='c++',
-            include_dirs=[numpy.get_include()],
+            include_dirs=[numpy.get_include(), '../../CSM'],
+            libraries=libraries,
+            library_dirs=library_dirs,
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args)]
     )

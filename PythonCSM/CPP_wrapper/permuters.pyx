@@ -5,6 +5,7 @@ import ctypes
 
 include "misc.pxi"
 include "cache.pyx"
+include "fast_calculations.pyx"
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -121,6 +122,7 @@ cdef class CalcState:
     def __init__(self, int molecule_size, int op_order, allocate=True):
         self.op_order = op_order
         self.molecule_size = molecule_size
+        cdef int i
         if allocate:
             self.A = Matrix3D()
             self.B = Vector3D()
@@ -128,6 +130,8 @@ cdef class CalcState:
             identity_perm=np.array([i for i in range(molecule_size)])
             neg_perm=np.array([-1 for i in range(molecule_size)])
             self.perms.set_perm(0, identity_perm)
+            for i in range(1,op_order):
+                self.perms.set_perm(i, neg_perm)
             self.CSM=1.0
 
 

@@ -82,8 +82,6 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     :param args: The CSM arguments
     :return: A dictionary with all the results: csm, dMin, perm and direction
     """
-    logger.debug("csm_op atoms:")
-    logger.debug([atom.pos for atom in molecule.atoms])
     best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
@@ -111,7 +109,6 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
         # failed to find csm value for any permutation
         raise ValueError("Failed to calculate a csm value for %s" % op_type)
     best_csm.d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
-
     best_csm.symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
                                                               best_csm.op_order, best_csm.d_min)
     return best_csm

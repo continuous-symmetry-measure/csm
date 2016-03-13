@@ -9,6 +9,7 @@ import numpy as np
 from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
 from numpy.polynomial import Polynomial
+from CPP_wrapper.permuters import PolynomialRoots, build_polynomial
 
 
 # logger = logging.getLogger("csm")
@@ -42,7 +43,7 @@ def calc_A_B(mol,op_order, multiplier, sintheta, perms, size):
 
 
 
-def build_polynomial(lambdas, m_t_B_2):
+def old_build_polynomial(lambdas, m_t_B_2):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
     # from the old C CSM code more or less untouched.
@@ -157,9 +158,6 @@ def pre_caching(molecule, op_order, size, p):
     A, B = calc_A_B(molecule, op_order, p.multiplier, p.sintheta, perms, size)
     return perms, A,B, p.costheta, p.sintheta
 
-def pre_caching_AB(p):
-    return
-
 def calc_ref_plane(molecule, p, op_order, op_type):
     size = len(molecule.atoms)
     if p.type[:2]=="AB":
@@ -188,7 +186,7 @@ def calc_ref_plane(molecule, p, op_order, op_type):
 
 
     coeffs = build_polynomial(lambdas, m_t_B_2)
-    roots = np.roots(coeffs)
+    roots = PolynomialRoots(coeffs)
     # polynomial = build_polynomial()
     # roots = polynomial.roots()
 
