@@ -1,4 +1,4 @@
-# cython: profile=True
+# # cython: profile=True
 # cython: language-level=3
 # cython: boundscheck=False, wraparound=False, nonecheck=False
 import ctypes
@@ -86,7 +86,6 @@ cdef class Matrix3D:
                 self.buf[i][j] *= scalar
         return self
 
-
 cdef class Vector3D:
     cdef double buf[3]
 
@@ -165,7 +164,7 @@ cdef class PermsHolder:
         self.buf_size = op_order * molecule_size * sizeof(long)
         self.buffer = <long *>malloc(self.buf_size)
 
-    def __dealloc(PermsHolder self):
+    def __dealloc__(PermsHolder self):
         if self.buffer:
             free(self.buffer)
             self.buffer = <long *>0
@@ -201,6 +200,8 @@ cdef class PermsHolder:
     def set_perm(PermsHolder self, int op_order, long[:] perm):
         if len(perm)!=self.molecule_size:
             raise ValueError("Wrong length of perm")
+        if op_order < 0 or op_order >= self.op_order:
+            raise ValueError("op_+order out of range")
 
         cdef int i
         for i in range(len(perm)):
@@ -304,6 +305,15 @@ def one_iter(CalcState state, group, Cache cache):
             fix_perm(state, group[j], i)
             state.A.add_mul(cache.get_matrix(j), cache.cosines[j])
             state.B.add_mul(cache.get_vector(j), cache.sines[j])
+
+
+def run_iters(CalcState state, group, Cache cache, int num_iters):
+    cdef int i
+    cdef CalcState old_state
+    for i in range(num_iters):
+        old_state = state.copy()
+        one_iter(state, group, cache)
+        state = old_state
 
 
 cdef class ArrayHolder:
