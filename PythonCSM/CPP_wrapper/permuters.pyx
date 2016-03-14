@@ -1,6 +1,3 @@
-# cython: profile=True
-# cython: language-level=3
-# cython: boundscheck=False, wraparound=False, nonecheck=False
 import ctypes
 
 import numpy as np
