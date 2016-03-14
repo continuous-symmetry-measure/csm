@@ -3,7 +3,7 @@ import itertools
 import math
 import numpy as np
 
-from CPP_wrapper.permuters import _CythonPermuter
+from CPP_wrapper.fast import CythonPermuter
 
 from calculations.pair_cache import PairCache
 
@@ -278,7 +278,3 @@ class SinglePermPermuter:
 
     def permute(self):
         yield self._perm
-
-
-class CythonPermuter(_CythonPermuter):
-    pass

@@ -18,7 +18,7 @@ extra_link_args = []
 if sys.platform == 'win32':
     library_dirs = ['../../openbabel-files/Windows/lib/x64/Release', '../../CSM/cmake/Release', BOOST_ROOT]
     libraries = ['csmlib']
-    # extra_compiler_args = ['/Zi', '/Od']  # Debug info, no optimization
+    extra_compile_args = ['/Ox']
     # extra_link_args = ['/debug']
 elif sys.platform in ['linux', 'linux2']:
     library_dirs = ['../../openbabel-files/unix/lib', '../../CSM/cmake']
@@ -32,7 +32,7 @@ setup(
     ext_modules=cythonize(
         [Extension(
             "*",
-            ["permuters.pyx", "cache.pyx", "fast_calculations.pyx"],
+            ["fast.pyx"],
             language='c++',
             include_dirs=[numpy.get_include(), '../../CSM'],
             libraries=libraries,

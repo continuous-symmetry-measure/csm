@@ -3,7 +3,8 @@ import math
 import numpy as np
 from calculations.constants import MINDOUBLE, MAXDOUBLE
 from calculations.pair_cache import PairCache
-from calculations.ref_plane import calc_ref_plane
+from CPP_wrapper.fast import calc_ref_plane
+# from calculations.ref_plane import calc_ref_plane
 from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
 from calculations.permuters import SinglePermPermuter, MoleculeLegalPermuter, CythonPermuter
@@ -102,18 +103,18 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     return best_csm
 
 def permutation_loop(permuter, molecule, op_order, op_type, traced_state, best_csm):
-    for pip in permuter.permute():
-        csm, dir = calc_ref_plane(molecule, pip, op_order, op_type)
+    for calc_state in permuter.permute():
+        csm, dir = calc_ref_plane(op_order, op_type, calc_state)
         if csm_state_tracer_func:
             traced_state.csm = csm
-            traced_state.perm = pip.perm
+            traced_state.perm = calc_state.perms.get_perm(0)
             traced_state.dir = dir
             csm_state_tracer_func(traced_state)
 
         if csm < best_csm.csm:
             best_csm.csm = csm
             best_csm.dir = dir
-            best_csm.perm = pip.perm[:]
+            best_csm.perm = calc_state.perms.get_perm(0)
             # TODO: Write permutations while looping
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
