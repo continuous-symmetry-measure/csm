@@ -63,4 +63,4 @@ def run_csm(args={}):
 if __name__ == '__main__':
     timer = timeit.Timer(lambda: run_csm(args=sys.argv[1:]))
     time = timer.timeit(number=1)
-    print(time)
+    print("Runtime:", time)

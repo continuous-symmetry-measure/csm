@@ -116,6 +116,7 @@ def calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B, B):
                     break
                 else:
                     dir[i] += m_t_B[j] / (lambdas[j] - lambda_max) * m[i, j]
+
             m_max_B = m_max_B + dir[i] * B[i]
     return dir, m_max_B
 
