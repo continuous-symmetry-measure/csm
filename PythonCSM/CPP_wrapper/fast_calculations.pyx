@@ -10,54 +10,54 @@ cdef class CalcState
 cdef class Vector3D
 cdef class Matrix3D
 
-cdef build_polynomial(double [3] lambdas, double[3] m_t_B_2):
+cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2, double coeffs[7]):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
     # from the old C CSM code more or less untouched.
-    cdef double coeffs[7]   # A polynomial of the 6th degree. coeffs[0] is for x^6, xoeefs[1] for x^5 , etc..
+    # cdef double coeffs[7]   # A polynomial of the 6th degree. coeffs[0] is for x^6, xoeefs[1] for x^5 , etc..
     coeffs[0]=1.0
-    coeffs[1] = -2 * (lambdas[0] + lambdas[1] + lambdas[2])
-    coeffs[2] = lambdas[0] * lambdas[0] + lambdas[1] * lambdas[1] + lambdas[2] * lambdas[2] - \
-                m_t_B_2[0] - m_t_B_2[1] - m_t_B_2[2] + \
-                4 * (lambdas[0] * lambdas[1] + lambdas[0] * lambdas[2] + lambdas[1] * lambdas[2])
-    coeffs[3] = -8 * lambdas[0] * lambdas[1] * lambdas[2] + \
-                2 * (m_t_B_2[0] * lambdas[1] +
-                     m_t_B_2[0] * lambdas[2] +
-                     m_t_B_2[1] * lambdas[0] +
-                     m_t_B_2[1] * lambdas[2] +
-                     m_t_B_2[2] * lambdas[0] +
-                     m_t_B_2[2] * lambdas[1] -
-                     lambdas[0] * lambdas[2] * lambdas[2] -
-                     lambdas[0] * lambdas[0] * lambdas[1] -
-                     lambdas[0] * lambdas[0] * lambdas[2] -
-                     lambdas[0] * lambdas[1] * lambdas[1] -
-                     lambdas[1] * lambdas[1] * lambdas[2] -
-                     lambdas[1] * lambdas[2] * lambdas[2])
+    coeffs[1] = -2 * (lambdas.buf[0] + lambdas.buf[1] + lambdas.buf[2])
+    coeffs[2] = lambdas.buf[0] * lambdas.buf[0] + lambdas.buf[1] * lambdas.buf[1] + lambdas.buf[2] * lambdas.buf[2] - \
+                m_t_B_2.buf[0] - m_t_B_2.buf[1] - m_t_B_2.buf[2] + \
+                4 * (lambdas.buf[0] * lambdas.buf[1] + lambdas.buf[0] * lambdas.buf[2] + lambdas.buf[1] * lambdas.buf[2])
+    coeffs[3] = -8 * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[2] + \
+                2 * (m_t_B_2.buf[0] * lambdas.buf[1] +
+                     m_t_B_2.buf[0] * lambdas.buf[2] +
+                     m_t_B_2.buf[1] * lambdas.buf[0] +
+                     m_t_B_2.buf[1] * lambdas.buf[2] +
+                     m_t_B_2.buf[2] * lambdas.buf[0] +
+                     m_t_B_2.buf[2] * lambdas.buf[1] -
+                     lambdas.buf[0] * lambdas.buf[2] * lambdas.buf[2] -
+                     lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] -
+                     lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[2] -
+                     lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] -
+                     lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] -
+                     lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2])
     coeffs[4] = 4 * \
-                ((lambdas[0] * lambdas[1] * lambdas[2] * (lambdas[0] + lambdas[1] + lambdas[2]) -
-                  (m_t_B_2[2] * lambdas[0] * lambdas[1] +
-                   m_t_B_2[1] * lambdas[0] * lambdas[2] +
-                   m_t_B_2[0] * lambdas[2] * lambdas[1]))) - \
-                m_t_B_2[0] * (lambdas[1] * lambdas[1] + lambdas[2] * lambdas[2]) - \
-                m_t_B_2[1] * (lambdas[0] * lambdas[0] + lambdas[2] * lambdas[2]) - \
-                m_t_B_2[2] * (lambdas[0] * lambdas[0] + lambdas[1] * lambdas[1]) + \
-                lambdas[0] * lambdas[0] * lambdas[1] * lambdas[1] + \
-                lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] + \
-                lambdas[0] * lambdas[0] * lambdas[2] * lambdas[2]
+                ((lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[2] * (lambdas.buf[0] + lambdas.buf[1] + lambdas.buf[2]) -
+                  (m_t_B_2.buf[2] * lambdas.buf[0] * lambdas.buf[1] +
+                   m_t_B_2.buf[1] * lambdas.buf[0] * lambdas.buf[2] +
+                   m_t_B_2.buf[0] * lambdas.buf[2] * lambdas.buf[1]))) - \
+                m_t_B_2.buf[0] * (lambdas.buf[1] * lambdas.buf[1] + lambdas.buf[2] * lambdas.buf[2]) - \
+                m_t_B_2.buf[1] * (lambdas.buf[0] * lambdas.buf[0] + lambdas.buf[2] * lambdas.buf[2]) - \
+                m_t_B_2.buf[2] * (lambdas.buf[0] * lambdas.buf[0] + lambdas.buf[1] * lambdas.buf[1]) + \
+                lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] + \
+                lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2] + \
+                lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[2] * lambdas.buf[2]
     coeffs[5] = 2 * \
-                (m_t_B_2[0] * lambdas[1] * lambdas[2] * (lambdas[1] + lambdas[2]) +
-                 m_t_B_2[1] * lambdas[0] * lambdas[2] * (lambdas[0] + lambdas[2]) +
-                 m_t_B_2[2] * lambdas[0] * lambdas[1] * (lambdas[0] + lambdas[1])) \
+                (m_t_B_2.buf[0] * lambdas.buf[1] * lambdas.buf[2] * (lambdas.buf[1] + lambdas.buf[2]) +
+                 m_t_B_2.buf[1] * lambdas.buf[0] * lambdas.buf[2] * (lambdas.buf[0] + lambdas.buf[2]) +
+                 m_t_B_2.buf[2] * lambdas.buf[0] * lambdas.buf[1] * (lambdas.buf[0] + lambdas.buf[1])) \
                 - 2 * \
-                  (lambdas[0] * lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] +
-                   lambdas[0] * lambdas[0] * lambdas[1] * lambdas[2] * lambdas[2] +
-                   lambdas[0] * lambdas[0] * lambdas[1] * lambdas[1] * lambdas[2])
-    coeffs[6] = -m_t_B_2[0] * lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2] - \
-                m_t_B_2[1] * lambdas[0] * lambdas[0] * lambdas[2] * lambdas[2] - \
-                m_t_B_2[2] * lambdas[0] * lambdas[0] * lambdas[1] * lambdas[1] + \
-                lambdas[0] * lambdas[0] * lambdas[1] * lambdas[1] * lambdas[2] * lambdas[2]
+                  (lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2] +
+                   lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2] +
+                   lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2])
+    coeffs[6] = -m_t_B_2.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2] - \
+                m_t_B_2.buf[1] * lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[2] * lambdas.buf[2] - \
+                m_t_B_2.buf[2] * lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] + \
+                lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2]
 
-    return coeffs
+    # return coeffs
 
 
 def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lambda_max, Matrix3D m, Vector3D m_t_B, Vector3D B):
@@ -93,28 +93,21 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     return dir, m_max_B
 
 
-cdef PolynomialRoots(coeffs):
-    cdef double coeffs_v[7]
+cdef PolynomialRoots(double coeffs[7], complex roots[7]):
     cdef double zeror[7]
     cdef double zeroi[7]
 
-    cdef int i
+    csmlib.rpoly(coeffs, 6, zeror, zeroi)
     for i in range(7):
-        coeffs_v[i] = coeffs[i]
-
-    csmlib.rpoly(coeffs_v, 6, zeror, zeroi)
-    cdef complex result[7]
-    for i in range(7):
-        result[i] = complex(zeror[i], zeroi[i])
-
-    return result
+        roots[i] = complex(zeror[i], zeroi[i])
 
 
 cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2):
     cdef double coeffs[7]
-    coeffs = build_polynomial(lambdas.buf, m_t_B_2.buf)
     cdef complex roots[7]
-    roots = PolynomialRoots(coeffs)
+
+    build_polynomial(lambdas, m_t_B_2, coeffs)
+    PolynomialRoots(coeffs, roots)
     # polynomial = build_polynomial()
     # roots = polynomial.roots()
 
@@ -133,49 +126,40 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2):
 
 cpdef calc_ref_plane(int op_order, op_type, CalcState calc_state):
     cdef int i
-    # logger.debug("Computed matrix A is:")
-    # logger.debug(A)
-    # logger.debug("Computed vector B is: %s" % B)
-
-    # A = calc_state.A.to_numpy()
-    # B = calc_state.B.to_numpy()
-
-    # lambdas - list of 3 eigenvalues of A
-    # m - list of 3 eigenvectors of A
-
-    # lambdas, m = np.linalg.eig(A)
-    #print("Numpy:")
-    #print('A: ', A)
-    #print('EigenVectors: ', m)
-    #print("EigenValues: ", lambdas)
 
     cdef Matrix3D m = Matrix3D()
     cdef Vector3D lambdas = Vector3D()
-    csmlib.GetEigens(calc_state.A.buf, m.buf, lambdas.buf)
-    #print("C++:")
-    #print('A: ', str(calc_state.A))
-    #print('EigenVectors: ', str(eigenvectors))
-    #print("EigenValues: ", str(eigenvalues))
 
-    # compute square of scalar multiplications of eigen vectors with B
-    # m_t_B = m.T @ B
-    # m_t_B_2 = np.power(m_t_B, 2)
+
+    #_lambdas, _m = np.linalg.eig(calc_state.A.to_numpy())
+    #for i in range(3):
+    #    for j in range(3):
+    #        m.buf[i][j] = _m[i][j]
+    #    lambdas.buf[i] = _lambdas[i]
+
+    csmlib.GetEigens(calc_state.A.buf, m.buf, lambdas.buf)
 
     cdef Vector3D m_t_B = m.T_mul_by_vec(calc_state.B)
     cdef Vector3D m_t_B_2 = Vector3D()
     for i in range(3):
-        m_t_B_2[i] = m_t_B[i] * m_t_B[i]
-
-    #m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
-
-    # logger.debug("mTb: %s" % m_t_B)
-    # logger.debug("mTb^2: %s" % m_t_B_2)
+        m_t_B_2.buf[i] = m_t_B[i] * m_t_B[i]
 
     lambda_max=get_lambda_max(lambdas, m_t_B_2)
-
-    # logger.debug("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
 
     dir, m_max_B = calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B, calc_state.B)
     csm = calc_state.CSM + (lambda_max - m_max_B) / 2
     csm = math.fabs(100 * (1.0 - csm / op_order))
+
+    print("Perm:" , calc_state.perms.get_perm(1))
+    print("A: ", str(calc_state.A))
+    print("B: ", str(calc_state.B))
+    print("m: ", str(m))
+    print("lambdas: ", str(lambdas))
+    print("m_t_B: ", str(m_t_B))
+    print("m_t_B_2: ", str(m_t_B_2))
+    print("dir: ", str(dir))
+    print("m_max_b: ", str(m_max_B))
+    print("csm: ", str(csm))
+
+
     return csm, dir
