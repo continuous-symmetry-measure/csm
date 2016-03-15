@@ -10,7 +10,7 @@ cdef class CalcState
 cdef class Vector3D
 cdef class Matrix3D
 
-cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2):  
+cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
     # from the old C CSM code more or less untouched.
@@ -73,23 +73,30 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
         # If we are in zero teta case, we should pick the direction matching lambda_max
         min_dist = MAXDOUBLE
         minarg = 0
-
+        print("zero theta")
         for i in range(3):
             if math.fabs(lambdas.buf[i] - lambda_max) < min_dist:
                 min_dist = math.fabs(lambdas.buf[i] - lambda_max)
                 minarg = i
+                print("min_dist", min_dist)
         for i in range(3):
             dir.buf[i] = m.buf[i][minarg]
     else:
+        print("not zero")
         for i in range(3):
             for j in range(3):
                 # error safety
                 if math.fabs(lambdas.buf[j] - lambda_max) < 1e-6:
                     dir.buf[i] = m.buf[i][j]
+                    print("dir[",i,"]",dir.buf[i], "if")
                     break
                 else:
                     dir.buf[i] += m_t_B.buf[j] / (lambdas.buf[j] - lambda_max) * m.buf[i][j]
+                    print("dir[",i,"]",dir.buf[i], "else")
             m_max_B = m_max_B + dir.buf[i] * B.buf[i]
+            print("m_max_b", m_max_B)
+    print("dir",dir.to_numpy())
+    print("###")
     return dir, m_max_B
 
 
@@ -129,12 +136,26 @@ cpdef calc_ref_plane(int op_order, op_type, CalcState calc_state):
     cdef Matrix3D m = Matrix3D()
     cdef Vector3D lambdas = Vector3D()
     csmlib.GetEigens(calc_state.A.buf, m.buf, lambdas.buf)
+
+
     cdef Vector3D m_t_B = m.T_mul_by_vec(calc_state.B)
     cdef Vector3D m_t_B_2 = Vector3D()
     for i in range(3):
         m_t_B_2[i] = m_t_B[i] * m_t_B[i]
+
     lambda_max=get_lambda_max(lambdas, m_t_B_2)
-    dir, m_max_B = calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B, calc_state.B)
+    dir, m_max_B = calculate_dir(op_type=='CS', op_order, lambdas, lambda_max, m, m_t_B, calc_state.B)
     csm = calc_state.CSM + (lambda_max - m_max_B) / 2
     csm = math.fabs(100 * (1.0 - csm / op_order))
+    print("A", calc_state.A.to_numpy())
+    print("B",str(calc_state.B))
+    print("m",m.to_numpy())
+    print("lambdas",str(lambdas))
+    print("m_t_B",str(m_t_B))
+    print("m_t_B_2",str(m_t_B_2))
+    print("lambda_max", lambda_max)
+    print("dir", str(dir))
+    print("m_max_B", m_max_B)
+    print("csm",csm)
+    print("-------------------")
     return csm, dir

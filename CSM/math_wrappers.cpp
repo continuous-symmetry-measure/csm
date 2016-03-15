@@ -5,7 +5,7 @@
  */
 
 #include "math_wrappers.h"
-
+#include <iostream>
 #include <vector>
 #include <complex>
 #include "logging.h"
@@ -87,12 +87,19 @@ void GetEigens(const double matrix[3][3], double eigenVectors[3][3], double eige
 	Eigen::Matrix3d m;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
-			m(i, j) = matrix[i][j];
+		{
+			m(j,i) = matrix[i][j];
+		}
 
 	Eigen::EigenSolver<Eigen::Matrix3d> solver(m, true);
+	std::cout <<"print11"<< solver.eigenvalues()<<"\n";
+	std::cout << solver.eigenvectors();
+
+
 	for (int i = 0; i < 3; i++)
 	{
 		eigenValues[i] = solver.eigenvalues()[i].real();
+		
 		for (int j = 0; j < 3; j++)
 			eigenVectors[i][j] = solver.eigenvectors().col(i)[j].real();
 	}
