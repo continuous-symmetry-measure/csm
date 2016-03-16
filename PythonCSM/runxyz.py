@@ -1,4 +1,4 @@
-from calculations.permuters import is_legal_perm
+# from calculations.permuters import is_legal_perm
 from collections import OrderedDict
 from input_output.arguments import get_operation_data
 

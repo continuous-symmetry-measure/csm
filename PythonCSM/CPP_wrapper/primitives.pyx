@@ -94,7 +94,7 @@ cdef class Matrix3D:
         cdef int i, j
         for i in range(3):
             for j in range(3):
-                m[j][i] = self.buf[i][j]
+                m[i][j] = self.buf[i][j]
         return m
 
     cpdef T_mul_by_vec(Matrix3D self, Vector3D vec):

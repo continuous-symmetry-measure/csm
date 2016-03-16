@@ -10,7 +10,7 @@ cdef class CalcState
 cdef class Vector3D
 cdef class Matrix3D
 
-cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2, double coeffs[7]):
+cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2, double *coeffs):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
     # from the old C CSM code more or less untouched.
@@ -57,8 +57,6 @@ cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2, double coeffs[7]):
                 m_t_B_2.buf[2] * lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] + \
                 lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2]
 
-    # return coeffs
-
 
 def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lambda_max, Matrix3D m, Vector3D m_t_B, Vector3D B):
     cdef double m_max_B = 0.0
@@ -79,87 +77,99 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
                 min_dist = math.fabs(lambdas.buf[i] - lambda_max)
                 minarg = i
         for i in range(3):
-            dir.buf[i] = m.buf[i][minarg]
+            dir.buf[i] = m.buf[minarg][i]
     else:
         for i in range(3):
+            dir.buf[i] = 0.0
             for j in range(3):
                 # error safety
                 if math.fabs(lambdas.buf[j] - lambda_max) < 1e-6:
                     dir.buf[i] = m.buf[i][j]
                     break
                 else:
-                    dir.buf[i] += m_t_B.buf[j] / (lambdas.buf[j] - lambda_max) * m.buf[i][j]
-            m_max_B = m_max_B + dir.buf[i] * B.buf[i]
+                    dir.buf[i] += m_t_B.buf[j] / (lambdas.buf[j] - lambda_max) * m.buf[j][i]
+            m_max_B += dir.buf[i] * B.buf[i]
     return dir, m_max_B
 
 
-cdef PolynomialRoots(double coeffs[7], complex roots[7]):
-    cdef double zeror[7]
-    cdef double zeroi[7]
+cdef PolynomialRoots(double coeffs[7], complex *roots):
+    cdef double zeror[6]
+    cdef double zeroi[6]
+    cdef int i
 
     csmlib.rpoly(coeffs, 6, zeror, zeroi)
-    for i in range(7):
+    for i in range(6):
         roots[i] = complex(zeror[i], zeroi[i])
 
 
 cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2):
     cdef double coeffs[7]
-    cdef complex roots[7]
+    cdef complex roots[6]
+    cdef double lambda_max = -MAXDOUBLE
+    cdef int i
 
     build_polynomial(lambdas, m_t_B_2, coeffs)
     PolynomialRoots(coeffs, roots)
-    # polynomial = build_polynomial()
-    # roots = polynomial.roots()
-
-    # logger.debug('roots: ')
-    # logger.debug(roots)
 
     # lambda_max is a real root of the polynomial equation
     # according to the description above the formula (13) in the paper
-    cdef double lambda_max = -MAXDOUBLE
-    cdef int i
-    for i in range(len(roots)):
+    for i in range(6):
         if roots[i].real > lambda_max and math.fabs(roots[i].imag) < ZERO_IM_PART_MAX:
             lambda_max = roots[i].real
 
     return lambda_max
 
-cpdef calc_ref_plane(int op_order, op_type, CalcState calc_state):
+cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
+    global log
     cdef int i
+
+    # log = calc_state.perms.get_perm(1)[0]==4 and calc_state.perms.get_perm(1)[1]==0
+    #
+    # if log:
+    #     print("Perm:")
+    #     print(calc_state.perms.get_perm(1))
+    #     print("A:")
+    #     print(str(calc_state.A))
+    #     print("B:")
+    #     print(str(calc_state.B))
 
     cdef Matrix3D m = Matrix3D()
     cdef Vector3D lambdas = Vector3D()
-
-
-    #_lambdas, _m = np.linalg.eig(calc_state.A.to_numpy())
-    #for i in range(3):
-    #    for j in range(3):
-    #        m.buf[i][j] = _m[i][j]
-    #    lambdas.buf[i] = _lambdas[i]
-
     csmlib.GetEigens(calc_state.A.buf, m.buf, lambdas.buf)
+
+    # if log:
+    #     print("m:")
+    #     print(str(m))
+    #     print("lambdas:")
+    #     print(str(lambdas))
 
     cdef Vector3D m_t_B = m.T_mul_by_vec(calc_state.B)
     cdef Vector3D m_t_B_2 = Vector3D()
     for i in range(3):
         m_t_B_2.buf[i] = m_t_B[i] * m_t_B[i]
 
+    # if log:
+    #     print("m_t_B:")
+    #     print(str(m_t_B))
+    #     print("m_t_B_2:")
+    #     print(str(m_t_B_2))
+
     lambda_max=get_lambda_max(lambdas, m_t_B_2)
 
-    dir, m_max_B = calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B, calc_state.B)
+    dir, m_max_B = calculate_dir(is_op_cs, op_order, lambdas, lambda_max, m, m_t_B, calc_state.B)
     csm = calc_state.CSM + (lambda_max - m_max_B) / 2
     csm = math.fabs(100 * (1.0 - csm / op_order))
 
-    print("Perm:" , calc_state.perms.get_perm(1))
-    print("A: ", str(calc_state.A))
-    print("B: ", str(calc_state.B))
-    print("m: ", str(m))
-    print("lambdas: ", str(lambdas))
-    print("m_t_B: ", str(m_t_B))
-    print("m_t_B_2: ", str(m_t_B_2))
-    print("dir: ", str(dir))
-    print("m_max_b: ", str(m_max_B))
-    print("csm: ", str(csm))
-
+    # if log:
+    #     print("csm:")
+    #     print(calc_state.CSM)
+    #     print("lambda_max:")
+    #     print(lambda_max)
+    #     print("m_max_b:")
+    #     print(m_max_B)
+    #     print("dir:")
+    #     print(str(dir))
+    #     print("final-csm:")
+    #     print(str(csm))
 
     return csm, dir

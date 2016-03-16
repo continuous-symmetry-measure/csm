@@ -104,7 +104,7 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
 
 def permutation_loop(permuter, molecule, op_order, op_type, traced_state, best_csm):
     for calc_state in permuter.permute():
-        csm, dir = calc_ref_plane(op_order, op_type, calc_state)
+        csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
         if csm_state_tracer_func:
             traced_state.csm = csm
             traced_state.perm = calc_state.perms.get_perm(1)
