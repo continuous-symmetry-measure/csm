@@ -206,6 +206,78 @@ class Molecule:
             remove_list = ["H", " H"]
             self.strip_atoms(remove_list, ignore_hy)
 
+    def strip_atoms(self, remove_list, ignore_hy):
+            """
+            Creates a new Molecule from m by removing atoms who's symbol is in the remove list
+            :param csm_args:
+            :param removeList: atomic symbols to remove
+            """
+
+            # find atoms in removeList
+            to_remove = []
+            size = len(self._atoms)
+            for i in range(size):
+                hits = 0
+                for s in remove_list:
+                    if self._atoms[i].symbol == s:
+                        hits += 1
+                        break
+                if hits > 0:
+                    to_remove.append(i)
+
+            if len(to_remove) > 0:
+                self.remove_atoms(to_remove, ignore_hy)
+
+    def remove_atoms(self, to_remove, ignore_hy):
+        """
+        Removes atoms with indexes in the to_remove list from the molecule
+        :param csm_args:
+        :param to_remove:
+        """
+        move_indexes = {}
+        size = len(self._atoms)
+        j = 0
+
+        for i in range(size):
+            if i == to_remove[j]:
+                j += 1
+            else:
+                move_indexes[i] = i - j
+        j -= 1
+
+        for i in range(size - 1, 0, -1):
+            if i == to_remove[j]:
+                # remove the atom i
+                self._atoms.pop(i)
+                if not ignore_hy:
+                    if self.obmol:
+                        self.obmol.DeleteAtom(self.obmol.GetAtom(i + 1))
+                j -= 1
+            else:
+                # update the i-th atom adjacents
+                l = len(self._atoms[i].adjacent)
+                for k in range(l - 1, 0, -1):
+                    if self._atoms[i].adjacent[k] in move_indexes:
+                        self._atoms[i].adjacent[k] = move_indexes[self._atoms[i].adjacent[k]]
+                    else:
+                        self._atoms[i].adjacent.pop(k)
+
+        if ignore_hy:
+            # update indexes in equivalence classes
+            groups_num = len(self._equivalence_classes)
+            for i in range(groups_num - 1, -1, -1):
+                group_size = len(self._equivalence_classes[i])
+                for j in range(group_size - 1, -1, -1):
+                    if self._equivalence_classes[i][j] in move_indexes:
+                        self._equivalence_classes[i][j] = move_indexes[self._equivalence_classes[i][j]]
+                    else:
+                        self._equivalence_classes[i].pop(j)
+                if len(self._equivalence_classes[i]) == 0:
+                    self._equivalence_classes.pop(i)
+        else:  # removeHy
+            self._find_equivalence_classes()
+
+
     def normalize(self, keep_center=False):
         """
         Normalize the molecule
