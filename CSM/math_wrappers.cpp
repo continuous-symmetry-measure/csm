@@ -31,7 +31,7 @@ std::vector<std::complex<double> > FindPolyRoots(const std::vector<double>& coef
 	// Prepare all the rpoly arguments
 	// Allocate all the necessary memory manually, and copy the coefficients, since rpoly
 	// might change them - who knows.
-	int highest_degree = coefficients.size() - 1;
+	size_t highest_degree = coefficients.size() - 1;
 	double *zeror = new double[highest_degree];  // Not using std::vector<double>.data() because it just seems wrong
 	double *zeroi = new double[highest_degree];  // although it is quite acceptable http://stackoverflow.com/questions/18759692/stdvector-write-directly-to-the-internal-array
 	double *coeffs = new double[highest_degree + 1];
@@ -92,9 +92,6 @@ void GetEigens(const double matrix[3][3], double eigenVectors[3][3], double eige
 		}
 
 	Eigen::EigenSolver<Eigen::Matrix3d> solver(m, true);
-	std::cout <<"print11"<< solver.eigenvalues()<<"\n";
-	std::cout << solver.eigenvectors();
-
 
 	for (int i = 0; i < 3; i++)
 	{

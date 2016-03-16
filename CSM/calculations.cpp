@@ -184,7 +184,7 @@ double calcRefPlane(Molecule* m, int* perm, double *dir, OperationType type) {
 	LOG(debug) << matrix_A[0][0] << " " << matrix_A[0][1] << " " << matrix_A[0][2];
 	LOG(debug) << matrix_A[1][0] << " " << matrix_A[1][1] << " " << matrix_A[1][2];
 	LOG(debug) << matrix_A[2][0] << " " << matrix_A[2][1] << " " << matrix_A[2][2] << endl;
-	LOG(debug) << "Computed vector B is : " << vec_B[0] << " " << vec_B[1] << " " << vec_B[0] << endl;
+	LOG(debug) << "Computed vector B is : " << vec_B[0] << " " << vec_B[1] << " " << vec_B[2] << endl;
 
 	vector<EigenResult> eigens = GetEigens(matrix_A);
 
