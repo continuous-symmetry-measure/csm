@@ -3,7 +3,7 @@ import logging
 import sys
 import timeit
 
-from calculations.permuters import MoleculeLegalPermuter, CythonPermuter
+from CPP_wrapper.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, LegalPermChecker, PQPermChecker
 from input_output.arguments import get_split_arguments
 from calculations.csm_calculations import exact_calculation
 from calculations import csm_calculations

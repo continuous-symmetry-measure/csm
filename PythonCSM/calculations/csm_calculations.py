@@ -1,13 +1,8 @@
-import csv
-import math
 import numpy as np
 from calculations.constants import MINDOUBLE, MAXDOUBLE
-from calculations.pair_cache import PairCache
 from CPP_wrapper.fast import calc_ref_plane
-# from calculations.ref_plane import calc_ref_plane
-from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
-from calculations.permuters import SinglePermPermuter, MoleculeLegalPermuter, CythonPermuter
+from CPP_wrapper.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, LegalPermChecker, PQPermChecker
 import logging
 from recordclass import recordclass
 
@@ -15,7 +10,7 @@ np.set_printoptions(precision=6)
 
 logger = logging.getLogger("csm")
 
-__author__ = 'YAEL'
+__author__ = 'Itay, Devora, Yael'
 
 CSMState = recordclass('CSMState', ('molecule',
                                     'op_order',
@@ -46,16 +41,16 @@ def process_results(results, keepCenter=False):
     results.symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
 
 
-def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, permuter_class=MoleculeLegalPermuter, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, permuter_class=CythonPermuter, permchecker=TruePermChecker, perm=None, calc_local=False, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         sn_max = op_order
         # First CS
-        best_result = csm_operation('CS', 2, molecule, perm, permuter_class)
+        best_result = csm_operation('CS', 2, molecule, permuter_class, permchecker, perm)
         best_result.op_type='CS'
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
-                result = csm_operation('SN', op_order, molecule, perm, permuter_class)
+                result = csm_operation('SN', op_order, molecule, permuter_class, permchecker, perm)
                 if result.csm < best_result.csm:
                     best_result = result
                     best_result.op_type='SN'
@@ -64,7 +59,7 @@ def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, 
                     break
 
     else:
-        best_result = csm_operation(op_type, op_order, molecule, perm, permuter_class)
+        best_result = csm_operation(op_type, op_order, molecule, permuter_class, permchecker, perm)
 
     process_results(best_result, molecule)
     if calc_local:
@@ -74,7 +69,7 @@ def exact_calculation(op_type, op_order, molecule, perm=None, calc_local=False, 
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=MoleculeLegalPermuter):
+def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, permchecker=TruePermChecker, perm=None):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.

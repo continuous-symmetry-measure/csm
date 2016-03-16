@@ -39,6 +39,21 @@ cdef class LegalPermChecker(PermChecker):
                 return False
         return True
 
+
+class PQPermChecker:
+    def __init__(self, mol):
+        self.mol = mol
+
+    def is_legal(self, pip, origin, destination):
+        raise NotImplemented
+        for adjacent in self.mol.atoms[destination].adjacent:
+            if pip.p[adjacent] != -1 and (origin, pip.p[adjacent]) not in self.mol.bondset:
+                return False
+            for adjacent in self.mol.atoms[origin].adjacent:
+                if pip.q[adjacent] != -1 and (destination, pip.q[adjacent]) not in self.mol.bondset:
+                    return False
+        return True
+
 cdef class CalcState:
     cdef public Matrix3D A
     cdef public Vector3D B
@@ -228,3 +243,20 @@ cdef class CythonPermuter:
     def permute(self):
         for pip in self._recursive_permute(self._groups, self._pip):
             yield pip.state
+
+
+class SinglePermPermuter:
+    """ A permuter that returns just one permutation, used for when the permutation is specified by the user """
+
+    class SinglePermInProgress(CythonPIP):
+        def __init__(self, mol, perm, op_order, op_type):
+            super().__init__(mol, op_order, op_type, TruePermChecker)
+            self.p=perm
+            self.cache = Cache(mol)
+            self.close_cycle(perm, self.cache)
+
+    def __init__(self, perm, mol, op_order, op_type):
+        self._perm = self.SinglePermInProgress(mol, perm, op_order, op_type)
+
+    def permute(self):
+        yield self._perm.state
