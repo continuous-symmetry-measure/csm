@@ -3,13 +3,12 @@ import itertools
 import math
 import numpy as np
 
-from CPP_wrapper.fast import CythonPermuter
-
+from CPP_wrapper.fast import CythonPermuter, CythonPIP, Cache, TruePermChecker
 from calculations.pair_cache import PairCache
 
 __author__ = 'Devora'
 
-
+'''
 class PermChecker:
     def __init__(self, mol):
         self.mol = mol
@@ -41,7 +40,7 @@ class TruePermChecker:
 
     def is_legal(self, pip, origin, destination):
         return True
-
+'''
 
 class TemplatePermInProgress:
     def __init__(self, mol, op_order, op_type, permchecker):
@@ -267,14 +266,15 @@ class MoleculeLegalPermuter:
 class SinglePermPermuter:
     """ A permuter that returns just one permutation, used for when the permutation is specified by the user """
 
-    class SinglePermInProgress(TemplatePermInProgress):
+    class SinglePermInProgress(CythonPIP):
         def __init__(self, mol, perm, op_order, op_type):
-            super().__init__(mol, op_order, op_type, None)
+            super().__init__(mol, op_order, op_type, TruePermChecker)
             self.p=perm
-            self.type="SP"
+            self.cache = Cache(mol)
+            self.close_cycle(perm, self.cache)
 
     def __init__(self, perm, mol, op_order, op_type):
         self._perm = self.SinglePermInProgress(mol, perm, op_order, op_type)
 
     def permute(self):
-        yield self._perm
+        yield self._perm.state

@@ -92,7 +92,18 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     else:
         permuter = permuter_class(molecule, op_order, op_type)
 
-    permutation_loop(permuter, molecule, op_order, op_type, traced_state, best_csm)
+    for calc_state in permuter.permute():
+        csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
+        if csm_state_tracer_func:
+            traced_state.csm = csm
+            traced_state.perm = calc_state.perm
+            traced_state.dir = dir
+            csm_state_tracer_func(traced_state)
+
+        if csm < best_csm.csm:
+            best_csm.csm = csm
+            best_csm.dir = dir
+            best_csm.perm = calc_state.perm
 
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation
@@ -101,21 +112,6 @@ def csm_operation(op_type, op_order, molecule, perm=None, permuter_class=Molecul
     best_csm.symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
                                                               best_csm.op_order, best_csm.d_min)
     return best_csm
-
-def permutation_loop(permuter, molecule, op_order, op_type, traced_state, best_csm):
-    for calc_state in permuter.permute():
-        csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
-        if csm_state_tracer_func:
-            traced_state.csm = csm
-            traced_state.perm = calc_state.perms.get_perm(1)
-            traced_state.dir = dir
-            csm_state_tracer_func(traced_state)
-
-        if csm < best_csm.csm:
-            best_csm.csm = csm
-            best_csm.dir = dir
-            best_csm.perm = calc_state.perms.get_perm(1)
-            # TODO: Write permutations while looping
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
     is_improper = op_type != 'CN'

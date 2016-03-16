@@ -73,7 +73,7 @@ cdef class CalcState:
 
     property perm:
         def __get__(self):
-            return self.perms.get_perm(0)
+            return self.perms.get_perm(1)
 
 cdef class CythonPIP:
     cdef PermChecker permchecker
