@@ -2,7 +2,7 @@ import numpy as np
 from calculations.constants import MINDOUBLE, MAXDOUBLE
 from CPP_wrapper.fast import calc_ref_plane
 from molecule.normalizations import de_normalize_coords, normalize_coords
-from CPP_wrapper.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, LegalPermChecker, PQPermChecker
+from CPP_wrapper.fast import CythonPermuter, SinglePermPermuter, TruePermChecker,PQPermChecker
 import logging
 from recordclass import recordclass
 
@@ -41,7 +41,13 @@ def process_results(results):
     results.symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
 
 
-def exact_calculation(op_type, op_order, molecule, permuter_class=CythonPermuter, permchecker=TruePermChecker, perm=None, calc_local=False, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, permuter_class=CythonPermuter, keep_structure=False, perm=None, calc_local=False, *args, **kwargs):
+    if keep_structure:
+        permchecker=PQPermChecker
+    else:
+        permchecker=TruePermChecker
+    
+
     if op_type == 'CH':  # Chirality
         sn_max = op_order
         # First CS
@@ -85,7 +91,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
         permuter = SinglePermPermuter(np.array(perm), molecule, op_order, op_type)
         logger.debug("SINGLE PERM")
     else:
-        permuter = permuter_class(molecule, op_order, op_type)
+        permuter = permuter_class(molecule, op_order, op_type, permchecker)
 
     for calc_state in permuter.permute():
         csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
@@ -100,6 +106,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
             best_csm.dir = dir
             best_csm.perm = calc_state.perm
 
+    print (permuter.count)
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation
         raise ValueError("Failed to calculate a csm value for %s" % op_type)

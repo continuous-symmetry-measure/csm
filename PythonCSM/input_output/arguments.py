@@ -18,6 +18,7 @@ def _create_parser():
     parser.add_argument('output', default='output.txt', help='Output file')
 
     # Optional arguments (their names start with --)
+    parser.add_argument('--keepStructure', action='store_true', default=False, help='Maintain molecule structure from being distorted')
     parser.add_argument('--ignoreHy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
     parser.add_argument('--removeHy', action='store_true', default=False,
                         help='Remove Hydrogen atoms in computations, rebuild molecule without them and compute')
@@ -140,6 +141,7 @@ def _process_split_arguments(parse_res):
     calc_args['limit_run'] = not parse_res.nolimit
     calc_args['find_perm'] = parse_res.findperm
     calc_args['detect_outliers'] = parse_res.detectOutliers
+    calc_args['keep_structure']=parse_res.keepStructure
     if parse_res.approx:
         calc_args['find_perm'] = True
         calc_args['detect_outliers'] = True
