@@ -46,8 +46,6 @@ def _create_parser():
                         help='Print the local CSM (csm for each atom) in the output file')
     parser.add_argument('--approx', action='store_true', default=False,
                         help='Equivalent to --detectOutliers --findperm together')
-    parser.add_argument('--keepCenter', action='store_true', default=False,
-                        help='Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass')
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
     parser.add_argument('--outputPerms', action='store', default=None,
                         help='Writes all enumerated permutations to file')
@@ -158,7 +156,6 @@ def _process_split_arguments(parse_res):
     mol_args['babel_bond'] = parse_res.babelbond
     mol_args['use_mass'] = parse_res.useMass
     mol_args['use_chains'] = parse_res.useChains
-    mol_args['keep_center'] = parse_res.keepCenter
     if parse_res.writeOpenu:
         mol_args['format'] = "PDB"
     if parse_res.useperm:
