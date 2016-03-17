@@ -12,7 +12,6 @@ def read_inputs(perm_file_name=None, dir_file_name=None, **kwargs):
     Returns:
         (molecule, perm, dir) - perm and dir may be None
     """
-
     molecule = Molecule.from_file(**kwargs)
     if perm_file_name:
         perm = read_perm_file(perm_file_name)
@@ -50,7 +49,7 @@ def read_perm_file(filename):
     Check that the permutation is legal, raise ValueError if not
     """
     with open(filename, 'r') as f:
-        line = f.readline().split()
+        line = f.read().split()
         used = set()
 
         result = []

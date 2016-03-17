@@ -12,7 +12,7 @@ def _create_parser():
 
     # The first three positional arguments
     parser.add_argument('type',
-                        choices=('c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 's2', 's4', 's6', 's8', 'cs', 'ci', 'ch'),
+                        choices=('c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c10', 's2', 's4', 's6', 's8', 's10', 'cs', 'ci', 'ch'),
                         help='The type of operation')
     parser.add_argument('input', help='Input file')
     parser.add_argument('output', default='output.txt', help='Output file')
@@ -95,10 +95,12 @@ _opcode_data = {
     'c6': ('CN', 6, "C6 SYMMETRY"),
     'c7': ('CN', 7, "C7 SYMMETRY"),
     'c8': ('CN', 8, "C8 SYMMETRY"),
+    'c10': ('CN', 10, "C10 SYMMETRY"),
     's2': ('SN', 2, "S2 SYMMETRY"),
     's4': ('SN', 4, "S4 SYMMETRY"),
     's6': ('SN', 6, "S6 SYMMETRY"),
-    's8': ('SN', 8, "S8 SYMMETRY")
+    's8': ('SN', 8, "S8 SYMMETRY"),
+    's10': ('SN', 8, "S10 SYMMETRY")
 }
 
 def get_operation_data(opcode):
