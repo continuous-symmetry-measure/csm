@@ -193,7 +193,6 @@ class Molecule:
         Preprocess a molecule based on the arguments passed to CSM
         :param remove_hy: True if hydrogen atoms should be removed
         :param ignore_hy: True when hydrogen atoms should be ignored when calculating the equivalence classes
-        :param keepCenter: True when the molecule's CoM shouldn't be moved
         :param kwargs: Place holder for all other csm_args.
         You can call it by passing **csm_args
         """
@@ -278,14 +277,13 @@ class Molecule:
             self._find_equivalence_classes()
 
 
-    def normalize(self, keep_center=False):
+    def normalize(self):
         """
         Normalize the molecule
-        :param keep_center:
         """
         coords = [atom.pos for atom in self._atoms]
         masses = [atom.mass for atom in self._atoms]
-        (norm_coords, self._norm_factor) = normalize_coords(coords, masses, keep_center)
+        (norm_coords, self._norm_factor) = normalize_coords(coords, masses)
         size = len(self._atoms)
         for i in range(size):
             self._atoms[i].pos = norm_coords[i]
@@ -303,37 +301,36 @@ class Molecule:
         for i in range(size):
             self._atoms[i].pos = denorm_coords[i]
 
-    def _complete_initialization(self, remove_hy, ignore_hy, keep_center):
+    def _complete_initialization(self, remove_hy, ignore_hy):
         """
         Finish creating the molecule after reading the raw data
         """
         self._calculate_equivalency(remove_hy, ignore_hy)
-        self.normalize(keep_center)
+        self.normalize()
 
     @staticmethod
     def from_string(string, format, initialize=True, use_chains=False, babel_bond=False, ignore_hy=False,
-                    remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
+                    remove_hy=False, ignore_symm=False, use_mass=False):
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
-        # second note: keepCenter has only ever been tested as false, it's not at all certain it's still used or still works when true
 
         # step one: get the molecule object
         obm = Molecule._obm_from_string(string, format, babel_bond)
         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
         if initialize:
-            mol._complete_initialization(remove_hy, ignore_hy, keep_center)
+            mol._complete_initialization(remove_hy, ignore_hy)
 
         return mol
 
     @staticmethod
     def from_file(in_file_name, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False, *args, **kwargs):
+                  remove_hy=False, ignore_symm=False, use_mass=False, *args, **kwargs):
         if format == "csm":
             mol = Molecule._read_csm_file(in_file_name, ignore_symm, use_mass)
         else:
             obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
             mol = Molecule._from_obm(obm, ignore_symm, use_mass)
         if initialize:
-            mol._complete_initialization(remove_hy, ignore_hy, keep_center)
+            mol._complete_initialization(remove_hy, ignore_hy)
         return mol
 
     @staticmethod

@@ -27,7 +27,7 @@ CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 # This is useful for writing all permutations to file during the calculation
 csm_state_tracer_func = None
 
-def process_results(results, keepCenter=False):
+def process_results(results):
     """
     Final normalizations and de-normalizations
     :param results: CSM old_calculations results
@@ -35,7 +35,7 @@ def process_results(results, keepCenter=False):
     """
     #    results.molecule.set_norm_factor(molecule.norm_factor)
     masses = [atom.mass for atom in results.molecule.atoms]
-    normalize_coords(results.symmetric_structure, masses, keepCenter)
+    normalize_coords(results.symmetric_structure, masses)
 
     results.molecule.de_normalize()
     results.symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
@@ -61,7 +61,7 @@ def exact_calculation(op_type, op_order, molecule, permuter_class=CythonPermuter
     else:
         best_result = csm_operation(op_type, op_order, molecule, permuter_class, permchecker, perm)
 
-    process_results(best_result, molecule)
+    process_results(best_result)
     if calc_local:
         best_result.local_csm = compute_local_csm(molecule, best_result.perm, best_result.dir, best_result.op_type,
                                                   best_result.op_order)
