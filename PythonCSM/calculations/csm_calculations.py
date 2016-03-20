@@ -48,7 +48,7 @@ def process_results(results):
     results.symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
 
 
-def perm_count(op_type, op_order, molecule, keep_structure, *args, **kwargs):
+def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *args, **kwargs):
     def _len_group_permuter(group_size, cycle_size, add_cycles_of_two):
         """
         Returns the length of the group permuter.
@@ -147,25 +147,40 @@ def perm_count(op_type, op_order, molecule, keep_structure, *args, **kwargs):
             log_num_perms = log_perms_in_kind(kind)
             count += math.exp(log_num_structs + log_num_perms)
         return count
-    if keep_structure:
-        permuter = CythonPermuter(molecule, op_order, op_type, PQPermChecker, perm_class=CythonPIP)
-        for perm in permuter.permute():
-            if permuter.count%1000000==0:
-                print("counted", permuter.count, "permutations thus far...")
-        count=permuter.count
-    else:
+
+    perm_checker=TruePermChecker
+
+    if not print_perms:
+        if keep_structure:
+            pass
         count=1
         groups=molecule.equivalence_classes
         for group in groups:
             count*=_len_group_permuter(len(group), op_order, op_type=='SN')
-    return int(count)
+        return int(count)
+
+    if keep_structure:
+        perm_checker=PQPermChecker
+
+    traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
+    permuter = CythonPermuter(molecule, op_order, op_type, perm_checker, perm_class=CythonPIP)
+
+    for pip in permuter.permute():
+        if csm_state_tracer_func:
+            traced_state.csm = ''
+            traced_state.perm = pip.perm
+            traced_state.dir = ''
+            csm_state_tracer_func(traced_state)
+        if permuter.count%1000000==0:
+            print("counted", permuter.count, "permutations thus far...")
+        count=permuter.count
+    return count
 
 def exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=None, calc_local=False, *args, **kwargs):
     if keep_structure:
         permchecker=PQPermChecker
     else:
         permchecker=TruePermChecker
-        print("Total perms:", perm_count(op_type, op_order, molecule, keep_structure))
 
     permuter_class=CythonPermuter
 

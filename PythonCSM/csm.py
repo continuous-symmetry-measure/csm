@@ -3,7 +3,7 @@ import logging
 import sys
 import timeit
 from input_output.arguments import get_split_arguments
-from calculations.csm_calculations import exact_calculation
+from calculations.csm_calculations import exact_calculation, perm_count
 from calculations import csm_calculations
 from input_output.readers import read_inputs
 from input_output.writers import print_results
@@ -47,6 +47,8 @@ def run_csm(args={}):
         if calc_args['find_perm']:
             raise NotImplementedError("No approx yet")
     #        result = approx_calculation(**calc_args)
+        elif calc_args['just_perms']:
+            result = perm_count(**calc_args)
         else:
             result = exact_calculation(**calc_args)
 

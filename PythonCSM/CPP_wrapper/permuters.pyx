@@ -39,9 +39,9 @@ class PQPermChecker(PermChecker):
         for adjacent in self.mol.atoms[destination].adjacent:
             if pip.p[adjacent] != -1 and (origin, pip.p[adjacent]) not in self.mol.bondset:
                 return False
-            for adjacent in self.mol.atoms[origin].adjacent:
-                if pip.q[adjacent] != -1 and (destination, pip.q[adjacent]) not in self.mol.bondset:
-                    return False
+        #for adjacent in self.mol.atoms[origin].adjacent:
+        #        if pip.q[adjacent] != -1 and (destination, pip.q[adjacent]) not in self.mol.bondset:
+        #            return False
         return True
 
 cdef class CalcState:
@@ -83,8 +83,6 @@ cdef class CalcState:
 cdef class CythonPIP:
     cdef PermChecker permchecker
     cdef public CalcState state
-    cdef public int[:] p
-    cdef public int[:] q
     cdef public int molecule_size
     cdef public int op_order
     cdef public double[:] costheta
@@ -95,22 +93,23 @@ cdef class CythonPIP:
         self.permchecker = permchecker(mol)
         self.molecule_size =len(mol.atoms)
         self.state = CalcState(len(mol.atoms), op_order, True)
-        self.p = -1 * np.ones((self.molecule_size,), dtype=np.int)  # Numpy array, but created once per molecule so no worries.
-        self.q = -1 * np.ones((self.molecule_size,), dtype=np.int)
         self.op_order=op_order
         self.sintheta, self.costheta, self.multiplier= self._precalculate(op_type, op_order)
 
+    property p:
+        def __get__(self):
+            return self.state.perm
 
     cpdef switch(CythonPIP self, int origin, int destination):
         if self.permchecker.is_legal(self, origin, destination):
-            self.p[origin]=destination
-            self.q[destination]=origin
+            self.state.perms.set_perm_value(1, origin, destination)
+            #self.q[destination]=origin
             return True
         return False
 
     cpdef unswitch(CythonPIP self, int origin, int destination):
-        self.p[origin] = -1
-        self.q[destination] = -1
+        self.state.perms.set_perm_value(1, origin, -1)
+        #self.q[destination] = -1
 
     cdef _precalculate(CythonPIP self, op_type, int op_order):
         cdef bool is_improper = op_type != 'CN'
@@ -154,7 +153,7 @@ cdef class PreCalcPIP(CythonPIP):
         cdef int j
         cdef int index, permuted_index
         cdef double dists
-        for iop in range(1, self.state.op_order):
+        for iop in range(2, self.state.op_order):
             dists=0.0
             for j in range(len(group)):
                 index = group[j]
