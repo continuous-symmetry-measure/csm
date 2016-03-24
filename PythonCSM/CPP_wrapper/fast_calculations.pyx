@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 cimport numpy as np
-cimport csmlib
+cimport fastcpp
 from calculations.constants import MAXDOUBLE, ZERO_IM_PART_MAX
 from libcpp cimport bool
 
@@ -97,7 +97,7 @@ cdef PolynomialRoots(double coeffs[7], complex *roots):
     cdef double zeroi[6]
     cdef int i
 
-    csmlib.rpoly(coeffs, 6, zeror, zeroi)
+    fastcpp.rpoly(coeffs, 6, zeror, zeroi)
     for i in range(6):
         roots[i] = complex(zeror[i], zeroi[i])
 
@@ -135,7 +135,7 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
 
     cdef Matrix3D m = Matrix3D()
     cdef Vector3D lambdas = Vector3D()
-    csmlib.GetEigens(calc_state.A.buf, m.buf, lambdas.buf)
+    fastcpp.GetEigens(calc_state.A.buf, m.buf, lambdas.buf)
 
     # if log:
     #     print("m:")
