@@ -171,7 +171,7 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
             traced_state.dir = ''
             csm_state_tracer_func(traced_state)
         if permuter.count%1000000==0:
-            print("counted", permuter.count, "permutations thus far...")
+            print("counted", int(permuter.count/1000000), "million permutations thus far...")
         count=permuter.count
     return count
 
@@ -231,7 +231,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
 
     for calc_state in permuter.permute():
         if permuter.count%1000000==0:
-            print("calculated for", permuter.count, "permutations thus far...\t Time:", datetime.now()-start_time)
+            print("calculated for", int(permuter.count/1000000), "million permutations thus far...\t Time:", datetime.now()-start_time)
         csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
         if csm_state_tracer_func:
             traced_state.csm = csm

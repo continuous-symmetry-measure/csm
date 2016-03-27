@@ -39,9 +39,6 @@ class PQPermChecker(PermChecker):
         for adjacent in self.mol.atoms[destination].adjacent:
             if pip.p[adjacent] != -1 and (origin, pip.p[adjacent]) not in self.mol.bondset:
                 return False
-        for adjacent in self.mol.atoms[origin].adjacent:
-                if pip.q[adjacent] != -1 and (destination, pip.q[adjacent]) not in self.mol.bondset:
-                    return False
         return True
 
 cdef class CalcState:
