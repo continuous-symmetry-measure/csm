@@ -34,6 +34,7 @@ class Molecule:
 
     @property
     def equivalence_classes(self):
+        self._equivalence_classes.sort(key=len)
         return self._equivalence_classes
 
     @property
