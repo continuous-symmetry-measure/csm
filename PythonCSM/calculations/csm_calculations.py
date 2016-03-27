@@ -151,13 +151,12 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
     perm_checker=TruePermChecker
 
     if not print_perms:
-        if keep_structure:
-            pass
-        count=1
-        groups=molecule.equivalence_classes
-        for group in groups:
-            count*=_len_group_permuter(len(group), op_order, op_type=='SN')
-        return int(count)
+        if not keep_structure:
+            count=1
+            groups=molecule.equivalence_classes
+            for group in groups:
+                count*=_len_group_permuter(len(group), op_order, op_type=='SN')
+            return int(count)
 
     if keep_structure:
         perm_checker=PQPermChecker
