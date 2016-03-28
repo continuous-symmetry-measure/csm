@@ -48,6 +48,7 @@ cdef class CalcState:
     cdef public int op_order
     cdef public int molecule_size
     cdef public double CSM
+    cdef public int[:] p
 
     def __init__(self, int molecule_size, int op_order, allocate=True):
         self.op_order = op_order
@@ -75,7 +76,9 @@ cdef class CalcState:
 
     property perm:
         def __get__(self):
-            return self.perms.get_perm(1)
+            return self.p
+        def __set__(self, val):
+            self.p=val
 
 cdef class CythonPIP:
     cdef PermChecker permchecker
@@ -244,6 +247,7 @@ cdef class CythonPermuter:
     def permute(self):
         for pip in self._recursive_permute(self._groups, self._pip):
             self.count+=1
+            pip.state.perm=pip.p
             yield pip.state
 
 
@@ -256,6 +260,7 @@ class SinglePermPermuter:
             self.p=perm
             self.cache = Cache(mol)
             self.close_cycle(perm, self.cache)
+            self.state.perm=perm
 
     def __init__(self, perm, mol, op_order, op_type):
         self._perm = self.SinglePermInProgress(mol, perm, op_order, op_type)
