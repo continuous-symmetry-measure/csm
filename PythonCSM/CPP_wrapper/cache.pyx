@@ -44,16 +44,16 @@ cdef class Cache:
     cdef _outer
     cdef _inner
     def __init__(self, mol):
-        size=len(mol.atoms)
         self._cross= {}
         self._outer = {}
         self._inner={}
         cdef int i, j
-        for i in range(size):
-            for j in range(size):
-                self._cross[(i,j)]= cross_product(mol.Q[i],mol.Q[j])
-                self._inner[(i,j)]= inner_product(mol.Q[i],mol.Q[j])
-                self._outer[(i,j)]= outer_product_sum(mol.Q[i],mol.Q[j])
+        for group in mol.equivalence_classes:
+            for i in group:
+                for j in group:
+                    self._cross[(i,j)]= cross_product(mol.Q[i],mol.Q[j])
+                    self._inner[(i,j)]= inner_product(mol.Q[i],mol.Q[j])
+                    self._outer[(i,j)]= outer_product_sum(mol.Q[i],mol.Q[j])
 
     cpdef double inner_product(Cache self, int i, int j):
         return self._inner[(i,j)]

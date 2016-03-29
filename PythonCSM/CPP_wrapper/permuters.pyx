@@ -131,7 +131,7 @@ cdef class CythonPIP:
                 multiplier[i] = 1 - cos
         return sintheta, costheta, multiplier
 
-    cpdef close_cycle(self, group, Cache cache):
+    cpdef close_cycle(self, group):
         return None
 
     cpdef unclose_cycle(self,  CalcState old_state):
@@ -140,15 +140,20 @@ cdef class CythonPIP:
 
 
 cdef class PreCalcPIP(CythonPIP):
-    cpdef close_cycle(self, group, Cache cache):
+    cdef Cache cache
+    def __init__(self, mol, op_order, op_type, permchecker):
+        super().__init__(mol, op_order, op_type, permchecker)
+        self.cache = Cache(mol)
+
+    cpdef close_cycle(self, group):
         old_state = self.state.copy()
-        self.partial_calculate(group, cache)
+        self.partial_calculate(group, self.cache)
         return old_state
 
     cpdef unclose_cycle(self,  CalcState old_state):
         self.state = old_state
 
-    cdef partial_calculate(self, group, Cache cache):
+    cdef partial_calculate(PreCalcPIP self, group, Cache cache):
         cdef int iop
         cdef int j
         cdef int index, permuted_index
@@ -174,8 +179,8 @@ cdef class CythonPermuter:
     cdef CythonPIP _pip
     cdef _cycle_lengths
     cdef int _max_length
-    cdef Cache cache
     cdef public int count
+    cdef int first_index
 
     def __init__(self, mol, op_order, op_type, perm_checker, perm_class=PreCalcPIP):
         self.count=0
@@ -185,7 +190,6 @@ cdef class CythonPermuter:
         if op_type == 'SN':
             self._cycle_lengths = (1, 2, op_order)
         self._max_length = op_order
-        self.cache = Cache(mol)
 
     def _group_recursive_permute(self,pip, curr_atom, cycle_head, built_cycle, cycle_length, remainder):
             """
@@ -206,7 +210,7 @@ cdef class CythonPermuter:
                 # Yes it can, attempt to close it
                 if pip.switch(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
                     built_cycle.append(cycle_head)
-                    saved_state=pip.close_cycle(built_cycle, self.cache)
+                    saved_state=pip.close_cycle(built_cycle)
                     if not remainder:  # perm has been completed
                         yield pip
                     else:
@@ -254,12 +258,11 @@ cdef class CythonPermuter:
 class SinglePermPermuter:
     """ A permuter that returns just one permutation, used for when the permutation is specified by the user """
 
-    class SinglePIP(CythonPIP):
+    class SinglePIP(PreCalcPIP):
         def __init__(self, mol, perm, op_order, op_type):
             super().__init__(mol, op_order, op_type, TruePermChecker)
             self.p=perm
-            self.cache = Cache(mol)
-            self.close_cycle(perm, self.cache)
+            self.close_cycle(perm)
             self.state.perm=perm
 
     def __init__(self, perm, mol, op_order, op_type):

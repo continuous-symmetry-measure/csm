@@ -225,7 +225,7 @@ class Molecule:
                         break
                 if hits > 0:
                     to_remove.append(i)
-
+            print(hits, "molecules of hydrogen removed or ignored")
             if len(to_remove) > 0:
                 self.remove_atoms(to_remove, ignore_hy)
 
