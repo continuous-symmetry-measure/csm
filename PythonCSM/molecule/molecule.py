@@ -205,6 +205,7 @@ class Molecule:
                 self._obmol.DeleteHydrogens()
             remove_list = ["H", " H"]
             self.strip_atoms(remove_list, ignore_hy)
+            self._find_equivalence_classes()
 
     def strip_atoms(self, remove_list, ignore_hy):
             """
