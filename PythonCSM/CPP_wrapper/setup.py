@@ -26,7 +26,7 @@ elif sys.platform in ['linux', 'linux2']:
     extra_compile_args = ['-fPIC']
 
 setup(
-    name='fast',
+    name='CPP_Wrapper',
     version='0.1',
     description='Fast C++ calculations',
     author='Chelem',
