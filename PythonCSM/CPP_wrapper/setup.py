@@ -1,6 +1,6 @@
 __author__ = 'zmbq'
 
-from distutils.core import setup
+from setuptools import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
 import sys
@@ -26,6 +26,11 @@ elif sys.platform in ['linux', 'linux2']:
     extra_compile_args = ['-fPIC']
 
 setup(
+    name='fast',
+    version='0.1',
+    description='Fast C++ calculations',
+    author='Chelem',
+    author_email='contact@chelem.co.il',
     ext_modules=cythonize(
         [Extension(
             "*",
