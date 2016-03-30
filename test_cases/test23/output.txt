@@ -1,0 +1,8 @@
+CSM starting up
+Going to enumerate over 6096 permutations
+Entire run should take approx. 0.00 hours on a 2.0Ghz Computer
+CHIRALITY: 0.0000
+CSM starting up
+Going to enumerate over 6096 permutations
+Entire run should take approx. 0.00 hours on a 2.0Ghz Computer
+CHIRALITY: 0.0000

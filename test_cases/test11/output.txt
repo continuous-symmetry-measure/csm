@@ -1,0 +1,4 @@
+CSM starting up
+Going to enumerate over 2.39048e+008 permutations
+Entire run should take approx. 0.83 hours on a 2.0Ghz Computer
+MIRROR SYMMETRY: 5.0290

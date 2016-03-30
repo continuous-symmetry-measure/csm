@@ -10,6 +10,7 @@
 
 #include <math.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "permuter.h"
 
 using namespace std;
@@ -163,13 +164,13 @@ Permuter::Permuter(int size, int groupSize, int addGroupsOfTwo) : _used(size), _
 	// The cycles can only be of length 1 or operation order. 
 	//findDivisors(p);
 	if (addGroupsOfTwo && groupSize > 2) {
-		_divisors = { 2, _operationOrder };
-		//_divisors[0] = 2;
-		//_divisors[1] = _operationOrder;
+		_divisors.resize(2);
+		_divisors[0] = 2;
+		_divisors[1] = _operationOrder;
 		_numDivisors = 2;
 	} else {
-		_divisors = { _operationOrder };
-		//_divisors[0] = _operationOrder;
+		_divisors.resize(1);
+		_divisors[0] = _operationOrder;
 		_numDivisors = 1;
 	}
 
@@ -283,7 +284,7 @@ void Permuter::reset()
 	_firstPermutation = true;
 	for (i = 0; i < _numCycles; i++) {
 		freeCycle(_cycles[i]);
-		_cycles[i] = nullptr;
+		_cycles[i] = NULL;
 	}
 	_numCycles = 0;
 	for (i = 0; i < _size; i++) {

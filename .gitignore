@@ -1,0 +1,16 @@
+/PythonCSM/CPP_wrapper/local_settings.py
+
+activate.bat 
+activate 
+activate.ps1
+wheels/
+__pycache__/
+.idea/
+*.pyc
+cmake/
+msvc/
+build/
+*.log
+*.sdf
+*.suo
+env/

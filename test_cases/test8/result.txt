@@ -1,0 +1,28 @@
+C3 SYMMETRY: 7.1183
+SCALING FACTOR: 0.893225
+
+ INITIAL STRUCTURE COORDINATES
+4
+csm\test_cases\test8\h2o2.xyz
+O         -0.48500        0.00000        0.00000
+O          0.48500        0.00000        0.00000
+H         -0.80833        0.86456       -0.29814
+H          0.80833       -0.86457        0.29814
+
+
+ RESULTING STRUCTURE COORDINATES
+4
+csm\test_cases\test8\h2o2.xyz
+O         -0.26051        0.23773       -0.08198
+O          0.26051       -0.23772        0.08198
+H         -0.90835        0.82890       -0.28584
+H          0.90835       -0.82891        0.28584
+
+
+ DIRECTIONAL COSINES:
+
+-0.719488 0.656563 -0.226412
+
+ PERMUTATION:
+
+1 2 3 4 

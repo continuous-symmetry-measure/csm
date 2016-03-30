@@ -18,20 +18,17 @@
 #include <ctype.h>  //for ispace
 #include <math.h>   //for sqrt
 #include "Molecule.h"
-#include "babelAdapter.h"
-
 #include "parseFunctions.h"
-#include <openbabel/mol.h>
 #include "elements.h"
 #include "logging.h"
 
-using namespace OpenBabel;
+#include "csmlib.h"
+
 using namespace std;
 
-const int DIM = 3;
 const double MINDOOUBLE = 1e-8;
-const int LINE_BUFFER_SIZE = 1000;  /* maximal length of line of input */
 const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking similarity */
+const int DIM = 3;
 
 // ************************************************************
 //       implementation
@@ -40,7 +37,7 @@ const int DEPTH_ITERATIONS = 200;   /* maximal depth to descend to when checking
 /*
  * allocates memory for the molecule structure
  */
-Molecule::Molecule(int size) : _mass(size, 1.0), _valency(size, 0), _similar(size)
+Molecule::Molecule(size_t size) : _valency(size, 0), _similar(size), _mass(size, 1.0)
 {
 	int i;
     _size = size;
@@ -90,468 +87,55 @@ Molecule::~Molecule()
 	free(_adjacent);
 };
 
+
 /*
- * replace atom symbols with 'XX' - for unknown
+ * Creates a molecule from the python supplied atoms
  */
-void Molecule::replaceSymbols()
+Molecule* Molecule::createFromPython(const python_molecule &molecule)
 {
-
-	int i;
-
-	// set new symbols 'XX'
-	char *sym;
-
-    // free old symbols
-    for (i=0;i<_size;i++){
-        if (_symbol[i]){
-    		free(_symbol[i]);
-        }
-	}
-
-    for (i=0;i<_size;i++){
-    	sym = (char *)malloc(3 * sizeof(char) );
-    	sym[0]='X';
-    	sym[1]='X';
-		sym[2]='\0';
-		_symbol[i] = sym;
-	}
-
-}
-
-/*
- * creates a molecule from an input data file
- */
-Molecule* Molecule::create(FILE *in,FILE *err,bool replaceSym){
-
-    int size,i;
-
-    // read size
-    if (fscanf(in,"%d",&size)!=1){
-		LOG(error) << "Input Error: Number of atoms not supplied";
-        return NULL;
-    }
-    if (size == 0)
-		return NULL;
-
-    // allocate molecule
-    Molecule* m = new Molecule(size);
-
-    // read atoms
-    for (i=0; i<size; i++){
-
-        m->_symbol[i] = readString(in); // allocates space for symbol
-
-        if(fscanf(in,"%lf%lf%lf",&(m->_pos[i][0]),&(m->_pos[i][1]),&(m->_pos[i][2]))!=3){
-			LOG(error) << "Input Error: Failed reading input for atom " << i+1;
-			delete m;
-            return NULL;
-        }
-
-    }
-
-    if (replaceSym)
-    	m->replaceSymbols();
-
-    // read connectivity
-    int atomNum,neighbour;
-    char c;
-
-    // allocate temporary buffer
-    int *buff = (int*)malloc(size * sizeof(int));
-    int pos;
-
-    for (i=0; i<size; i++){
-
-        // read and check atom number
-        fscanf(in,"%d",&atomNum);
-        if (atomNum != i /* +0 */ +1){
-			LOG(error) << "Input Error: Failed reading connectivity for atom " << i + 1;
-            delete m;
-            return NULL;
-        }
-
-        int valency = 0;
-        pos = 0;
-
-        // read neighbour numbers till newline
-        while(1){
-
-            // eat whitespace except newline
-            c = getc(in);
-            while ( isspace( (unsigned char)c ) && (c != '\n' ) )
-                c = getc(in);
-
-            // termination
-            if (c == '\n')
-                break;
-
-            // otherwise put back read char
-            ungetc(c,in);
-
-            // read neighbour number
-            if( (fscanf(in,"%d",&neighbour) !=1) || (neighbour > /* >= */ size) ) {
-				LOG(error) << "Input Error: Failed reading connectivity for atom " << i+1;
-                delete m;
-                return NULL;
-            }
-
-            // write neighbour to buffer
-            buff[pos++] = neighbour  /* -0 */ -1;
-
-            // increment valancy
-            valency++;
-
-        }
-        m->_valency[i] = valency;
-
-        // allocate memory for neighbours and copy
-        m->_adjacent[i] = (int*)malloc(valency * sizeof(int));
-
-        int j;
-        for (j=0; j<valency; j++)
-        	m->_adjacent[i][j] = buff[j];
-
-    }
-
-    free(buff);
-
-    m->initSimilarity(DEPTH_ITERATIONS);
-
-    return (m);
-}
-
-/*
- * creates a molecule from a PDB input data file
- */
-Molecule* Molecule::createPDB(FILE *in,FILE *err,bool replaceSym){
-
-    int size,i;
-
-    // read size
-    size = countAtomsPDB(in);
-    if (size == 0)
-		return NULL;
-
-    // allocate molecule
-    Molecule* m = new Molecule(size);
-
-    // read atoms
-    for (i=0; i<size; i++){
-
-		// note: readAtom allocates space for symbol
-
-		if (! readAtomPDB(in,&(m->_symbol[i]),m->_pos[i]) ){
-			LOG(error) << "Input Error: Failed reading input for atom " << i;
-            delete m;
-            return NULL;
-        }
-
-    }
-
-    if (replaceSym)
-    	m->replaceSymbols();
-
-    // read connectivity
-    int *neighbours = (int*)malloc(size * sizeof(int));
-    int valency,curAtom;
-
-    for (i=0; i<size; i++){
-
-		if ( (! readConnectivityPDB(in,&valency,neighbours,size,&curAtom) ) ||
-			(curAtom < 0) ){
-			LOG(error) << "Input Error: Failed reading connectivity element number " << i+1;
-            delete m;
-            return NULL;
-        }
-
-        m->_valency[curAtom] = valency;
-
-        // allocate memory for neighbours and copy
-        m->_adjacent[curAtom] = (int*)malloc(valency * sizeof(int));
-
-        int j;
-        for (j=0; j<valency; j++)
-        	m->_adjacent[curAtom][j] = neighbours[j];
-
-    }
-
-    free(neighbours);
-
-    m->initSimilarity(DEPTH_ITERATIONS);
-
-    return (m);
-}
-
-/**
-* Create a molecule from an OBMol
-*
-* @param obmol The OpenBabel Molecule
-* @param replaceSym Whether to ignore atom names or not
-*
-* This function was moved from BabelAdapter.cpp
-*/
-Molecule* Molecule::createFromOBMol(OBMol &obmol, bool replaceSym, bool useMass) 
-{
-	int numAtoms = obmol.NumAtoms();
-	int i, j;
-	Molecule *mol = new Molecule(numAtoms);
-
-	for (i = 0; i < numAtoms; i++) {
-		OBAtom* atom = obmol.GetAtom(i + 1);
-		if (atom->GetAtomicNum() <= ELEMENTS.size() && atom->GetAtomicNum() > 0) {
-			mol->_symbol[i] = strdup(ELEMENTS[atom->GetAtomicNum() - 1].c_str());
-		}
-		else {
-			mol->_symbol[i] = strdup(atom->GetType());
-		}
-		if (useMass) {
-			mol->_mass[i] = atom->GetAtomicMass();
-		}
-		mol->_valency[i] = atom->GetValence();
-		mol->_adjacent[i] = (int*)malloc(mol->_valency[i] * sizeof(int));
-		j = 0;
-		for (OBBondIterator itr = atom->BeginBonds(); itr != atom->EndBonds(); itr++) {
-			// Check if it's the first or second atom that is the neighbour			
-			if ((*itr)->GetBeginAtomIdx() == atom->GetIdx()) {
-				mol->_adjacent[i][j] = (*itr)->GetEndAtomIdx() - 1;
-			}
-			else {
-				mol->_adjacent[i][j] = (*itr)->GetBeginAtomIdx() - 1;
-			}
-			j++;
-		}
-		mol->_pos[i][0] = atom->GetX();
-		mol->_pos[i][1] = atom->GetY();
-		mol->_pos[i][2] = atom->GetZ();
-	}
-
-	if (replaceSym) 
-		mol->replaceSymbols();
-
-	mol->initSimilarity(DEPTH_ITERATIONS);
-
-	return mol;
-}
-
-
-/*
- * Creates a new Molecule from selected atoms of the source Molecule (src)
- *
- * ! assumes selectedAtoms are present in src
- * ! This implies that the selectedAtomsSize is smaller or equal to source size
- *
- */
-Molecule* Molecule::copy(int* selectedAtoms, int selectedAtomsSize, bool updateSimilarity )
-{
-
-	int i,j,old_i,len;
-
-	// allocate molecule
-    Molecule* dest = new Molecule(selectedAtomsSize);
-    if (!dest){
-    	return NULL; // allocation failed
-    }
-
-	//// allocate temporary buffers
-	int *buff = (int*)malloc(dest->_size * sizeof(int));
-	int *inversSelected = (int*)malloc(_size * sizeof(int));
-	int *newGroups = (int*)malloc(_groupNum * sizeof(int));
-
-	// init inversSelected - is the inverse of selectedAtoms (index->element,element->index)
-	for ( i=0;  i< _size ;  i++ ) {
-		inversSelected[i] = -1;	
-	}
-	for (i = 0; i < _groupNum; i++) {
-		newGroups[i] = 0;
-	}
-	for ( i=0;  i< dest->_size ;  i++ )
-		inversSelected[selectedAtoms[i]] = i;
-
-	dest->_groupNum = 0;
-
-	// main loop
-	for (i=0; i<dest->_size; i++){
-
-		old_i = selectedAtoms[i];
-
-		// copy pos
-		for (j=0; j<DIM; j++){
-			dest->_pos[i][j] = _pos[old_i][j];
-		}
-		// Copy mass
-		dest->_mass[i] = _mass[old_i];
-
-		// copy similar
-		if (newGroups[_similar[old_i] - 1] == 0) {
-			dest->_groupNum++;
-			newGroups[_similar[old_i] - 1] = dest->_groupNum;
-		}
-		dest->_similar[i] = newGroups[_similar[old_i] - 1];
-
-		// copy symbol - allocate the same size as old
-		len = strlen(_symbol[old_i]);
-		dest->_symbol[i] = (char *)malloc((len+1) * sizeof(char) );
-		strcpy(dest->_symbol[i],_symbol[old_i]);
-
-		// update adjacency and valency
-		int pos = -1;
-		int valency = 0;
-
-    	// for each item in src adjacency list
-		for ( j=0;  j< _valency[old_i] ;  j++ ){
-
-			// if item in selectedAtoms add to buffer
-			pos = inversSelected[_adjacent[old_i][j]];
-			if (pos != -1)
-				buff[valency++] = pos;
-		}
-
-		dest->_valency[i] = valency;
-
-		// allocate memory for adjacent and copy buffer
-        dest->_adjacent[i] = (int*)malloc(valency * sizeof(int));
-        for (j=0; j<valency; j++)
-        	dest->_adjacent[i][j] = buff[j];
-
-	}
-
-	free(inversSelected);
-	free(buff);
-	free(newGroups);
-
-	if (updateSimilarity)
-		dest->initSimilarity(DEPTH_ITERATIONS);
-
-	return(dest);
-}
-
-/*
- * breaks down atoms into similar groups by symbol and graph structure
- * depth -  is the desired maximal depth to take into account
- */
-void Molecule::initSimilarity(int depth)
-{
-
-    int i,j,groupNum;
-
-    groupNum = 1;
-	vector<bool> marked(_size, false);
-
-	LOG(debug) << "Breaking molecule into similarity groups";
-
-    // break into initial groups by symbol and valancy
-    for (i=0; i<_size ; i++){
-
-        if (marked[i])
-            continue;
-
-        for (j=0; j<_size ; j++){
-            if ( (marked[j]) || (_valency[i] != _valency[j]) || (strcmp(_symbol[i],_symbol[j])!=0) )
-                 continue;
-
-             _similar[j] = groupNum;
-             marked[j] = true;
-        }
-        groupNum++;
-    }
-
-    int *group = (int*)malloc(_size * sizeof(int));     //temporary buffer
-    int *subGroup = (int*)malloc(_size * sizeof(int));  //temporary buffer
-
-    // iteratively refine the breakdown into groups
-	// In a previous version we had 'depth' iterations, this version breaks into subgroups at an infinite depth -
-	// as long as there's something to break, it is broken
-	bool dividedGroup;
-	int numIters = 0;
-	do
+	const std::vector<python_atom> &atoms = molecule.atoms;
+	Molecule *m = new Molecule(atoms.size());
+	for (int i = 0; i < atoms.size(); i++)
 	{
-		numIters++;
-		dividedGroup = false;
-		marked.assign(_size, false);
+		m->_symbol[i] = strdup(atoms[i].symbol.c_str());
+		int valency = atoms[i].adjacent.size();
+		m->_valency[i] = valency;
+		m->_adjacent[i] = (int*)malloc(valency * sizeof(int));
 
-		for (i = 0; i < _size; i++){
+		for (int j = 0; j < valency; j++)
+			m->_adjacent[i][j] = atoms[i].adjacent[j];
 
-			if (marked[i])
-				continue;
+		for (int j = 0; j < 3; j++)
+			m->_pos[i][j] = atoms[i].pos[j];
 
-			// mark self as done
-			marked[i] = true;
-
-			int len = 0; //group size
-
-			// create the items in the group of i
-			for (j = 0; j < _size; j++)
-				if ((j != i) && (_similar[j] == _similar[i])){
-					group[len++] = j;
-				}
-
-			int subLen = 0; //newGroup size
-
-			// for each item in the group check if it can be split or not
-			for (j = 0; j < len; j++){
-				if (isSimilar(group[j], i))
-					// mark similar item as done
-					marked[group[j]] = true;
-				else
-					// add to new subGroup
-					subGroup[subLen++] = group[j];
-			}
-
-			// give subGroup members a new id
-			bool updated = false;
-			for (j = 0; j < subLen; j++){
-				updated = true;
-				_similar[subGroup[j]] = groupNum;
-			}
-
-			if (updated)
-			{
-				groupNum++;
-				dividedGroup = true;
-			}
-		}
-	} while (dividedGroup);
-
-	LOG(debug) << "Broken into groups with " << numIters << " iterations.";
-    _groupNum = groupNum -1;
-
-    free(group);
-    free(subGroup);
-}
-
-/*
- * Atom a is similar to Atom b if for each neighbour of i, j has a similar neighbour
- */
-int Molecule::isSimilar(int a,int b)
-{
-	int i, j;
-	bool found = true;
-
-	auto mark = std::vector<bool>(_size, false);
-
-	// for each of i's neighbours
-	for ( i=0;  i<_valency[a];  i++ ){
-
-		found = false;
-
-		for ( j=0;  j<_valency[b];  j++ ){
-			if (mark[j])
-				continue;
-
-			if (_similar[_adjacent[a][i]] == _similar[_adjacent[b][j]]){
-				found = true;
-				mark[j] = true;
-				break;
-			}
-
-		}
-
-		if (!found)
-			break;
-
+		m->_mass[i] = atoms[i].mass;
 	}
 
-	return(found);
+	// Copy the equivalenceClasses
+	if (molecule.equivalenceClasses.size())
+	{
+		m->_similar.resize(atoms.size(), 0);
+		for (int group = 0; group < molecule.equivalenceClasses.size(); group++)
+		{
+			const vector<int> &eclass = molecule.equivalenceClasses[group];
+			for (int i = 0; i < eclass.size(); i++)
+			{
+				int atom = eclass[i];
+				m->_similar[atom] = group + 1;
+			}
+		}
+		m->_groupNum = molecule.equivalenceClasses.size();
+	}
+	else
+	{
+		// Trivial equivalence classes - every atom on its own
+		m->_similar.resize(atoms.size(), 0);
+		for (int i = 0; i < atoms.size(); i++)
+			m->_similar[i] = i;
+		m->_groupNum = atoms.size(); 
+	}
+
+	return m;
 }
 
 /*
@@ -613,90 +197,6 @@ int Molecule::getMaxGroupSize()
 	return max;
 }
 
-/*
- * Creates a new Molecule from m by removing atoms who's symbol is in the
- * remove list
- */
-Molecule* Molecule::stripAtoms(char** removeList, int removeListSize, int updateSimilarity)
-{
-	Molecule* newM;
-
-	int i, j, count, hits;
-
-    int *selected = (int*)malloc(_size * sizeof(int));
-
-	// find atoms not in removeList
-    count = 0;
-
-	for ( i=0;  i< _size ;  i++ ){
-		hits = 0;
-		for ( j=0;  j< removeListSize ;  j++ ) {
-			if( strcmp( _symbol[i], removeList[j] ) == 0 ) {
-				hits++;
-				break;
-			}
-		}
-		if (hits == 0){
-			selected[count] = i;
-			count ++;
-		}
-	}
-
-	// return a new Molecule copy
-	newM = copy(selected,count,updateSimilarity);
-	free(selected);
-	return newM;
-}
-
-/*
- * Normalizes the position of atoms of the molecule
- * returns true if successful, false otherwise
- */
-bool Molecule::normalizeMolecule(bool keepCenter = false){
-
-	double tmp,x_avg, y_avg, z_avg,norm;
-	int i;
-
-	x_avg = y_avg = z_avg = 0.0;
-
-	if (!keepCenter) {
-		double mass_sum = 0;
-		for(i=0; i< _size; i++){
-			x_avg += _pos[i][0] * _mass[i];
-			y_avg += _pos[i][1] * _mass[i];
-			z_avg += _pos[i][2] * _mass[i];
-			mass_sum += _mass[i];
-		}
-		x_avg /= (double)(mass_sum);
-		y_avg /= (double)(mass_sum);
-		z_avg /= (double)(mass_sum);
-	}
-
-	norm = 0.0;
-	for(i=0; i< _size; i++){
-		tmp = SQR(_pos[i][0]-x_avg) +
-		      SQR(_pos[i][1]-y_avg) +
-		      SQR(_pos[i][2]-z_avg);
-		norm += tmp;
-	}
-	// normalize to 1 and not molecule size
-	//norm = sqrt(norm / (double)m->_size);
-	norm = sqrt(norm);
-
-
-	if(norm < MINDOOUBLE)
-		return false;
-
-	for(i=0; i< _size; i++){
-		_pos[i][0] = ((_pos[i][0] - x_avg) / norm);
-		_pos[i][1] = ((_pos[i][1] - y_avg) / norm);
-		_pos[i][2] = ((_pos[i][2] - z_avg) / norm);
-	}
-
-	_norm = norm;
-
-	return true;
-}
 
 /*
  * prints the molecule
@@ -911,9 +411,3 @@ void Molecule::printDebug2()
     printf("\n");
 
 };
-
-void Molecule::fillAtomicMasses()
-{
-	for (int i = 0; i < _size; i++)
-		_mass[i] = getAtomicMass(_symbol[i]);
-}

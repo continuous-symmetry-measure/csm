@@ -9,52 +9,37 @@
 #define OPTIONS_H
 
 #include <string>
+#include <vector>
 
-namespace csm_options
+typedef enum {
+	CN,
+	SN,
+	CS,
+	CI,
+	CH
+} OperationType;
+
+class Molecule;  // Forward reference
+
+struct csm_options
 {
-	typedef enum {
-		CN,
-		SN,
-		CS,
-		CI,
-		CH
-	} OperationType;
+	std::string opName;
+	bool writeOpenu;
 
-	extern char opName[100];
-	extern bool printNorm;
-	extern bool printLocal;
-	extern bool writeOpenu;
-	extern std::string format;
+	OperationType type;
+	int opOrder;
+	int sn_max;
+	bool detectOutliers;
+	std::string logFileName;
 
-	extern bool ignoreHy;
-	extern bool removeHy;
-	extern bool ignoreSym;
-	extern bool useFormat;
-	extern OperationType type;
-	extern int opOrder;
-	extern bool useperm;
-	extern bool useDir;
-	extern bool findPerm;
-	extern bool useMass;
-	extern bool limitRun;
-	extern bool babelBond;
-	extern bool timeOnly;
-	extern int sn_max;
-	extern bool detectOutliers;
-	extern double A;
-	extern bool babelTest;
-	extern bool keepCenter;
-	extern std::string logFile;
+	std::vector<double> dir;
+	std::vector<int> perm;
 
-	// file pointers
-	extern FILE* inFile;
-	extern FILE* outFile;
-	extern FILE* permfile;
-	extern FILE* dirfile;
-	extern char *inFileName;
-	extern char *outFileName;
+	Molecule *molecule;  // The molecule to be used
 
-	void usage(const std::string op);
-	void parseInput(int argc, char *argv[]);
-}
+	csm_options();
+};
+
+extern csm_options options;
+
 #endif

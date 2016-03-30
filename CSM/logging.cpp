@@ -18,9 +18,9 @@ using namespace boost::log;
 static void set_debug_logging(bool enable)
 {
 	if (enable)
-		core::get()->set_filter(trivial::severity >= trivial::severity_level::trace);
+        core::get()->set_filter(trivial::severity >= trivial::trace);
 	else
-		core::get()->set_filter(trivial::severity >= trivial::severity_level::info);
+		core::get()->set_filter(trivial::severity >= trivial::info);
 }
 
 void init_logging()
@@ -29,7 +29,7 @@ void init_logging()
 	register_simple_formatter_factory< trivial::severity_level, char >("Severity");
 	add_console_log(std::cerr,
 		keywords::format = "[%TimeStamp%]  [%Severity%]: %Message%",
-		keywords::filter = trivial::severity >= trivial::severity_level::error);
+		keywords::filter = trivial::severity >= trivial::error);
 	add_console_log(std::cout, keywords::format = "%Message%");
 
 	set_debug_logging(false);

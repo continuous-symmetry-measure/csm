@@ -5,7 +5,7 @@
  */
 
 #include "math_wrappers.h"
-
+#include <iostream>
 #include <vector>
 #include <complex>
 #include "logging.h"
@@ -26,12 +26,12 @@ extern "C" {
  *
  * This function delegates the calculations to rpoly.c
  */
-std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coefficients)
+std::vector<std::complex<double> > FindPolyRoots(const std::vector<double>& coefficients)
 {
 	// Prepare all the rpoly arguments
 	// Allocate all the necessary memory manually, and copy the coefficients, since rpoly
 	// might change them - who knows.
-	int highest_degree = coefficients.size() - 1;
+	size_t highest_degree = coefficients.size() - 1;
 	double *zeror = new double[highest_degree];  // Not using std::vector<double>.data() because it just seems wrong
 	double *zeroi = new double[highest_degree];  // although it is quite acceptable http://stackoverflow.com/questions/18759692/stdvector-write-directly-to-the-internal-array
 	double *coeffs = new double[highest_degree + 1];
@@ -43,7 +43,7 @@ std::vector<std::complex<double>> FindPolyRoots(const std::vector<double>& coeff
 		
 	delete[] coeffs;
 
-	std::vector<std::complex<double>> roots;
+	std::vector<std::complex<double> > roots;
 	for (int i = 0; i < highest_degree; i++)
 		roots.push_back(std::complex<double>(zeror[i], zeroi[i]));
 
@@ -80,4 +80,24 @@ std::vector<EigenResult> GetEigens(const double matrix[3][3])
 	}
 
 	return results;
+}
+
+void GetEigens(const double matrix[3][3], double eigenVectors[3][3], double eigenValues[3])
+{
+	Eigen::Matrix3d m;
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
+		{
+			m(j,i) = matrix[i][j];
+		}
+
+	Eigen::EigenSolver<Eigen::Matrix3d> solver(m, true);
+
+	for (int i = 0; i < 3; i++)
+	{
+		eigenValues[i] = solver.eigenvalues()[i].real();
+		
+		for (int j = 0; j < 3; j++)
+			eigenVectors[i][j] = solver.eigenvectors().col(i)[j].real();
+	}
 }
