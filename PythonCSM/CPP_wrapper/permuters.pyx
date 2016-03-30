@@ -266,7 +266,8 @@ class SinglePermPermuter:
             self.state.perm=perm
 
     def __init__(self, perm, mol, op_order, op_type):
-        self._perm = self.SinglePermInProgress(mol, perm, op_order, op_type)
+        self._perm = self.SinglePIP(mol, perm, op_order, op_type)
+        self.count=1
 
     def permute(self):
         yield self._perm.state
