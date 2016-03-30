@@ -34,6 +34,7 @@ class Molecule:
 
     @property
     def equivalence_classes(self):
+        self._equivalence_classes.sort(key=len)
         return self._equivalence_classes
 
     @property
@@ -204,6 +205,7 @@ class Molecule:
                 self._obmol.DeleteHydrogens()
             remove_list = ["H", " H"]
             self.strip_atoms(remove_list, ignore_hy)
+            self._find_equivalence_classes()
 
     def strip_atoms(self, remove_list, ignore_hy):
             """
@@ -223,7 +225,7 @@ class Molecule:
                         break
                 if hits > 0:
                     to_remove.append(i)
-
+            print(hits, "molecules of hydrogen removed or ignored")
             if len(to_remove) > 0:
                 self.remove_atoms(to_remove, ignore_hy)
 
