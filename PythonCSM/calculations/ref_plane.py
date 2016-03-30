@@ -8,17 +8,20 @@ import logging
 import numpy as np
 from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
-from CPP_wrapper import fast_calculations as cpp
-
 from numpy.polynomial import Polynomial
+from CPP_wrapper.permuters import get_lambda_max
 
 
 # logger = logging.getLogger("csm")
 
-def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
+def cross(a, b):
+    return np.array([a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
+                     a[0] * b[1] - a[1] * b[0]])
+
+def calc_A_B(mol,op_order, multiplier, sintheta, perms, size):
     # A is calculated according to formula (17) in the paper
     # B is calculated according to formula (12) in the paper
-
+    #Q = mol.Q
     A = np.zeros((3, 3,))
     B = np.zeros((3,), dtype=np.float64, order="c")  # Row vector for now
 
@@ -27,17 +30,20 @@ def calc_A_B(op_order, multiplier, sintheta, perms, size, Q):
         # The i'th power of the permutation
         cur_perm = perms[i]
         # Q_ is Q after applying the i'th permutation on atoms (Q' in the article)
-        Q_ = np.array([  Q[p] for p in cur_perm  ],  dtype=np.float64, order="c")  # Q'
+        #Q_ = np.array([  Q[p] for p in cur_perm  ],  dtype=np.float64, order="c")  # Q'
         # A_intermediate is calculated according to the formula (5) in the paper, as follows:
         # the cross product of Qi, Q_i plus the cross product of Q_i, Qi, summed.
-        A+=multiplier[i] * (Q.T.dot(Q_)+Q_.T.dot(Q))
+        #A+=multiplier[i] * (Q.T.dot(Q_)+Q_.T.dot(Q))
         #B is the sum of the cross products of Q[k] and Q_[k], times sintheta. it is calculated in c++
-        cpp.calc_B(B, size, Q, Q_, sintheta[i])
+        for k in range(size):
+            A += multiplier[i] * mol.cache.outer_product_sum(k, cur_perm[k])
+            B += sintheta[i] * mol.cache.cross(k, cur_perm[k])
 
     return A, B.T  # Return B as a column vector
 
 
-def build_polynomial(lambdas, m_t_B_2):
+
+def old_build_polynomial(lambdas, m_t_B_2):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
     # from the old C CSM code more or less untouched.
@@ -86,11 +92,11 @@ def build_polynomial(lambdas, m_t_B_2):
     return coeffs
 
 
-def calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B, B):
+def calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B, B):
     m_max_B = 0.0
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
-    if is_zero_angle or op_order == 2:
+    if op_type == 'CS' or op_order == 2:
         # If we are in zero teta case, we should pick the direction matching lambda_max
         min_dist = MAXDOUBLE
         minarg = 0
@@ -110,11 +116,12 @@ def calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B, B):
                     break
                 else:
                     dir[i] += m_t_B[j] / (lambdas[j] - lambda_max) * m[i, j]
+
             m_max_B = m_max_B + dir[i] * B[i]
     return dir, m_max_B
 
 
-def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B):
+def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B, cache):
     # initialize identity permutation
 
     # CSM is computed according to formula (15) in the paper with some changes according to CPP code:
@@ -124,80 +131,53 @@ def calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B):
     csm = 1.0
     for i in range(1, op_order):
         dists = 0.0
-
+        #dists=cache.inner_sum()
         # i'th power of permutation
         cur_perm = perms[i]
 
-        Q_ = np.array([  Q[p] for p in cur_perm  ])
-
-        #sum of the inner products of Q an Q_
-        dists=np.einsum('ij,ij', Q, Q_)
-        #dists=np.dot(Q.flat,Q_.flat)
-
-        #for k in range(size):
-        #    dists += cpp.inner_product( Q[k], Q[cur_perm[k]])
+        #Q_ = [Q[cur_perm[i]] for i in range(size)]
+        #dists=np.einsum('ij,ij', Q, Q_)
+        for k in range(size):
+            dists += Q[k].T @ Q[cur_perm[k]]
+            #dists+= cache.inner_product(k, cur_perm[k])
         csm += costheta[i] * dists
 
     # logger.debug("csm=%lf lambda_max=%lf m_max_B=%lf" % (csm, lambda_max, m_max_B))
     # logger.debug("dir: %lf %lf %lf" % (dir[0], dir[1], dir[2]))
 
     csm += (lambda_max - m_max_B) / 2
-    csm = math.fabs(100 * (1.0 - csm / op_order))
-
     # logger.debug("dir - csm: %lf %lf %lf - %lf" %
     #             (dir[0], dir[1], dir[2], csm))
     return csm
 
-
-def pre_caching(op_type, op_order):
-    is_improper = op_type != 'CN'
-    is_zero_angle = op_type == 'CS'
-    multiplicand= 2 * math.pi /op_order
-    costheta = np.zeros(op_order)
-    sintheta = np.zeros(op_order)
-    multiplier=np.zeros(op_order)
-    if not is_zero_angle:
-        for i in range(1, op_order):
-            x= multiplicand * i
-            costheta[i] = math.cos(x)
-            sintheta[i] = math.sin(x)
-            if is_improper and (i % 2):
-                multiplier[i] = -1 - costheta[i]
-            else:
-                multiplier[i] = 1 - costheta[i]
-
-    return sintheta, costheta, multiplier, is_zero_angle
-
-def perm_caching(perm, size, op_order):
+def pre_caching(molecule, op_order, size, p):
+    perm=p.perm
     perms = np.empty([op_order, size], dtype=np.int)
     perms[0] = [i for i in range(size)]
     for i in range(1, op_order):
         perms[i] = [perm[perms[i - 1][j]] for j in range(size)]
-    return perms
+    A, B = calc_A_B(molecule, op_order, p.multiplier, p.sintheta, perms, size)
+    return perms, A,B, p.costheta, p.sintheta
 
-
-
-def calc_ref_plane(molecule, perm, op_order, op_type):
+def calc_ref_plane(molecule, p, op_order, op_type):
     size = len(molecule.atoms)
-
-    # pre-caching:
-    #a variety of values dependent on i in loop 1 to op_Order are calculated in advance
-    #and reused in the several such loops in the code
-    sintheta, costheta, multiplier, is_zero_angle= pre_caching(op_type, op_order)
-    perms = perm_caching(perm, size, op_order)
+    if p.type[:2]=="AB":
+        perms, A,B,costheta, sintheta = p.perms, p.A, p.B,p.costheta, p.sintheta
+    else:
+        perms, A,B,costheta, sintheta=pre_caching(molecule, op_order, size, p)
 
 
-    # For all k, 0 <= k < size, Q[k] = column vector of x_k, y_k, z_k (position of the k'th atom)
-    # - described on the first page of the paper
-    Q = molecule.Q
 
-    A, B = calc_A_B(op_order, multiplier, sintheta, perms, size, Q)
+
+    # logger.debug("Computed matrix A is:")
+    # logger.debug(A)
+    # logger.debug("Computed vector B is: %s" % B)
 
     # lambdas - list of 3 eigenvalues of A
     # m - list of 3 eigenvectors of A
     lambdas, m = np.linalg.eig(A)
     # compute square of scalar multiplications of eigen vectors with B
-    m_t_B= m.T@B
+    m_t_B = m.T @ B
     m_t_B_2 = np.power(m_t_B, 2)
     #m_t_B_2 = m_t_B_2[:, 0]  # Convert from column vector to row vector
 
@@ -205,20 +185,14 @@ def calc_ref_plane(molecule, perm, op_order, op_type):
     # logger.debug("mTb^2: %s" % m_t_B_2)
 
 
-    coeffs = build_polynomial(lambdas, m_t_B_2)
-    roots = cpp.PolynomialRoots(coeffs)
-
-    # lambda_max is a real root of the polynomial equation
-    # according to the description above the formula (13) in the paper
-    lambda_max = -MAXDOUBLE
-    for i in range(len(roots)):
-        if roots[i].real > lambda_max and math.fabs(roots[i].imag) < ZERO_IM_PART_MAX:
-            lambda_max = roots[i].real
+    lambda_max=get_lambda_max(lambdas, m_t_B_2)
 
     # logger.debug("lambdas (eigenvalues): %lf %lf %lf" % (lambdas[0], lambdas[1], lambdas[2]))
 
-    dir, m_max_B = calculate_dir(is_zero_angle, op_order, lambdas, lambda_max, m, m_t_B,B)
-
-    csm = calculate_csm(op_order, perms, size, Q, costheta, lambda_max, m_max_B)
-
+    dir, m_max_B = calculate_dir(op_type, op_order, lambdas, lambda_max, m, m_t_B,B)
+    if p.type[:2]=="AB":
+        csm=p.CSM + (lambda_max - m_max_B) / 2
+    else:
+        csm = calculate_csm(op_order, perms, size, molecule.Q, costheta, lambda_max, m_max_B, molecule.cache)
+    csm = math.fabs(100 * (1.0 - csm / op_order))
     return csm, dir

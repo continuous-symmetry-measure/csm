@@ -2,41 +2,174 @@ import math
 
 import numpy as np
 cimport numpy as np
-cimport csmlib
-
+cimport fastcpp
 from calculations.constants import MAXDOUBLE, ZERO_IM_PART_MAX
+from libcpp cimport bool
 
-DTYPE = np.float64
-ctypedef np.float64_t DTYPE_t
+cdef class CalcState
+cdef class Vector3D
+cdef class Matrix3D
 
-ITYPE = np.int
-ctypedef np.int_t ITYPE_t
+cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2, double *coeffs):
+    # The polynomial is described in equation 13.
+    # The following code calculates the polynomial's coefficients quickly, and is taken
+    # from the old C CSM code more or less untouched.
+    # cdef double coeffs[7]   # A polynomial of the 6th degree. coeffs[0] is for x^6, xoeefs[1] for x^5 , etc..
+    coeffs[0]=1.0
+    coeffs[1] = -2 * (lambdas.buf[0] + lambdas.buf[1] + lambdas.buf[2])
+    coeffs[2] = lambdas.buf[0] * lambdas.buf[0] + lambdas.buf[1] * lambdas.buf[1] + lambdas.buf[2] * lambdas.buf[2] - \
+                m_t_B_2.buf[0] - m_t_B_2.buf[1] - m_t_B_2.buf[2] + \
+                4 * (lambdas.buf[0] * lambdas.buf[1] + lambdas.buf[0] * lambdas.buf[2] + lambdas.buf[1] * lambdas.buf[2])
+    coeffs[3] = -8 * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[2] + \
+                2 * (m_t_B_2.buf[0] * lambdas.buf[1] +
+                     m_t_B_2.buf[0] * lambdas.buf[2] +
+                     m_t_B_2.buf[1] * lambdas.buf[0] +
+                     m_t_B_2.buf[1] * lambdas.buf[2] +
+                     m_t_B_2.buf[2] * lambdas.buf[0] +
+                     m_t_B_2.buf[2] * lambdas.buf[1] -
+                     lambdas.buf[0] * lambdas.buf[2] * lambdas.buf[2] -
+                     lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] -
+                     lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[2] -
+                     lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] -
+                     lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] -
+                     lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2])
+    coeffs[4] = 4 * \
+                ((lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[2] * (lambdas.buf[0] + lambdas.buf[1] + lambdas.buf[2]) -
+                  (m_t_B_2.buf[2] * lambdas.buf[0] * lambdas.buf[1] +
+                   m_t_B_2.buf[1] * lambdas.buf[0] * lambdas.buf[2] +
+                   m_t_B_2.buf[0] * lambdas.buf[2] * lambdas.buf[1]))) - \
+                m_t_B_2.buf[0] * (lambdas.buf[1] * lambdas.buf[1] + lambdas.buf[2] * lambdas.buf[2]) - \
+                m_t_B_2.buf[1] * (lambdas.buf[0] * lambdas.buf[0] + lambdas.buf[2] * lambdas.buf[2]) - \
+                m_t_B_2.buf[2] * (lambdas.buf[0] * lambdas.buf[0] + lambdas.buf[1] * lambdas.buf[1]) + \
+                lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] + \
+                lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2] + \
+                lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[2] * lambdas.buf[2]
+    coeffs[5] = 2 * \
+                (m_t_B_2.buf[0] * lambdas.buf[1] * lambdas.buf[2] * (lambdas.buf[1] + lambdas.buf[2]) +
+                 m_t_B_2.buf[1] * lambdas.buf[0] * lambdas.buf[2] * (lambdas.buf[0] + lambdas.buf[2]) +
+                 m_t_B_2.buf[2] * lambdas.buf[0] * lambdas.buf[1] * (lambdas.buf[0] + lambdas.buf[1])) \
+                - 2 * \
+                  (lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2] +
+                   lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2] +
+                   lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2])
+    coeffs[6] = -m_t_B_2.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2] - \
+                m_t_B_2.buf[1] * lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[2] * lambdas.buf[2] - \
+                m_t_B_2.buf[2] * lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] + \
+                lambdas.buf[0] * lambdas.buf[0] * lambdas.buf[1] * lambdas.buf[1] * lambdas.buf[2] * lambdas.buf[2]
 
-cimport cython
+
+def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lambda_max, Matrix3D m, Vector3D m_t_B, Vector3D B):
+    cdef double m_max_B = 0.0
+    cdef Vector3D dir = Vector3D.zero()
+    cdef int i, j
+    cdef double min_dist
+    cdef int minarg
+
+    # dir is calculated below according to formula (14) in the paper.
+    # in the paper dir is called 'm_max'
+    if is_zero_angle or op_order == 2:
+        # If we are in zero teta case, we should pick the direction matching lambda_max
+        min_dist = MAXDOUBLE
+        minarg = 0
+
+        for i in range(3):
+            if math.fabs(lambdas.buf[i] - lambda_max) < min_dist:
+                min_dist = math.fabs(lambdas.buf[i] - lambda_max)
+                minarg = i
+        for i in range(3):
+            dir.buf[i] = m.buf[minarg][i]
+    else:
+        for i in range(3):
+            dir.buf[i] = 0.0
+            for j in range(3):
+                # error safety
+                if math.fabs(lambdas.buf[j] - lambda_max) < 1e-6:
+                    dir.buf[i] = m.buf[i][j]
+                    break
+                else:
+                    dir.buf[i] += m_t_B.buf[j] / (lambdas.buf[j] - lambda_max) * m.buf[j][i]
+            m_max_B += dir.buf[i] * B.buf[i]
+    return dir, m_max_B
 
 
-cdef _calc_B(np.ndarray[DTYPE_t, ndim=1, mode="c"] B, int size, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q_, double sintheta):
-    csmlib.calc_B(<double *>B.data, size, <double (*)[3]>Q.data, <double (*)[3]>Q_.data, sintheta)
-
-
-@cython.boundscheck(False)
-def calc_B(np.ndarray[DTYPE_t, ndim=1, mode="c"] B not None, int size, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q not None, np.ndarray[DTYPE_t, ndim=2, mode="c"]Q_ not None, double sintheta):
-    _calc_B(B, size, Q, Q_, sintheta)
-
-
-def PolynomialRoots(coeffs):
-    cdef double coeffs_v[7]
-    cdef double zeror[7]
-    cdef double zeroi[7]
-
+cdef PolynomialRoots(double coeffs[7], complex *roots):
+    cdef double zeror[6]
+    cdef double zeroi[6]
     cdef int i
-    for i in range(7):
-        coeffs_v[i] = coeffs[i]
 
-    csmlib.rpoly(coeffs_v, 6, zeror, zeroi)
-    result = []
-    for i in range(7):
-        result.append(complex(zeror[i], zeroi[i]))
+    fastcpp.rpoly(coeffs, 6, zeror, zeroi)
+    for i in range(6):
+        roots[i] = complex(zeror[i], zeroi[i])
 
-    return result
 
+cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2):
+    cdef double coeffs[7]
+    cdef complex roots[6]
+    cdef double lambda_max = -MAXDOUBLE
+    cdef int i
+
+    build_polynomial(lambdas, m_t_B_2, coeffs)
+    PolynomialRoots(coeffs, roots)
+
+    # lambda_max is a real root of the polynomial equation
+    # according to the description above the formula (13) in the paper
+    for i in range(6):
+        if roots[i].real > lambda_max and math.fabs(roots[i].imag) < ZERO_IM_PART_MAX:
+            lambda_max = roots[i].real
+
+    return lambda_max
+
+cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
+    global log
+    cdef int i
+
+    # log = calc_state.perms.get_perm(1)[0]==4 and calc_state.perms.get_perm(1)[1]==0
+    #
+    # if log:
+    #     print("Perm:")
+    #     print(calc_state.perms.get_perm(1))
+    #     print("A:")
+    #     print(str(calc_state.A))
+    #     print("B:")
+    #     print(str(calc_state.B))
+
+    cdef Matrix3D m = Matrix3D()
+    cdef Vector3D lambdas = Vector3D()
+    fastcpp.GetEigens(calc_state.A.buf, m.buf, lambdas.buf)
+
+    # if log:
+    #     print("m:")
+    #     print(str(m))
+    #     print("lambdas:")
+    #     print(str(lambdas))
+
+    cdef Vector3D m_t_B = m.T_mul_by_vec(calc_state.B)
+    cdef Vector3D m_t_B_2 = Vector3D()
+    for i in range(3):
+        m_t_B_2.buf[i] = m_t_B[i] * m_t_B[i]
+
+    # if log:
+    #     print("m_t_B:")
+    #     print(str(m_t_B))
+    #     print("m_t_B_2:")
+    #     print(str(m_t_B_2))
+
+    lambda_max=get_lambda_max(lambdas, m_t_B_2)
+
+    dir, m_max_B = calculate_dir(is_op_cs, op_order, lambdas, lambda_max, m, m_t_B, calc_state.B)
+    csm = calc_state.CSM + (lambda_max - m_max_B) / 2
+    csm = math.fabs(100 * (1.0 - csm / op_order))
+
+    # if log:
+    #     print("csm:")
+    #     print(calc_state.CSM)
+    #     print("lambda_max:")
+    #     print(lambda_max)
+    #     print("m_max_b:")
+    #     print(m_max_B)
+    #     print("dir:")
+    #     print(str(dir))
+    #     print("final-csm:")
+    #     print(str(csm))
+
+    return csm, dir

@@ -1,3 +1,4 @@
+from calculations.pair_cache import PairCache
 from openbabel import OBAtom, OBElementTable, OBAtomAtomIter, OBConversion, OBMol
 from molecule.atom import Atom, GetAtomicSymbol
 from molecule.normalizations import normalize_coords, de_normalize_coords
@@ -17,7 +18,7 @@ class Molecule:
         self._flags = {}
         self._create_bondset()
         self._obmol = obmol
-        self._Q=self._calc_Q()
+        self.create_Q()
 
     @property
     def Q(self):
@@ -192,7 +193,6 @@ class Molecule:
         Preprocess a molecule based on the arguments passed to CSM
         :param remove_hy: True if hydrogen atoms should be removed
         :param ignore_hy: True when hydrogen atoms should be ignored when calculating the equivalence classes
-        :param keepCenter: True when the molecule's CoM shouldn't be moved
         :param kwargs: Place holder for all other csm_args.
         You can call it by passing **csm_args
         """
@@ -205,30 +205,93 @@ class Molecule:
             remove_list = ["H", " H"]
             self.strip_atoms(remove_list, ignore_hy)
 
-    def normalize(self, keep_center=False):
+    def strip_atoms(self, remove_list, ignore_hy):
+            """
+            Creates a new Molecule from m by removing atoms who's symbol is in the remove list
+            :param csm_args:
+            :param removeList: atomic symbols to remove
+            """
+
+            # find atoms in removeList
+            to_remove = []
+            size = len(self._atoms)
+            for i in range(size):
+                hits = 0
+                for s in remove_list:
+                    if self._atoms[i].symbol == s:
+                        hits += 1
+                        break
+                if hits > 0:
+                    to_remove.append(i)
+
+            if len(to_remove) > 0:
+                self.remove_atoms(to_remove, ignore_hy)
+
+    def remove_atoms(self, to_remove, ignore_hy):
+        """
+        Removes atoms with indexes in the to_remove list from the molecule
+        :param csm_args:
+        :param to_remove:
+        """
+        move_indexes = {}
+        size = len(self._atoms)
+        j = 0
+
+        for i in range(size):
+            if i == to_remove[j]:
+                j += 1
+            else:
+                move_indexes[i] = i - j
+        j -= 1
+
+        for i in range(size - 1, 0, -1):
+            if i == to_remove[j]:
+                # remove the atom i
+                self._atoms.pop(i)
+                if not ignore_hy:
+                    if self.obmol:
+                        self.obmol.DeleteAtom(self.obmol.GetAtom(i + 1))
+                j -= 1
+            else:
+                # update the i-th atom adjacents
+                l = len(self._atoms[i].adjacent)
+                for k in range(l - 1, 0, -1):
+                    if self._atoms[i].adjacent[k] in move_indexes:
+                        self._atoms[i].adjacent[k] = move_indexes[self._atoms[i].adjacent[k]]
+                    else:
+                        self._atoms[i].adjacent.pop(k)
+
+        if ignore_hy:
+            # update indexes in equivalence classes
+            groups_num = len(self._equivalence_classes)
+            for i in range(groups_num - 1, -1, -1):
+                group_size = len(self._equivalence_classes[i])
+                for j in range(group_size - 1, -1, -1):
+                    if self._equivalence_classes[i][j] in move_indexes:
+                        self._equivalence_classes[i][j] = move_indexes[self._equivalence_classes[i][j]]
+                    else:
+                        self._equivalence_classes[i].pop(j)
+                if len(self._equivalence_classes[i]) == 0:
+                    self._equivalence_classes.pop(i)
+        else:  # removeHy
+            self._find_equivalence_classes()
+
+
+    def normalize(self):
         """
         Normalize the molecule
-        :param keep_center:
         """
         coords = [atom.pos for atom in self._atoms]
         masses = [atom.mass for atom in self._atoms]
-        (norm_coords, self._norm_factor) = normalize_coords(coords, masses, keep_center)
+        (norm_coords, self._norm_factor) = normalize_coords(coords, masses)
         size = len(self._atoms)
         for i in range(size):
             self._atoms[i].pos = norm_coords[i]
-        self._Q = self._calc_Q()
+        self.create_Q()
 
-    def _calc_Q(self):
-        def col_vec(list):
-            a = np.array(list)
-            a = a.reshape((3, 1))
-            return a
+    def create_Q(self):
+        self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
 
-        # Q = np.zeros((len(self.atoms), 3), dtype=np.float64)
-        # for i, atom in enumerate(self.atoms):
-        #    Q[i, :] = atom.pos
-        # return Q
-        return np.array([np.array((atom.pos),  dtype=np.float64, order="c") for atom in self.atoms],  dtype=np.float64, order="c")
 
     def de_normalize(self):
         coords = [atom.pos for atom in self._atoms]
@@ -238,37 +301,36 @@ class Molecule:
         for i in range(size):
             self._atoms[i].pos = denorm_coords[i]
 
-    def _complete_initialization(self, remove_hy, ignore_hy, keep_center):
+    def _complete_initialization(self, remove_hy, ignore_hy):
         """
         Finish creating the molecule after reading the raw data
         """
         self._calculate_equivalency(remove_hy, ignore_hy)
-        self.normalize(keep_center)
+        self.normalize()
 
     @staticmethod
     def from_string(string, format, initialize=True, use_chains=False, babel_bond=False, ignore_hy=False,
-                    remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False):
+                    remove_hy=False, ignore_symm=False, use_mass=False):
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
-        # second note: keepCenter has only ever been tested as false, it's not at all certain it's still used or still works when true
 
         # step one: get the molecule object
         obm = Molecule._obm_from_string(string, format, babel_bond)
         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
         if initialize:
-            mol._complete_initialization(remove_hy, ignore_hy, keep_center)
+            mol._complete_initialization(remove_hy, ignore_hy)
 
         return mol
 
     @staticmethod
     def from_file(in_file_name, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False, keep_center=False, *args, **kwargs):
+                  remove_hy=False, ignore_symm=False, use_mass=False, *args, **kwargs):
         if format == "csm":
             mol = Molecule._read_csm_file(in_file_name, ignore_symm, use_mass)
         else:
             obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
             mol = Molecule._from_obm(obm, ignore_symm, use_mass)
         if initialize:
-            mol._complete_initialization(remove_hy, ignore_hy, keep_center)
+            mol._complete_initialization(remove_hy, ignore_hy)
         return mol
 
     @staticmethod

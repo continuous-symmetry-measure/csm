@@ -11,6 +11,9 @@ def print_results(result, in_args, calc_args, out_args):
     :param calc_args: Calculation arguments to CSM
     :param out_args: Output arguments to CSM
     """
+    if calc_args['just_perms']:
+        print(result)
+        return
     with open(out_args['out_file_name'], 'w', encoding='utf-8') as f:
         f.write("%s: %.4lf\n" % (calc_args['op_name'], abs(result.csm)))
         f.write("SCALING FACTOR: %7lf\n" % result.d_min)
@@ -120,10 +123,13 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     num_atoms = result.molecule.obmol.NumAtoms()
     # update coordinates
     for i in range(num_atoms):
-        atom = result.molecule.obmol.GetAtom(i + 1)
-        atom.SetVector(result.molecule.atoms[i].pos[0],
+        try:
+            atom = result.molecule.obmol.GetAtom(i + 1)
+            atom.SetVector(result.molecule.atoms[i].pos[0],
                        result.molecule.atoms[i].pos[1],
                        result.molecule.atoms[i].pos[2])
+        except:
+            pass
 
     write_ob_molecule(result.molecule.obmol, in_args['format'], f)
 
@@ -131,10 +137,12 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
 
     # update coordinates
     for i in range(num_atoms):
-        atom = result.molecule.obmol.GetAtom(i + 1)
-        atom.SetVector(result.symmetric_structure[i][0],
+        try:
+            atom.SetVector(result.symmetric_structure[i][0],
                        result.symmetric_structure[i][1],
                        result.symmetric_structure[i][2])
+        except:
+            pass
 
     f.write("\n RESULTING STRUCTURE COORDINATES\n")
     write_ob_molecule(result.molecule.obmol, in_args['format'], f)

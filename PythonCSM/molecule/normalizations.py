@@ -4,28 +4,27 @@ import math
 import logging
 logger = logging.getLogger("csm")
 
-def normalize_coords(coords, masses, keep_center):
+def normalize_coords(coords, masses):
     """
     Normalize coordinates
     :param coords: atom coordinates
     :param masses: Atomic masses
-    :param keep_center:  When false, the center of mass is moved to (0,0,0)
     :return: (List of normalized coordinates, normalization factor)
     """
 
     x_avg = y_avg = z_avg = 0.0
 
     size = len(masses)
-    if not keep_center:
-        mass_sum = 0
-        for i in range(size):
-            x_avg += coords[i][0] * masses[i]
-            y_avg += coords[i][1] * masses[i]
-            z_avg += coords[i][2] * masses[i]
-            mass_sum += masses[i]
-        x_avg /= mass_sum
-        y_avg /= mass_sum
-        z_avg /= mass_sum
+
+    mass_sum = 0
+    for i in range(size):
+        x_avg += coords[i][0] * masses[i]
+        y_avg += coords[i][1] * masses[i]
+        z_avg += coords[i][2] * masses[i]
+        mass_sum += masses[i]
+    x_avg /= mass_sum
+    y_avg /= mass_sum
+    z_avg /= mass_sum
 
     norm = 0.0
     for i in range(size):

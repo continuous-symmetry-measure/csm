@@ -1,4 +1,4 @@
-from calculations.permuters import is_legal_perm
+# from calculations.permuters import is_legal_perm
 from collections import OrderedDict
 from input_output.arguments import get_operation_data
 
@@ -189,15 +189,13 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
             atom_mismatch, res = check_result(result, validate, index, symm)
             if res['verify']:
                 molecule2 = Molecule.from_string(xyz, "xyz")
-                expected_perm=[p-1 for p in res['perm expected']]
-                verify = exact_calculation(operation.type, operation.order, molecule2,expected_perm)
+                expected_perm=([p-1 for p in res['perm expected']])
+                verify = exact_calculation(operation.type, operation.order, molecule2, perm=expected_perm)
                 atom_mismatch2, res2 = check_result(verify, validate, index, symm)
                 if res2['status']!= 'OK':
                     res['verify']=(res2['message'], res2['csm result'], res2['atoms result'])
                 else:
                     res['verify']="Verified"
-                if not is_legal_perm(expected_perm, molecule2):
-                    res['verify']+="illegal original perm"
             writer.writerow(res)
             print()
     print("done")
@@ -206,7 +204,8 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
 def test_individuals(molfile, symmfile, permfile, resfile):
 
     for filename in glob.glob('*.txt'):
-        result = exact_calculation(symmetry, molecule, perm=perm)
+        1
+        #result = exact_calculation(symmetry, molecule, perm=perm)
 
 
 
@@ -244,7 +243,7 @@ def run():
     molfile = os.path.join(directory, r'/input/input_4-clusters/W_Au12_optimized_B3P86.xyz')
     symmfile = os.path.join(directory, r'/expected_output/expected_output_4_clusters/sym.txt')
     resfile = os.path.join(directory, r'/expected_output/expected_output_4_clusters/csmresults.log')
-    #runtests(molfile, symmfile, resfile, directory, name)
+    runtests(molfile, symmfile, resfile, directory, name)
 
 
 if __name__ == '__main__':

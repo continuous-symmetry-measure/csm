@@ -12,12 +12,26 @@ def _create_parser():
 
     # The first three positional arguments
     parser.add_argument('type',
-                        choices=('c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 's2', 's4', 's6', 's8', 'cs', 'ci', 'ch'),
+                        choices=('c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c10', 's2', 's4', 's6', 's8', 's10', 'cs', 'ci', 'ch'),
                         help='The type of operation')
     parser.add_argument('input', help='Input file')
     parser.add_argument('output', default='output.txt', help='Output file')
 
     # Optional arguments (their names start with --)
+
+    parser.add_argument('--justperms', action='store_true', default=False,
+                        help='no calculation of CSM. without --outputPerms, only counts the perm. ')
+    parser.add_argument('--approx', action='store_true', default=False,
+                        help='Equivalent to --detectOutliers --findperm together')
+
+    parser.add_argument('--useperm', type=str, help='Only compute for a single permutation')
+    parser.add_argument('--usedir', type=str, help='Use a predefined axis as a starting point. '
+                                                   'This options ignores the -ignoreSym/-ignoreHy/-removeHy flags')
+    parser.add_argument('--findperm', action='store_true', default=False, help='Attempt to search for a permutation')
+    parser.add_argument('--detectOutliers', action='store_true', default=False,
+                        help="Use statistical methods to try and improve --findperm's results")
+
+    parser.add_argument('--keepStructure', action='store_true', default=False, help='Maintain molecule structure from being distorted')
     parser.add_argument('--ignoreHy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
     parser.add_argument('--removeHy', action='store_true', default=False,
                         help='Remove Hydrogen atoms in computations, rebuild molecule without them and compute')
@@ -29,12 +43,7 @@ def _create_parser():
                         help='Write output in open university format')
     parser.add_argument('--nolimit', action='store_true', default=False,
                         help='Allows running program while ignoring computational complexity')
-    parser.add_argument('--useperm', type=str, help='Only compute for a single permutation')
-    parser.add_argument('--usedir', type=str, help='Use a predefined axis as a starting point. '
-                                                   'This options ignores the -ignoreSym/-ignoreHy/-removeHy flags')
-    parser.add_argument('--findperm', action='store_true', default=False, help='Attempt to search for a permutation')
-    parser.add_argument('--detectOutliers', action='store_true', default=False,
-                        help="Use statistical methods to try and improve --findperm's results")
+
     parser.add_argument('--babelbond', action='store_true', default=False, help='Let OpenBabel compute bonding')
     parser.add_argument('--useMass', action='store_true', default=False,
                         help='Use the atomic masses to define center of mass')
@@ -44,10 +53,7 @@ def _create_parser():
     parser.add_argument('--printNorm', action='store_true', default=False, help='Print the normalization factor as well')
     parser.add_argument('--printLocal', action='store_true', default=False,
                         help='Print the local CSM (csm for each atom) in the output file')
-    parser.add_argument('--approx', action='store_true', default=False,
-                        help='Equivalent to --detectOutliers --findperm together')
-    parser.add_argument('--keepCenter', action='store_true', default=False,
-                        help='Do not change coordinates s.t. (0,0,0) corresponds to Center of Mass')
+
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
     parser.add_argument('--outputPerms', action='store', default=None,
                         help='Writes all enumerated permutations to file')
@@ -95,10 +101,12 @@ _opcode_data = {
     'c6': ('CN', 6, "C6 SYMMETRY"),
     'c7': ('CN', 7, "C7 SYMMETRY"),
     'c8': ('CN', 8, "C8 SYMMETRY"),
+    'c10': ('CN', 10, "C10 SYMMETRY"),
     's2': ('SN', 2, "S2 SYMMETRY"),
     's4': ('SN', 4, "S4 SYMMETRY"),
     's6': ('SN', 6, "S6 SYMMETRY"),
-    's8': ('SN', 8, "S8 SYMMETRY")
+    's8': ('SN', 8, "S8 SYMMETRY"),
+    's10': ('SN', 8, "S10 SYMMETRY")
 }
 
 def get_operation_data(opcode):
@@ -140,9 +148,13 @@ def _process_split_arguments(parse_res):
     calc_args['limit_run'] = not parse_res.nolimit
     calc_args['find_perm'] = parse_res.findperm
     calc_args['detect_outliers'] = parse_res.detectOutliers
+    calc_args['keep_structure']=parse_res.keepStructure
+    calc_args['just_perms']=parse_res.justperms
     if parse_res.approx:
         calc_args['find_perm'] = True
         calc_args['detect_outliers'] = True
+    if parse_res.outputPerms:
+        calc_args['print_perms']=True
 
     mol_args['in_file_name'] = parse_res.input
     mol_args['ignore_hy'] = parse_res.ignoreHy
@@ -156,7 +168,6 @@ def _process_split_arguments(parse_res):
     mol_args['babel_bond'] = parse_res.babelbond
     mol_args['use_mass'] = parse_res.useMass
     mol_args['use_chains'] = parse_res.useChains
-    mol_args['keep_center'] = parse_res.keepCenter
     if parse_res.writeOpenu:
         mol_args['format'] = "PDB"
     if parse_res.useperm:

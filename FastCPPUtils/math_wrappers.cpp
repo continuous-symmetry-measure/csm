@@ -8,9 +8,6 @@
 #include <iostream>
 #include <vector>
 #include <complex>
-#include "logging.h"
-#include "dmatrix.h"
-#include "dvector.h"
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
 
