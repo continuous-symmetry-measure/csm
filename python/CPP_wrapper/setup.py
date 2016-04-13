@@ -16,13 +16,9 @@ except:
 extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
-    library_dirs = ['../../FastCPPUtils/cmake/Release']
-    libraries = ['FastCPPUtils']
     extra_compile_args = ['/Ox']
     # extra_link_args = ['/debug']
 elif sys.platform in ['linux', 'linux2']:
-    library_dirs = ['../../FastCPPUtils/cmake']
-    libraries = ['FastCPPUtils']
     extra_compile_args = ['-fPIC']
 
 setup(
@@ -34,11 +30,9 @@ setup(
     ext_modules=cythonize(
         [Extension(
             "*",
-            ["fast.pyx"],
+            ["fast.pyx", "../../FastCPPUtils/rpoly.c", "../../FastCPPUtils/math_wrappers.cpp"],
             language='c++',
-            include_dirs=[numpy.get_include(), '../../FastCPPUtils'],
-            libraries=libraries,
-            library_dirs=library_dirs,
+            include_dirs=[numpy.get_include(), '../../include', '../../FastCPPUtils'],
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args)]
     )
