@@ -1,4 +1,4 @@
-from molecule.molecule import Molecule
+from csm.molecule.molecule import Molecule
 
 
 def read_inputs(perm_file_name=None, dir_file_name=None, **kwargs):

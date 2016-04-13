@@ -4,12 +4,12 @@ import itertools
 import math
 
 import numpy as np
-from calculations.constants import MINDOUBLE, MAXDOUBLE
-from CPP_wrapper.fast import calc_ref_plane
+from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
+from csm.CPP_wrapper.fast import calc_ref_plane
 
 from collections import namedtuple
-from molecule.normalizations import de_normalize_coords, normalize_coords
-from CPP_wrapper.fast import CythonPermuter, SinglePermPermuter, TruePermChecker,PQPermChecker, CythonPIP
+from csm.molecule.normalizations import de_normalize_coords, normalize_coords
+from csm.CPP_wrapper.fast import CythonPermuter, SinglePermPermuter, TruePermChecker,PQPermChecker, CythonPIP
 import logging
 
 np.set_printoptions(precision=6)
