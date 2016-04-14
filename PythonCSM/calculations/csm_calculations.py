@@ -6,10 +6,11 @@ import math
 import numpy as np
 from calculations.constants import MINDOUBLE, MAXDOUBLE
 from CPP_wrapper.fast import calc_ref_plane
+
+from collections import namedtuple
 from molecule.normalizations import de_normalize_coords, normalize_coords
 from CPP_wrapper.fast import CythonPermuter, SinglePermPermuter, TruePermChecker,PQPermChecker, CythonPIP
 import logging
-from recordclass import recordclass
 
 np.set_printoptions(precision=6)
 
@@ -17,7 +18,7 @@ logger = logging.getLogger("csm")
 
 __author__ = 'Itay, Devora, Yael'
 
-CSMState = recordclass('CSMState', ('molecule',
+CSMState = namedtuple('CSMState', ('molecule',
                                     'op_order',
                                     'op_type',
                                     'csm',
@@ -45,7 +46,8 @@ def process_results(results):
     normalize_coords(results.symmetric_structure, masses)
 
     results.molecule.de_normalize()
-    results.symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
+    symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
+    return results._replace(symmetric_structure=symmetric_structure)
 
 
 def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *args, **kwargs):
@@ -202,10 +204,11 @@ def exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=No
     else:
         best_result = csm_operation(op_type, op_order, molecule, permuter_class, permchecker, perm)
 
-    process_results(best_result)
+    best_result = process_results(best_result)
     if calc_local:
-        best_result.local_csm = compute_local_csm(molecule, best_result.perm, best_result.dir, best_result.op_type,
-                                                  best_result.op_order)
+        local_csm = compute_local_csm(molecule, best_result.perm, best_result.dir, best_result.op_type,
+                                      best_result.op_order)
+        best_result = best_result._replace(local_csm=local_csm)
 
     return best_result
 
@@ -240,17 +243,17 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
             csm_state_tracer_func(traced_state)
 
         if csm < best_csm.csm:
-            best_csm.csm = csm
-            best_csm.dir = dir
-            best_csm.perm = calc_state.perm
+            best_csm = best_csm._replace(csm=csm, dir=dir, perm=calc_state.perm)
 
-    best_csm.perm_count=permuter.count
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation
         raise ValueError("Failed to calculate a csm value for %s" % op_type)
-    best_csm.d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
-    best_csm.symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
-                                                              best_csm.op_order, best_csm.d_min)
+
+    best_csm = best_csm._replace(perm_count=permuter.count)
+    d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
+    symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
+                                                     best_csm.op_order, d_min)
+    best_csm = best_csm._replace(perm_count = permuter.count, d_min=d_min, symmetric_structure=symmetric_structure)
     return best_csm
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):

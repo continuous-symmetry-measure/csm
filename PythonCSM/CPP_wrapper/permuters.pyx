@@ -48,7 +48,7 @@ cdef class CalcState:
     cdef public int op_order
     cdef public int molecule_size
     cdef public double CSM
-    cdef public int[:] p
+    cdef public long[:] p
 
     def __init__(self, int molecule_size, int op_order, allocate=True):
         self.op_order = op_order
@@ -88,8 +88,8 @@ cdef class CythonPIP:
     cdef public double[:] costheta
     cdef public double[:] sintheta
     cdef double[:] multiplier
-    cdef public int[:] p
-    cdef public int[:] q
+    cdef public long[:] p
+    cdef public long[:] q
 
     def __init__(self, mol, op_order, op_type, permchecker):
         self.permchecker = permchecker(mol)
