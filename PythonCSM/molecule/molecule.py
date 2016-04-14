@@ -53,6 +53,9 @@ class Molecule:
     def obmol(self):
         return self._obmol
 
+    def __len__(self):
+        return len(self._atoms)
+
     def has_bond(self, atom_i, atom_j):
         if (atom_i, atom_j) in self._bondset:
             return True
