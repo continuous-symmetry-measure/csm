@@ -2,12 +2,14 @@ import os
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 import sys
+import numpy
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
     README = readme.read()
 
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
+
 
 # Fix the numpy bootstrap problem (http://stackoverflow.com/a/21621689/871910)
 class build_ext(_build_ext):
@@ -17,6 +19,7 @@ class build_ext(_build_ext):
         __builtins__.__NUMPY_SETUP__ = False
         import numpy
         self.include_dirs.append(numpy.get_include())
+        print("Include dirs are: ", self.include_dirs)
 
 # Cython definitions
 BASE_DIR = "../"
@@ -49,12 +52,12 @@ setup(
 
     # The Cython extension module
     ext_modules=[Extension(
-        "fast",
+        "csm.fast",
         [os.path.join(CPP_WRAPPER_DIR, "fast.cpp"),
          os.path.join(FAST_CPPUTILS_DIR, "rpoly.c"),
          os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp")],
         language='c++',
-        include_dirs=[INCLUDE_DIR, FAST_CPPUTILS_DIR],
+        include_dirs=[INCLUDE_DIR, FAST_CPPUTILS_DIR, numpy.get_include()],
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args),],
 

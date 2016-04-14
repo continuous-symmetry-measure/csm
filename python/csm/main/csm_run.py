@@ -24,7 +24,9 @@ def init_logging(log_file_name=None, *args, **kwargs):
         logging.basicConfig(level=logging.ERROR)
     logger = logging.getLogger("csm")
 
-def run_csm(args={}):
+def run(args=[]):
+    print("Args passed to run: ", args)
+    print("sys.argv: ", sys.argv)
     csv_file = None
     try:
         # Read inputs
@@ -60,6 +62,6 @@ def run_csm(args={}):
             csv_file.close()
 
 if __name__ == '__main__':
-    timer = timeit.Timer(lambda: run_csm(args=sys.argv[1:]))
+    timer = timeit.Timer(lambda: run(args=sys.argv[1:]))
     time = timer.timeit(number=1)
     print("Runtime:", time)

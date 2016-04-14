@@ -20,14 +20,14 @@ elif sys.platform in ['linux', 'linux2']:
     extra_compile_args = ['-fPIC']
 
 setup(
-    name='CPP_Wrapper',
+    name='fast',
     version='0.1',
     description='Fast C++ calculations',
     author='Chelem',
     author_email='contact@chelem.co.il',
     ext_modules=cythonize(
         [Extension(
-            "*",
+            "fast",
             ["fast.pyx",
              os.path.join(FAST_CPPUTILS_DIR, "rpoly.c"),
              os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp")],

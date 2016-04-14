@@ -5,11 +5,11 @@ import math
 
 import numpy as np
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-from csm.CPP_wrapper.fast import calc_ref_plane
+from csm.fast import calc_ref_plane
 
 from collections import namedtuple
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
-from csm.CPP_wrapper.fast import CythonPermuter, SinglePermPermuter, TruePermChecker,PQPermChecker, CythonPIP
+from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker,PQPermChecker, CythonPIP
 import logging
 
 np.set_printoptions(precision=6)

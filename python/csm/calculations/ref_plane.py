@@ -6,10 +6,10 @@
 #
 import logging
 import numpy as np
-from calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
+from csm.calculations.constants import ZERO_IM_PART_MAX, MAXDOUBLE
 import math
 from numpy.polynomial import Polynomial
-from CPP_wrapper.permuters import get_lambda_max
+from csm.fast.permuters import get_lambda_max
 
 
 # logger = logging.getLogger("csm")
