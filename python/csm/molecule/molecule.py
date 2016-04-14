@@ -1,7 +1,6 @@
-from calculations.pair_cache import PairCache
-from openbabel import OBAtom, OBElementTable, OBAtomAtomIter, OBConversion, OBMol
-from molecule.atom import Atom, GetAtomicSymbol
-from molecule.normalizations import normalize_coords, de_normalize_coords
+from openbabel import OBAtomAtomIter, OBConversion, OBMol
+from csm.molecule.atom import Atom, GetAtomicSymbol
+from csm.molecule.normalizations import normalize_coords, de_normalize_coords
 import logging
 import numpy as np
 

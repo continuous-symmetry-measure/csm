@@ -1,7 +1,0 @@
-*.cpp
-*.so
-*.pyd
-*.pdb
-build/
-
-

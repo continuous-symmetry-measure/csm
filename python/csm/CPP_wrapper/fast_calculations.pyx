@@ -3,7 +3,7 @@ import math
 import numpy as np
 cimport numpy as np
 cimport fastcpp
-from calculations.constants import MAXDOUBLE, ZERO_IM_PART_MAX
+from csm.calculations.constants import MAXDOUBLE, ZERO_IM_PART_MAX
 from libcpp cimport bool
 
 cdef class CalcState
