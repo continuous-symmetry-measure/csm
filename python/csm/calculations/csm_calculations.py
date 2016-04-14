@@ -9,7 +9,7 @@ from csm.fast import calc_ref_plane
 
 from collections import namedtuple
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
-from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker,PQPermChecker, CythonPIP
+from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
 import logging
 
 np.set_printoptions(precision=6)
@@ -19,15 +19,15 @@ logger = logging.getLogger("csm")
 __author__ = 'Itay, Devora, Yael'
 
 CSMState = namedtuple('CSMState', ('molecule',
-                                    'op_order',
-                                    'op_type',
-                                    'csm',
-                                    'perm',
-                                    'dir',
-                                    'd_min',
-                                    'symmetric_structure',
-                                    'local_csm',
-                                    'perm_count',))
+                                   'op_order',
+                                   'op_type',
+                                   'csm',
+                                   'perm',
+                                   'dir',
+                                   'd_min',
+                                   'symmetric_structure',
+                                   'local_csm',
+                                   'perm_count',))
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 # When this property is set by an outside caller, it is called every permutation iteration with the current CSMState
@@ -39,7 +39,6 @@ def process_results(results):
     """
     Final normalizations and de-normalizations
     :param results: CSM old_calculations results
-    :param csm_args: CSM args
     """
     #    results.molecule.set_norm_factor(molecule.norm_factor)
     masses = [atom.mass for atom in results.molecule.atoms]
@@ -63,12 +62,13 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
         A *kind* of cycle struct is: (n1 cycles of size c1, n2 cycles of size c2, ...). Where c1..cn are either 1, cycle_size
         or 2 (if add_cycles_of_two is True), and the sum of ni*ci adds to group_size
         """
+
         def log_fact(n):
             """
             Returns the log(n!)
             """
             result = 0.0
-            for i in range(1,n+1):
+            for i in range(1, n + 1):
                 result += math.log(i)
             return result
 
@@ -83,14 +83,14 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
             if n <= 0:
                 raise ValueError("n must be positive")
 
-            return log_fact(n) - log_fact(n-r) - log_fact(r)
+            return log_fact(n) - log_fact(n - r) - log_fact(r)
 
         def generate_kinds():
             """
             Generates all cycle_struct kinds with the given group_size and cycle_lengths.
             A kind is a mapping from cycle_size to the number of cycles
             """
-            add_two = add_cycles_of_two and cycle_size!=2  # Do we add cycles of two?
+            add_two = add_cycles_of_two and cycle_size != 2  # Do we add cycles of two?
             for num_cycle_size in range(0, group_size // cycle_size + 1):
                 if add_two:
                     left = group_size - cycle_size * num_cycle_size  # amount left
@@ -140,7 +140,7 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
             """
             log_result = 0
             for cycle_size, cycle_count in kind.items():
-                log_result += cycle_count * log_fact(cycle_size-1)
+                log_result += cycle_count * log_fact(cycle_size - 1)
             return log_result
 
         count = 0
@@ -150,18 +150,18 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
             count += math.exp(log_num_structs + log_num_perms)
         return count
 
-    perm_checker=TruePermChecker
+    perm_checker = TruePermChecker
 
     if not print_perms:
         if not keep_structure:
-            count=1
-            groups=molecule.equivalence_classes
+            count = 1
+            groups = molecule.equivalence_classes
             for group in groups:
-                count*=_len_group_permuter(len(group), op_order, op_type=='SN')
+                count *= _len_group_permuter(len(group), op_order, op_type == 'SN')
             return int(count)
 
     if keep_structure:
-        perm_checker=PQPermChecker
+        perm_checker = PQPermChecker
 
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
     permuter = CythonPermuter(molecule, op_order, op_type, perm_checker, perm_class=CythonPIP)
@@ -172,32 +172,33 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
             traced_state.perm = pip.perm
             traced_state.dir = ''
             csm_state_tracer_func(traced_state)
-        if permuter.count%1000000==0:
-            print("counted", int(permuter.count/1000000), "million permutations thus far...")
-        count=permuter.count
+        if permuter.count % 1000000 == 0:
+            print("counted", int(permuter.count / 1000000), "million permutations thus far...")
+        count = permuter.count
     return count
+
 
 def exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=None, calc_local=False, *args, **kwargs):
     if keep_structure:
-        permchecker=PQPermChecker
+        permchecker = PQPermChecker
     else:
-        permchecker=TruePermChecker
+        permchecker = TruePermChecker
 
-    permuter_class=CythonPermuter
+    permuter_class = CythonPermuter
 
     if op_type == 'CH':  # Chirality
         sn_max = op_order
         # First CS
         best_result = csm_operation('CS', 2, molecule, permuter_class, permchecker, perm)
-        best_result.op_type='CS'
+        best_result.op_type = 'CS'
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
                 result = csm_operation('SN', op_order, molecule, permuter_class, permchecker, perm)
                 if result.csm < best_result.csm:
                     best_result = result
-                    best_result.op_type='SN'
-                    best_result.op_order=op_order
+                    best_result.op_type = 'SN'
+                    best_result.op_order = op_order
                 if best_result.csm > MINDOUBLE:
                     break
 
@@ -222,7 +223,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
     :param args: The CSM arguments
     :return: A dictionary with all the results: csm, dMin, perm and direction
     """
-    start_time=datetime.now()
+    start_time = datetime.now()
     best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
@@ -233,9 +234,10 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
         permuter = permuter_class(molecule, op_order, op_type, permchecker)
 
     for calc_state in permuter.permute():
-        if permuter.count%1000000==0:
-            print("calculated for", int(permuter.count/1000000), "million permutations thus far...\t Time:", datetime.now()-start_time)
-        csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
+        if permuter.count % 1000000 == 0:
+            print("calculated for", int(permuter.count / 1000000), "million permutations thus far...\t Time:",
+                  datetime.now() - start_time)
+        csm, dir = calc_ref_plane(op_order, op_type == 'CS', calc_state)
         if csm_state_tracer_func:
             traced_state.csm = csm
             traced_state.perm = calc_state.perm
@@ -253,8 +255,9 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
     d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
     symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
                                                      best_csm.op_order, d_min)
-    best_csm = best_csm._replace(perm_count = permuter.count, d_min=d_min, symmetric_structure=symmetric_structure)
+    best_csm = best_csm._replace(perm_count=permuter.count, d_min=d_min, symmetric_structure=symmetric_structure)
     return best_csm
+
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
     is_improper = op_type != 'CN'
@@ -340,37 +343,40 @@ def approx_calculation(op_type, op_order, molecule, detect_outliers=True, *args,
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
-        perm=estimate_perm(op_type, op_order, molecule, dir)
-        best_csm=csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+        perm = estimate_perm(op_type, op_order, molecule, dir)
+        best_csm = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
     else:
         best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
         # step one: get initial approximate position of symmetry element
-        for dir in get_first_approx_position(op_type, op_order, molecule, detect_outliers): #3 or 9 options
+        for dir in get_first_approx_position(op_type, op_order, molecule, detect_outliers):  # 3 or 9 options
             for i in range(50):
                 # step two: get permutation
-                perm=estimate_perm(op_type, op_order, molecule, dir)
+                perm = estimate_perm(op_type, op_order, molecule, dir)
                 # step three: iterative refinement
                 # feed calculated_symm_position into step three
                 # repeat fifty times
                 # return minimal value reached during the fifty iterations
-                interim_results=csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
-                dir=interim_results.dir
-                if interim_results.csm<best_csm.csm:
-                    best_csm=interim_results
+                interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+                dir = interim_results.dir
+                if interim_results.csm < best_csm.csm:
+                    best_csm = interim_results
     return best_csm
 
 
 MIN_GROUPS_FOR_OUTLIERS = 10
+
+
 def get_first_approx_position(op_type, op_order, molecule, detect_outliers):
     # step one: get initial approximate position of symmetry element
-    fit_dir(op_type, molecule.equivalence_classes)
+    eigenvalues, dirs = fit_dir(op_type, molecule.equivalence_classes)
     # if there aren't enough groups to detect outliers don't bother
     if detect_outliers and len(molecule.equivalence_classes) > MIN_GROUPS_FOR_OUTLIERS:
         # to improve accuracy of initial guess, neglect outlier points:
         # calculate the median m for the ddeviation of the points from the symmetry element
+        #numpy.median
         # an outlier has a deivation larger than 2m
         # repeat best fit, without outliers
-        reduced_group=molecule.equivalence_classes
+        reduced_group = molecule.equivalence_classes
         fit_dir(op_type, reduced_group)
 
     use_orthogonal = True
@@ -378,74 +384,102 @@ def get_first_approx_position(op_type, op_order, molecule, detect_outliers):
         2
         # to compensate for poor initial guess, examine 2 vectors perpendicular to initial guess and each other
 
+    return dirs
+
 
 def fit_dir(op_type, equivalence_classes):
     def cross_product_minus_average(vector, average, matrix):
         for i in range(3):
             for j in range(3):
-                matrix[i][j]+=vector[i]-average[i] * vector[j]-average[j]
-
+                matrix[i][j] += vector[i] - average[i] * vector[j] - average[j]
 
     # calculate geometric center for each equivalency group:
     # average positions of all atoms in the group
-    averaged_groups=np.array()
+    averaged_groups = []
     for group in equivalence_classes:
-        sumxyz=[0.0,0.0,0.0]
+        sumxyz = np.zeros(3)
         for atom in group:
-            sumxyz+=atom
-            #this operation can be done without loop with numpy
-        sumxyz/=len(group)
+            sumxyz += atom
+            # this operation can be done without loop with numpy
+        sumxyz /= len(group)
         averaged_groups.append(sumxyz)
 
-    #matrix for linear regression:
-    averaged_position=[0,0,0]
+    # matrix for linear regression:
+    averaged_position = [0, 0, 0]
     for group in averaged_groups:
         for atom in group:
             averaged_position += atom
             # this operation can be done without loop with numpy
     averaged_position /= len(group)
 
-    #create the matrix of the sum of the outer crosses of the averaged group array
-    matrix= np.zeroes((3,3,))
+    # create the matrix of the sum of the outer crosses of the averaged group array
+    mat = np.zeros((3, 3))
     for position in averaged_groups:
-        cross_product_minus_average(position, averaged_position, matrix)
+        cross_product_minus_average(position, averaged_position, mat)
 
 
-    #computer eigenvalues and eigenvectors
+        # computer eigenvalues and eigenvectors
         # lambdas - list of 3 eigenvalues of matrix
         # m - list of 3 eigenvectors of matrix
-    lambdas, m = np.linalg.eig(matrix)
+    lambdas, m = np.linalg.eig(mat)
 
-    #the original code included a difference between CS (planefit) and Cn or SN>2 (linefit)
-    #except that they both called identical functions
+    return lambdas, m
+    # the original code included a difference between CS (planefit) and Cn or SN>2 (linefit)
+    # except that they both called identical functions
+
 
 def estimate_perm(op_type, op_order, molecule, dir):
     # step two: first estimation of the symmetry measure: first permutation
     # apply the symmetry operation once, using symm_element from step one
 
-    #create rotation matrix
-    rotation_mat=create_rotation_matrix(1, op_type, op_order, dir)
+    # create rotation matrix
+    rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
 
-    #run rotation matrix on atoms
-    rotated= rotation_mat @ molecule.Q
+    # run rotation matrix on atoms
+    rotated = (rotation_mat @ molecule.Q.T).T
 
-    # measure all the distances between all the points in X to all the points in Y
-    distances=np.array((len(molecule), len(molecule)))
-    for i in range(len(molecule)):
-        for j in range(len(molecule)):
-            distances[i][j]=math.abs(np.sum(rotated[i]-molecule.Q[j]))
 
     # create permutation:
-    perm=[-1]*len(molecule)
-    # recursive:
-    # find a pair of points (X,Y) minimally distant from each other (eg, minimum of distances_matrix
-    # new_matrix = remove x row, y column from distances_matrix
-    removed_arr=distances
-    while(removed_arr):
-        indices=np.argmin(removed_arr, axis=0) #need to find correct axis to use here
-        perm[indices[0]]=indices[1]
-        removed_arr=np.delete(removed_arr, indices[0], 0)
-        removed_arr=np.delete(removed_arr, indices[1], 1)
-    # recursive new_matrix
+    perm = [-1] * len(molecule)
+    #permutation creation is done by group:
+    for group in molecule.equivalence_classes:
+        if len(group)==1:
+            perm[group[0]]=group[0]
+
+        else:
+                # measure all the distances between all the points in X to all the points in Y
+                distances = {}
+                for i in group:
+                    for j in group:
+                        distances[(i,j)] = math.fabs(np.sum(rotated[i] - molecule.Q[j]))
+
+                # recursive:
+                # find a pair of points (X,Y) minimally distant from each other (eg, minimum of distances_matrix
+                # new_matrix = remove x row, y column from distances_matrix
+
+                #INEFFICIENT METHOD:
+
+                while True:
+                    min_distance = MAXDOUBLE
+                    for (i,j) in distances:
+                            if distances[(i,j)]<min_distance:
+                                min_distance=distances[(i,j)]
+                                pair=(i,j)
+                    i=pair[0]
+                    j=pair[1]
+                    for k in group:
+                        for t in group:
+                            try:
+                                if k==i:
+                                    del distances[(k,t)]
+                                elif t==j:
+                                    del distances[(k, t)]
+                            except:
+                                pass
+
+                    perm[i]=j
+                    if min_distance==MAXDOUBLE:
+                        break
+
     # return paired sets, as permutation
     return perm
