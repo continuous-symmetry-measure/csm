@@ -22,9 +22,8 @@ class build_ext(_build_ext):
         print("Include dirs are: ", self.include_dirs)
 
 # Cython definitions
-BASE_DIR = "../"
-FAST_CPPUTILS_DIR = os.path.join(BASE_DIR, "FastCPPUtils")
-INCLUDE_DIR = os.path.join(BASE_DIR, "include")
+FAST_CPPUTILS_DIR = "FastCPPUtils"
+EIGEN_INCLUDE_DIR = "../include"
 CPP_WRAPPER_DIR = "csm/CPP_wrapper"
 
 extra_compile_args = []
@@ -38,7 +37,7 @@ elif sys.platform in ['linux', 'linux2']:
 
 setup(
     name='csm',
-    version='0.6.0',
+    version='0.6.1',
     packages=['csm.calculations', 'csm.input_output', 'csm.molecule', 'csm.main'],
     setup_requires=['numpy>=1.10'],
     install_requires=['numpy>=1.10', 'openbabel>=1.8'],
@@ -50,19 +49,25 @@ setup(
     author='The Research Software Company',
     author_email='itay@chelem.co.il',
 
+    # Files required by the extension
+    package_data={
+        "csm.main": [os.path.join(FAST_CPPUTILS_DIR, "*.*"), 'README.md'],
+    },
+
     # The Cython extension module
     ext_modules=[Extension(
         "csm.fast",
         [os.path.join(CPP_WRAPPER_DIR, "fast.cpp"),
          os.path.join(FAST_CPPUTILS_DIR, "rpoly.c"),
-         os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp")],
+         os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp"),
+         ],
         language='c++',
-        include_dirs=[INCLUDE_DIR, FAST_CPPUTILS_DIR, numpy.get_include()],
+        include_dirs=[EIGEN_INCLUDE_DIR, FAST_CPPUTILS_DIR, numpy.get_include()],
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args),],
 
     # The csm command
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'csm = csm.main.csm_run:run',
         ]
