@@ -339,96 +339,157 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
 
 
 def approx_calculation(op_type, op_order, molecule, detect_outliers=True, *args, **kwargs):
+    return find_best_perm(op_type, op_order, molecule, detect_outliers)
+
+
+def find_best_perm(op_type, op_order, molecule, detect_outliers):
+    logger.debug("findBestPerm called")
+
     if op_type == 'CI' or (op_type == 'SN' and op_order == 2):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
         perm = estimate_perm(op_type, op_order, molecule, dir)
-        best_csm = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+        best = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+
     else:
-        best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
-        # step one: get initial approximate position of symmetry element
-        for dir in get_first_approx_position(op_type, op_order, molecule, detect_outliers):  # 3 or 9 options
+        best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
+        dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
+        for dir in dirs:
+            # find permutation for this direction of the symmetry axis
+            perm = estimate_perm(op_type, op_order, molecule, dir)
+
+            # solve using this perm until it converges:
+            curr_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+            best_for_this_dir = curr_results
+            # (can add in conditions that curr_results.csm>1e-4 and curr_results.csm - old_resutls.csm>0.01 later)
+            # (can also use max_iters instead of fixed 50, but 50 is whats given in the article and we don't care right now)
             for i in range(50):
-                # step two: get permutation
-                perm = estimate_perm(op_type, op_order, molecule, dir)
-                # step three: iterative refinement
-                # feed calculated_symm_position into step three
-                # repeat fifty times
-                # return minimal value reached during the fifty iterations
-                interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
-                dir = interim_results.dir
-                if interim_results.csm < best_csm.csm:
-                    best_csm = interim_results
-    return best_csm
+                perm = estimate_perm(op_type, op_order, molecule, curr_results.dir)
+                curr_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+                if curr_results.csm < best_for_this_dir.csm:
+                    best_for_this_dir = curr_results
+
+            if best_for_this_dir.csm < best.csm:
+                best = best_for_this_dir
+
+    return best
 
 
-MIN_GROUPS_FOR_OUTLIERS = 10
+min_group_for_outliers = 10
+def find_symmetry_directions(molecule, detect_outliers, op_type):
+    # get average position of each equivalence group:
+    group_averages = []
+    for group in molecule.equivalence_classes:
+        sum= [0,0,0]
+        for index in group:
+            sum += molecule.Q[index]
+        average = sum / len(group)
+        group_averages.append(average)
+    group_averages = np.array(group_averages)
 
-
-def get_first_approx_position(op_type, op_order, molecule, detect_outliers):
-    # step one: get initial approximate position of symmetry element
-    eigenvalues, dirs = fit_dir(op_type, molecule.equivalence_classes)
-    # if there aren't enough groups to detect outliers don't bother
-    if detect_outliers and len(molecule.equivalence_classes) > MIN_GROUPS_FOR_OUTLIERS:
-        # to improve accuracy of initial guess, neglect outlier points:
-        # calculate the median m for the ddeviation of the points from the symmetry element
-        #numpy.median
-        # an outlier has a deivation larger than 2m
-        # repeat best fit, without outliers
-        reduced_group = molecule.equivalence_classes
-        fit_dir(op_type, reduced_group)
-
-    use_orthogonal = True
-    if use_orthogonal:
-        2
-        # to compensate for poor initial guess, examine 2 vectors perpendicular to initial guess and each other
-
+    dirs = dir_fit(group_averages)
+    if detect_outliers and len(molecule.equivalence_classes) > min_group_for_outliers:
+        dirs = dirs_without_outliers(dirs, group_averages, op_type)
+    dirs = dirs_orthogonal(dirs)
     return dirs
 
 
-def fit_dir(op_type, equivalence_classes):
+def dir_fit(positions):
     def cross_product_minus_average(vector, average, matrix):
+        '''
+        :return: adds to matrix the cross_product of (vector-average) with itself.
+        '''
         for i in range(3):
             for j in range(3):
                 matrix[i][j] += vector[i] - average[i] * vector[j] - average[j]
 
-    # calculate geometric center for each equivalency group:
-    # average positions of all atoms in the group
-    averaged_groups = []
-    for group in equivalence_classes:
-        sumxyz = np.zeros(3)
-        for atom in group:
-            sumxyz += atom
-            # this operation can be done without loop with numpy
-        sumxyz /= len(group)
-        averaged_groups.append(sumxyz)
+    # get vector of the average position
+    sum = np.einsum('ij->j', positions)
+    average = sum / len(positions)
 
-    # matrix for linear regression:
-    averaged_position = [0, 0, 0]
-    for group in averaged_groups:
-        for atom in group:
-            averaged_position += atom
-            # this operation can be done without loop with numpy
-    averaged_position /= len(group)
-
-    # create the matrix of the sum of the outer crosses of the averaged group array
     mat = np.zeros((3, 3))
-    for position in averaged_groups:
-        cross_product_minus_average(position, averaged_position, mat)
-
+    for pos in positions:
+        cross_product_minus_average(pos, average, mat)
 
         # computer eigenvalues and eigenvectors
         # lambdas - list of 3 eigenvalues of matrix
         # m - list of 3 eigenvectors of matrix
     lambdas, m = np.linalg.eig(mat)
+    dirs = m
 
-    return lambdas, m
-    # the original code included a difference between CS (planefit) and Cn or SN>2 (linefit)
-    # except that they both called identical functions
+    # normalize result:
+    for dir in dirs:
+        normalize_dir(dir)
+
+    return dirs
+
+
+def normalize_dir(dir):
+    dir=np.array(dir)
+    norm = math.sqrt(math.fabs(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]))
+    dir /= norm
+    dir=list(dir)
+
+
+def dirs_without_outliers(dirs, positions, op_type):
+    additional_dirs=list(dirs)
+    for dir in dirs:
+        dists=[]
+        # 1.Find the distance of each point from the line/plane
+        for pos in positions:
+            if op_type=='CS':
+                dists.append(math.abs(dir[0]*pos[0]+dir[1]*pos[1]+dir[2]*pos[2]))
+            else:
+                dists.append(1)
+
+        # 2. Find median of the distances m
+        median=numpy.median(numpy.array(dists))
+        # 3. for each distance di, if di > 2*m, remove it as an outlier
+        with_outliers_removed=list()
+        for i in range(len):
+            if dists[i] < 2 * median:
+                with_outliers_removed.append(positions[i])
+        # 4. recompute dirs
+        additional_dirs = additional_dirs + list(dir_fit(with_outliers_removed))
+
+    return additional_dirs
+
+
+def dirs_orthogonal(dirs):
+    added_dirs = list(dirs)
+
+    for dir in dirs:
+        if math.fabs(dir[0]) < MINDOUBLE:
+            dir1 = [1.0, 0.0, 0.0]
+            dir2 = [0.0, -dir[2], dir[1]]
+        elif math.fabs(dir[1] < MINDOUBLE):
+            dir1 = [-dir[2], 0.0, dir[0]]
+            dir2 = [0.0, 1.0, 0.0]
+        else:
+            dir1 = [-dir[1], dir[0], 0.0]
+            dir2 = [0.0, -dir[2], dir[1]]
+        # normalize dir1:
+        normalize_dir(dir1)
+        # remove projection of dir1 from dir2
+        scal = dir1[0] * dir2[0] + dir1[1] * dir2[1] + dir1[2] * dir2[2]
+        dir2[0] -= scal * dir1[0]
+        dir2[1] -= scal * dir1[1]
+        dir2[2] -= scal * dir1[2]
+        # normalize dir2
+        normalize_dir(dir2)
+        added_dirs.append(dir1)
+        added_dirs.append(dir2)
+
+    return np.array(added_dirs)
 
 
 def estimate_perm(op_type, op_order, molecule, dir):
+    1
+
+
+
+def blablablaperm():
     # step two: first estimation of the symmetry measure: first permutation
     # apply the symmetry operation once, using symm_element from step one
 
