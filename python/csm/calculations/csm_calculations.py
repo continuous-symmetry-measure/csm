@@ -9,7 +9,7 @@ from csm.fast import calc_ref_plane
 
 from collections import namedtuple
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
-from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
+from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP, GetEigens
 import logging
 
 np.set_printoptions(precision=6)
@@ -386,7 +386,7 @@ def find_symmetry_directions(molecule, detect_outliers, op_type):
             sum += molecule.Q[index]
         average = sum / len(group)
         group_averages.append(average)
-    group_averages = np.array(group_averages)
+    group_averages = np.array(group_averages) #up to here has been checked against c++
 
     dirs = dir_fit(group_averages)
     if detect_outliers and len(molecule.equivalence_classes) > min_group_for_outliers:
@@ -396,27 +396,27 @@ def find_symmetry_directions(molecule, detect_outliers, op_type):
 
 
 def dir_fit(positions):
-    def cross_product_minus_average(vector, average, matrix):
-        '''
-        :return: adds to matrix the cross_product of (vector-average) with itself.
-        '''
-        for i in range(3):
-            for j in range(3):
-                matrix[i][j] += vector[i] - average[i] * vector[j] - average[j]
-
     # get vector of the average position
     sum = np.einsum('ij->j', positions)
-    average = sum / len(positions)
+    average = sum / len(positions) #up to here has been checked against c++
 
     mat = np.zeros((3, 3))
     for pos in positions:
-        cross_product_minus_average(pos, average, mat)
+        for j in range(3):
+            for k in range(3):
+                mat[j][k] += (pos[j] - average[j]) * (pos[k] - average[k])
+
 
         # computer eigenvalues and eigenvectors
         # lambdas - list of 3 eigenvalues of matrix
         # m - list of 3 eigenvectors of matrix
-    lambdas, m = np.linalg.eig(mat)
-    dirs = m
+    #lambdas, m = np.linalg.eig(mat)
+    #dirs = m
+    #cdef Matrix3D m = Matrix3D()
+    #cdef Vector3D lambdas = Vector3D()
+    m = np.zeros((3, 3))
+    lambdas = np.zeros((1, 3))
+    GetEigens(mat.buf, m.buf, lambdas.buf)
 
     # normalize result:
     for dir in dirs:
@@ -484,12 +484,8 @@ def dirs_orthogonal(dirs):
     return np.array(added_dirs)
 
 
+
 def estimate_perm(op_type, op_order, molecule, dir):
-    1
-
-
-
-def blablablaperm():
     # step two: first estimation of the symmetry measure: first permutation
     # apply the symmetry operation once, using symm_element from step one
 
