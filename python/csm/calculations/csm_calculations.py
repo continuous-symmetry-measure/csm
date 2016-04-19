@@ -240,7 +240,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
                   datetime.now() - start_time)
         csm, dir = calc_ref_plane(op_order, op_type == 'CS', calc_state)
         if csm_state_tracer_func:
-            traced_state = traced_state._replace(csm = csm, perm= calc_state.perm, dir = dir)
+            traced_state = traced_state._replace(csm=csm, perm=calc_state.perm, dir=dir)
             csm_state_tracer_func(traced_state)
 
         if csm < best_csm.csm:
@@ -359,15 +359,15 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers):
             perm = estimate_perm(op_type, op_order, molecule, dir)
 
             # solve using this perm until it converges:
-            curr_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
-            best_for_this_dir = curr_results
-            # (can add in conditions that curr_results.csm>1e-4 and curr_results.csm - old_resutls.csm>0.01 later)
+            interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+            best_for_this_dir = interim_results
+            # (can add in conditions that interim_results.csm>1e-4 and interim_results.csm - old_resutls.csm>0.01 later)
             # (can also use max_iters instead of fixed 50, but 50 is whats given in the article and we don't care right now)
             for i in range(50):
-                perm = estimate_perm(op_type, op_order, molecule, curr_results.dir)
-                curr_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
-                if curr_results.csm < best_for_this_dir.csm:
-                    best_for_this_dir = curr_results
+                perm = estimate_perm(op_type, op_order, molecule, interim_results.dir)
+                interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+                if interim_results.csm < best_for_this_dir.csm:
+                    best_for_this_dir = interim_results
 
             if best_for_this_dir.csm < best.csm:
                 best = best_for_this_dir
@@ -376,16 +376,18 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers):
 
 
 min_group_for_outliers = 10
+
+
 def find_symmetry_directions(molecule, detect_outliers, op_type):
     # get average position of each equivalence group:
     group_averages = []
     for group in molecule.equivalence_classes:
-        sum= [0,0,0]
+        sum = [0, 0, 0]
         for index in group:
             sum += molecule.Q[index]
         average = sum / len(group)
         group_averages.append(average)
-    group_averages = np.array(group_averages) #up to here has been checked against c++
+    group_averages = np.array(group_averages)
 
     dirs = dir_fit(group_averages)
     if detect_outliers and len(molecule.equivalence_classes) > min_group_for_outliers:
@@ -394,17 +396,23 @@ def find_symmetry_directions(molecule, detect_outliers, op_type):
     return dirs
 
 
+def normalize_dir(dir):
+    dir = np.array(dir)  # lists also get sent to this function, but can't be /='d
+    norm = math.sqrt(math.fabs(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]))
+    dir /= norm
+    return dir
+
+
 def dir_fit(positions):
     # get vector of the average position
     sum = np.einsum('ij->j', positions)
-    average = sum / len(positions) #up to here has been checked against c++
+    average = sum / len(positions)
 
     mat = np.zeros((3, 3), dtype=np.float64, order="c")
     for pos in positions:
         for j in range(3):
             for k in range(3):
                 mat[j][k] += (pos[j] - average[j]) * (pos[k] - average[k])
-
 
     # computer eigenvalues and eigenvectors
     # lambdas - list of 3 eigenvalues of matrix (function demands them, but we won't be using them here)
@@ -414,36 +422,27 @@ def dir_fit(positions):
     cppeigen(mat, dirs, lambdas)
 
     # normalize result:
-    dirs=np.array([normalize_dir(dir) for dir in dirs])
-    #for dir in dirs:
-    #    dir = normalize_dir(dir)
+    dirs = np.array([normalize_dir(dir) for dir in dirs])
 
-    return dirs #up to here has been checked against c++
-
-
-def normalize_dir(dir):
-    dir=np.array(dir) #lists also get sent to this function, but can't be /='d
-    norm = math.sqrt(math.fabs(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]))
-    dir /= norm
-    return dir
+    return dirs
 
 
 def dirs_without_outliers(dirs, positions, op_type):
-    additional_dirs=list(dirs)
+    additional_dirs = list(dirs)
     for dir in dirs:
-        dists=[]
+        dists = []
         # 1.Find the distance of each point from the line/plane
         for pos in positions:
-            if op_type=='CS':
-                dists.append(math.abs(dir[0]*pos[0]+dir[1]*pos[1]+dir[2]*pos[2]))
+            if op_type == 'CS':
+                dists.append(math.abs(dir[0] * pos[0] + dir[1] * pos[1] + dir[2] * pos[2]))
             else:
-                dists.append(1)
+                dists.append(np.linalg.norm(dir - pos))
 
         # 2. Find median of the distances m
-        median=numpy.median(numpy.array(dists))
+        median = np.median(np.array(dists))
         # 3. for each distance di, if di > 2*m, remove it as an outlier
-        with_outliers_removed=list()
-        for i in range(len):
+        with_outliers_removed = list()
+        for i in range(len(positions)):
             if dists[i] < 2 * median:
                 with_outliers_removed.append(positions[i])
         # 4. recompute dirs
@@ -466,19 +465,18 @@ def dirs_orthogonal(dirs):
             dir1 = [-dir[1], dir[0], 0.0]
             dir2 = [0.0, -dir[2], dir[1]]
         # normalize dir1:
-        dir1= normalize_dir(dir1)
+        dir1 = normalize_dir(dir1)
         # remove projection of dir1 from dir2
         scal = dir1[0] * dir2[0] + dir1[1] * dir2[1] + dir1[2] * dir2[2]
         dir2[0] -= scal * dir1[0]
         dir2[1] -= scal * dir1[1]
         dir2[2] -= scal * dir1[2]
         # normalize dir2
-        dir2= normalize_dir(dir2)
+        dir2 = normalize_dir(dir2)
         added_dirs.append(dir1)
         added_dirs.append(dir2)
 
     return np.array(added_dirs)
-
 
 
 def estimate_perm(op_type, op_order, molecule, dir):
@@ -491,48 +489,51 @@ def estimate_perm(op_type, op_order, molecule, dir):
     # run rotation matrix on atoms
     rotated = (rotation_mat @ molecule.Q.T).T
 
-
     # create permutation:
     perm = [-1] * len(molecule)
-    #permutation creation is done by group:
+    # permutation creation is done by group:
     for group in molecule.equivalence_classes:
-        if len(group)==1:
-            perm[group[0]]=group[0]
+        if len(group) == 1:
+            perm[group[0]] = group[0]
 
         else:
-                # measure all the distances between all the points in X to all the points in Y
-                distances = {}
-                for i in group:
-                    for j in group:
-                        distances[(i,j)] = math.fabs(np.sum(rotated[i] - molecule.Q[j]))
+            # measure all the distances between all the points in X to all the points in Y
+            distances = {}
+            for i in group:
+                for j in group:
+                    a = rotated[i]
+                    b = molecule.Q[j]
+                    distances[(i, j)] = np.linalg.norm(a - b)
+                    # distances[(i, j)] = math.fabs(np.sum(rotated[i] - molecule.Q[j])) #using abs gives same result as using sqrt of sq
+                    # distances[(i,j)] = math.sqrt((rotated[i] - molecule.Q[j])*(rotated[i] - molecule.Q[j]))
 
-                # recursive:
-                # find a pair of points (X,Y) minimally distant from each other (eg, minimum of distances_matrix
-                # new_matrix = remove x row, y column from distances_matrix
+            # recursive:
+            # find a pair of points (X,Y) minimally distant from each other (eg, minimum of distances_matrix
+            # new_matrix = remove x row, y column from distances_matrix
 
-                #INEFFICIENT METHOD:
+            # INEFFICIENT METHOD:
 
-                while True:
-                    min_distance = MAXDOUBLE
-                    for (i,j) in distances:
-                            if distances[(i,j)]<min_distance:
-                                min_distance=distances[(i,j)]
-                                pair=(i,j)
-                    i=pair[0]
-                    j=pair[1]
-                    for k in group:
-                        for t in group:
-                            try:
-                                if k==i:
-                                    del distances[(k,t)]
-                                elif t==j:
-                                    del distances[(k, t)]
-                            except:
-                                pass
+            while True:
+                min_distance = MAXDOUBLE
+                for (i, j) in distances:
+                    if distances[(i, j)] < min_distance:
+                        min_distance = distances[(i, j)]
+                        pair = (i, j)
+                i = pair[0]
+                j = pair[1]
+                for k in group:
+                    for t in group:
+                        try:
+                            if k == i:
+                                del distances[(k, t)]
+                            elif t == j:
+                                del distances[(k, t)]
+                        except:
+                            pass
 
-                    perm[i]=j
-                    if min_distance==MAXDOUBLE:
-                        break
+                perm[i] = j
+                if min_distance == MAXDOUBLE:
+                    break
 
     # return paired sets, as permutation
     return perm
