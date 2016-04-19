@@ -9,7 +9,7 @@ from csm.fast import calc_ref_plane
 
 from collections import namedtuple
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
-from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP, GetEigens
+from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
 import logging
 
 np.set_printoptions(precision=6)
@@ -239,9 +239,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
                   datetime.now() - start_time)
         csm, dir = calc_ref_plane(op_order, op_type == 'CS', calc_state)
         if csm_state_tracer_func:
-            traced_state.csm = csm
-            traced_state.perm = calc_state.perm
-            traced_state.dir = dir
+            traced_state = traced_state._replace(csm = csm, perm= calc_state.perm, dir = dir)
             csm_state_tracer_func(traced_state)
 
         if csm < best_csm.csm:
@@ -410,13 +408,13 @@ def dir_fit(positions):
         # computer eigenvalues and eigenvectors
         # lambdas - list of 3 eigenvalues of matrix
         # m - list of 3 eigenvectors of matrix
-    #lambdas, m = np.linalg.eig(mat)
-    #dirs = m
+    lambdas, m = np.linalg.eig(mat)
+    dirs = m
     #cdef Matrix3D m = Matrix3D()
     #cdef Vector3D lambdas = Vector3D()
-    m = np.zeros((3, 3))
-    lambdas = np.zeros((1, 3))
-    GetEigens(mat.buf, m.buf, lambdas.buf)
+    #m = np.zeros((3, 3))
+    #lambdas = np.zeros((1, 3))
+    #GetEigens(mat.buf, m.buf, lambdas.buf)
 
     # normalize result:
     for dir in dirs:
