@@ -237,9 +237,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
             print("calculated for", int(permuter.count/1000000), "million permutations thus far...\t Time:", datetime.now()-start_time)
         csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
         if csm_state_tracer_func:
-            traced_state.csm = csm
-            traced_state.perm = calc_state.perm
-            traced_state.dir = dir
+            best_csm = best_csm._replace(csm=csm, dir=dir, perm=calc_state.perm)
             csm_state_tracer_func(traced_state)
 
         if csm < best_csm.csm:
