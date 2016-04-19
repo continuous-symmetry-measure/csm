@@ -39,7 +39,7 @@ def run(args=[]):
             csv_file = open(out_args['perms_csv_name'], 'w')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
             perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm],
+            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p + 1 for p in state.perm],
                                                                                          state.dir,
                                                                                          state.csm, ])
 
