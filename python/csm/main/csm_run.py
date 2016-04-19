@@ -3,7 +3,8 @@ import logging
 import sys
 import timeit
 from csm.input_output.arguments import get_split_arguments
-from csm.calculations.csm_calculations import exact_calculation, perm_count, approx_calculation
+from csm.calculations.csm_calculations import exact_calculation, perm_count
+from csm.calculations.approx_calculations import approx_calculation
 from csm.calculations import csm_calculations
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results

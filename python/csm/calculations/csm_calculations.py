@@ -8,7 +8,6 @@ from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import calc_ref_plane
 from collections import namedtuple
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
-from csm.calculations.approx_calculations import find_best_perm
 from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
 import logging
 
@@ -336,5 +335,4 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
     return symmetric
 
 
-def approx_calculation(op_type, op_order, molecule, detect_outliers=True, *args, **kwargs):
-    return find_best_perm(op_type, op_order, molecule, detect_outliers)
+

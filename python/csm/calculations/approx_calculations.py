@@ -1,9 +1,12 @@
 import numpy as np
+import math
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
 from csm.fast import external_get_eigens as cppeigen
 from csm.calculations.csm_calculations import csm_operation, CSMState, create_rotation_matrix
 
+def approx_calculation(op_type, op_order, molecule, detect_outliers=True, *args, **kwargs):
+    return find_best_perm(op_type, op_order, molecule, detect_outliers)
 
 def find_best_perm(op_type, op_order, molecule, detect_outliers):
     if op_type == 'CI' or (op_type == 'SN' and op_order == 2):
@@ -22,17 +25,22 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers):
 
             # solve using this perm until it converges:
             interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
-            best_for_this_dir = interim_results
-            # (can add in conditions that interim_results.csm>1e-4 and interim_results.csm - old_resutls.csm>0.01 later)
-            # (can also use max_iters instead of fixed 50, but 50 is whats given in the article and we don't care right now)
-            for i in range(50):
+            best_for_this_dir = old_results= interim_results
+            i=0
+            max_iterations=50
+            while (i<max_iterations and math.fabs(old_results.csm- interim_results.csm)>0.01 and interim_results.csm>0.0001):
+                old_results = interim_results
+                i+=1
                 perm = estimate_perm(op_type, op_order, molecule, interim_results.dir)
                 interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
                 if interim_results.csm < best_for_this_dir.csm:
                     best_for_this_dir = interim_results
 
+
             if best_for_this_dir.csm < best.csm:
                 best = best_for_this_dir
+
+            print("best csm is", best.csm)
 
     return best
 
@@ -154,24 +162,20 @@ def estimate_perm(op_type, op_order, molecule, dir):
     # create permutation:
     perm = [-1] * len(molecule)
 
-    #np_distances = np.ones((len(molecule), len(molecule))) * MAXDOUBLE
-
-
     # permutation creation is done by group:
     for group in molecule.equivalence_classes:
         if len(group) == 1:
             perm[group[0]] = group[0]
-            #np_distances[group[0]][group[0]]=0
 
         else:
             # measure all the distances between all the points in X to all the points in Y
-            distances={}
-            for i in group:
-                for j in group:
-                    a = rotated[i]
-                    b = molecule.Q[j]
-                    distances[(i,j)]= np.linalg.norm(a - b)
-                    #np_distances[i][j] = np.linalg.norm(a - b)
+            size=len(group)
+            distances=np.zeros((size,size))
+            for i in range(len(group)):
+                for j in range(len(group)):
+                    a = rotated[group[i]]
+                    b = molecule.Q[group[j]]
+                    distances[i][j]= np.linalg.norm(a - b)
 
             # recursive:
             # find a pair of points (X,Y) minimally distant from each other (eg, minimum of distances_matrix
@@ -179,27 +183,53 @@ def estimate_perm(op_type, op_order, molecule, dir):
 
             # INEFFICIENT METHOD:
 
-            while True:
-                min_distance = MAXDOUBLE
-                for (i, j) in distances:
-                    if distances[(i, j)] < min_distance:
-                        min_distance = distances[(i, j)]
-                        pair = (i, j)
-                i = pair[0]
-                j = pair[1]
-                for k in group:
-                    for t in group:
-                        try:
-                            if k == i:
-                                del distances[(k, t)]
-                            elif t == j:
-                                del distances[(k, t)]
-                        except:
-                            pass
+            min_distance = MAXDOUBLE
+            maxvals = np.ones(len(group)) * MAXDOUBLE
+            left=len(group)
+            while left>0:
+                if left<op_order:
+                    for index in left:
+                        perm[index]=index
+                        left-=1
+                else:
+                    (i,j) = (int(np.argmin(distances) / len(distances[0])), int(np.argmin(distances) % len(distances[0])))
+                    perm[group[j]] = group[i]
+                    distances[:, j] = maxvals
+                    distances[i, :] = maxvals
+                    left-=1
 
-                perm[i] = j
-                if min_distance == MAXDOUBLE:
-                    break
+                     #starting cycle
+                    orbitstart=i
+                    orbitdone=False
+                    orbitlength=1
+                    while orbitlength<op_order:
+                        (i, j) = (int(np.argmin(distances) / len(distances[0])), int(np.argmin(distances) % len(distances[0])))
+                        perm[group[j]] = group[i]
+                        distances[:, j] = maxvals
+                        distances[i, :] = maxvals
+                        left -= 1
+                        orbitlength+=1
+                    perm[group[orbitstart]]=group[j] #close loop
+    return perm
+
+
+
+
+'''
+            for i in range(len(distances)): #row
+                if left <op_order:
+                    j=i
+                else:
+                    j= np.argmin(distances[i]) #find minimum value for this index
+                    if op_order==2 or i ==j: #complete 1 or 2 length cycle
+                        perm[group[j]] = group[i] #this line is redundant in the i==j case, but I'm assuming for now the efficiency cost is negligble
+
+                    else: #we're trying to build an orbit
+                        1
+                #set perm
+                perm[group[i]] = group[j]
+                distances[:, j] = maxvals #"zero" out the column of j so it cant be selected again
+'''
 
     #np_distances permutation is done by matrix:
     #view= np_distances[:,:]
@@ -207,4 +237,4 @@ def estimate_perm(op_type, op_order, molecule, dir):
 
 
     # return paired sets, as permutation
-    return perm
+
