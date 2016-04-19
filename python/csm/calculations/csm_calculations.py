@@ -10,6 +10,7 @@ from csm.fast import calc_ref_plane
 from collections import namedtuple
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
 from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
+from csm.fast import external_get_eigens as cppeigen
 import logging
 
 np.set_printoptions(precision=6)
@@ -398,36 +399,33 @@ def dir_fit(positions):
     sum = np.einsum('ij->j', positions)
     average = sum / len(positions) #up to here has been checked against c++
 
-    mat = np.zeros((3, 3))
+    mat = np.zeros((3, 3), dtype=np.float64, order="c")
     for pos in positions:
         for j in range(3):
             for k in range(3):
                 mat[j][k] += (pos[j] - average[j]) * (pos[k] - average[k])
 
 
-        # computer eigenvalues and eigenvectors
-        # lambdas - list of 3 eigenvalues of matrix
-        # m - list of 3 eigenvectors of matrix
-    lambdas, m = np.linalg.eig(mat)
-    dirs = m
-    #cdef Matrix3D m = Matrix3D()
-    #cdef Vector3D lambdas = Vector3D()
-    #m = np.zeros((3, 3))
-    #lambdas = np.zeros((1, 3))
-    #GetEigens(mat.buf, m.buf, lambdas.buf)
+    # computer eigenvalues and eigenvectors
+    # lambdas - list of 3 eigenvalues of matrix (function demands them, but we won't be using them here)
+    # dirs- list of 3 eigenvectors of matrix
+    dirs = np.zeros((3, 3), dtype=np.float64, order="c")
+    lambdas = np.zeros((3), dtype=np.float64, order="c")
+    cppeigen(mat, dirs, lambdas)
 
     # normalize result:
-    for dir in dirs:
-        normalize_dir(dir)
+    dirs=np.array([normalize_dir(dir) for dir in dirs])
+    #for dir in dirs:
+    #    dir = normalize_dir(dir)
 
-    return dirs
+    return dirs #up to here has been checked against c++
 
 
 def normalize_dir(dir):
-    dir=np.array(dir)
+    dir=np.array(dir) #lists also get sent to this function, but can't be /='d
     norm = math.sqrt(math.fabs(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]))
     dir /= norm
-    dir=list(dir)
+    return dir
 
 
 def dirs_without_outliers(dirs, positions, op_type):
@@ -461,21 +459,21 @@ def dirs_orthogonal(dirs):
         if math.fabs(dir[0]) < MINDOUBLE:
             dir1 = [1.0, 0.0, 0.0]
             dir2 = [0.0, -dir[2], dir[1]]
-        elif math.fabs(dir[1] < MINDOUBLE):
+        elif math.fabs(dir[1]) < MINDOUBLE:
             dir1 = [-dir[2], 0.0, dir[0]]
             dir2 = [0.0, 1.0, 0.0]
         else:
             dir1 = [-dir[1], dir[0], 0.0]
             dir2 = [0.0, -dir[2], dir[1]]
         # normalize dir1:
-        normalize_dir(dir1)
+        dir1= normalize_dir(dir1)
         # remove projection of dir1 from dir2
         scal = dir1[0] * dir2[0] + dir1[1] * dir2[1] + dir1[2] * dir2[2]
         dir2[0] -= scal * dir1[0]
         dir2[1] -= scal * dir1[1]
         dir2[2] -= scal * dir1[2]
         # normalize dir2
-        normalize_dir(dir2)
+        dir2= normalize_dir(dir2)
         added_dirs.append(dir1)
         added_dirs.append(dir2)
 
