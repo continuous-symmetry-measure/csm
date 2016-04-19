@@ -7,9 +7,8 @@ import sys
 import numpy
 import os
 
-BASE_DIR = "../../.."
-FAST_CPPUTILS_DIR = os.path.join(BASE_DIR, "FastCPPUtils")
-INCLUDE_DIR = os.path.join(BASE_DIR, "include")
+FAST_CPPUTILS_DIR = "../../FastCPPUtils"
+EIGEN_INCLUDE_DIR = "../../../include"
 
 extra_compile_args = []
 extra_link_args = []
@@ -32,7 +31,7 @@ setup(
              os.path.join(FAST_CPPUTILS_DIR, "rpoly.c"),
              os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp")],
             language='c++',
-            include_dirs=[numpy.get_include(), INCLUDE_DIR, FAST_CPPUTILS_DIR],
+            include_dirs=[numpy.get_include(), EIGEN_INCLUDE_DIR, FAST_CPPUTILS_DIR],
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args)]
     )

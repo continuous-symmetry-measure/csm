@@ -25,8 +25,8 @@ def init_logging(log_file_name=None, *args, **kwargs):
     logger = logging.getLogger("csm")
 
 def run(args=[]):
-    print("Args passed to run: ", args)
-    print("sys.argv: ", sys.argv)
+    if not args:
+        args = sys.argv[1:]
     csv_file = None
     try:
         # Read inputs
