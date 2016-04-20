@@ -228,7 +228,6 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
 
     if perm:
         permuter = SinglePermPermuter(np.array(perm), molecule, op_order, op_type)
-        logger.debug("SINGLE PERM")
     else:
         permuter = permuter_class(molecule, op_order, op_type, permchecker)
 
@@ -298,14 +297,12 @@ def compute_local_csm(molecule, perm, dir, op_type, op_order):
 
 
 def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
-    logger.debug('create_symmetric_structure called')
+    #logger.debug('create_symmetric_structure called')
 
     cur_perm = np.arange(len(perm))  # array of ints...
     size = len(perm)
     m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
     symmetric = np.copy(m_pos)
-    logger.debug("in atoms:")
-    logger.debug(symmetric)
 
     normalization = d_min / op_order
 
@@ -314,8 +311,8 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
     for i in range(1, op_order):
         # get rotation
         rotation_matrix = create_rotation_matrix(i, op_type, op_order, dir)
-        logger.debug("Rotation matrix:\n")
-        logger.debug(rotation_matrix)
+     #   logger.debug("Rotation matrix:\n")
+     #   logger.debug(rotation_matrix)
         # rotated_positions = m_pos @ rotation_matrix
 
         # set permutation
@@ -324,13 +321,9 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
         # add correct permuted rotation to atom in outAtoms
         for j in range(len(symmetric)):
             symmetric[j] += rotation_matrix @ m_pos[cur_perm[j]]
-        logger.debug("Out atoms")
-        logger.debug(symmetric)
 
     # apply normalization:
     symmetric *= normalization
-    logger.debug("normalized out atoms:")
-    logger.debug(symmetric)
 
     return symmetric
 
