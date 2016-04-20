@@ -30,7 +30,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers):
 
             # solve using this perm until it converges:
             best_for_this_dir = interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
-
+            logger.debug("permutation is:" + str(perm))
             old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
             i = 0
             max_iterations = 50
@@ -217,7 +217,7 @@ def estimate_perm(op_type, op_order, molecule, dir):
                     a = rotated[i]
                     b = molecule.Q[j]
                     distance = np.linalg.norm(a - b)
-                    distances.append(distance_record(i, j, distance))
+                    distances.append(distance_record(j, i, distance))
                     # np_distances[i][j] = np.linalg.norm(a - b)
 
             distances = newlist = sorted(distances, key=lambda x: x.distance)
@@ -243,7 +243,7 @@ def perm_builder(op_type, op_order, group, distances, perm):
             if perm[row] == -1:
                 perm[row] = row
                 used[row] = 1
-                logger.debug("set [" + str(row) +  "] =" + str (col) + " (distance=" + str(record.distance) + ")")
+                logger.debug("set [" + str(row) +  "] =" + str (row) + " (distance=" + str(record.distance) + ")")
                 left -= 1
 
         elif op_order == 2:
@@ -289,9 +289,18 @@ def perm_builder(op_type, op_order, group, distances, perm):
                     orbit_done = True
                 else:
                     for next_item in distances:
+                        flag=False
                         next_row = next_item.row
                         next_col = next_item.col
-                        if next_row == col and used[next_col] == 0 and next_row != next_col:
+                        if next_row == col and used[next_col] == 0 \
+                                and next_row != next_col:
+                            if next_col == orbit_start:
+                                if len(group)>3:
+                                    flag=True
+                                if type=='SN' and orbit_size==1:
+                                        orbit_done=True
+                                else:
+                                        continue
                             row = next_row
                             col = next_col
                             orbit_size += 1
@@ -391,4 +400,105 @@ def python_perm_builder(op_type, op_order, group, distances, perm):
                 #set perm
                 perm[group[i]] = group[j]
                 distances[:, j] = maxvals #"zero" out the column of j so it cant be selected again
-'''
+
+
+def test():
+		for (j = 0; j < tableSize && left > 0; j++) {
+			int enoughForFullOrbit = left >= opOrder;
+			int row = distances[j].row;
+			int col = distances[j].col;
+			int dist;
+
+			# If we have used this item already - skip it.
+			if (perm[row] != -1)
+				continue;
+
+			# If we do not have enought to full groups, set all remaining items to themselves
+			if (left == 1 || (type == CN && !enoughForFullOrbit)) {
+				for (k = 0; k < groupSize; k++) {
+					if (used[group[k]] == 0) {
+						perm[group[k]] = group[k];
+						LOG(debug) << "set [" << group[k] << "] =" << group[k] << " (distance=" << distances[k].distance << "???)";
+					}
+				}
+				break;
+			}
+			if (opOrder == 2) {
+				# Special treatment - only size 1 and two orbits are allowed
+				# If both elements are not yet set, use the element.
+				if (perm[row] == -1 && perm[col] == -1)  {
+					perm[row] = col;
+					perm[col] = row;
+					LOG(debug) << "set [" << row << "] =" << col<< " (distance="<<distances[j].distance<<")";
+					LOG(debug) << "set [" << col << "] =" << row << " (distance=" << distances[j].distance << "???)";
+					left -= (row == col) ? 1 : 2;
+				}
+			}
+			else {
+				# we now want to complete an orbit.
+				if (perm[row] == -1 && used[col] == 0) {
+					perm[row] = col;
+					used[col] = 1;
+					LOG(debug) << "set [" << row << "] =" << col << " (distance=" << distances[j].distance << ")";
+					left--;
+				}
+				else {
+					continue;
+				}
+
+				# if this is an orbit of size one...
+				if (row == col) continue;
+
+				# If there is no more room for full orbit, must be SN and size two orbit
+				if (type == SN && !enoughForFullOrbit) {
+					perm[col] = row;
+					used[row] = 1;
+					LOG(debug) << "set [" << col << "] =" << row << " (distance=" << distances[j].distance << ")";
+					left--;
+					continue;
+				}
+
+				# Run until an orbit is complete
+				orbitDone = false;
+				orbitStart = row;
+				orbitSize = 1;
+
+				while (!orbitDone) {
+
+					if (orbitSize == opOrder - 1) {
+						row = col;
+						col = orbitStart;
+						orbitDone = true;
+					}
+					else {
+						# Search for the next orbit element
+						for (k = j + 1; k < tableSize; k++) {
+							if (distances[k].row == col && used[distances[k].col] == 0 &&
+								distances[k].col != distances[k].row) {
+								if (orbitStart == distances[k].col) {
+									if (type == SN && orbitSize == 1) {
+										# we have now closed an orbit of size 2
+										orbitDone = true;
+									}
+									else {
+										continue;
+
+									}
+								}
+								row = distances[k].row;
+								col = distances[k].col;
+								dist = distances[k].distance;
+
+								orbitSize++;
+								break;
+							}
+						}
+					}
+					perm[row] = col;
+					used[col] = 1;
+					LOG(debug) << "set [" << row << "] =" << col << " (distance=" << dist << ")";
+					left--;
+				}
+			}
+		}
+		'''
