@@ -40,6 +40,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers):
                 i += 1
                 perm = estimate_perm(op_type, op_order, molecule, interim_results.dir)
                 interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+                logger.debug("permutation is:"+str(perm))
                 if interim_results.csm < best_for_this_dir.csm:
                     best_for_this_dir = interim_results
 
@@ -160,6 +161,28 @@ class distance_record:
         self.row = row
         self.distance = dist
         self.col = col
+    def __str__(self):
+        return "distance" + str(self.row) +"," + str(self.col)+": "+str(self.distance)
+
+
+def approx_create_rotation_matrix(op_type, op_order, dir):
+    is_improper = op_type != 'CN'
+    is_zero_angle = op_type == 'CS'
+    W = np.array([[0.0, -dir[2], dir[1]], [dir[2], 0.0, -dir[0]], [-dir[1], dir[0], 0.0]])
+    logger.debug("W:"+str(W))
+    rot = np.zeros((3, 3))
+    angle = 0.0 if is_zero_angle else 2 * np.pi / op_order
+    factor = -1 if is_improper else 1
+    # The rotation matrix is calculated similarly to the Rodrigues rotation matrix. The only
+    # difference is that the matrix is also a reflection matrix when factor is -1.
+    #
+    # This is why we took the old C++ code instead of applying the Rodrigues formula directly.
+    for s in range(3):
+        for t in range(3):
+            ang = np.cos(angle) if s == t else 0
+            rot[s][t] = ang + ((factor - np.cos(angle)) * dir[s] * dir[t] + np.sin(angle) * W[s][t])
+
+    return rot
 
 
 def estimate_perm(op_type, op_order, molecule, dir):
@@ -168,8 +191,9 @@ def estimate_perm(op_type, op_order, molecule, dir):
     # apply the symmetry operation once, using symm_element from step one
 
     # create rotation matrix
-    rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
-    logger.debug(rotation_mat)
+    logger.debug("estimatePerm called on dir: "+str(dir))
+    rotation_mat = approx_create_rotation_matrix(op_type, op_order, dir)
+    logger.debug("rotation matrix:\n"+ str(rotation_mat))
     # run rotation matrix on atoms
     rotated = (rotation_mat @ molecule.Q.T).T
 
@@ -199,16 +223,12 @@ def estimate_perm(op_type, op_order, molecule, dir):
             distances = newlist = sorted(distances, key=lambda x: x.distance)
             perm = perm_builder(op_type, op_order, group, distances, perm)
 
-    #get rid of missed values
-    for index in perm:
-        if perm[index]== -1:
-            perm[index]=index
-
     return perm
 
 
 def perm_builder(op_type, op_order, group, distances, perm):
     # this is intended to serve as a copy-paste of the (buggy) c++ algorithm
+    logger.debug("group:"+ str(group))
     left = len(group)
     used = np.zeros(len(perm))  # array to keep track of which values have already been placed
     # Go over the sorted group, and set the permutation
@@ -223,6 +243,7 @@ def perm_builder(op_type, op_order, group, distances, perm):
             if perm[row] == -1:
                 perm[row] = row
                 used[row] = 1
+                logger.debug("set [" + str(row) +  "] =" + str (col) + " (distance=" + str(record.distance) + ")")
                 left -= 1
 
         elif op_order == 2:
@@ -232,6 +253,8 @@ def perm_builder(op_type, op_order, group, distances, perm):
                 perm[row] = col
                 perm[col] = row
                 used[row] = used[col] = 1
+                logger.debug("set [" + str(row) + "] =" + str(col) + " (distance=" + str(record.distance) + ")")
+                logger.debug("set [" + str(col) + "] =" + str(row) + " (distance=" + str(record.distance) + ")")
                 if row == col:
                     left -= 1
                 else:
@@ -240,6 +263,7 @@ def perm_builder(op_type, op_order, group, distances, perm):
             # we now want to complete an orbit
             if perm[row] == -1 and used[col] == 0:
                 perm[row] = col
+                logger.debug("set [" + str(row) + "] =" + str(col) + " (distance=" + str(record.distance) + ")")
                 used[col] = 1
                 left -= 1
             else:
@@ -250,6 +274,7 @@ def perm_builder(op_type, op_order, group, distances, perm):
             # If there is no more room for full orbit, must be SN and size two orbit
             if type == 'SN' and left < op_order:
                 perm[col] = row
+                logger.debug("set [" + str(col) + "] =" + str(row) + " (distance=" + str(record.distance) + ")")
                 used[row] = 1
                 left -= 1
                 continue
@@ -271,9 +296,10 @@ def perm_builder(op_type, op_order, group, distances, perm):
                             col = next_col
                             orbit_size += 1
                             break  # out of the for loop
-                    perm[row] = col
-                    used[col] = 1
-                    left -= 1
+                perm[row] = col
+                logger.debug("set [" + str(row) + "] =" + str(col) + " (distance=" + str(record.distance) +")")
+                used[col] = 1
+                left -= 1
     return perm
 
 
