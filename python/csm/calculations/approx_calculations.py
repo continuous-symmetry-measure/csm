@@ -9,7 +9,7 @@ from csm.calculations.csm_calculations import csm_operation, CSMState, create_ro
 logger = logging.getLogger("csm")
 
 
-def approx_calculation(op_type, op_order, molecule, detect_outliers=True, *args, **kwargs):
+def approx_calculation(op_type, op_order, molecule, detect_outliers=False, *args, **kwargs):
     return find_best_perm(op_type, op_order, molecule, detect_outliers)
 
 
@@ -64,6 +64,7 @@ def find_symmetry_directions(molecule, detect_outliers, op_type):
             sum += molecule.Q[index]
         average = sum / len(group)
         group_averages.append(average)
+    logger.debug("averages:"+str(group_averages))
     group_averages = np.array(group_averages)
 
     dirs = dir_fit(group_averages)
@@ -105,8 +106,9 @@ def dir_fit(positions):
 
 
 def dirs_without_outliers(dirs, positions, op_type):
-    additional_dirs = list(dirs)
+    more_dirs=[]
     for dir in dirs:
+        logger.debug("original dir was:" + str(dir))
         dists = []
         # 1.Find the distance of each point from the line/plane
         for pos in positions:
@@ -121,11 +123,14 @@ def dirs_without_outliers(dirs, positions, op_type):
         with_outliers_removed = list()
         for i in range(len(positions)):
             if dists[i] < 2 * median:
+                logger.debug("not an outlier:"+str(dists[i]))
                 with_outliers_removed.append(positions[i])
         # 4. recompute dirs
-        additional_dirs = additional_dirs + list(dir_fit(with_outliers_removed))
+        outliers_dirs= dir_fit(with_outliers_removed)
+        test=list(outliers_dirs)
+        more_dirs+=test
+    return np.array(more_dirs)
 
-    return additional_dirs
 
 
 def dirs_orthogonal(dirs):

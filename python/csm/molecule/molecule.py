@@ -145,7 +145,8 @@ class Molecule:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
         if self.chains:
-            self.process_chains()
+            1
+        #    self.process_chains()
 
     def process_chains(self):
         # Divide all the equivalence classes so that no equivalence class includes two atoms from different chains
