@@ -115,28 +115,58 @@ def dirs_without_outliers(dirs, positions, op_type):
             if op_type == 'CS':
                 dists.append(math.abs(dir[0] * pos[0] + dir[1] * pos[1] + dir[2] * pos[2]))
             else:
-                dists.append(np.linalg.norm(dir - pos))
+                dists.append(compute_distance_from_line(pos, dir))
+                #testdir=np.linalg.norm(dir)
+                #testpos=np.linalg.norm(pos)
+                #dists.append(np.linalg.norm(testdir-testpos))
+                #dists.append(np.linalg.norm(dir - pos))
 
         # 2. Find median of the distances m
         median = np.median(np.array(dists))
+        logger.debug("median "+str(median))
         # 3. for each distance di, if di > 2*m, remove it as an outlier
         with_outliers_removed = list()
         for i in range(len(positions)):
-            if dists[i] < 2 * median:
-                logger.debug("not an outlier:"+str(dists[i]))
+            if (dists[i] / median > 2 or dists[i] / median > 2):
                 with_outliers_removed.append(positions[i])
         # 4. recompute dirs
         outliers_dirs= dir_fit(with_outliers_removed)
+        logger.debug("new dirs:" +str(outliers_dirs[0])+ str(outliers_dirs[1])+ str(outliers_dirs[2]))
         test=list(outliers_dirs)
         more_dirs+=test
     return np.array(more_dirs)
 
+
+def compute_distance_from_line(group_avg_point, test_dir_end):
+    def magnitude(point1, point2):
+        vec=point2-point1
+        return math.sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2])
+
+    def get_U(Point, LineStart, LineEnd, LineMag):
+        return (((Point[0] - LineStart[0]) * (LineEnd[0] - LineStart[0])) +
+         ((Point[1] - LineStart[1]) * (LineEnd[1] - LineStart[1])) +
+         ((Point[2] - LineStart[2]) * (LineEnd[2] - LineStart[2]))) / (LineMag * LineMag)
+
+    def get_intersect(LineStart, LineEnd, U):
+        Intersection=[0,0,0]
+        Intersection[0] = LineStart[0] + U * (LineEnd[0] - LineStart[0]);
+        Intersection[1] = LineStart[1] + U * (LineEnd[1] - LineStart[1]);
+        Intersection[2] = LineStart[2] + U * (LineEnd[2] - LineStart[2]);
+        return Intersection
+
+
+    linestart=[0,0,0]
+    linemag= magnitude(test_dir_end, linestart)
+    U= get_U(group_avg_point, linestart, test_dir_end, linemag)
+    intersection= get_intersect(linestart, test_dir_end, U)
+    return magnitude(group_avg_point, intersection)
 
 
 def dirs_orthogonal(dirs):
     added_dirs = list(dirs)
 
     for dir in dirs:
+        logger.debug("base dir: "+str(dir))
         if math.fabs(dir[0]) < MINDOUBLE:
             dir1 = [1.0, 0.0, 0.0]
             dir2 = [0.0, -dir[2], dir[1]]
@@ -148,6 +178,7 @@ def dirs_orthogonal(dirs):
             dir2 = [0.0, -dir[2], dir[1]]
         # normalize dir1:
         dir1 = normalize_dir(dir1)
+        logger.debug("newdir after norm" + str(dir1))
         # remove projection of dir1 from dir2
         scal = dir1[0] * dir2[0] + dir1[1] * dir2[1] + dir1[2] * dir2[2]
         dir2[0] -= scal * dir1[0]
@@ -155,6 +186,7 @@ def dirs_orthogonal(dirs):
         dir2[2] -= scal * dir1[2]
         # normalize dir2
         dir2 = normalize_dir(dir2)
+        logger.debug("newdir2 after norm" + str(dir2))
         added_dirs.append(dir1)
         added_dirs.append(dir2)
 
