@@ -4,6 +4,7 @@ import sys
 import timeit
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations.csm_calculations import exact_calculation, perm_count
+from csm.calculations.approx_calculations import approx_calculation
 from csm.calculations import csm_calculations
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results
@@ -41,14 +42,13 @@ def run(args=[]):
             csv_file = open(out_args['perms_csv_name'], 'w')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
             perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm],
+            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p + 1 for p in state.perm],
                                                                                          state.dir,
                                                                                          state.csm, ])
 
         # run actual calculation
         if calc_args['find_perm']:
-            raise NotImplementedError("No approx yet")
-    #        result = approx_calculation(**calc_args)
+            result = approx_calculation(**calc_args)
         elif calc_args['just_perms']:
             result = perm_count(**calc_args)
         else:
