@@ -26,6 +26,7 @@ def init_logging(log_file_name=None, *args, **kwargs):
     logger = logging.getLogger("csm")
 
 def run(args=[]):
+    print("CSM starting up")
     if not args:
         args = sys.argv[1:]
     csv_file = None

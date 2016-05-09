@@ -310,7 +310,9 @@ class Molecule:
         """
         Finish creating the molecule after reading the raw data
         """
+        print("Breaking molecule into similarity groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
+        print("Broken into "+str(len(self._equivalence_classes))+" groups")
         self.normalize()
 
     @staticmethod

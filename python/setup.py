@@ -69,7 +69,7 @@ setup(
     # The csm command
     entry_points={
         'console_scripts': [
-            'csm = csm.main.csm_run:run',
+            'csm = csm.main.csm_run:run_no_return',
         ]
     },
 
