@@ -10,6 +10,9 @@ cdef class CalcState
 cdef class Vector3D
 cdef class Matrix3D
 
+DTYPE = np.float64
+ctypedef np.float64_t DTYPE_t
+
 cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2, double *coeffs):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
@@ -118,6 +121,10 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2):
             lambda_max = roots[i].real
 
     return lambda_max
+
+
+def external_get_eigens(np.ndarray[DTYPE_t, ndim=2, mode="c"] A, np.ndarray[DTYPE_t, ndim=2, mode="c"] m, np.ndarray[DTYPE_t, ndim=1, mode="c"] lambdas):
+   fastcpp.GetEigens( <double (*)[3]>A.data,  <double (*)[3]>m.data, <double *>lambdas.data)
 
 cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
     global log

@@ -4,6 +4,7 @@ import sys
 import timeit
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations.csm_calculations import exact_calculation, perm_count
+from csm.calculations.approx_calculations import approx_calculation
 from csm.calculations import csm_calculations
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results
@@ -47,8 +48,7 @@ def run(args=[]):
 
         # run actual calculation
         if calc_args['find_perm']:
-            raise NotImplementedError("No approx yet")
-    #        result = approx_calculation(**calc_args)
+            result = approx_calculation(**calc_args)
         elif calc_args['just_perms']:
             result = perm_count(**calc_args)
         else:
@@ -60,6 +60,9 @@ def run(args=[]):
     finally:
         if csv_file:
             csv_file.close()
+
+def run_no_return(args=[]):
+    run(args)
 
 if __name__ == '__main__':
     timer = timeit.Timer(lambda: run(args=sys.argv[1:]))

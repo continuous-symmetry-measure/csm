@@ -12,7 +12,9 @@ def _create_parser():
 
     # The first three positional arguments
     parser.add_argument('type',
-                        choices=('c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c10', 's2', 's4', 's6', 's8', 's10', 'cs', 'ci', 'ch'),
+                        choices=(
+                        'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c10', 's2', 's4', 's6', 's8', 's10', 'cs', 'ci',
+                        'ch'),
                         help='The type of operation')
     parser.add_argument('input', help='Input file')
     parser.add_argument('output', default='output.txt', help='Output file')
@@ -31,7 +33,8 @@ def _create_parser():
     parser.add_argument('--detectOutliers', action='store_true', default=False,
                         help="Use statistical methods to try and improve --findperm's results")
 
-    parser.add_argument('--keepStructure', action='store_true', default=False, help='Maintain molecule structure from being distorted')
+    parser.add_argument('--keepStructure', action='store_true', default=False,
+                        help='Maintain molecule structure from being distorted')
     parser.add_argument('--ignoreHy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
     parser.add_argument('--removeHy', action='store_true', default=False,
                         help='Remove Hydrogen atoms in computations, rebuild molecule without them and compute')
@@ -50,7 +53,8 @@ def _create_parser():
     parser.add_argument('--timeOnly', action='store_true', default=False, help="Only print the time and exit")
     parser.add_argument('--babelTest', action='store_true', default=False, help="Test if the molecule is legal or not")
     parser.add_argument('--sn_max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
-    parser.add_argument('--printNorm', action='store_true', default=False, help='Print the normalization factor as well')
+    parser.add_argument('--printNorm', action='store_true', default=False,
+                        help='Print the normalization factor as well')
     parser.add_argument('--printLocal', action='store_true', default=False,
                         help='Print the local CSM (csm for each atom) in the output file')
 
@@ -83,11 +87,12 @@ def _check_arguments(in_args, calc_args, out_args):
         if in_args["remove_hy"]:
             raise ValueError("--useperm ignores the --removeHy option, can't use them together")
 
-    if calc_args['detect_outliers'] and not calc_args['find_perms']:
+    if calc_args['detect_outliers'] and not calc_args['find_perm']:
         raise ValueError("--detectOutliers must be used with --findperm")
 
     if in_args['use_chains'] and not in_args['molecule'].chains:
         raise ValueError("--useChains specified but no chains provided in the molecule file")
+
 
 OperationCode = namedtuple('OperationCode', ('type', 'order', 'name'))
 _opcode_data = {
@@ -108,6 +113,7 @@ _opcode_data = {
     's8': ('SN', 8, "S8 SYMMETRY"),
     's10': ('SN', 8, "S10 SYMMETRY")
 }
+
 
 def get_operation_data(opcode):
     """
@@ -148,13 +154,13 @@ def _process_split_arguments(parse_res):
     calc_args['limit_run'] = not parse_res.nolimit
     calc_args['find_perm'] = parse_res.findperm
     calc_args['detect_outliers'] = parse_res.detectOutliers
-    calc_args['keep_structure']=parse_res.keepStructure
-    calc_args['just_perms']=parse_res.justperms
+    calc_args['keep_structure'] = parse_res.keepStructure
+    calc_args['just_perms'] = parse_res.justperms
     if parse_res.approx:
         calc_args['find_perm'] = True
         calc_args['detect_outliers'] = True
     if parse_res.outputPerms:
-        calc_args['print_perms']=True
+        calc_args['print_perms'] = True
 
     mol_args['in_file_name'] = parse_res.input
     mol_args['ignore_hy'] = parse_res.ignoreHy
@@ -192,7 +198,7 @@ def get_split_arguments(args):
     :param args:
     :return:
     """
-    parser =_create_parser()
+    parser = _create_parser()
     parsed_args = parser.parse_args(args)
     mol_args, calc_args, out_args = _process_split_arguments(parsed_args)
     return mol_args, calc_args, out_args
