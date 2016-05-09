@@ -37,7 +37,7 @@ elif sys.platform in ['linux', 'linux2']:
 
 setup(
     name='csm',
-    version='0.6.1',
+    version='0.7.0',
     packages=['csm.calculations', 'csm.input_output', 'csm.molecule', 'csm.main'],
     setup_requires=['numpy>=1.10'],
     install_requires=['numpy>=1.10', 'openbabel>=1.8'],
