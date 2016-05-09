@@ -189,15 +189,13 @@ def exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=No
         sn_max = op_order
         # First CS
         best_result = csm_operation('CS', 2, molecule, permuter_class, permchecker, perm)
-        best_result.op_type = 'CS'
+        best_result = best_result._replace(op_type='CS') #unclear why this line isn't redundant
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
                 result = csm_operation('SN', op_order, molecule, permuter_class, permchecker, perm)
                 if result.csm < best_result.csm:
-                    best_result = result
-                    best_result.op_type = 'SN'
-                    best_result.op_order = op_order
+                    best_result = result._replace(op_type = 'SN', op_order = op_order)
                 if best_result.csm > MINDOUBLE:
                     break
 

@@ -5,13 +5,14 @@ from collections import namedtuple
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
 from csm.fast import external_get_eigens as cppeigen
-from csm.calculations.csm_calculations import csm_operation, CSMState, create_rotation_matrix
+from csm.calculations.csm_calculations import csm_operation, CSMState, create_rotation_matrix, process_results
 
 logger = logging.getLogger("csm")
 
 
 def approx_calculation(op_type, op_order, molecule, detect_outliers=False, *args, **kwargs):
-    return find_best_perm(op_type, op_order, molecule, detect_outliers)
+    results= find_best_perm(op_type, op_order, molecule, detect_outliers)
+    return process_results(results)
 
 
 def find_best_perm(op_type, op_order, molecule, detect_outliers):
