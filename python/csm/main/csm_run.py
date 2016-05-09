@@ -59,6 +59,9 @@ def run(args=[]):
         if csv_file:
             csv_file.close()
 
+def run_no_return(args=[]):
+    run(args)
+
 if __name__ == '__main__':
     timer = timeit.Timer(lambda: run(args=sys.argv[1:]))
     time = timer.timeit(number=1)

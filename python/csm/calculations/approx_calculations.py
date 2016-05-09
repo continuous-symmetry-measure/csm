@@ -44,8 +44,8 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers):
                 interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
                 if interim_results.csm < best_for_this_dir.csm:
                     best_for_this_dir = interim_results
-            print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(
-                i) + " iterations")
+            #print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(
+            #    i) + " iterations")
 
 
             if best_for_this_dir.csm < best.csm:
