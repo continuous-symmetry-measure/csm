@@ -11,7 +11,7 @@ def print_results(result, in_args, calc_args, out_args):
     :param calc_args: Calculation arguments to CSM
     :param out_args: Output arguments to CSM
     """
-    if calc_args['just_perms']:
+    if calc_args['calc_type']=='just_perms':
         print(result)
         return
     with open(out_args['out_file_name'], 'w', encoding='utf-8') as f:

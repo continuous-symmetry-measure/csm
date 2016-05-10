@@ -11,8 +11,20 @@ from csm.molecule.molecule import Molecule
 logger = logging.getLogger("csm")
 
 
-def trivial_calculation(op_type, op_order, molecule, *args, **kwargs):
-    pass
+def trivial_calculation(op_type, op_order, molecule, use_chains=False, *args, **kwargs):
+    if molecule.chains and use_chains:
+        permutations = []
+        dummy = Molecule.dummy_molecule(len(molecule._chains))
+        permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
+        for state in permuter.permute():
+            permutations.append(list(state.perm))
+
+    else:
+        perm = [i for i in range(len(molecule))]
+        result = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
+                               TruePermChecker, perm)
+
+    return process_results(result)
 
 def approx_calculation(op_type, op_order, molecule, detect_outliers=False, *args, **kwargs):
     results= find_best_perm(op_type, op_order, molecule, detect_outliers)
@@ -248,13 +260,6 @@ def estimate_perm(op_type, op_order, molecule, dir):
 
     # create permutation:
     perm = [-1] * len(molecule)
-
-    permutations=[]
-    if molecule.chains:
-        dummy=Molecule.dummy_molecule(len(molecule._chains))
-        permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
-        for state in permuter.permute():
-            permutations.append(list(state.perm))
 
 
      #permutation creation is done by group:

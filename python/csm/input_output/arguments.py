@@ -216,7 +216,7 @@ def _process_split_arguments(parse_res):
     out_args['out_file_name'] = parse_res.output
     out_args['perms_csv_name'] = parse_res.outputPerms
 
-    _check_arguments(mol_args, calc_args, out_args)
+    #_check_arguments(mol_args, calc_args, out_args)
 
     return mol_args, calc_args, out_args
 
