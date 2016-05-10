@@ -8,6 +8,7 @@ from csm.calculations.approx_calculations import approx_calculation
 from csm.calculations import csm_calculations
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results
+import csm
 
 APPROX_RUN_PER_SEC = 8e4
 sys.setrecursionlimit(10000)
@@ -26,7 +27,7 @@ def init_logging(log_file_name=None, *args, **kwargs):
     logger = logging.getLogger("csm")
 
 def run(args=[]):
-    print("CSM starting up")
+    print("CSM version %s" % csm.__version__)
     if not args:
         args = sys.argv[1:] 
     csv_file = None

@@ -2,13 +2,23 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
+
+import sys
+
 from collections import namedtuple
 
 __author__ = 'zmbq'
 
 
+class OurParser(ArgumentParser):
+    def error(self, message):
+        print("Error: %s" % message, file=sys.stderr)
+        print("Type csm --help for help", file=sys.stderr)
+        sys.exit(2)
+
+
 def _create_parser():
-    parser = ArgumentParser()
+    parser = OurParser()
 
     # The first three positional arguments
     parser.add_argument('type',

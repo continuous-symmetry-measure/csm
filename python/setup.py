@@ -1,4 +1,5 @@
 import os
+import re
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 import sys
@@ -34,10 +35,22 @@ if sys.platform == 'win32':
 elif sys.platform in ['linux', 'linux2']:
     extra_compile_args = ['-fPIC']
 
-exec(open(os.path.join(os.path.abspath(__file__), os.pardir,'version.py')).read())
+def get_version():
+    pathname = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'csm', 'version.py')
+    with open(pathname, "r") as ver_inp:
+        code = ver_inp.read()
+    pattern = r"__version__\s*=\s*'(?P<version>.*)'"
+    match = re.match(pattern, code)
+    if not match:
+        raise ValueError("Version file must contain one line: __version__='...'")
+    version = match.group("version")
+    return version
+
+csm_version = get_version()
+print("Packaging CSM version %s" % csm_version)
 setup(
     name='csm',
-    version = __version__,
+    version=csm_version,
     packages=['csm.calculations', 'csm.input_output', 'csm.molecule', 'csm.main'],
     setup_requires=['numpy>=1.10'],
     install_requires=['numpy>=1.10', 'openbabel>=1.8'],
