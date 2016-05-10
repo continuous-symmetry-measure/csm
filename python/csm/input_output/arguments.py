@@ -2,13 +2,23 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
+
+import sys
+
 from collections import namedtuple
 
 __author__ = 'zmbq'
 
 
+class OurParser(ArgumentParser):
+    def error(self, message):
+        print("Error: %s" % message, file=sys.stderr)
+        print("Enter csm --help for help", file=sys.stderr)
+        sys.exit(2)
+
+
 def _create_parser():
-    parser = ArgumentParser()
+    parser = OurParser(usage="\ncsm type input_molecule output_file [additional arguments]")
 
     # The first three positional arguments
     parser.add_argument('type',
@@ -16,7 +26,7 @@ def _create_parser():
                         'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c10', 's2', 's4', 's6', 's8', 's10', 'cs', 'ci',
                         'ch'),
                         help='The type of operation')
-    parser.add_argument('input', help='Input file')
+    parser.add_argument('input', help='Input molecule file')
     parser.add_argument('output', default='output.txt', help='Output file')
 
     # Optional arguments (their names start with --)
