@@ -132,6 +132,7 @@ cdef class CythonPIP:
         return sintheta, costheta, multiplier
 
     cpdef close_cycle(self, group):
+        self.state.perm=self.p
         return None
 
     cpdef unclose_cycle(self,  CalcState old_state):

@@ -165,9 +165,9 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
     permuter = CythonPermuter(molecule, op_order, op_type, perm_checker, perm_class=CythonPIP)
 
-    for pip in permuter.permute():
+    for state in permuter.permute():
         if csm_state_tracer_func:
-            traced_state=traced_state._replace(csm = '', perm = pip.perm, dir = '') #TODO this code does not work because it's not pip anymore, it's state
+            traced_state=traced_state._replace(csm = '', perm = state.perm, dir = '')
             csm_state_tracer_func(traced_state)
         if permuter.count%1000000==0:
             print("counted", int(permuter.count/1000000), "million permutations thus far...")
