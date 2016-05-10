@@ -239,7 +239,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
             csm_state_tracer_func(traced_state)
 
         if csm < best_csm.csm:
-            best_csm = best_csm._replace(csm=csm, dir=dir, perm=calc_state.perm)
+            best_csm = best_csm._replace(csm=csm, dir=dir, perm=list(calc_state.perm))
 
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation
