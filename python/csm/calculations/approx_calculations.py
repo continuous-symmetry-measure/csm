@@ -6,6 +6,7 @@ from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
 from csm.fast import external_get_eigens as cppeigen
 from csm.calculations.csm_calculations import csm_operation, CSMState, create_rotation_matrix, process_results
+from csm.molecule.molecule import Molecule
 
 logger = logging.getLogger("csm")
 
@@ -148,7 +149,7 @@ def dirs_without_outliers(dirs, positions, op_type):
         median = np.median(np.array(dists_arr))
         # 3. for each distance di, if di > 2*m, remove it as an outlier
         with_outliers_removed = list()
-        for i in dists:
+        for i in dists_dict:
             dist, pos = dists[i]
             if not (dist / median > 2 or dist / median > 2):
                 with_outliers_removed.append(pos)
@@ -245,7 +246,15 @@ def estimate_perm(op_type, op_order, molecule, dir):
     # create permutation:
     perm = [-1] * len(molecule)
 
-    # permutation creation is done by group:
+    permutations=[]
+    if molecule.chains:
+        dummy=Molecule.dummy_molecule(len(molecule._chains))
+        permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
+        for state in permuter.permute():
+            permutations.append(list(state.perm))
+
+
+     #permutation creation is done by group:
     for group in molecule.equivalence_classes:
         if len(group) == 1:
             perm[group[0]] = group[0]

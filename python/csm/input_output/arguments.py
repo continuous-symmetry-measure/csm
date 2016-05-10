@@ -100,8 +100,8 @@ def _check_arguments(in_args, calc_args, out_args):
     if calc_args['detect_outliers'] and not calc_args['find_perm']:
         raise ValueError("--detectOutliers must be used with --findperm")
 
-    if in_args['use_chains'] and not in_args['molecule'].chains:
-        raise ValueError("--useChains specified but no chains provided in the molecule file")
+    #if in_args['use_chains'] and not in_args['molecule'].chains:
+     #   raise ValueError("--useChains specified but no chains provided in the molecule file")
 
 
 OperationCode = namedtuple('OperationCode', ('type', 'order', 'name'))

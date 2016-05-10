@@ -316,6 +316,17 @@ class Molecule:
         self.normalize()
 
     @staticmethod
+    def dummy_molecule(size):
+        atoms=[]
+        for i in range(size):
+            atom = Atom("XX", (0,0,0), False)
+            atoms.append(atom)
+        mol= Molecule(atoms)
+        group = [i for i in range(size)]
+        mol._equivalence_classes=[group]
+        return mol
+
+    @staticmethod
     def from_string(string, format, initialize=True, use_chains=False, babel_bond=False, ignore_hy=False,
                     remove_hy=False, ignore_symm=False, use_mass=False):
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
