@@ -34,10 +34,10 @@ if sys.platform == 'win32':
 elif sys.platform in ['linux', 'linux2']:
     extra_compile_args = ['-fPIC']
 
-
+exec(open(os.path.join(os.path.abspath(__file__), os.pardir,'version.py')).read())
 setup(
     name='csm',
-    version='0.7.0',
+    version = __version__,
     packages=['csm.calculations', 'csm.input_output', 'csm.molecule', 'csm.main'],
     setup_requires=['numpy>=1.10'],
     install_requires=['numpy>=1.10', 'openbabel>=1.8'],
