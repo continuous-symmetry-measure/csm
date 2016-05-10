@@ -4,7 +4,7 @@ import sys
 import timeit
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations.csm_calculations import exact_calculation, perm_count
-from csm.calculations.approx_calculations import approx_calculation
+from csm.calculations.approx_calculations import approx_calculation, trivial_calculation
 from csm.calculations import csm_calculations
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results
@@ -49,10 +49,12 @@ def run(args=[]):
                                                                                          state.csm, ])
 
         # run actual calculation
-        if calc_args['find_perm']:
+        if calc_args['calc_type']=='approx':
             result = approx_calculation(**calc_args)
-        elif calc_args['just_perms']:
+        elif calc_args['calc_type']=='just_perms':
             result = perm_count(**calc_args)
+        elif calc_args['calc_type']=='trivial':
+            result=trivial_calculation(**calc_args)
         else:
             result = exact_calculation(**calc_args)
 

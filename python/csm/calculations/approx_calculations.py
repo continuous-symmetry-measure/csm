@@ -11,6 +11,9 @@ from csm.molecule.molecule import Molecule
 logger = logging.getLogger("csm")
 
 
+def trivial_calculation(op_type, op_order, molecule, *args, **kwargs):
+    pass
+
 def approx_calculation(op_type, op_order, molecule, detect_outliers=False, *args, **kwargs):
     results= find_best_perm(op_type, op_order, molecule, detect_outliers)
     return process_results(results)

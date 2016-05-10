@@ -30,7 +30,8 @@ def _create_parser():
     parser.add_argument('output', default='output.txt', help='Output file')
 
     # Optional arguments (their names start with --)
-
+    parser.add_argument('--trivial', action='store_true', default=False,
+                        help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
     parser.add_argument('--justperms', action='store_true', default=False,
                         help='no calculation of CSM. without --outputPerms, only counts the perm. ')
     parser.add_argument('--approx', action='store_true', default=False,
@@ -157,18 +158,35 @@ def _process_split_arguments(parse_res):
     out_args = {}
 
     op = get_operation_data(parse_res.type)
+
     calc_args['op_type'] = op.type
     calc_args['op_order'] = op.order
     calc_args['op_name'] = op.name
     calc_args['sn_max'] = parse_res.sn_max
     calc_args['limit_run'] = not parse_res.nolimit
-    calc_args['find_perm'] = parse_res.findperm
-    calc_args['detect_outliers'] = parse_res.detectOutliers
+
+
     calc_args['keep_structure'] = parse_res.keepStructure
-    calc_args['just_perms'] = parse_res.justperms
+
+    calc_args['calc_type'] = 'exact'  # this is the default, which will be changed if relevant
+
+    #calc_args['just_perms'] = parse_res.justperms
+    if parse_res.justperms:
+        calc_args['calc_type'] = 'just_perms'
+
+    if parse_res.trivial:
+        calc_args['calc_type'] = 'trivial'
+
+    calc_args['detect_outliers'] = parse_res.detectOutliers
+    if parse_res.findperm:
+        calc_args['calc_type'] = 'approx'
+    # calc_args['find_perm'] = parse_res.findperm
     if parse_res.approx:
-        calc_args['find_perm'] = True
+        calc_args['calc_type'] = 'approx'
+        #calc_args['find_perm'] = True
         calc_args['detect_outliers'] = True
+
+
     if parse_res.outputPerms:
         calc_args['print_perms'] = True
 
