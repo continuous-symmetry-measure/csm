@@ -35,7 +35,6 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
             if result.csm < best.csm:
                 best = result
 
-
     else:
         perm = [i for i in range(len(molecule))]
         best = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
@@ -163,26 +162,23 @@ def dirs_without_outliers(dirs, positions, op_type):
     print("======================detecting outliers============================")
     more_dirs = []
     for dir in dirs:
-        dists_dict = {}
-        dists_arr = []
         # 1.Find the distance of each point from the line/plane
+        dists=[]
         for i in range(len(positions)):
             pos = positions[i]
             if op_type == 'CS':
                 dist = math.abs(dir[0] * pos[0] + dir[1] * pos[1] + dir[2] * pos[2])
-                dists_dict[i] = (dist, pos)
-                dists_arr[i] = dist
             else:
                 dist = compute_distance_from_line(pos, dir)
-                dists_dict[i] = (dist, pos)
-                dists_arr[i] = dist
+            dists.append(dist)
 
         # 2. Find median of the distances m
-        median = np.median(np.array(dists_arr))
+        median = np.median(np.array(dists))
         # 3. for each distance di, if di > 2*m, remove it as an outlier
         with_outliers_removed = list()
-        for i in dists_dict:
-            dist, pos = dists[i]
+        for i in range(len(positions)):
+            pos = positions[i]
+            dist = dists[i]
             if not (dist / median > 2 or dist / median > 2):
                 with_outliers_removed.append(pos)
         # 4. recompute dirs
@@ -281,21 +277,17 @@ def estimate_perm(op_type, op_order, molecule, dir):
 
      #permutation creation is done by group:
     for group in molecule.equivalence_classes:
-        if len(group) == 1:
-            perm[group[0]] = group[0]
-            #print(group[0], 0, group[0], group[0], sep=", ")
-        else:
-            # measure all the distances between all the points in X to all the points in Y
-            distances = DistanceMatrix(group)#list()
-            for i in range(len(group)):
-                for j in range(len(group)):
-                    a = rotated[group[i]]
-                    b = molecule.Q[group[j]]
-                    distance = np.linalg.norm(a - b)
-                    distances.add(j,i,distance)
-                    #distances.append(distance_record(j, i, distance))
+        # measure all the distances between all the points in X to all the points in Y
+        distances = DistanceMatrix(group)#list()
+        for i in range(len(group)):
+            for j in range(len(group)):
+                a = rotated[group[i]]
+                b = molecule.Q[group[j]]
+                distance = np.linalg.norm(a - b)
+                distances.add(j,i,distance)
+                #distances.append(distance_record(j, i, distance))
 
-            perm = perm_builder(op_type, op_order, group, distances, perm)
+        perm = perm_builder(op_type, op_order, group, distances, perm)
 
     return perm
 
