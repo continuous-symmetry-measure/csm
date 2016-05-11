@@ -148,7 +148,7 @@ class Molecule:
             1
         #    self.process_chains()
 
-    def process_chains(self):
+    def process_chains(self): #DEFUNCT code, not currently used
         # Divide all the equivalence classes so that no equivalence class includes two atoms from different chains
         divided_groups = []
         for group in self.equivalence_classes:
@@ -393,8 +393,7 @@ class Molecule:
         """
         num_atoms = obmol.NumAtoms()
         atoms = []
-        chains = set()
-        chains_list = []
+        chains = {}
         for i in range(num_atoms):
             obatom = obmol.GetAtom(i + 1)
             if ignore_symm:
@@ -405,8 +404,8 @@ class Molecule:
             position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
             chain = obatom.GetResidue().GetChain()
             if chain not in chains:
-                chains.add(chain)
-                chains_list.append(chain)
+                chains[chain]=[]
+            chains[chain].append(i)
             atom = Atom(symbol, position, use_mass, chain)
             adjacent = []
             iter = OBAtomAtomIter(obatom)

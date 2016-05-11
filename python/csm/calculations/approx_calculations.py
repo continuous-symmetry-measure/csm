@@ -11,20 +11,37 @@ from csm.molecule.molecule import Molecule
 logger = logging.getLogger("csm")
 
 
-def trivial_calculation(op_type, op_order, molecule, use_chains=False, *args, **kwargs):
+def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **kwargs):
     if molecule.chains and use_chains:
-        permutations = []
+        best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
+        chainkeys=list(molecule.chains.keys())
+        chain_permutations = []
         dummy = Molecule.dummy_molecule(len(molecule._chains))
         permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
         for state in permuter.permute():
-            permutations.append(list(state.perm))
+            chain_permutations.append(list(state.perm))
+        for chainperm in chain_permutations:
+            perm = [-1 for i in range(len(molecule))]
+            for f_index in range(len(chainperm)):
+                f_chain_key=chainkeys[f_index]
+                t_chain_key=chainkeys[chainperm[f_index]]
+                f_chain=molecule.chains[f_chain_key]
+                t_chain = molecule.chains[t_chain_key]
+                for i in range(len(f_chain)):
+                    perm[f_chain[i]]=t_chain[i]
+
+            result = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
+                           TruePermChecker, perm)
+            if result.csm < best.csm:
+                best = result
+
 
     else:
         perm = [i for i in range(len(molecule))]
-        result = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
+        best = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
                                TruePermChecker, perm)
 
-    return process_results(result)
+    return process_results(best)
 
 def approx_calculation(op_type, op_order, molecule, detect_outliers=False, *args, **kwargs):
     results= find_best_perm(op_type, op_order, molecule, detect_outliers)
