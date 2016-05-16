@@ -51,7 +51,7 @@ print("Packaging CSM version %s" % csm_version)
 setup(
     name='csm',
     version=csm_version,
-    packages=['csm.calculations', 'csm.input_output', 'csm.molecule', 'csm.main'],
+    packages=['csm.calculations', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
     install_requires=['numpy>=1.10', 'openbabel>=1.8'],
     include_package_data=True,
