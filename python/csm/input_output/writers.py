@@ -1,5 +1,6 @@
 __author__ = 'YAEL'
 
+import openbabel
 from openbabel import OBConversion
 
 
@@ -136,16 +137,18 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     # print resulting structure coordinates
 
     # update coordinates
+    mol = result.molecule.obmol
     for i in range(num_atoms):
         try:
-            atom.SetVector(result.symmetric_structure[i][0],
+            a=mol.GetAtom(i+1)
+            a.SetVector(result.symmetric_structure[i][0],
                        result.symmetric_structure[i][1],
                        result.symmetric_structure[i][2])
         except:
             pass
 
     f.write("\n RESULTING STRUCTURE COORDINATES\n")
-    write_ob_molecule(result.molecule.obmol, in_args['format'], f)
+    write_ob_molecule(mol, in_args['format'], f)
 
     # print dir
 
