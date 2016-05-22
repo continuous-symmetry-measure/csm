@@ -42,12 +42,40 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
 
     return process_results(best)
 
-def approx_calculation(op_type, op_order, molecule, detect_outliers=False, *args, **kwargs):
-    results= find_best_perm(op_type, op_order, molecule, detect_outliers)
+def is_legal(perm, molecule):
+    legal=True
+
+    switch=True
+    for key in molecule.chains:
+        if 0 in molecule.chains[key] and perm[0] in molecule.chains[key]:
+            switch=False
+        break
+
+
+    switched=True
+    for i in range(len(perm)):
+        if i in molecule.chains[key] and perm[i] in molecule.chains[key]:
+            switched=False
+        else:
+            switched=True
+        if switched != switch:
+            test=perm[i]
+            first= molecule.atoms[i].chain
+            second= molecule.atoms[test].chain
+            legal=False
+            break
+
+    return legal
+
+
+
+def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, *args, **kwargs):
+    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains)
+    #print(is_legal(results.perm, molecule))
     return process_results(results)
 
 
-def find_best_perm(op_type, op_order, molecule, detect_outliers):
+def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
     if op_type == 'CI' or (op_type == 'SN' and op_order == 2):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
@@ -57,31 +85,44 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers):
 
     else:
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
+
+        chain_permutations = []
+        if molecule.chains and use_chains:
+            chainkeys = list(molecule.chains.keys())
+            dummy = Molecule.dummy_molecule(len(molecule.chains))
+            permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
+            for state in permuter.permute():
+                chain_permutations.append([i for i in state.perm])
+        else:
+            chain_permutations.append([])
+
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
         for dir in dirs:
-            # find permutation for this direction of the symmetry axis
-            perm = estimate_perm(op_type, op_order, molecule, dir)
+            for chainperm in chain_permutations:
+                if chainperm==chain_permutations[0]:
+                    continue
+                # find permutation for this direction of the symmetry axis
+                perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
 
-            # solve using this perm until it converges:
-            best_for_this_dir = interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
-                                                                TruePermChecker, perm)
-            old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
-            i = 0
-            max_iterations = 50
-            while (i < max_iterations and math.fabs(
-                        old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
-                old_results = interim_results
-                i += 1
-                perm = estimate_perm(op_type, op_order, molecule, interim_results.dir)
-                interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
-                if interim_results.csm < best_for_this_dir.csm:
-                    best_for_this_dir = interim_results
-            #print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(
-            #    i) + " iterations")
+                # solve using this perm until it converges:
+                best_for_this_dir = interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
+                                                                    TruePermChecker, perm)
+                old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
+                i = 0
+                max_iterations = 50
+                while (i < max_iterations and math.fabs(
+                            old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
+                    old_results = interim_results
+                    i += 1
+                    perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm)
+                    interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+                    if interim_results.csm < best_for_this_dir.csm:
+                        best_for_this_dir = interim_results
+                #print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
 
 
-            if best_for_this_dir.csm < best.csm:
-                best = best_for_this_dir
+                if best_for_this_dir.csm < best.csm:
+                    best = best_for_this_dir
 
     return best
 
@@ -261,7 +302,7 @@ class DistanceMatrix:
 
 
 
-def estimate_perm(op_type, op_order, molecule, dir):
+def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
     # this is a naive implementation, which works well with the naive c++ build_perm
     # step two: first estimation of the symmetry measure: first permutation
     # apply the symmetry operation once, using symm_element from step one
@@ -274,24 +315,26 @@ def estimate_perm(op_type, op_order, molecule, dir):
     # create permutation:
     perm = [-1] * len(molecule)
 
-
      #permutation creation is done by group:
     for group in molecule.equivalence_classes:
         # measure all the distances between all the points in X to all the points in Y
         distances = DistanceMatrix(group)#list()
         for i in range(len(group)):
             for j in range(len(group)):
-                a = rotated[group[i]]
-                b = molecule.Q[group[j]]
-                distance = np.linalg.norm(a - b)
+                 #legal chainperm permutation
+                distance = np.linalg.norm(rotated[group[i]] - molecule.Q[group[j]])
+                if chainperm:
+                    number_index_of_chain_from = molecule.chainkeys.index(molecule.atoms[group[i]].chain)
+                    number_index_of_chain_to = molecule.chainkeys.index(molecule.atoms[group[j]].chain)
+                    if chainperm[number_index_of_chain_from] != number_index_of_chain_to:
+                        distance = MAXDOUBLE
                 distances.add(j,i,distance)
-                #distances.append(distance_record(j, i, distance))
 
-        perm = perm_builder(op_type, op_order, group, distances, perm)
+        perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
 
     return perm
 
-def perm_builder(op_type, op_order, group, distance_matrix, perm):
+def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
     group_id=np.min(group)
     left=len(group)
     while left>=op_order:
@@ -352,83 +395,4 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm):
             distance_matrix.remove(from_val, from_val)
             #left -= 1
             #print(group_id, left, group[from_val], group[from_val], sep=", ")
-    return perm
-
-
-
-
-
-def cpp_perm_builder(op_type, op_order, group, distances, perm):
-    # this is intended to serve as a copy-paste of the (buggy) c++ algorithm
-    left = len(group)
-    used = np.zeros(len(perm))  # array to keep track of which values have already been placed
-    distances = newlist = sorted(distances, key=lambda x: x.distance)
-    # Go over the sorted group, and set the permutation
-    for record in distances:
-        row = record.row
-        col = record.col
-        not_enough= left < op_order
-        # If we have set or used these indexes already - skip this pair.
-        if perm[row] != -1 or used[col] != 0:
-            continue
-        # If we do not have enought to fill cycles, set all remaining items to themselves
-        if left <= 1 or (op_type == 'CN' and left < op_order):
-            #if perm[row] == -1:  #this is redundant as it has already been checked
-            perm[row] = row
-            used[row] = 1
-            left -= 1
-
-        elif op_order == 2:
-            # Special treatment - only size  1 and two  orbits are allowed
-            # If both elements  are not yet set, use the element.
-            #if perm[row] == -1 and perm[col] == -1:  # and used[row] == used[col] == 0:  #this is redundant as it has already been checked
-            perm[row] = col
-            perm[col] = row
-            used[row] = used[col] = 1
-            if row == col:
-                left -= 1
-            else:
-                left -= 2
-        else:
-            # we now want to complete an orbit
-            #if perm[row] == -1 and used[col] == 0: #this is redundant as it has already been checked
-            perm[row] = col
-            used[col] = 1
-            left -= 1
-            # if this is an orbit of size one, "cycle" is complete, so...
-            if row == col:
-                continue
-            # If there is no more room for full orbit, must be SN and size two orbit
-            if op_type == 'SN' and not_enough: #PLEASE NOTE MISSING CHECK
-                perm[col] = row
-                used[row] = 1
-                left -= 1
-                continue
-                # run until orbit is complete:
-            orbit_done = False
-            orbit_start = row
-            orbit_size = 1
-            while not orbit_done:
-                if orbit_size == op_order - 1:
-                    row = col
-                    col = orbit_start
-                    orbit_done = True
-                else:
-                    for next_item in distances:
-                        next_row = next_item.row
-                        next_col = next_item.col
-                        if next_row == col and used[next_col] == 0 \
-                                and next_row != next_col:
-                            if next_col == orbit_start:
-                                if op_type == 'SN' and orbit_size == 1:
-                                    orbit_done = True
-                                else:
-                                    continue
-                            row = next_row
-                            col = next_col
-                            orbit_size += 1
-                            break  # out of the for loop
-                perm[row] = col
-                used[col] = 1
-                left -= 1
     return perm

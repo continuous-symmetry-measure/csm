@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from openbabel import OBAtomAtomIter, OBConversion, OBMol
 from csm.molecule.atom import Atom, GetAtomicSymbol
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords
@@ -11,6 +13,7 @@ class Molecule:
     def __init__(self, atoms={}, chains={}, norm_factor=1.0, obmol=None):
         self._atoms = atoms
         self._chains = chains
+        self.chainkeys=[key for key in chains.keys()]
         self._bondset = set()
         self._equivalence_classes = []
         self._norm_factor = norm_factor
@@ -100,6 +103,7 @@ class Molecule:
 
             group_num += 1
 
+        logger.debug("initial number of groups:", group_num)
         # iteratively refine the breakdown into groups
         # break into subgroups at an infinite depth - as long as there's something to break, it is broken
 
@@ -136,7 +140,7 @@ class Molecule:
 
             groups.extend(new_groups)
 
-        logger.debug("Broken into groups with %d iterations." % num_iters)
+        logger.debug("Broken into %d groups with %d iterations." % (group_num, num_iters))
 
         self._equivalence_classes = groups
         for group in groups:
@@ -145,26 +149,27 @@ class Molecule:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
         if self.chains:
-            1
-        #    self.process_chains()
+           self.process_chains()
 
-    def process_chains(self): #DEFUNCT code, not currently used
+    def process_chains(self):
+        1
+        #DEFUNCT code, not currently used
         # Divide all the equivalence classes so that no equivalence class includes two atoms from different chains
-        divided_groups = []
-        for group in self.equivalence_classes:
-            sub_groups = {}
-            for chain in self.chains:
-                sub_groups[chain] = []
-            for elem in group:
-                sub_groups[self.atoms[elem].chain].append(elem)  # put an atom into a suitable chain sub_group
-            for chain in sub_groups:
-                if len(sub_groups[chain]) == len(group) / len(
-                        self._chains):  # check that all chains are the same length
-                    divided_groups.append(sub_groups[chain])
-                else:
-                    raise ValueError("Illegal chains molecule structure")
+        #divided_groups = []
+        #for group in self.equivalence_classes:
+        #    sub_groups = {}
+        #    for chain in self.chains:
+        #        sub_groups[chain] = []
+        #    for elem in group:
+        #        sub_groups[self.atoms[elem].chain].append(elem)  # put an atom into a suitable chain sub_group
+        #    for chain in sub_groups:
+        #        if len(sub_groups[chain]) == len(group) / len(
+        #                self._chains):  # check that all chains are the same length
+        #            divided_groups.append(sub_groups[chain])
+        #        else:
+        #            raise ValueError("Illegal chains molecule structure")
 
-        self._equivalence_classes = divided_groups
+        #self._equivalence_classes = divided_groups
 
     def is_similar(self, atoms_group_num, a, b):
         found = True
@@ -393,7 +398,7 @@ class Molecule:
         """
         num_atoms = obmol.NumAtoms()
         atoms = []
-        chains = {}
+        chains = OrderedDict()
         for i in range(num_atoms):
             obatom = obmol.GetAtom(i + 1)
             if ignore_symm:

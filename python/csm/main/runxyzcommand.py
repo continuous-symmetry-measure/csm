@@ -4,15 +4,15 @@ import os
 import glob
 import numpy as np
 
-from csm import run_csm
-from molecule.molecule import Molecule
+from csm_run import run
+from csm.molecule.molecule import Molecule
 
 
-outputdirectory=r'C:\Users\devora.witty\Sources\csm\test_cases\inbal\expected_output\expected_output_'
-inputdirectory=r'C:\Users\devora.witty\Sources\csm\test_cases\inbal\input\input_'
-testnames= [#'1_methane_csm',
-            #'2_biphenyls',
-            #'3_cyclopentadiene',
+outputdirectory=r'D:\UserData\devora\Sources\csm\test_cases\inbal\expected_output\expected_output_'
+inputdirectory=r'D:\UserData\devora\Sources\csm\test_cases\inbal\input\input_'
+testnames= ['1_methane_csm',
+            '2_biphenyls',
+            '3_cyclopentadiene',
             '4_clusters']
 
 
@@ -103,7 +103,7 @@ def parse_and_run(workdir):
             for arg in args:
                     fixed_args=arg.replace("__IN__", molfilename).replace("__OUT__", "outfile.out").replace("-formatxyz","").replace("-useperm","--useperm")
                     fixed_args=fixed_args.split()
-                    result = run_csm(fixed_args[1:])
+                    result = run(fixed_args[1:])
                     observed_results.append(result)
 
         return observed_results

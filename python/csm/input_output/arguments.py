@@ -201,7 +201,7 @@ def _process_split_arguments(parse_res):
         mol_args['format'] = parse_res.input.split(".")[-1]
     mol_args['babel_bond'] = parse_res.babelbond
     mol_args['use_mass'] = parse_res.useMass
-    mol_args['use_chains'] = parse_res.useChains
+    calc_args['use_chains'] = mol_args['use_chains'] = parse_res.useChains
     if parse_res.writeOpenu:
         mol_args['format'] = "PDB"
     if parse_res.useperm:

@@ -1,11 +1,11 @@
 # from calculations.permuters import is_legal_perm
 from collections import OrderedDict
-from input_output.arguments import get_operation_data
+from csm.input_output.arguments import get_operation_data
 
-from molecule.molecule import Molecule
+from csm.molecule.molecule import Molecule
 from openbabel import OBAtomAtomIter, OBConversion, OBMol
-from molecule.atom import GetAtomicSymbol, Atom
-from calculations.csm_calculations import exact_calculation
+from csm.molecule.atom import GetAtomicSymbol, Atom
+from csm.calculations.csm_calculations import exact_calculation
 import numpy as np
 import csv
 import re
@@ -218,32 +218,32 @@ def run():
                         datefmt='%a, %d %b %Y %H:%M:%S',
                         filename='runxyz.log',
                         filemode='w')
-    #directory=r'C:\Users\dev\Documents\Chelem\csm'
+    #directory=r'D:\UserData\devora\Sources\csm\test_cases/inbal'
     directory = r'../test_cases/inbal'
 
     name = "methane_test"
     molfile = os.path.join(directory, 'input/input_1_methane_csm/methane-test1.xyz')
     symmfile = os.path.join(directory, 'expected_output/expected_output_1_methane_csm/sym.txt')
     resfile = os.path.join(directory,  'expected_output/expected_output_1_methane_csm/csmresults.log')
-    #test_individuals(molfile, symmfile, resfile, directory, name)
+    runtests(molfile, symmfile, resfile, directory, name)
 
     name = "biphenyl_test"
     molfile = os.path.join(directory, r'/input/input_2_biphenyl/biphenyl_test.xyz')
     symmfile = os.path.join(directory, r'/expected_output/expected_output_2_biphenyls/sym.txt')
     resfile = os.path.join(directory, r'/expected_output/expected_output_2_biphenyls/csmresults.log')
-    #runtests(molfile, symmfile, resfile, directory, name)
+    runtests(molfile, symmfile, resfile, directory, name)
 
     name = "cyclopentadiene_test"
     molfile = os.path.join(directory, r'input/input_3_cyclopentadiene/cyclopentadiene-test.xyz')
     symmfile = os.path.join(directory, r'expected_output/expected_output_3_cyclopentadiene/sym.txt')
     resfile = os.path.join(directory, r'expected_output/expected_output_3_cyclopentadiene/csmresults.log')
-    runtests(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
     name = "4cluster_test"
     molfile = os.path.join(directory, r'/input/input_4-clusters/W_Au12_optimized_B3P86.xyz')
     symmfile = os.path.join(directory, r'/expected_output/expected_output_4_clusters/sym.txt')
     resfile = os.path.join(directory, r'/expected_output/expected_output_4_clusters/csmresults.log')
-    runtests(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
 
 if __name__ == '__main__':

@@ -50,6 +50,11 @@ def run(args=[]):
 
         # run actual calculation
         if calc_args['calc_type']=='approx':
+            if len(calc_args['molecule'].atoms) % calc_args['op_order'] != 0 and calc_args['molecule'].chains:
+                print("atom number not divisible by op order")
+                return 0
+            else:
+                print("okay, trying")
             result = approx_calculation(**calc_args)
         elif calc_args['calc_type']=='just_perms':
             result = perm_count(**calc_args)
