@@ -99,14 +99,14 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
         for dir in dirs:
             for chainperm in chain_permutations:
-                if chainperm==chain_permutations[0]:
-                    continue
+                #if chainperm==chain_permutations[0]:
+                #    continue
                 # find permutation for this direction of the symmetry axis
                 perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
-
                 # solve using this perm until it converges:
-                best_for_this_dir = interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
-                                                                    TruePermChecker, perm)
+                best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
+                                                                    TruePermChecker, perm, approx=True)
+                print("got results")
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 i = 0
                 max_iterations = 50
@@ -115,15 +115,14 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                     old_results = interim_results
                     i += 1
                     perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm)
-                    interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+                    interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
                     if interim_results.csm < best_for_this_dir.csm:
                         best_for_this_dir = interim_results
-                #print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
+                print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
 
 
                 if best_for_this_dir.csm < best.csm:
                     best = best_for_this_dir
-
     return best
 
 
@@ -341,7 +340,6 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
         (from_val, to_val)=distance_matrix.get_min_val()
         perm[group[from_val]]=group[to_val]
         distance_matrix.remove(from_val, to_val)
-        #print(group_id, left, group[from_val], group[to_val], sep=", ")
         left-=1
         if from_val==to_val: #cycle length 1 completed
             continue
@@ -370,12 +368,12 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
 
             perm[group[from_val]]=group[to_val]
             distance_matrix.remove(from_val, to_val)
-            #print(group_id, left, group[from_val], group[to_val], sep=", ")
             left-=1
             cycle_length+=1
         pass
 
     #for remaining pairs or singles, simply go through them and set them
+    #TODO: this section is wrong for chains
     while True:
         (from_val, to_val) = distance_matrix.get_min_val()
         if perm[group[from_val]] != -1: #we've finished with the group
@@ -385,14 +383,7 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
             perm[group[to_val]] = group[from_val]
             distance_matrix.remove(from_val, to_val)
             distance_matrix.remove(to_val, from_val)
-            #print(group_id, left, group[from_val], group[to_val], sep=", ")
-            #left-=1
-            #if from_val!=to_val:
-            #    print(group_id, left, group[to_val], group[from_val], sep=", ")
-            #    left-=1
         else:
             perm[group[from_val]]=group[from_val]
             distance_matrix.remove(from_val, from_val)
-            #left -= 1
-            #print(group_id, left, group[from_val], group[from_val], sep=", ")
     return perm

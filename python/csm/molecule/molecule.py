@@ -418,6 +418,13 @@ class Molecule:
                 adjacent.append(neighbour_atom.GetIdx() - 1)
             atom.adjacent = adjacent
             atoms.append(atom)
+
+        equal=True
+        for chain in chains:
+            if len(atoms)%len(chains[chain]) !=0: #check that length of chain is, at minimum, a divisor of number of atoms
+                equal=False
+        #if not equal:
+        #    raise Exception("Molecule's chains not of expected length: % num of chains, % num of molecules", (len(chains), len(atoms)))
         mol = Molecule(atoms=atoms, chains=chains, obmol=obmol)
         return mol
 

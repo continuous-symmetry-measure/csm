@@ -209,7 +209,7 @@ def exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=No
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, permchecker=TruePermChecker, perm=None):
+def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, permchecker=TruePermChecker, perm=None, approx=False):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -223,7 +223,7 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
     if perm:
-        permuter = SinglePermPermuter(np.array(perm), molecule, op_order, op_type)
+        permuter = SinglePermPermuter(np.array(perm), molecule, op_order, op_type, approx)
     else:
         permuter = permuter_class(molecule, op_order, op_type, permchecker)
 
@@ -245,9 +245,11 @@ def csm_operation(op_type, op_order, molecule, permuter_class=CythonPermuter, pe
 
     best_csm = best_csm._replace(perm_count=permuter.count)
     d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
+
     symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
                                                      best_csm.op_order, d_min)
     best_csm = best_csm._replace(perm_count = permuter.count, d_min=d_min, symmetric_structure=symmetric_structure)
+
     return best_csm
 
 

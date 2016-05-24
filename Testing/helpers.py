@@ -1,10 +1,11 @@
 import pprint
 import sys
+sys.path.append(r'D:\UserData\devora\Sources\csm\python\csm')
 from tempfile import NamedTemporaryFile, mkstemp
-
-__author__ = 'zmbq'
 import csm
 
+
+__author__ = 'zmbq'
 """
 Helper functions for running CSM tests
 """
@@ -184,7 +185,7 @@ def run_test(test_dir):
 
 def run_csm_python(test_dir, output_path):
     args = get_python_test_args(test_dir, output_path)
-    return csm.run_csm(args)
+    return csm.csm_run.run(args)
 
 def run_test_python(test_dir):
     try:

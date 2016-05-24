@@ -44,17 +44,12 @@ def run(args=[]):
             csv_file = open(out_args['perms_csv_name'], 'w')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
             perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p+1 for p in state.perm],
+            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p + 1 for p in state.perm],
                                                                                          state.dir,
                                                                                          state.csm, ])
 
         # run actual calculation
         if calc_args['calc_type']=='approx':
-            if len(calc_args['molecule'].atoms) % calc_args['op_order'] != 0 and calc_args['molecule'].chains:
-                print("atom number not divisible by op order")
-                return 0
-            else:
-                print("okay, trying")
             result = approx_calculation(**calc_args)
         elif calc_args['calc_type']=='just_perms':
             result = perm_count(**calc_args)

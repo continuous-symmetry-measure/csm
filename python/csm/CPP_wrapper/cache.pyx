@@ -63,3 +63,17 @@ cdef class Cache:
 
     cpdef Vector3D cross(Cache self, int i, int j):
         return self._cross[(i,j)]
+
+cdef class FakeCache(Cache):
+    cdef mol
+    def __init__(self, mol):
+        self.mol=mol
+
+    cpdef double inner_product(FakeCache self, int i, int j):
+        return inner_product(self.mol.Q[i],self.mol.Q[j])
+
+    cpdef Matrix3D outer_product_sum(FakeCache self, int i, int j):
+        return outer_product_sum(self.mol.Q[i],self.mol.Q[j])
+
+    cpdef Vector3D cross(FakeCache self, int i, int j):
+        return cross_product(self.mol.Q[i],self.mol.Q[j])

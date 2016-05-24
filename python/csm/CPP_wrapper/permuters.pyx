@@ -9,6 +9,7 @@ from libc.string cimport memcpy
 from libcpp cimport bool
 
 cdef class Cache
+cdef class FakeCache
 cdef class Matrix3D
 cdef class Vector3D
 cdef class PermsHolder
@@ -142,9 +143,12 @@ cdef class CythonPIP:
 
 cdef class PreCalcPIP(CythonPIP):
     cdef Cache cache
-    def __init__(self, mol, op_order, op_type, permchecker):
+    def __init__(self, mol, op_order, op_type, permchecker, approx=False):
         super().__init__(mol, op_order, op_type, permchecker)
-        self.cache = Cache(mol)
+        if approx:
+            self.cache=FakeCache(mol)
+        else:
+            self.cache = Cache(mol)
 
     cpdef close_cycle(self, group):
         old_state = self.state.copy()
@@ -258,18 +262,18 @@ cdef class CythonPermuter:
 
 class SinglePermPermuter:
     """ A permuter that returns just one permutation, used for when the permutation is specified by the user """
-
     class SinglePIP(PreCalcPIP):
-        def __init__(self, mol, perm, op_order, op_type):
-            super().__init__(mol, op_order, op_type, TruePermChecker)
+        def __init__(self, mol, perm, op_order, op_type, approx):
+            super().__init__(mol, op_order, op_type, TruePermChecker, approx)
             self.p=perm
             self.close_cycle(perm)
             self.state.perm=perm
 
-    def __init__(self, perm, mol, op_order, op_type):
-        self._perm = self.SinglePIP(mol, perm, op_order, op_type)
+    def __init__(self, perm, mol, op_order, op_type, approx=False):
+        self._perm = self.SinglePIP(mol, perm, op_order, op_type, approx)
         self.count=1
 
     def permute(self):
         yield self._perm.state
+
 
