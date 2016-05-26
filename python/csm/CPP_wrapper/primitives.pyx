@@ -2,6 +2,7 @@ from cpython cimport array
 cimport numpy as np
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
+from libcpp.vector cimport vector
 
 cdef class Matrix3D:
     cdef double buf[3][3]
@@ -194,6 +195,32 @@ cdef class Vector3D:
     def __str__(self):
         return str(self.to_numpy())
 
+cdef class Vector3DHolder:
+    cdef double *buffer
+    cdef int buf_size
+
+    def __cinit__(Vector3DHolder self, np.ndarray[DTYPE_t, ndim=2] mat):
+        if mat.shape[1] != 3:
+            raise ValueError("Expected a matrix with 3D vectors, received shape: (%d, %d)" % (mat.shape[0], mat.shape[1]))
+        self.buf_size = 3 * mat.shape[0] * sizeof(double)
+        self.buffer = <double *>malloc(self.buf_size)
+
+        cdef int offset
+        cdef int i, j
+        for i in range(mat.shape[0]):
+            for j in range(3):
+                self.buffer[offset] = mat[i][j]
+                offset += 1
+
+    def __dealloc__(self):
+        if self.buffer:
+            free(self.buffer)
+            self.buffer = <double *>0
+
+    cdef double *get_vector(self, int index):
+        return &self.buffer[3 * index]
+
+
 
 cdef class PermsHolder:
     cdef long *buffer
@@ -264,3 +291,4 @@ cdef class PermsHolder:
             a[i] = self.get_perm_value(op_order, i)
 
         return a
+

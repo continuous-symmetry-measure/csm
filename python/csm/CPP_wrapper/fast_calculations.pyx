@@ -1,4 +1,4 @@
-import math
+from libc.math cimport fabs
 
 import numpy as np
 cimport numpy as np
@@ -9,9 +9,6 @@ from libcpp cimport bool
 cdef class CalcState
 cdef class Vector3D
 cdef class Matrix3D
-
-DTYPE = np.float64
-ctypedef np.float64_t DTYPE_t
 
 cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2, double *coeffs):
     # The polynomial is described in equation 13.
@@ -76,8 +73,8 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
         minarg = 0
 
         for i in range(3):
-            if math.fabs(lambdas.buf[i] - lambda_max) < min_dist:
-                min_dist = math.fabs(lambdas.buf[i] - lambda_max)
+            if fabs(lambdas.buf[i] - lambda_max) < min_dist:
+                min_dist = fabs(lambdas.buf[i] - lambda_max)
                 minarg = i
         for i in range(3):
             dir.buf[i] = m.buf[minarg][i]
@@ -86,7 +83,7 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
             dir.buf[i] = 0.0
             for j in range(3):
                 # error safety
-                if math.fabs(lambdas.buf[j] - lambda_max) < 1e-6:
+                if fabs(lambdas.buf[j] - lambda_max) < 1e-6:
                     dir.buf[i] = m.buf[i][j]
                     break
                 else:
@@ -117,7 +114,7 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2):
     # lambda_max is a real root of the polynomial equation
     # according to the description above the formula (13) in the paper
     for i in range(6):
-        if roots[i].real > lambda_max and math.fabs(roots[i].imag) < ZERO_IM_PART_MAX:
+        if roots[i].real > lambda_max and fabs(roots[i].imag) < ZERO_IM_PART_MAX:
             lambda_max = roots[i].real
 
     return lambda_max
@@ -165,7 +162,7 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
 
     dir, m_max_B = calculate_dir(is_op_cs, op_order, lambdas, lambda_max, m, m_t_B, calc_state.B)
     csm = calc_state.CSM + (lambda_max - m_max_B) / 2
-    csm = math.fabs(100 * (1.0 - csm / op_order))
+    csm = fabs(100 * (1.0 - csm / op_order))
 
     # if log:
     #     print("csm:")

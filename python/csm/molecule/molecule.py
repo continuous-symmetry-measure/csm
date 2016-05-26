@@ -151,8 +151,29 @@ class Molecule:
         if self.chains:
            self.process_chains()
 
+
     def process_chains(self):
-        1
+        #this code was written to handle chains in approx
+        #we split the group according to chains, so that we can measure distances only between chains passing to eachother
+        #we also build indices of what the group index is of the respective atomic number,
+        #so that we can build the distance matrix 0...n (where n is the size of the group)
+        chain_groups=[]
+        chain_indices=[]
+        for group in self.equivalence_classes:
+            chaingroup={}
+            group_indices={}
+            for i in range(len(group)):
+                group_indices[group[i]]=i
+                chain_numeric_index = self.chainkeys.index(self.atoms[group[i]].chain)
+                try:
+                    chaingroup[chain_numeric_index].append(group[i])
+                except:
+                    chaingroup[chain_numeric_index]=[group[i]]
+            chain_groups.append(chaingroup)
+            chain_indices.append(group_indices)
+        self.chain_groups=chain_groups
+        self.chain_indices=chain_indices
+
         #DEFUNCT code, not currently used
         # Divide all the equivalence classes so that no equivalence class includes two atoms from different chains
         #divided_groups = []
@@ -421,7 +442,8 @@ class Molecule:
 
         equal=True
         for chain in chains:
-            if len(atoms)%len(chains[chain]) !=0: #check that length of chain is, at minimum, a divisor of number of atoms
+            test= len(atoms)%len(chains[chain])
+            if test!=0: #check that length of chain is, at minimum, a divisor of number of atoms
                 equal=False
         #if not equal:
         #    raise Exception("Molecule's chains not of expected length: % num of chains, % num of molecules", (len(chains), len(atoms)))

@@ -3,11 +3,10 @@ import math
 import logging
 from collections import namedtuple
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
+from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP, estimate_perm
 from csm.fast import external_get_eigens as cppeigen
 from csm.calculations.csm_calculations import csm_operation, CSMState, create_rotation_matrix, process_results
 from csm.molecule.molecule import Molecule
-
 logger = logging.getLogger("csm")
 
 
@@ -97,19 +96,20 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
             chain_permutations.append([])
 
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
+
         for dir in dirs:
-            for chainperm in chain_permutations:
-                #if chainperm==chain_permutations[0]:
-                #    continue
+            #for chainperm in chain_permutations:
+                chainperm=chain_permutations[1]
+                if chainperm==chain_permutations[0]:
+                    continue
                 # find permutation for this direction of the symmetry axis
                 perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
                 # solve using this perm until it converges:
+                old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
                                                                     TruePermChecker, perm, approx=True)
-                print("got results")
-                old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 i = 0
-                max_iterations = 50
+                max_iterations = 2
                 while (i < max_iterations and math.fabs(
                             old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
                     old_results = interim_results
@@ -129,6 +129,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
 min_group_for_outliers = 10
 
 
+
 def find_symmetry_directions(molecule, detect_outliers, op_type):
     # get average position of each equivalence group:
     group_averages = []
@@ -143,7 +144,7 @@ def find_symmetry_directions(molecule, detect_outliers, op_type):
     dirs = dir_fit(group_averages)
     if detect_outliers and len(molecule.equivalence_classes) > min_group_for_outliers:
         dirs = dirs_without_outliers(dirs, group_averages, op_type)
-    dirs = dirs_orthogonal(dirs)
+    #dirs = dirs_orthogonal(dirs)
     return dirs
 
 
@@ -254,136 +255,3 @@ def dirs_orthogonal(dirs):
     return np.array(added_dirs)
 
 
-class distance_record:
-    def __init__(self, row, col, dist):
-        self.row = row
-        self.distance = dist
-        self.col = col
-
-    def __str__(self):
-        return "distance" + str(self.row) + "," + str(self.col) + ": " + str(self.distance)
-
-Distance= namedtuple('Distance', 'from_val to_val distance')
-
-class DistanceMatrix:
-    def __init__(self, group):
-        self.np_distances= np.ones((len(group), len(group))) * MAXDOUBLE
-        self._np_delete = np.copy(self.np_distances[0])
-        #self.list_distances=[]
-
-    def add(self, from_val, to_val, distance=MAXDOUBLE):
-        self.np_distances[from_val][to_val]=distance
-        #dist=Distance(from_val=from_val, to_val=to_val, distance=distance)
-        #self.list_distances.append(dist)
-
-    def sort(self):
-        pass#self.list_distances = newlist = sorted(self.list_distances, key=lambda x: x.distance)
-
-    def remove(self, from_val, to_val):
-        self.np_distances[:,to_val]=self._np_delete
-        self.np_distances[from_val,:]=self._np_delete
-
-    def get_min_val(self):
-        a=self.np_distances
-        from_val = int(np.argmin(a) / len(a[0]))
-        to_val= int(np.argmin(a) % len(a[0]))
-        return (from_val, to_val)
-
-    def get_next_in_cycle(self, from_val, constraints):
-        searched_row=self.np_distances[from_val]
-        indices= np.argsort(searched_row)
-        i=0
-        if constraints:
-            while indices[i] in constraints:
-                i+=1
-        to_val=indices[i]
-        return (from_val, to_val)
-
-
-
-def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
-    # this is a naive implementation, which works well with the naive c++ build_perm
-    # step two: first estimation of the symmetry measure: first permutation
-    # apply the symmetry operation once, using symm_element from step one
-
-    # create rotation matrix
-    rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
-    # run rotation matrix on atoms
-    rotated = (rotation_mat @ molecule.Q.T).T
-
-    # create permutation:
-    perm = [-1] * len(molecule)
-
-     #permutation creation is done by group:
-    for group in molecule.equivalence_classes:
-        # measure all the distances between all the points in X to all the points in Y
-        distances = DistanceMatrix(group)#list()
-        for i in range(len(group)):
-            for j in range(len(group)):
-                 #legal chainperm permutation
-                distance = np.linalg.norm(rotated[group[i]] - molecule.Q[group[j]])
-                if chainperm:
-                    number_index_of_chain_from = molecule.chainkeys.index(molecule.atoms[group[i]].chain)
-                    number_index_of_chain_to = molecule.chainkeys.index(molecule.atoms[group[j]].chain)
-                    if chainperm[number_index_of_chain_from] != number_index_of_chain_to:
-                        distance = MAXDOUBLE
-                distances.add(j,i,distance)
-
-        perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
-
-    return perm
-
-def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
-    group_id=np.min(group)
-    left=len(group)
-    while left>=op_order:
-        (from_val, to_val)=distance_matrix.get_min_val()
-        perm[group[from_val]]=group[to_val]
-        distance_matrix.remove(from_val, to_val)
-        left-=1
-        if from_val==to_val: #cycle length 1 completed
-            continue
-        #otherwise, build cycle:
-        cycle_head=from_val
-        cycle_length=1
-        cycle_done=False
-
-        while not cycle_done:
-            constraints= set()
-            constraints.add(cycle_head) #prevents too-short cycle
-            if cycle_length== op_order-1:
-                from_val = to_val
-                to_val = cycle_head
-                cycle_done = True
-            else:
-                constraints.add(to_val)#prevent dead-end cycle
-                constraints.add(from_val)  # prevent dead-endloop
-                if (op_type=='SN' or op_order==2) and cycle_length<2:
-                    constraints.remove(cycle_head) #remove cycle_head from constraints (also removes from_val)
-
-                (next_from_val, next_to_val)=distance_matrix.get_next_in_cycle(to_val, constraints)
-                if next_to_val==from_val: #cycle length 2 - only possible if above if(op_type==SN... was True
-                    cycle_done=True
-                (from_val, to_val)=(next_from_val, next_to_val)
-
-            perm[group[from_val]]=group[to_val]
-            distance_matrix.remove(from_val, to_val)
-            left-=1
-            cycle_length+=1
-        pass
-
-    #for remaining pairs or singles, simply go through them and set them
-    #TODO: this section is wrong for chains
-    while True:
-        (from_val, to_val) = distance_matrix.get_min_val()
-        if perm[group[from_val]] != -1: #we've finished with the group
-            break
-        if op_type=='SN':
-            perm[group[from_val]] = group[to_val]
-            perm[group[to_val]] = group[from_val]
-            distance_matrix.remove(from_val, to_val)
-            distance_matrix.remove(to_val, from_val)
-        else:
-            perm[group[from_val]]=group[from_val]
-            distance_matrix.remove(from_val, from_val)
-    return perm

@@ -1,6 +1,11 @@
 from libcpp.vector cimport vector
 from cpython cimport array
 
+import numpy as np
+cimport numpy as np
+
+DTYPE = np.float64
+ctypedef np.float64_t DTYPE_t
 
 def cs(s):
     """ Converts a Python string to a C++ string """
