@@ -15,28 +15,27 @@ cdef array_distance(double *a, double *b):
 
 cdef class DistanceMatrix:
     cdef int group_size
-    cdef np_distances
-    cdef double[:,:] mv_distances
-    cdef double[:] _np_delete
+    cdef double[:,::1] mv_distances  # Make sure this is a C-order memoryview
+    cdef int[:] _allowed_rows  # _allowd_rows[i] is 1 iff the row is still available for a permutation
+    cdef int[:] _allowed_cols  # Respectively.
 
     def __init__(self, group):
         self.group_size = len(group)
-        self.np_distances = np.ones((len(group), len(group)), order="c") * MAXDOUBLE
-        self.mv_distances = self.np_distances
-        self._np_delete = np.copy(self.np_distances[0])
-        #self.list_distances=[]
+        self.mv_distances = np.ones((len(group), len(group)), order="c") * MAXDOUBLE
+        self._allowed_rows = np.zeros(len(group), dtype='i')
+        self._allowed_cols = np.zeros(len(group), dtype='i')
 
-    def add(self, from_val, to_val, distance=MAXDOUBLE):
-        self.np_distances[from_val][to_val]=distance
-        #dist=Distance(from_val=from_val, to_val=to_val, distance=distance)
-        #self.list_distances.append(dist)
+    def add(self, int from_val, int to_val, double distance=MAXDOUBLE):
+        self.mv_distances[from_val, to_val] = distance
+        self._allowed_rows[from_val] = 1
+        self._allowed_cols[to_val] = 1
 
     def sort(self):
         pass#self.list_distances = newlist = sorted(self.list_distances, key=lambda x: x.distance)
 
-    def remove(self, from_val, to_val):
-        self.np_distances[:,to_val]=self._np_delete
-        self.np_distances[from_val,:]=self._np_delete
+    def remove(self, int from_val, int to_val):
+        self._allowed_rows[from_val] = 0
+        self._allowed_cols[to_val] = 0
 
     def get_min_val(self):
         cdef int i
@@ -46,29 +45,43 @@ cdef class DistanceMatrix:
         cdef int min_j
         cdef double tmp
 
-        for i in range(self.group_size):
-            for j in range(self.group_size):
-                tmp = self.mv_distances[i][j]
-                if tmp < min:
-                    min = tmp
-                    min_i = i
-                    min_j = j
-        return (min_i, min_j)
-        # a=self.np_distances
-        # argmin=np.argmin(a)
-        # from_val = int(argmin/ len(a[0]))
-        # to_val= int(argmin % len(a[0]))
-        # return (from_val, to_val)
+        cdef double *row_ptr
+        cdef int *allowed_rows = &self._allowed_rows[0]
+        cdef int *allowed_cols = &self._allowed_cols[0]
 
-    def get_next_in_cycle(self, from_val, constraints):
-        searched_row=self.np_distances[from_val]
-        indices= np.argsort(searched_row)
-        i=0
-        if constraints:
-            while indices[i] in constraints:
-                i+=1
-        to_val=indices[i]
+        for i in range(self.group_size):
+            if allowed_rows[i]:
+                row_ptr = &self.mv_distances[i,0]
+                for j in range(self.group_size):
+                    if allowed_cols[i]:
+                        tmp = row_ptr[j]
+                        if tmp < min:
+                            min = tmp
+                            min_i = i
+                            min_j = j
+        return (min_i, min_j)
+
+    def get_min_val_old(self):
+        a = self.mv_distances
+        argmin=np.argmin(a)
+        from_val = int(argmin/ len(a[0]))
+        to_val= int(argmin % len(a[0]))
         return (from_val, to_val)
+
+    def get_next_in_cycle(self, int from_val, constraints):
+        if not self._allowed_rows[from_val]:
+            raise ValueError("get_next_in_cycle called with an unavailable row %d" % from_val)
+
+        searched_row = self.mv_distances[from_val]
+        min = MAXDOUBLE
+        min_i = -1
+        for i in range(self.group_size):
+            if self._allowed_cols[i] and not i in constraints:
+                tmp = searched_row[i]
+                if tmp < min:
+                    min, min_i = tmp, i
+
+        return (from_val, min_i)
 
 
 cdef class Vector3DHolder
