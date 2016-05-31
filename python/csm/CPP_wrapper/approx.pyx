@@ -113,7 +113,7 @@ def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
     if not chainperm:
         chainperm = [0]
 
-     #permutation creation is done by group:
+    #permutation creation is done by group:
     #print("Estimating permutation for dir ", dir)
     for i in range(len(molecule.equivalence_classes)):
         group = molecule.equivalence_classes[i]
