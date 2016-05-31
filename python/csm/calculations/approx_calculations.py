@@ -98,7 +98,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
         for dir in dirs:
-            #for chainperm in chain_permutations:
+            for chainperm in chain_permutations:
                 chainperm=chain_permutations[1]
                 if chainperm==chain_permutations[0]:
                     continue
@@ -109,7 +109,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                 best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
                                                                     TruePermChecker, perm, approx=True)
                 i = 0
-                max_iterations = 2
+                max_iterations = 50
                 while (i < max_iterations and math.fabs(
                             old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
                     old_results = interim_results
@@ -144,7 +144,7 @@ def find_symmetry_directions(molecule, detect_outliers, op_type):
     dirs = dir_fit(group_averages)
     if detect_outliers and len(molecule.equivalence_classes) > min_group_for_outliers:
         dirs = dirs_without_outliers(dirs, group_averages, op_type)
-    #dirs = dirs_orthogonal(dirs)
+    dirs = dirs_orthogonal(dirs)
     return dirs
 
 
