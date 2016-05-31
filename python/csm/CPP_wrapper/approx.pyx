@@ -53,7 +53,7 @@ cdef class DistanceMatrix:
             if allowed_rows[i]:
                 row_ptr = &self.mv_distances[i,0]
                 for j in range(self.group_size):
-                    if allowed_cols[i]:
+                    if allowed_cols[j]:
                         tmp = row_ptr[j]
                         if tmp < min:
                             min = tmp
@@ -87,19 +87,12 @@ cdef class DistanceMatrix:
 cdef class Vector3DHolder
 
 def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
-    # this is a naive implementation, which works well with the naive c++ build_perm
-    # step two: first estimation of the symmetry measure: first permutation
-    # apply the symmetry operation once, using symm_element from step one
-
     # create rotation matrix
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
     # run rotation matrix on atoms
     rotated = (rotation_mat @ molecule.Q.T).T
     cdef Vector3DHolder rotated_holder = Vector3DHolder(rotated)
 
-    #cdef double *t = rotated_holder.get_vector(1000)
-    #print("Rotated holder: %f, %f, %f" % (t[0], t[1], t[2]))
-    #print("Rotated: %f, %f, %f" % (rotated[1000][0], rotated[1000][1], rotated[1000][2]))
     cdef Vector3DHolder Q_holder = Vector3DHolder(molecule.Q)
 
     cdef double *a
@@ -110,7 +103,7 @@ def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
 
      #permutation creation is done by group:
     for i in range(len(molecule.equivalence_classes)):
-        group=molecule.equivalence_classes[i]
+        group = molecule.equivalence_classes[i]
         distances = DistanceMatrix(group)
         if chainperm:
             chain_group=molecule.chain_groups[i]

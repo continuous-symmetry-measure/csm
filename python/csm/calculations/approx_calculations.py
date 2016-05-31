@@ -99,30 +99,30 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
 
         for dir in dirs:
             #for chainperm in chain_permutations:
-                chainperm=chain_permutations[1]
-                if chainperm==chain_permutations[0]:
-                    continue
-                # find permutation for this direction of the symmetry axis
-                perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
-                # solve using this perm until it converges:
-                old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
-                best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
-                                                                    TruePermChecker, perm, approx=True)
-                i = 0
-                max_iterations = 2
-                while (i < max_iterations and math.fabs(
-                            old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
-                    old_results = interim_results
-                    i += 1
-                    perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm)
-                    interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
-                    if interim_results.csm < best_for_this_dir.csm:
-                        best_for_this_dir = interim_results
-                print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
+            chainperm = chain_permutations[1]
+            if chainperm == chain_permutations[0]:
+                continue
+            # find permutation for this direction of the symmetry axis
+            perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
+            # solve using this perm until it converges:
+            old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
+            best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
+                                                                TruePermChecker, perm, approx=True)
+            i = 0
+            max_iterations = 2
+            while (i < max_iterations and math.fabs(
+                        old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
+                old_results = interim_results
+                i += 1
+                perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm)
+                interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
+                if interim_results.csm < best_for_this_dir.csm:
+                    best_for_this_dir = interim_results
+            print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
 
 
-                if best_for_this_dir.csm < best.csm:
-                    best = best_for_this_dir
+            if best_for_this_dir.csm < best.csm:
+                best = best_for_this_dir
     return best
 
 
