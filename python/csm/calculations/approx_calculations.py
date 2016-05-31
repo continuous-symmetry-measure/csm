@@ -99,9 +99,6 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
 
         for dir in dirs:
             for chainperm in chain_permutations:
-                chainperm=chain_permutations[1]
-                if chainperm==chain_permutations[0]:
-                    continue
                 # find permutation for this direction of the symmetry axis
                 perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
                 # solve using this perm until it converges:
@@ -118,11 +115,11 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                     interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
                     if interim_results.csm < best_for_this_dir.csm:
                         best_for_this_dir = interim_results
-                print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
+            #print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
 
 
-                if best_for_this_dir.csm < best.csm:
-                    best = best_for_this_dir
+            if best_for_this_dir.csm < best.csm:
+                best = best_for_this_dir
     return best
 
 
