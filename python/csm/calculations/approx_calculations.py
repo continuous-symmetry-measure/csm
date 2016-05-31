@@ -105,6 +105,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
                                                                     TruePermChecker, perm, approx=True)
+                print("Dir %s, csm: %s" % (dir, interim_results.csm))
                 i = 0
                 max_iterations = 50
                 while (i < max_iterations and math.fabs(
@@ -115,7 +116,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                     interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
                     if interim_results.csm < best_for_this_dir.csm:
                         best_for_this_dir = interim_results
-            #print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
+            print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
 
 
             if best_for_this_dir.csm < best.csm:

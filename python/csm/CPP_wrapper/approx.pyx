@@ -21,9 +21,11 @@ cdef class DistanceMatrix:
 
     def __init__(self, group):
         self.group_size = len(group)
+        # print("Creating DistanceMatrix for group of size ", self.group_size)
         self.mv_distances = np.ones((len(group), len(group)), order="c") * MAXDOUBLE
         self._allowed_rows = np.zeros(len(group), dtype='i')
         self._allowed_cols = np.zeros(len(group), dtype='i')
+        # print("DistanceMatrix created")
 
     def add(self, int from_val, int to_val, double distance=MAXDOUBLE):
         self.mv_distances[from_val, to_val] = distance
@@ -41,8 +43,8 @@ cdef class DistanceMatrix:
         cdef int i
         cdef int j
         cdef double min = MAXDOUBLE
-        cdef int min_i
-        cdef int min_j
+        cdef int min_i = -1
+        cdef int min_j = -1
         cdef double tmp
 
         cdef double *row_ptr
@@ -50,10 +52,10 @@ cdef class DistanceMatrix:
         cdef int *allowed_cols = &self._allowed_cols[0]
 
         for i in range(self.group_size):
-            if allowed_rows[i]:
+            if self._allowed_rows[i]:
                 row_ptr = &self.mv_distances[i,0]
                 for j in range(self.group_size):
-                    if allowed_cols[j]:
+                    if self._allowed_cols[j]:
                         tmp = row_ptr[j]
                         if tmp < min:
                             min = tmp
@@ -81,12 +83,19 @@ cdef class DistanceMatrix:
                 if tmp < min:
                     min, min_i = tmp, i
 
+        if min_i==-1:
+            # print("Can't find next in cycle. Allowed columns:")
+            # for i in range(self.group_size):
+            #   if self._allowed_cols[i]:
+            #        print(i, '-->', searched_row[i])
+            raise ValueError("Can't find next in cycle. Constraints: %s" % str(constraints))
         return (from_val, min_i)
 
 
 cdef class Vector3DHolder
 
 def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
+    #print("estimate_perm(dir=%s) called, type of dir is %s" % (dir, type(dir)))
     # create rotation matrix
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
     # run rotation matrix on atoms
@@ -101,7 +110,11 @@ def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
     # create permutation:
     perm = [-1] * len(molecule)
 
+    if not chainperm:
+        chainperm = [0]
+
      #permutation creation is done by group:
+    #print("Estimating permutation for dir ", dir)
     for i in range(len(molecule.equivalence_classes)):
         group = molecule.equivalence_classes[i]
         distances = DistanceMatrix(group)
@@ -109,6 +122,7 @@ def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
             chain_group=molecule.chain_groups[i]
             chain_indices=molecule.chain_indices[i]
             for index in chainperm:
+                #print("Working on chain %s" % index)
                 from_chain=chain_group[index]
                 to_chain=chain_group[chainperm[index]]
                 for j in from_chain:
@@ -127,14 +141,18 @@ def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
 
         perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
 
+    # print("Returning estimated permutation")
     return perm
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
+    # print("Building permutation for group of len %d" % len(group))
     group_id=np.min(group)
     left=len(group)
     while left>=op_order:
+        # print("Building cycle (left=%d)..." % left)
         (from_val, to_val)=distance_matrix.get_min_val()
         perm[group[from_val]]=group[to_val]
+        # print("%d --> %d" % (from_val, to_val))
         distance_matrix.remove(from_val, to_val)
         left-=1
         if from_val==to_val: #cycle length 1 completed
@@ -147,7 +165,7 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
         while not cycle_done:
             constraints= set()
             constraints.add(cycle_head) #prevents too-short cycle
-            if cycle_length== op_order-1:
+            if cycle_length == op_order-1:
                 from_val = to_val
                 to_val = cycle_head
                 cycle_done = True
@@ -162,16 +180,18 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
                     cycle_done=True
                 (from_val, to_val)=(next_from_val, next_to_val)
 
+            # print("%d --> %d" % (from_val, to_val))
             perm[group[from_val]]=group[to_val]
             distance_matrix.remove(from_val, to_val)
             left-=1
             cycle_length+=1
-        pass
 
     #for remaining pairs or singles, simply go through them and set them
     #TODO: this section is wrong for chains
     while True:
         (from_val, to_val) = distance_matrix.get_min_val()
+        if from_val==-1:  # We're finished with this group
+            break
         if perm[group[from_val]] != -1: #we've finished with the group
             break
         if op_type=='SN':

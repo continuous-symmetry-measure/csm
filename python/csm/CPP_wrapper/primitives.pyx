@@ -205,7 +205,7 @@ cdef class Vector3DHolder:
         self.buf_size = 3 * mat.shape[0] * sizeof(double)
         self.buffer = <double *>malloc(self.buf_size)
 
-        cdef int offset
+        cdef int offset = 0
         cdef int i, j
         for i in range(mat.shape[0]):
             for j in range(3):
