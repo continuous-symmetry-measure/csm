@@ -4,13 +4,20 @@ class Stopwatch:
     def __init__(self):
         import time
         self._start = time.time()
+        self._prev= self._start
 
     def elapsed(self):
         import time
         return time.time() - self._start
 
+    def gap(self):
+        import time
+        gap= time.time()-self._prev
+        self._prev=time.time()
+        return gap
+
     def report(self, msg):
-        print('%6.3f %s' % (self.elapsed(), msg))
+        print('%6.3f (%6.3f ) %s' % (self.elapsed(), self.gap(), msg))
 
 stopwatch = Stopwatch()
 
@@ -34,8 +41,8 @@ from csm.calculations.csm_calculations import exact_calculation, perm_count
 stopwatch.report('imported csm.calculations_csmcalculations.exact_calculations, perm_count')
 
 from csm.calculations.approx_calculations import approx_calculation, trivial_calculation
-stopwatch.report('Imported approx_calculations")'
-                 '')
+stopwatch.report('Imported approx_calculations')
+
 from csm.calculations import csm_calculations
 stopwatch.report("Imported csm_calculations")
 
