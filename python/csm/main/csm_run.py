@@ -17,7 +17,7 @@ class Stopwatch:
         return gap
 
     def report(self, msg):
-        print('%6.3f (%6.3f ) %s' % (self.elapsed(), self.gap(), msg))
+        return
 
 stopwatch = Stopwatch()
 

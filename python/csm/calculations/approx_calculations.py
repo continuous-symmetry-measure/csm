@@ -15,7 +15,7 @@ class Stopwatch:
         return interval
 
     def report(self, msg):
-        print('\t%6.3f (%6.3f ) %s' % (self.elapsed(), self.interval(), msg))
+        return
 
 stopwatch = Stopwatch()
 
@@ -127,12 +127,14 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
             for state in permuter.permute():
                 chain_permutations.append([i for i in state.perm])
         else:
-            chain_permutations.append([])
+            chain_permutations.append([0])
 
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
         for dir in dirs:
-            for chainperm in chain_permutations:
+            for i in range(1):
+            #for chainperm in chain_permutations:
+                chainperm= chain_permutations[1]
                 # find permutation for this direction of the symmetry axis
                 perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
                 # solve using this perm until it converges:

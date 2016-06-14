@@ -16,7 +16,12 @@ class Molecule:
             self._chains = chains
         else:
             self._chains = {'A': list(range(len(atoms)))}  # Default - one chain of all the atoms
-        self.chainkeys = [key for key in chains.keys()]
+        #self.chainkeys = [key for key in chains.keys()]
+        i=0
+        self.chainkeys= {}
+        for key in self._chains:
+            self.chainkeys[key]=i
+            i+=1
         self._bondset = set()
         self._equivalence_classes = []
         self._norm_factor = norm_factor
@@ -163,24 +168,24 @@ class Molecule:
         """
         #this code was written to handle chains in approx
         #we split the group according to chains, so that we can measure distances only between chains passing to eachother
-        #we also build indices of what the group index is of the respective atomic number,
-        #so that we can build the distance matrix 0...n (where n is the size of the group)
+        #### DEFUNCT-we also build indices of what the group index is of the respective atomic number,
+        ####so that we can build the distance matrix 0...n (where n is the size of the group)
         chain_groups=[]
-        chain_indices=[]
+        #chain_indices=[]
         for group in self.equivalence_classes:
             chaingroup={}
             group_indices={}
             for i in range(len(group)):
-                group_indices[group[i]]=i
-                chain_numeric_index = self.chainkeys.index(self.atoms[group[i]].chain)
+                chain=self.chainkeys[self.atoms[group[i]].chain]
+                #group_indices[group[i]]=i
                 try:
-                    chaingroup[chain_numeric_index].append(group[i])
+                    chaingroup[chain].append(group[i])
                 except:
-                    chaingroup[chain_numeric_index]=[group[i]]
+                    chaingroup[chain]=[group[i]]
             chain_groups.append(chaingroup)
-            chain_indices.append(group_indices)
+            #chain_indices.append(group_indices)
         self.chain_groups=chain_groups
-        self.chain_indices=chain_indices
+        #self.chain_indices=chain_indices
 
         #DEFUNCT code, not currently used
         # Divide all the equivalence classes so that no equivalence class includes two atoms from different chains
