@@ -132,18 +132,16 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
         for dir in dirs:
-            for i in range(1):
-            #for chainperm in chain_permutations:
-                chainperm= chain_permutations[1]
+            for chainperm in chain_permutations:
                 # find permutation for this direction of the symmetry axis
                 perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
                                                                     TruePermChecker, perm, approx=True)
-                print("Dir %s, csm: %s" % (dir, interim_results.csm))
+                #print("Dir %s, csm: %s" % (dir, interim_results.csm))
                 i = 0
-                max_iterations = 50
+                max_iterations = 5
                 while (i < max_iterations and math.fabs(
                             old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
                     old_results = interim_results

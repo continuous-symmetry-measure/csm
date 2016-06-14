@@ -21,11 +21,11 @@ cdef class DistanceMatrix:
 
     def __init__(self, group):
         self.group_size = len(group)
-        # print("Creating DistanceMatrix for group of size ", self.group_size)
+        # #print("Creating DistanceMatrix for group of size ", self.group_size)
         self.mv_distances = np.ones((len(group), len(group)), order="c") * MAXDOUBLE
         self._allowed_rows = np.zeros(len(group), dtype='i')
         self._allowed_cols = np.zeros(len(group), dtype='i')
-        # print("DistanceMatrix created")
+        # #print("DistanceMatrix created")
 
     def add(self, int from_val, int to_val, double distance=MAXDOUBLE):
         self.mv_distances[from_val, to_val] = distance
@@ -85,10 +85,10 @@ cdef class DistanceMatrix:
                     min, min_i = tmp, i
 
         if min_i==-1:
-            # print("Can't find next in cycle. Allowed columns:")
+            # #print("Can't find next in cycle. Allowed columns:")
             # for i in range(self.group_size):
             #   if self._allowed_cols[i]:
-            #        print(i, '-->', searched_row[i])
+            #        #print(i, '-->', searched_row[i])
             self.myprint()
             raise ValueError("Can't find next in cycle. Constraints: %s" % str(constraints))
         return (from_val, min_i)
@@ -115,13 +115,14 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm):
                 used[next_index]=1
                 cycle.append(next_index)
                 next_index=chainperm[next_index]
-            print("cycle", cycle)
+         #   #print("cycle", cycle)
             cycles.append(cycle)
-        print("cycles", cycles)
+        ##print("cycles", cycles)
         return cycles
 
-
-    #print("estimate_perm(dir=%s) called, type of dir is %s" % (dir, type(dir)))
+    #print(len(molecule))
+    total=0
+    ##print("estimate_perm(dir=%s) called, type of dir is %s" % (dir, type(dir)))
     # create rotation matrix
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
     # run rotation matrix on atoms
@@ -137,42 +138,49 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm):
     perm = [-1] * len(molecule)
 
     #permutation creation is done by group:
-    #print("Estimating permutation for dir ", dir)
-    for i in range(len(molecule.equivalence_classes)):
-        for cycle in cycle_builder(chainperm):
+    ##print("Estimating permutation for dir ", dir)
+    cycles=cycle_builder(chainperm)
+    for cycle in cycles:
+        test=0
+        ##print("TEST IS", test)
+        ##print("cycle is", cycle)
+        for i in range(len(molecule.equivalence_classes)):
             group=[]
             for index in cycle:
-                print("chain in cycle", molecule.chain_groups[i][index])
                 group = group + molecule.chain_groups[i][index]
             chain_len=len( molecule.chain_groups[i][index])
-            print("group:",group)
-            print("group len", len(group), "chain len", chain_len)
+            ##print("group:",group)
+            ##print("group len", len(group), "chain len", chain_len)
+            total+=len(group)
             distances = DistanceMatrix(group)
 
             for from_index in cycle:
                 from_chain=molecule.chain_groups[i][from_index]
                 to_chain=molecule.chain_groups[i][cycle[from_index]]
-                print("from chain", from_chain, "to chain", to_chain)
+                ##print("from chain", from_chain, "to chain", to_chain)
                 for j in from_chain:
                     for k in to_chain:
                         a = rotated_holder.get_vector(j)
                         b = Q_holder.get_vector(k)
                         distance = array_distance(a,b)
                         distances.add(group.index(k), group.index(j), distance)
-        perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
+            ##print("about to build perm")
+            perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
+            ##print("############",total, "/", len(molecule),"#####################")
+        test+=1
 
-    # print("Returning estimated permutation")
+    ##print("Returning a completed perm")
     return perm
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
-    print("Building permutation for group of len %d" % len(group))
+    ##print("Building permutation for group of len %d" % len(group))
     group_id=np.min(group)
     left=len(group)
     while left>=op_order:
-        print("Building cycle (left=%d)..." % left)
+        ##print("Building cycle (left=%d)..." % left)
         (from_val, to_val)=distance_matrix.get_min_val()
         perm[group[from_val]]=group[to_val]
-        print("%d --> %d" % (from_val, to_val))
+        #print("%d --> %d" % (from_val, to_val))
         distance_matrix.remove(from_val, to_val)
         left-=1
         if from_val==to_val: #cycle length 1 completed
@@ -200,7 +208,7 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
                     cycle_done=True
                 (from_val, to_val)=(next_from_val, next_to_val)
 
-            print("%d --> %d" % (from_val, to_val))
+            ##print("%d --> %d" % (from_val, to_val))
             perm[group[from_val]]=group[to_val]
             distance_matrix.remove(from_val, to_val)
             left-=1
@@ -209,7 +217,7 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
     #for remaining pairs or singles, simply go through them and set them
     #TODO: this section is wrong for chains
     while True:
-        print("entered problem section")
+        ##print("entered problem section")
         (from_val, to_val) = distance_matrix.get_min_val()
         if from_val==-1:  # We're finished with this group
             break
@@ -223,7 +231,7 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
         else:
             perm[group[from_val]]=group[from_val]
             distance_matrix.remove(from_val, from_val)
-    print("exiting perm bulder")
+    ##print("exiting perm bulder")
     return perm
 
 
