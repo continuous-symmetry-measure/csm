@@ -12,8 +12,11 @@ logger = logging.getLogger("csm")
 class Molecule:
     def __init__(self, atoms={}, chains={}, norm_factor=1.0, obmol=None):
         self._atoms = atoms
-        self._chains = chains
-        self.chainkeys=[key for key in chains.keys()]
+        if chains:
+            self._chains = chains
+        else:
+            self._chains = {'A': list(range(len(atoms)))}  # Default - one chain of all the atoms
+        self.chainkeys = [key for key in chains.keys()]
         self._bondset = set()
         self._equivalence_classes = []
         self._norm_factor = norm_factor
@@ -153,6 +156,11 @@ class Molecule:
 
 
     def process_chains(self):
+        """
+
+        Returns:
+
+        """
         #this code was written to handle chains in approx
         #we split the group according to chains, so that we can measure distances only between chains passing to eachother
         #we also build indices of what the group index is of the respective atomic number,

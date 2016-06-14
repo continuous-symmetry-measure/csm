@@ -176,4 +176,4 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
     #     print("final-csm:")
     #     print(str(csm))
 
-    return csm, dir
+    return csm, dir.to_numpy()

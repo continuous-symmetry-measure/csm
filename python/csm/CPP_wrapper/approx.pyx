@@ -15,78 +15,93 @@ cdef array_distance(double *a, double *b):
 
 cdef class DistanceMatrix:
     cdef int group_size
-    cdef np_distances
-    cdef double[:,:] mv_distances
-    cdef double[:] _np_delete
+    cdef double[:,::1] mv_distances  # Make sure this is a C-order memoryview
+    cdef int[:] _allowed_rows  # _allowd_rows[i] is 1 iff the row is still available for a permutation
+    cdef int[:] _allowed_cols  # Respectively.
 
     def __init__(self, group):
         self.group_size = len(group)
-        self.np_distances = np.ones((len(group), len(group)), order="c") * MAXDOUBLE
-        self.mv_distances = self.np_distances
-        self._np_delete = np.copy(self.np_distances[0])
-        #self.list_distances=[]
+        # print("Creating DistanceMatrix for group of size ", self.group_size)
+        self.mv_distances = np.ones((len(group), len(group)), order="c") * MAXDOUBLE
+        self._allowed_rows = np.zeros(len(group), dtype='i')
+        self._allowed_cols = np.zeros(len(group), dtype='i')
+        # print("DistanceMatrix created")
 
-    def add(self, from_val, to_val, distance=MAXDOUBLE):
-        self.np_distances[from_val][to_val]=distance
-        #dist=Distance(from_val=from_val, to_val=to_val, distance=distance)
-        #self.list_distances.append(dist)
+    def add(self, int from_val, int to_val, double distance=MAXDOUBLE):
+        self.mv_distances[from_val, to_val] = distance
+        self._allowed_rows[from_val] = 1
+        self._allowed_cols[to_val] = 1
 
     def sort(self):
         pass#self.list_distances = newlist = sorted(self.list_distances, key=lambda x: x.distance)
 
-    def remove(self, from_val, to_val):
-        self.np_distances[:,to_val]=self._np_delete
-        self.np_distances[from_val,:]=self._np_delete
+    def remove(self, int from_val, int to_val):
+        self._allowed_rows[from_val] = 0
+        self._allowed_cols[to_val] = 0
 
     def get_min_val(self):
         cdef int i
         cdef int j
         cdef double min = MAXDOUBLE
-        cdef int min_i
-        cdef int min_j
+        cdef int min_i = -1
+        cdef int min_j = -1
         cdef double tmp
 
-        for i in range(self.group_size):
-            for j in range(self.group_size):
-                tmp = self.mv_distances[i][j]
-                if tmp < min:
-                    min = tmp
-                    min_i = i
-                    min_j = j
-        return (min_i, min_j)
-        # a=self.np_distances
-        # argmin=np.argmin(a)
-        # from_val = int(argmin/ len(a[0]))
-        # to_val= int(argmin % len(a[0]))
-        # return (from_val, to_val)
+        cdef double *row_ptr
+        cdef int *allowed_rows = &self._allowed_rows[0]
+        cdef int *allowed_cols = &self._allowed_cols[0]
 
-    def get_next_in_cycle(self, from_val, constraints):
-        searched_row=self.np_distances[from_val]
-        indices= np.argsort(searched_row)
-        i=0
-        if constraints:
-            while indices[i] in constraints:
-                i+=1
-        to_val=indices[i]
+        for i in range(self.group_size):
+            if self._allowed_rows[i]:
+                row_ptr = &self.mv_distances[i,0]
+                for j in range(self.group_size):
+                    if self._allowed_cols[j]:
+                        tmp = row_ptr[j]
+                        if tmp < min:
+                            min = tmp
+                            min_i = i
+                            min_j = j
+        return (min_i, min_j)
+
+    def get_min_val_old(self):
+        a = self.mv_distances
+        argmin=np.argmin(a)
+        from_val = int(argmin/ len(a[0]))
+        to_val= int(argmin % len(a[0]))
         return (from_val, to_val)
+
+    def get_next_in_cycle(self, int from_val, constraints):
+        if not self._allowed_rows[from_val]:
+            raise ValueError("get_next_in_cycle called with an unavailable row %d" % from_val)
+
+        searched_row = self.mv_distances[from_val]
+        min = MAXDOUBLE
+        min_i = -1
+        for i in range(self.group_size):
+            if self._allowed_cols[i] and not i in constraints:
+                tmp = searched_row[i]
+                if tmp < min:
+                    min, min_i = tmp, i
+
+        if min_i==-1:
+            # print("Can't find next in cycle. Allowed columns:")
+            # for i in range(self.group_size):
+            #   if self._allowed_cols[i]:
+            #        print(i, '-->', searched_row[i])
+            raise ValueError("Can't find next in cycle. Constraints: %s" % str(constraints))
+        return (from_val, min_i)
 
 
 cdef class Vector3DHolder
 
 def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
-    # this is a naive implementation, which works well with the naive c++ build_perm
-    # step two: first estimation of the symmetry measure: first permutation
-    # apply the symmetry operation once, using symm_element from step one
-
+    #print("estimate_perm(dir=%s) called, type of dir is %s" % (dir, type(dir)))
     # create rotation matrix
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
     # run rotation matrix on atoms
     rotated = (rotation_mat @ molecule.Q.T).T
     cdef Vector3DHolder rotated_holder = Vector3DHolder(rotated)
 
-    #cdef double *t = rotated_holder.get_vector(1000)
-    #print("Rotated holder: %f, %f, %f" % (t[0], t[1], t[2]))
-    #print("Rotated: %f, %f, %f" % (rotated[1000][0], rotated[1000][1], rotated[1000][2]))
     cdef Vector3DHolder Q_holder = Vector3DHolder(molecule.Q)
 
     cdef double *a
@@ -95,14 +110,19 @@ def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
     # create permutation:
     perm = [-1] * len(molecule)
 
-     #permutation creation is done by group:
+    if not chainperm:
+        chainperm = [0]
+
+    #permutation creation is done by group:
+    #print("Estimating permutation for dir ", dir)
     for i in range(len(molecule.equivalence_classes)):
-        group=molecule.equivalence_classes[i]
+        group = molecule.equivalence_classes[i]
         distances = DistanceMatrix(group)
         if chainperm:
             chain_group=molecule.chain_groups[i]
             chain_indices=molecule.chain_indices[i]
             for index in chainperm:
+                #print("Working on chain %s" % index)
                 from_chain=chain_group[index]
                 to_chain=chain_group[chainperm[index]]
                 for j in from_chain:
@@ -121,14 +141,18 @@ def estimate_perm(op_type, op_order, molecule, dir, chainperm=[]):
 
         perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
 
+    # print("Returning estimated permutation")
     return perm
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
+    # print("Building permutation for group of len %d" % len(group))
     group_id=np.min(group)
     left=len(group)
     while left>=op_order:
+        # print("Building cycle (left=%d)..." % left)
         (from_val, to_val)=distance_matrix.get_min_val()
         perm[group[from_val]]=group[to_val]
+        # print("%d --> %d" % (from_val, to_val))
         distance_matrix.remove(from_val, to_val)
         left-=1
         if from_val==to_val: #cycle length 1 completed
@@ -141,7 +165,7 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
         while not cycle_done:
             constraints= set()
             constraints.add(cycle_head) #prevents too-short cycle
-            if cycle_length== op_order-1:
+            if cycle_length == op_order-1:
                 from_val = to_val
                 to_val = cycle_head
                 cycle_done = True
@@ -156,16 +180,18 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
                     cycle_done=True
                 (from_val, to_val)=(next_from_val, next_to_val)
 
+            # print("%d --> %d" % (from_val, to_val))
             perm[group[from_val]]=group[to_val]
             distance_matrix.remove(from_val, to_val)
             left-=1
             cycle_length+=1
-        pass
 
     #for remaining pairs or singles, simply go through them and set them
     #TODO: this section is wrong for chains
     while True:
         (from_val, to_val) = distance_matrix.get_min_val()
+        if from_val==-1:  # We're finished with this group
+            break
         if perm[group[from_val]] != -1: #we've finished with the group
             break
         if op_type=='SN':
