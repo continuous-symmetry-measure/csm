@@ -11,6 +11,7 @@ logger = logging.getLogger("csm")
 
 class Molecule:
     def __init__(self, atoms={}, chains={}, norm_factor=1.0, obmol=None):
+
         self._atoms = atoms
         if chains:
             self._chains = chains
@@ -156,8 +157,8 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-        if self.chains:
-           self.process_chains()
+        if len(self.chains)>1:
+            self.process_chains()
 
 
     def process_chains(self):
@@ -517,4 +518,16 @@ class Molecule:
 
                 atoms[i].adjacent = neighbours
 
-        return Molecule(atoms)
+            try:
+                numchains=int(f.readline())
+                chains=OrderedDict()
+                for i in range(numchains):
+                    line = f.readline().split()
+                    chain_name= line[0]
+                    chains[chain_name]=[]
+                    for j in range(1, len(line)):
+                        atoms[line[j]-1]._chain=chain_name
+                        chains[chain_name].append(int(line[j]))
+            except:
+                pass
+        return Molecule(atoms=atoms, chains=chains)
