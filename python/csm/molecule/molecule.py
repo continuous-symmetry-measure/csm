@@ -526,8 +526,8 @@ class Molecule:
                     chain_name= line[0]
                     chains[chain_name]=[]
                     for j in range(1, len(line)):
-                        atoms[line[j]-1]._chain=chain_name
-                        chains[chain_name].append(int(line[j]))
+                        atoms[int(line[j])-1]._chain=chain_name
+                        chains[chain_name].append(int(line[j])-1)
             except:
                 pass
         return Molecule(atoms=atoms, chains=chains)
