@@ -184,11 +184,11 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
                     distances.add(group.index(k), group.index(j), distance)
             perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
 
-    print(perm)
+    #print(perm)
     return perm
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
-    print("Building permutation for group of len %d" % len(group))
+    # print("Building permutation for group of len %d" % len(group))
     #group_id=np.min(group)
     left=len(group)
     while left>=op_order:
