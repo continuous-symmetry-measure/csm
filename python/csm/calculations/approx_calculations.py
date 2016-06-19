@@ -114,7 +114,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
         #TODO- this code is no longer correct bc chainperm
-        perm = estimate_perm(op_type, op_order, molecule, dir)
+        perm = estimate_perm(op_type, op_order, molecule, dir, [], False)
         best = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
 
     else:
@@ -128,14 +128,14 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
             for state in permuter.permute():
                 chain_permutations.append([i for i in state.perm])
         else:
-            chain_permutations.append([0])
+            chain_permutations.append([]) #this is probably not the correct solution
 
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
         for dir in dirs:
             for chainperm in chain_permutations:
                 # find permutation for this direction of the symmetry axis
-                perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
+                perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, use_chains)
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
@@ -147,7 +147,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                             old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
                     old_results = interim_results
                     i += 1
-                    perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm)
+                    perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains)
                     interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
                     if interim_results.csm < best_for_this_dir.csm:
                         best_for_this_dir = interim_results
