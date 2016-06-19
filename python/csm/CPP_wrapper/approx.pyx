@@ -21,11 +21,11 @@ cdef class DistanceMatrix:
 
     def __init__(self, group):
         self.group_size = len(group)
-        # print("Creating DistanceMatrix for group of size ", self.group_size)
+        # #print("Creating DistanceMatrix for group of size ", self.group_size)
         self.mv_distances = np.ones((len(group), len(group)), order="c") * MAXDOUBLE
         self._allowed_rows = np.zeros(len(group), dtype='i')
         self._allowed_cols = np.zeros(len(group), dtype='i')
-        # print("DistanceMatrix created")
+        # #print("DistanceMatrix created")
 
     def add(self, int from_val, int to_val, double distance=MAXDOUBLE):
         self.mv_distances[from_val, to_val] = distance
@@ -85,16 +85,16 @@ cdef class DistanceMatrix:
                     min, min_i = tmp, i
 
         if min_i==-1:
-            # print("Can't find next in cycle. Allowed columns:")
+            # #print("Can't find next in cycle. Allowed columns:")
             # for i in range(self.group_size):
             #   if self._allowed_cols[i]:
-            #        print(i, '-->', searched_row[i])
+            #        #print(i, '-->', searched_row[i])
             self.tostr()
             raise ValueError("Can't find next in cycle. Constraints: %s" % str(constraints))
         return (from_val, min_i)
 
     def tostr(self):
-        print(self.mv_distances.base)
+        #print(self.mv_distances.base)
         pass
 
 
@@ -108,14 +108,14 @@ def cycle_builder(chainperm):
         :return: a cycle in chainperm
         """
         chainperm_copy=list(chainperm)
-        print("chainperm_copy", chainperm_copy)
+        #print("chainperm_copy", chainperm_copy)
 
         def recursive_cycle_builder(chain_head, index, cycle):
-            print(chain_head, index, cycle)
+            #print(chain_head, index, cycle)
             cycle.append(index)
             chainperm_copy[index]=-1
             if chainperm[index]==chain_head:
-                print("yielding cycle", cycle)
+                #print("yielding cycle", cycle)
                 yield cycle
                 cycle=[]
             else:
@@ -125,7 +125,7 @@ def cycle_builder(chainperm):
             if val==-1:
                 continue
             chainperm_copy[i]=-1
-            print("cycle head is", i)
+            #print("cycle head is", i)
             yield from recursive_cycle_builder(i, i,[])
         #find and return cycles
         pass
@@ -148,12 +148,12 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
         #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
         for cycle in cycle_builder(chainperm):
             for chain_group in molecule.chain_groups:
-                print(chain_group)
+                #print(chain_group)
                 #1. find the "group" we will be building a distance matrix with
                 group=[]
                 for chain_index in cycle:
                     group+=chain_group[chain_index]
-                print("group is", group)
+                #print("group is", group)
                 distances = DistanceMatrix(group)
 
             #2. within that group, go over legal switches and add their distance to the matrix
@@ -181,18 +181,18 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
                     distances.add(group.index(k), group.index(j), distance)
             perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
 
-    print(perm)
+    #print(perm)
     return perm
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
-    print("Building permutation for group of len %d" % len(group))
+    #print("Building permutation for group of len %d" % len(group))
     group_id=np.min(group)
     left=len(group)
     while left>=op_order:
-        print("Building cycle (left=%d)..." % left)
+        #print("Building cycle (left=%d)..." % left)
         (from_val, to_val)=distance_matrix.get_min_val()
         perm[group[from_val]]=group[to_val]
-        print("%d --> %d" % (from_val, to_val))
+        #print("%d --> %d" % (from_val, to_val))
         distance_matrix.remove(from_val, to_val)
         left-=1
         if from_val==to_val: #cycle length 1 completed
@@ -220,7 +220,7 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
                     cycle_done=True
                 (from_val, to_val)=(next_from_val, next_to_val)
 
-            print("%d --> %d" % (from_val, to_val))
+            #print("%d --> %d" % (from_val, to_val))
             perm[group[from_val]]=group[to_val]
             distance_matrix.remove(from_val, to_val)
             left-=1
