@@ -101,34 +101,34 @@ cdef class DistanceMatrix:
 cdef class Vector3DHolder
 
 def cycle_builder(chainperm):
-        """
-        the only thing this function does is build cycles ON THE BASIS OF CHAINPERM
-        if chainperm has invalid cycles, this will return invalid cycles
-        :param chainperm:
-        :return: a cycle in chainperm
-        """
-        chainperm_copy=list(chainperm)
-        #print("chainperm_copy", chainperm_copy)
+    """
+    the only thing this function does is build cycles ON THE BASIS OF CHAINPERM
+    if chainperm has invalid cycles, this will return invalid cycles
+    :param chainperm:
+    :return: a cycle in chainperm
+    """
+    chainperm_copy = list(chainperm)
+    # print("chainperm_copy", chainperm_copy)
 
-        def recursive_cycle_builder(chain_head, index, cycle):
-            #print(chain_head, index, cycle)
-            cycle.append(index)
-            chainperm_copy[index]=-1
-            if chainperm[index]==chain_head:
-                #print("yielding cycle", cycle)
-                yield cycle
-                cycle=[]
-            else:
-                yield from recursive_cycle_builder(chain_head,chainperm[index], cycle)
+    def recursive_cycle_builder(chain_head, index, cycle):
+        # print(chain_head, index, cycle)
+        cycle.append(index)
+        chainperm_copy[index] = -1
+        if chainperm[index] == chain_head:
+            # print("yielding cycle", cycle)
+            yield cycle
+            cycle = []
+        else:
+            yield from recursive_cycle_builder(chain_head, chainperm[index], cycle)
 
-        for i, val in enumerate(chainperm_copy):
-            if val==-1:
-                continue
-            chainperm_copy[i]=-1
-            #print("cycle head is", i)
-            yield from recursive_cycle_builder(i, i,[])
-        #find and return cycles
-        pass
+    for i, val in enumerate(chainperm_copy):
+        if val == -1:
+            continue
+        chainperm_copy[i] = -1
+        # print("cycle head is", i)
+        yield from recursive_cycle_builder(i, i, [])
+    # find and return cycles
+    pass
 
 def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
     # create rotation matrix
