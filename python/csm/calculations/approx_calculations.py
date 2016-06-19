@@ -113,6 +113,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
+        #TODO- this code is no longer correct bc chainperm
         perm = estimate_perm(op_type, op_order, molecule, dir)
         best = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
 
