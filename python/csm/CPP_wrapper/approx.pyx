@@ -169,7 +169,7 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
                                  distance = array_distance(a,b)
                                  distances.add(group.index(k), group.index(j), distance)
                 except KeyError:
-                    raise("Chains not fully equivalent")
+                    raise Exception("Chains not fully equivalent")
             #3. call the perm builder on the group
                 perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
             #(4. either continue to next group or finish)

@@ -21,10 +21,10 @@ def _create_parser():
     parser = OurParser(usage="\ncsm type input_molecule output_file [additional arguments]")
 
     # The first three positional arguments
+    c_symmetries = ['c%d' % n for n in range(2, 21)]
+    s_symmetries = ['s%d' % n for n in range(2, 21, 2)]
     parser.add_argument('type',
-                        choices=(
-                        'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c10', 's2', 's4', 's6', 's8', 's10', 'cs', 'ci',
-                        'ch'),
+                        choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
                         help='The type of operation')
     parser.add_argument('input', help='Input molecule file')
     parser.add_argument('output', default='output.txt', help='Output file')
@@ -135,6 +135,18 @@ def get_operation_data(opcode):
     Returns:
         And OperationCode object, with type, order and name
     """
+    def isint(s):
+        try:
+            int(s)
+            return True
+        except ValueError:
+            return False
+
+    opcode = opcode.lower()
+    if opcode[0]=='c' and isint(opcode[1:]):
+        return OperationCode(type='CN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
+    if opcode[0]=='s' and isint(opcode[1:]):
+        return OperationCode(type='SN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
     try:
         data = _opcode_data[opcode.lower()]
     except KeyError:
