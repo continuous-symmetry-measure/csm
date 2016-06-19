@@ -122,6 +122,7 @@ def cycle_builder(chainperm):
                 yield from recursive_cycle_builder(chain_head,chainperm[index], cycle)
 
         for i, val in enumerate(chainperm_copy):
+            #print("I,val", i,val)
             if val==-1:
                 continue
             chainperm_copy[i]=-1
@@ -135,7 +136,7 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
     # run rotation matrix on atoms
     rotated = (rotation_mat @ molecule.Q.T).T
-
+    #print("Chainperm", chainperm)
     cdef Vector3DHolder rotated_holder = Vector3DHolder(rotated)
     cdef Vector3DHolder Q_holder = Vector3DHolder(molecule.Q)
     cdef double *a
@@ -151,22 +152,24 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
                 #print(chain_group)
                 #1. find the "group" we will be building a distance matrix with
                 group=[]
-                for chain_index in cycle:
-                    group+=chain_group[chain_index]
-                #print("group is", group)
-                distances = DistanceMatrix(group)
+                try:
+                    for chain_index in cycle:
+                        group+=chain_group[chain_index]
+                    #print("group is", group)
+                    distances = DistanceMatrix(group)
 
-            #2. within that group, go over legal switches and add their distance to the matrix
-                for chain_index in cycle:
-                    from_chain=chain_group[chain_index]
-                    to_chain=chain_group[chainperm[chain_index]]
-                    for j in from_chain:
-                         for k in to_chain:
-                             a = rotated_holder.get_vector(j)
-                             b = Q_holder.get_vector(k)
-                             distance = array_distance(a,b)
-                             distances.add(group.index(k), group.index(j), distance)
-
+                #2. within that group, go over legal switches and add their distance to the matrix
+                    for chain_index in cycle:
+                        from_chain=chain_group[chain_index]
+                        to_chain=chain_group[chainperm[chain_index]]
+                        for j in from_chain:
+                             for k in to_chain:
+                                 a = rotated_holder.get_vector(j)
+                                 b = Q_holder.get_vector(k)
+                                 distance = array_distance(a,b)
+                                 distances.add(group.index(k), group.index(j), distance)
+                except KeyError:
+                    raise("Chains not fully equivalent")
             #3. call the perm builder on the group
                 perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
             #(4. either continue to next group or finish)
@@ -181,12 +184,12 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
                     distances.add(group.index(k), group.index(j), distance)
             perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
 
-    #print(perm)
+    print(perm)
     return perm
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
-    #print("Building permutation for group of len %d" % len(group))
-    group_id=np.min(group)
+    print("Building permutation for group of len %d" % len(group))
+    #group_id=np.min(group)
     left=len(group)
     while left>=op_order:
         #print("Building cycle (left=%d)..." % left)
