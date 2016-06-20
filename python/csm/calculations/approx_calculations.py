@@ -17,28 +17,14 @@ class Stopwatch:
     def report(self, msg):
         return
 
-stopwatch = Stopwatch()
-
-stopwatch.report("Stopwatch started in approx_calculations:")
-
 import numpy as np
-stopwatch.report("Imported numpy")
 import math
-stopwatch.report("Imported math")
 import logging
-stopwatch.report("Imported logging")
-from collections import namedtuple
-stopwatch.report("Imported namedtuple")
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-stopwatch.report("Imported constants (MIN, MAX)")
 from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP, estimate_perm
-stopwatch.report("Imported CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP, estimate_perm")
 from csm.fast import external_get_eigens as cppeigen
-stopwatch.report("Imported external_get_eigens")
-from csm.calculations.csm_calculations import csm_operation, CSMState, create_rotation_matrix, process_results
-stopwatch.report("Imported csm_operation, CSMState, create_rotation_matrix, process_results")
+from csm.calculations.exact_calculations import csm_operation, CSMState, process_results
 from csm.molecule.molecule import Molecule
-stopwatch.report("Imported Molecule")
 
 
 logger = logging.getLogger("csm")

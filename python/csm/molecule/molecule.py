@@ -338,16 +338,13 @@ class Molecule:
                 except:
                     lengths[len(group)]=1
             for key in lengths:
-                print("%d groups of length %d" %(lengths[key], key))
+                print("%d group%s of length %d" %(lengths[key], 's' if lengths[key] else '', key))
 
             if use_chains:
-                lengths = {}
                 for chain in self.chains:
-                    print ("chain %s of length %d" % (chain, len(self.chains[chain])))
-
+                    print ("Chain %s of length %d" % (chain, len(self.chains[chain])))
             else:
-                print("--usechains not specified. using one simulated chain of len %d" %len(self.chains['A']))
-
+                print("--useChains not specified. using one simulated chain of len %d" %len(self.chains['A']))
 
         print("Breaking molecule into similarity groups")
         self._calculate_equivalency(remove_hy, ignore_hy)

@@ -37,13 +37,13 @@ stopwatch.report("Imported timeit")
 from csm.input_output.arguments import get_split_arguments
 stopwatch.report("Import csm.input_output_arguments.get_split_arguments")
 
-from csm.calculations.csm_calculations import exact_calculation, perm_count
+from csm.calculations.exact_calculations import exact_calculation, perm_count
 stopwatch.report('imported csm.calculations_csmcalculations.exact_calculations, perm_count')
 
 from csm.calculations.approx_calculations import approx_calculation, trivial_calculation
 stopwatch.report('Imported approx_calculations')
 
-from csm.calculations import csm_calculations
+from csm.calculations import exact_calculations
 stopwatch.report("Imported csm_calculations")
 
 from csm.input_output.readers import read_inputs
@@ -92,9 +92,9 @@ def run(args=[]):
             csv_file = open(out_args['perms_csv_name'], 'w')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
             perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-            csm_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p + 1 for p in state.perm],
-                                                                                         state.dir,
-                                                                                         state.csm, ])
+            exact_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p + 1 for p in state.perm],
+                                                                                           state.dir,
+                                                                                           state.csm, ])
 
         # run actual calculation
         if calc_args['calc_type']=='approx':

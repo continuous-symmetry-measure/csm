@@ -2,6 +2,7 @@ from libc.math cimport sqrt
 import numpy as np
 cimport numpy as np
 from csm.calculations.constants import MAXDOUBLE
+from csm.calculations.basic_calculations import create_rotation_matrix
 
 cdef class Vector3D
 cdef class Matrix3D
@@ -132,6 +133,8 @@ def cycle_builder(chainperm):
         pass
 
 def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
+    print("Inside estimate_perm, dir=%s" % dir)
+
     # create rotation matrix
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
     # run rotation matrix on atoms
@@ -147,14 +150,14 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
 
     #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
     for cycle in cycle_builder(chainperm):
-        #print("cycle", cycle)
+        print("cycle", cycle)
         for chain_group in molecule.chain_groups:
             #print("chain group", chain_group)
             #1. find the "group" we will be building a distance matrix with
             group=[]
             for chain_index in cycle:
                 group+=chain_group[chain_index]
-            #print("group is", group)
+            print("group of length %d" % len(group))
             distances = DistanceMatrix(group)
 
             #2. within that group, go over legal switches and add their distance to the matrix
@@ -167,8 +170,10 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
                          b = Q_holder.get_vector(k)
                          distance = array_distance(a,b)
                          distances.add(group.index(k), group.index(j), distance)
+            print("Distance matrix complete")
         #3. call the perm builder on the group
             perm = perm_builder(op_type, op_order, group, distances, perm, chainperm)
+            print("Built part of the perm")
             #(4. either continue to next group or finish)
 
     print(perm)
@@ -233,24 +238,3 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm, chainperm):
             perm[group[from_val]]=group[from_val]
             distance_matrix.remove(from_val, from_val)
     return perm
-
-
-# TODO: Move this back to Python (csm_calculations), or keep it in Cython and call it from Python
-def create_rotation_matrix(iOp, op_type, op_order, dir):
-    is_improper = op_type != 'CN'
-    is_zero_angle = op_type == 'CS'
-    W = np.array([[0.0, -dir[2], dir[1]], [dir[2], 0.0, -dir[0]], [-dir[1], dir[0], 0.0]])
-    rot = np.zeros((3, 3))
-    angle = 0.0 if is_zero_angle else 2 * np.pi * iOp / op_order
-    factor = -1 if is_improper and (iOp % 2) == 1 else 1
-
-    # The rotation matrix is calculated similarly to the Rodrigues rotation matrix. The only
-    # difference is that the matrix is also a reflection matrix when factor is -1.
-    #
-    # This is why we took the old C++ code instead of applying the Rodrigues formula directly.
-    for s in range(3):
-        for t in range(3):
-            ang = np.cos(angle) if s == t else 0
-            rot[s][t] = ang + ((factor - np.cos(angle)) * dir[s] * dir[t] + np.sin(angle) * W[s][t])
-
-    return rot
