@@ -151,8 +151,9 @@ class Molecule:
 
     def _process_chains(self, use_chains):
         """
+        TODO: Improve this comment
         within each equivalence class, labels by chain
-        self.chain_groups=[ {key:[]}]
+        self.group_chains=[ {key:[]}]
         """
 
         if not use_chains:
@@ -164,9 +165,10 @@ class Molecule:
             self.chainkeys[key]=i
             i+=1
 
-        chain_groups=[]
+        group_chains=[]
         for group in self.equivalence_classes:
             chaingroup={}
+
             for i, atom_index in enumerate(group):
                 try: #get chain-- if no chain, default to A
                     if use_chains:
@@ -180,8 +182,8 @@ class Molecule:
                     chaingroup[self.chainkeys[chain]].append(atom_index)
                 except: #create array in dict
                     chaingroup[self.chainkeys[chain]]=[atom_index]
-            chain_groups.append(chaingroup)
-        self.chain_groups=chain_groups
+            group_chains.append(chaingroup)
+        self.group_chains = group_chains
 
 
 

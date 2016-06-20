@@ -132,6 +132,18 @@ def cycle_builder(chainperm):
         #find and return cycles
         pass
 
+def build_matrix_indices(chain_cycle, group_chain):
+    """
+    Takes a chain_cycle (a->b->c->a or just a) and the
+    Args:
+        cycle:
+        chain_group:
+
+    Returns: vector[int] where vec[a] is the atom's index in the matrix
+
+    """
+    pass
+
 def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
     print("Inside estimate_perm, dir=%s" % dir)
 
@@ -151,21 +163,28 @@ def estimate_perm(op_type, op_order, molecule, dir,  chainperm, use_chains):
     #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
     for cycle in cycle_builder(chainperm):
         print("cycle", cycle)
-        for chain_group in molecule.chain_groups:
+        # Todo: Convert cycle into a vector[int]
+        for chain_group in molecule.group_chains:
             #print("chain group", chain_group)
             #1. find the "group" we will be building a distance matrix with
+            matrix_indices = build_matrix_indices(cycle, chain_group)
+            # Todo: Add a comment - what group is. Show an example.
             group=[]
             for chain_index in cycle:
                 group+=chain_group[chain_index]
             print("group of length %d" % len(group))
+            # Todo: invert group and keep in vector[int]:
+            # group[a] = b --> group_indices[b] = a . group_vec should probably be as long as the number of atoms in the molecule
+
             distances = DistanceMatrix(group)
 
             #2. within that group, go over legal switches and add their distance to the matrix
-            for chain_index in cycle:
+            for chain_index in cycle: # Use an iterator
+                # Todo: Convert from_chain and to_chain into vector[ints]
                 from_chain=chain_group[chain_index]
                 to_chain=chain_group[chainperm[chain_index]]
-                for j in from_chain:
-                     for k in to_chain:
+                for j in from_chain: # Use vector[int].iterator
+                     for k in to_chain: # Use vector[int].iterator
                          a = rotated_holder.get_vector(j)
                          b = Q_holder.get_vector(k)
                          distance = array_distance(a,b)
