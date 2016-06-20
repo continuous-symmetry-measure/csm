@@ -121,14 +121,13 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
 
         chain_permutations = []
-        if molecule.chains and use_chains:
-            chainkeys = list(molecule.chains.keys())
-            dummy = Molecule.dummy_molecule(len(molecule.chains))
-            permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
-            for state in permuter.permute():
-                chain_permutations.append([i for i in state.perm])
-        else:
-            chain_permutations.append([]) #this is probably not the correct solution
+        #if molecule.chains and use_chains:
+        #chainkeys = list(molecule.chains.keys())
+        dummy = Molecule.dummy_molecule(len(molecule.chains))
+        permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
+        for state in permuter.permute():
+            chain_permutations.append([i for i in state.perm])
+
 
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
@@ -142,7 +141,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                                                                     TruePermChecker, perm, approx=True)
                 #print("Dir %s, csm: %s" % (dir, interim_results.csm))
                 i = 0
-                max_iterations = 5
+                max_iterations = 2
                 while (i < max_iterations and math.fabs(
                             old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
                     old_results = interim_results
