@@ -151,43 +151,89 @@ class Molecule:
 
     def _process_chains(self, use_chains):
         """
-
-        within each equivalence class, labels by chain
-        self.group_chains=[array of equivalence classes:
+        1. if there are no chains, creates one large simulated chain
+        2. creates chainkeys, translating between chain names ('A','B') to a chain index (0,1...)
+        3. within each equivalence class, labels by chain
+            self.group_chains=[array of equivalence classes:
                             {dictionary of chains:
                                 [array of indexes belonging to that chain in that equivalence class]
                             }
                         ]
+        4. Calculates chain equivalencies. (e.g, chains A and B are equivalent, chains C and D are equivalent)
         """
 
-        if not use_chains:
-            self._chains = {'A': list(range(len(self.atoms)))}  # Default - one chain of all the atoms
+        #1. if there are no chains, creates one large simulated chain
+        try:
+            if not use_chains:
+                self._chains = {'Sim': list(range(len(self.atoms)))}  # Default - one chain of all the atoms, "simulated"
+                print("--useChains not specified. Using one simulated chain of len %d" % len(self._chains['Sim']))
+            else:
+                self.atoms[0].chain #see if there even are chains
+        except:
+            self._chains = {'Sim': list(range(len(self.atoms)))}  # Default - one chain of all the atoms, "simulated"
+            print("Molecule has no chains specified. Using one simulated chain of len %d" % len(self.chains['Sim']))
 
+        #2. creates chainkeys, translating between chain names ('A','B') to a chain index (0,1...)
         i=0
         self.chainkeys= {}
         for key in self._chains:
             self.chainkeys[key]=i
             i+=1
 
+        #3. within each equivalence class, labels by chain
         group_chains=[]
         for group in self.equivalence_classes:
             chaingroup={}
 
             for i, atom_index in enumerate(group):
-                try: #get chain-- if no chain, default to A
+                try: #get chain-- if no chains, or not use_chains default to chain 0
                     if use_chains:
-                        chain= self.atoms[atom_index].chain
+                        chain= self.chainkeys[self.atoms[atom_index].chain]
                     else:
-                        chain= 'A'
+                        chain= 0
                 except:
-                    chain= 'A'
+                    chain= 0
 
                 try:#add index to array in dict
-                    chaingroup[self.chainkeys[chain]].append(atom_index)
+                    chaingroup[chain].append(atom_index)
                 except: #create array in dict
-                    chaingroup[self.chainkeys[chain]]=[atom_index]
+                    chaingroup[chain]=[atom_index]
             group_chains.append(chaingroup)
         self.group_chains = group_chains
+
+        #4. Calculates chain equivalencies. (e.g, chains A and B are equivalent, chains C and D are equivalent)
+        logger.debug("Calculating chain equivalency")
+        chain_equiv=list()
+        marked=np.zeros(len(self.chainkeys))
+        for chain in self.chains:
+            chainkey=self.chainkeys[chain]
+            if marked[chainkey]==1:
+                continue
+            equiv=list()
+            for chain in self.chains:
+                chainkey2 = self.chainkeys[chain]
+                same_lengths=True
+                for group in group_chains:
+                    try:
+                        length=len(group[chainkey])
+                    except:
+                        continue
+                    try:
+                        if length!=len(group[chainkey2]):
+                            same_lengths=False
+                    except KeyError:
+                        same_lengths=False
+                if same_lengths:
+                    equiv.append(int(chainkey2))
+                    marked[chainkey2]=1
+            chain_equiv.append(equiv)
+        print(chain_equiv)
+
+
+
+
+
+
 
 
 
@@ -349,8 +395,7 @@ class Molecule:
             if use_chains:
                 for chain in self.chains:
                     print ("Chain %s of length %d" % (chain, len(self.chains[chain])))
-            else:
-                print("--useChains not specified. using one simulated chain of len %d" %len(self.chains['A']))
+
 
         print("Breaking molecule into similarity groups")
         self._calculate_equivalency(remove_hy, ignore_hy)

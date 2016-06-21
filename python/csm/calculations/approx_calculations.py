@@ -134,7 +134,6 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                     i += 1
                     perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains)
                     interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
-                    print("csm:", str(interim_results.csm))
                     if interim_results.csm < best_for_this_dir.csm:
                         best_for_this_dir = interim_results
 
