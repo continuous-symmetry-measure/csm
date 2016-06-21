@@ -1,4 +1,4 @@
-# cython: profile=False
+# cython: profile=True
 # cython: language-level=3
 # cython: boundscheck=False, wraparound=False, nonecheck=False
 

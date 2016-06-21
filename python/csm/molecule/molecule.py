@@ -151,9 +151,13 @@ class Molecule:
 
     def _process_chains(self, use_chains):
         """
-        TODO: Improve this comment
+
         within each equivalence class, labels by chain
-        self.group_chains=[ {key:[]}]
+        self.group_chains=[array of equivalence classes:
+                            {dictionary of chains:
+                                [array of indexes belonging to that chain in that equivalence class]
+                            }
+                        ]
         """
 
         if not use_chains:
