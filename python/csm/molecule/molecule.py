@@ -176,8 +176,10 @@ class Molecule:
         #2. creates chainkeys, translating between chain names ('A','B') to a chain index (0,1...)
         i=0
         self.chainkeys= {}
+        self.reversechainkeys={}
         for key in self._chains:
             self.chainkeys[key]=i
+            self.reversechainkeys[i]=key
             i+=1
 
         #3. within each equivalence class, labels by chain
@@ -202,7 +204,6 @@ class Molecule:
         self.group_chains = group_chains
 
         #4. Calculates chain equivalencies. (e.g, chains A and B are equivalent, chains C and D are equivalent)
-        logger.debug("Calculating chain equivalency")
         chain_equiv=list()
         marked=np.zeros(len(self.chainkeys))
         for chain in self.chains:
@@ -227,7 +228,7 @@ class Molecule:
                     equiv.append(int(chainkey2))
                     marked[chainkey2]=1
             chain_equiv.append(equiv)
-        print(chain_equiv)
+        self.chain_equivalences=chain_equiv
 
 
 
@@ -395,24 +396,30 @@ class Molecule:
             if use_chains:
                 for chain in self.chains:
                     print ("Chain %s of length %d" % (chain, len(self.chains[chain])))
+                print("%d group%s of equivalent chains" % (len(self.chain_equivalences), 's' if lengths[key] else ''))
+                for chaingroup in self.chain_equivalences:
+                    chainstring="Group of length " + str(len(chaingroup))+":"
+                    for index in chaingroup:
+                        chainstring+=" "
+                        chainstring+=str(self.reversechainkeys[index])
+                    print(str(chainstring))
 
 
         print("Breaking molecule into similarity groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
         self._process_chains(use_chains)
         print("Broken into "+str(len(self._equivalence_classes))+" groups")
-        #diagnostics()
+        diagnostics()
         self.normalize()
 
     @staticmethod
-    def dummy_molecule(size):
+    def dummy_molecule(size, groups):
         atoms=[]
         for i in range(size):
             atom = Atom("XX", (0,0,0), False)
             atoms.append(atom)
         mol= Molecule(atoms)
-        group = [i for i in range(size)]
-        mol._equivalence_classes=[group]
+        mol._equivalence_classes=groups
         return mol
 
     @staticmethod

@@ -109,7 +109,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
         chain_permutations = []
         #if molecule.chains and use_chains:
         #chainkeys = list(molecule.chains.keys())
-        dummy = Molecule.dummy_molecule(len(molecule.chains))
+        dummy = Molecule.dummy_molecule(len(molecule.chains), molecule.chain_equivalences)
         permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
         for state in permuter.permute():
             chain_permutations.append([i for i in state.perm])

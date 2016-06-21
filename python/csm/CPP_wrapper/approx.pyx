@@ -34,9 +34,6 @@ cdef class DistanceMatrix:
         self._allowed_rows[from_val] = 1
         self._allowed_cols[to_val] = 1
 
-    def sort(self):
-        pass#self.list_distances = newlist = sorted(self.list_distances, key=lambda x: x.distance)
-
     def remove(self, int from_val, int to_val):
         self._allowed_rows[from_val] = 0
         self._allowed_cols[to_val] = 0
@@ -65,12 +62,6 @@ cdef class DistanceMatrix:
                             min_j = j
         return (min_i, min_j)
 
-    def get_min_val_old(self):
-        a = self.mv_distances
-        argmin=np.argmin(a)
-        from_val = int(argmin/ len(a[0]))
-        to_val= int(argmin % len(a[0]))
-        return (from_val, to_val)
 
     def get_next_in_cycle(self, int from_val, constraints):
         if not self._allowed_rows[from_val]:
@@ -180,7 +171,6 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains):
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
     # run rotation matrix on atoms
     rotated = (rotation_mat @ molecule.Q.T).T
-    ##print("Chainperm", chainperm)
     cdef Vector3DHolder rotated_holder = Vector3DHolder(rotated)
     cdef Vector3DHolder Q_holder = Vector3DHolder(molecule.Q)
     cdef int[:] atom_to_matrix_indices = np.ones(len(molecule), dtype=int) * -1
@@ -190,13 +180,16 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains):
     #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
     for cycle in cycle_builder(chain_perm):
         # Todo: Convert cycle into a vector[int]
-        for chain_group in molecule.group_chains:
-            #1. create the group of atom indices we will be building a a distance matrix with
-            current_atom_indices=get_atom_indices(cycle, chain_group)
+        for chains_in_group in molecule.group_chains:
+            #1. create the group of atom indices we will be building a distance matrix with
+            try:
+                current_atom_indices=get_atom_indices(cycle, chains_in_group)
+            except KeyError: #chaingroup does not have chains belonging to current cycle
+                continue #continue to next chain group
             atom_to_matrix_indices=get_atom_to_matrix_indices(current_atom_indices, atom_to_matrix_indices)
 
             #2. within that group, go over legal switches and add their distance to the matrix
-            distances=fill_distance_matrix(len(current_atom_indices), cycle, chain_group, chain_perm, rotated_holder, Q_holder, atom_to_matrix_indices)
+            distances=fill_distance_matrix(len(current_atom_indices), cycle, chains_in_group, chain_perm, rotated_holder, Q_holder, atom_to_matrix_indices)
 
             #3. call the perm builder on the group
             perm = perm_builder(op_type, op_order, current_atom_indices, distances, perm)
@@ -205,14 +198,13 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains):
     return perm
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm):
-    ##print("Building permutation for group of len %d" % len(group))
-    #group_id=np.min(group)
+    #print("Building permutation for group of len %d" % len(group))
     left=len(group)
     while left>=op_order:
-        ##print("Building cycle (left=%d)..." % left)
+        #print("Building cycle (left=%d)..." % left)
         (from_val, to_val)=distance_matrix.get_min_val()
         perm[group[from_val]]=group[to_val]
-        ##print("%d --> %d" % (from_val, to_val))
+        #print("%d --> %d" % (from_val, to_val))
         distance_matrix.remove(from_val, to_val)
         left-=1
         if from_val==to_val: #cycle length 1 completed
@@ -240,7 +232,7 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm):
                     cycle_done=True
                 (from_val, to_val)=(next_from_val, next_to_val)
 
-            ##print("%d --> %d" % (from_val, to_val))
+            #print("%d --> %d" % (from_val, to_val))
             perm[group[from_val]]=group[to_val]
             distance_matrix.remove(from_val, to_val)
             left-=1
@@ -259,7 +251,9 @@ def perm_builder(op_type, op_order, group, distance_matrix, perm):
             perm[group[to_val]] = group[from_val]
             distance_matrix.remove(from_val, to_val)
             distance_matrix.remove(to_val, from_val)
+            #print("%d --> %d" % (from_val, to_val))
         else:
             perm[group[from_val]]=group[from_val]
+            #print("%d --> %d" % (from_val, from_val))
             distance_matrix.remove(from_val, from_val)
     return perm
