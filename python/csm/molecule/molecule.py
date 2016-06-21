@@ -103,7 +103,7 @@ class Molecule:
 
             group_num += 1
 
-        logger.debug("initial number of groups:", group_num)
+        logger.debug("initial number of groups:"+ str(group_num))
         # iteratively refine the breakdown into groups
         # break into subgroups at an infinite depth - as long as there's something to break, it is broken
 
@@ -356,7 +356,7 @@ class Molecule:
         self._calculate_equivalency(remove_hy, ignore_hy)
         self._process_chains(use_chains)
         print("Broken into "+str(len(self._equivalence_classes))+" groups")
-        diagnostics()
+        #diagnostics()
         self.normalize()
 
     @staticmethod
