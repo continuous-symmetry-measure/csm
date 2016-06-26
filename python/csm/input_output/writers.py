@@ -2,7 +2,13 @@ __author__ = 'YAEL'
 
 import openbabel
 from openbabel import OBConversion
+import math
 
+def non_negative_zero(number):
+    if math.fabs(number)<0.00001:
+        return 0.0000
+    else:
+        return number
 
 def print_results(result, in_args, calc_args, out_args):
     """
@@ -17,7 +23,7 @@ def print_results(result, in_args, calc_args, out_args):
         return
     with open(out_args['out_file_name'], 'w', encoding='utf-8') as f:
         f.write("%s: %.4lf\n" % (calc_args['op_name'], abs(result.csm)))
-        f.write("SCALING FACTOR: %7lf\n" % result.d_min)
+        f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(result.d_min))
 
         # print CSM, initial molecule, resulting structure and direction according to format specified
 
@@ -29,9 +35,11 @@ def print_results(result, in_args, calc_args, out_args):
         # print norm
 
         if out_args['print_norm']:
-            print("NORMALIZATION FACTOR: %7lf" % result.molecule.norm_factor)
-            print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % result.d_min)
-            print("DIRECTIONAL COSINES: %lf %lf %lf" % (result.dir[0], result.dir[1], result.dir[2]))
+            print("NORMALIZATION FACTOR: %7lf" % non_negative_zero(result.molecule.norm_factor))
+            print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % non_negative_zero(result.d_min))
+            print("DIRECTIONAL COSINES: %lf %lf %lf" % (non_negative_zero(result.dir[0]),
+                                                        non_negative_zero(result.dir[1]),
+                                                        non_negative_zero(result.dir[2])))
             print("NUMBER OF EQUIVALENCE GROUPS: %d" % len(result.molecule.equivalence_classes))
 
         # print local CSM
@@ -42,7 +50,7 @@ def print_results(result, in_args, calc_args, out_args):
             size = len(result.molecule.atoms)
             for i in range(size):
                 sum += result.localCSM[i]
-                f.write("%s %7lf\n" % (result.molecule.atoms[i].symbol, result.localCSM[i]))
+                f.write("%s %7lf\n" % (result.molecule.atoms[i].symbol, non_negative_zero(result.localCSM[i])))
             f.write("\nsum: %7lf\n" % sum)
 
         # print chirality
@@ -76,9 +84,9 @@ def print_output(f, result, calc_args):
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
                 (result.molecule.atoms[i].symbol,
-                 result.molecule.atoms[i].pos[0],
-                 result.molecule.atoms[i].pos[1],
-                 result.molecule.atoms[i].pos[2]))
+                 non_negative_zero(result.molecule.atoms[i].pos[0]),
+                 non_negative_zero(result.molecule.atoms[i].pos[1]),
+                 non_negative_zero(result.molecule.atoms[i].pos[2])))
 
     for i in range(size):
         f.write("%d " % (i + 1))
@@ -93,9 +101,9 @@ def print_output(f, result, calc_args):
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
                 (result.molecule.atoms[i].symbol,
-                 result.symmetric_structure[i][0],
-                 result.symmetric_structure[i][1],
-                 result.symmetric_structure[i][2]))
+                 non_negative_zero(result.symmetric_structure[i][0]),
+                 non_negative_zero(result.symmetric_structure[i][1]),
+                 non_negative_zero(result.symmetric_structure[i][2])))
 
     for i in range(size):
         f.write("%d " % (i + 1))
@@ -106,7 +114,7 @@ def print_output(f, result, calc_args):
     # print dir
 
     f.write("\n DIRECTIONAL COSINES:\n\n")
-    f.write("%lf %lf %lf\n" % (result.dir[0], result.dir[1], result.dir[2]))
+    f.write("%lf %lf %lf\n" % (non_negative_zero(result.dir[0]), non_negative_zero(result.dir[1]), non_negative_zero(result.dir[2])))
 
 
 def print_output_ob(f, result, in_args, calc_args, out_args):
@@ -126,9 +134,9 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     for i in range(num_atoms):
         try:
             atom = result.molecule.obmol.GetAtom(i + 1)
-            atom.SetVector(result.molecule.atoms[i].pos[0],
-                       result.molecule.atoms[i].pos[1],
-                       result.molecule.atoms[i].pos[2])
+            atom.SetVector(non_negative_zero(result.molecule.atoms[i].pos[0]),
+                       non_negative_zero(result.molecule.atoms[i].pos[1]),
+                       non_negative_zero(result.molecule.atoms[i].pos[2]))
         except:
             pass
 
@@ -141,9 +149,9 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     for i in range(num_atoms):
         try:
             a=mol.GetAtom(i+1)
-            a.SetVector(result.symmetric_structure[i][0],
-                       result.symmetric_structure[i][1],
-                       result.symmetric_structure[i][2])
+            a.SetVector(non_negative_zero(result.symmetric_structure[i][0]),
+                       non_negative_zero(result.symmetric_structure[i][1]),
+                       non_negative_zero(result.symmetric_structure[i][2]))
         except:
             pass
 
@@ -153,7 +161,9 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     # print dir
 
     f.write("\n DIRECTIONAL COSINES:\n\n")
-    f.write("%lf %lf %lf\n" % (result.dir[0], result.dir[1], result.dir[2]))
+    f.write("%lf %lf %lf\n" % (non_negative_zero(result.dir[0]),
+                               non_negative_zero(result.dir[1]),
+                               non_negative_zero(result.dir[2])))
 
     if out_args['write_openu']:
         print("SV* %.4lf *SV\n" % abs(result.csm))
@@ -171,7 +181,7 @@ def update_coordinates(obmol, out_atoms):
     num_atoms = obmol.NumAtoms()
     for i in range(num_atoms):
         atom = obmol.GetAtom(i + 1)
-        atom.SetVector(out_atoms[i]['pos'][0], out_atoms[i]['pos'][1], out_atoms[i]['pos'][2])
+        atom.SetVector(non_negative_zero(out_atoms[i]['pos'][0]), non_negative_zero(out_atoms[i]['pos'][1]), non_negative_zero(out_atoms[i]['pos'][2]))
 
 
 def write_ob_molecule(mol, format, f):

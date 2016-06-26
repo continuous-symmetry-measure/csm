@@ -574,6 +574,7 @@ class Molecule:
 
                 atoms[i].adjacent = neighbours
 
+            chains={}
             try:
                 numchains=int(f.readline())
                 chains=OrderedDict()
