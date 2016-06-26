@@ -1,27 +1,10 @@
-class Stopwatch:
-    def __init__(self):
-        import time
-        self._start = time.time()
-        self._prev= self._start
-
-    def elapsed(self):
-        import time
-        return time.time() - self._start
-
-    def interval(self):
-        import time
-        interval= time.time()-self._prev
-        self._prev=time.time()
-        return interval
-
-    def report(self, msg):
-        return
-
 import numpy as np
 import math
 import logging
+import munkres
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP, estimate_perm
+from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
+from csm.fast import estimate_perm as cython_estimate_perm
 from csm.fast import external_get_eigens as cppeigen
 from csm.calculations.exact_calculations import csm_operation, CSMState, process_results
 from csm.molecule.molecule import Molecule
@@ -29,6 +12,11 @@ from csm.molecule.molecule import Molecule
 
 logger = logging.getLogger("csm")
 
+
+def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, *args, **kwargs):
+    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains)
+    #print(is_legal(results.perm, molecule))
+    return process_results(results)
 
 def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **kwargs):
     if molecule.chains and use_chains:
@@ -87,11 +75,8 @@ def is_legal(perm, molecule):
     return legal
 
 
-
-def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, *args, **kwargs):
-    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains)
-    #print(is_legal(results.perm, molecule))
-    return process_results(results)
+def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains):
+    return cython_estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains)
 
 
 def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):

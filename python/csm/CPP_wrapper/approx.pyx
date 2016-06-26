@@ -5,6 +5,8 @@ cimport numpy as np
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.basic_calculations import create_rotation_matrix
 
+from munkres import Munkres
+
 cdef class Vector3D
 cdef class Matrix3D
 
@@ -86,6 +88,9 @@ cdef class DistanceMatrix:
             raise ValueError("Can't find next in cycle. Constraints: %s" % str(constraints))
         return (from_val, min_i)
 
+    def get_matrix(self):
+        return self.mv_distances.base
+
     def tostr(self):
         ##print(self.mv_distances.base)
         pass
@@ -165,7 +170,7 @@ cdef fill_distance_matrix(len_group, cycle, chain_group, chain_perm, Vector3DHol
                 distances.add(matrix_indices[to_chain_index], matrix_indices[from_chain_index], distance)
     return distances
 
-def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains):
+def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains, hungarian):
     #print("Inside estimate_perm, dir=%s" % dir)
     # create rotation matrix
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
@@ -192,10 +197,23 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains):
             distances=fill_distance_matrix(len(current_atom_indices), cycle, chains_in_group, chain_perm, rotated_holder, Q_holder, atom_to_matrix_indices)
 
             #3. call the perm builder on the group
-            perm = perm_builder(op_type, op_order, current_atom_indices, distances, perm)
+            if hungarian:
+                perm = hungarian_perm_builder(op_type, op_order, current_atom_indices, distances, perm)
+            else:
+                perm = perm_builder(op_type, op_order, current_atom_indices, distances, perm)
             #(4. either continue to next group or finish)
     #print(perm)
     return perm
+
+def hungarian_perm_builder(op_type, op_order, group, distance_matrix, perm):
+    m = Munkres()
+    matrix=distance_matrix.get_matrix()
+    indexes = m.compute(matrix)
+    for (from_val, to_val) in indexes:
+        perm[group[from_val]]=group[to_val]
+    return perm
+
+
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm):
     #print("Building permutation for group of len %d" % len(group))

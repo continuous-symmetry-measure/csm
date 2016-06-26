@@ -409,7 +409,7 @@ class Molecule:
         self._calculate_equivalency(remove_hy, ignore_hy)
         self._process_chains(use_chains)
         print("Broken into "+str(len(self._equivalence_classes))+" groups")
-        diagnostics()
+        #diagnostics()
         self.normalize()
 
     @staticmethod
