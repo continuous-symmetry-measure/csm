@@ -4,7 +4,7 @@ import logging
 import munkres
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
-from csm.fast import estimate_perm as cython_estimate_perm
+from csm.fast import estimate_perm #as cython_estimate_perm
 from csm.fast import external_get_eigens as cppeigen
 from csm.calculations.exact_calculations import csm_operation, CSMState, process_results
 from csm.molecule.molecule import Molecule
@@ -13,8 +13,8 @@ from csm.molecule.molecule import Molecule
 logger = logging.getLogger("csm")
 
 
-def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, *args, **kwargs):
-    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains)
+def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, hungarian=False, *args, **kwargs):
+    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian)
     #print(is_legal(results.perm, molecule))
     return process_results(results)
 
@@ -75,17 +75,13 @@ def is_legal(perm, molecule):
     return legal
 
 
-def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains):
-    return cython_estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains)
-
-
-def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
+def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian):
     if op_type == 'CI' or (op_type == 'SN' and op_order == 2):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
         #TODO- this code is no longer correct bc chainperm
-        perm = estimate_perm(op_type, op_order, molecule, dir, [], False)
+        perm = estimate_perm(op_type, op_order, molecule, dir, [], False, hungarian)
         best = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
 
     else:
@@ -105,7 +101,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
         for dir in dirs:
             for chainperm in chain_permutations:
                 # find permutation for this direction of the symmetry axis
-                perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, use_chains)
+                perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, use_chains, hungarian)
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
@@ -117,7 +113,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
                            (math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01) and interim_results.csm > 0.0001):
                     old_results = interim_results
                     i += 1
-                    perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains)
+                    perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains, hungarian)
                     interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
                     if interim_results.csm < best_for_this_dir.csm:
                         best_for_this_dir = interim_results

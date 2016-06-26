@@ -74,6 +74,8 @@ def _create_parser():
                         help='Writes all enumerated permutations to file')
     parser.add_argument('--useChains', action='store_true', default=False,
                         help='Use chains specified in the PDB file in order to calculate permutations')
+    parser.add_argument('--hungarian', action='store_true', default=False,
+                        help='Use hungarian algorithm in approx')
 
     return parser
 
@@ -197,7 +199,8 @@ def _process_split_arguments(parse_res):
         calc_args['calc_type'] = 'approx'
         #calc_args['find_perm'] = True
         calc_args['detect_outliers'] = True
-
+    if parse_res.hungarian:
+        calc_args['hungarian'] = True
 
     if parse_res.outputPerms:
         calc_args['print_perms'] = True
