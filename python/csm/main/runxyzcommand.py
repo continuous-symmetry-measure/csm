@@ -11,7 +11,7 @@ from csm.molecule.molecule import Molecule
 outputdirectory=r'D:\UserData\devora\Sources\csm\test_cases\inbal\expected_output\expected_output_'
 inputdirectory=r'D:\UserData\devora\Sources\csm\test_cases\inbal\input\input_'
 testnames= ['1_methane_csm',
-            '2_biphenyls',
+            #'2_biphenyls',
             '3_cyclopentadiene',
             '4_clusters']
 

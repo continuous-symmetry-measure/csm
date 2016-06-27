@@ -5,7 +5,7 @@ from csm.input_output.arguments import get_operation_data
 from csm.molecule.molecule import Molecule
 from openbabel import OBAtomAtomIter, OBConversion, OBMol
 from csm.molecule.atom import GetAtomicSymbol, Atom
-from csm.calculations.csm_calculations import exact_calculation
+from csm.calculations.exact_calculations import exact_calculation
 import numpy as np
 import csv
 import re
@@ -231,19 +231,19 @@ def run():
     molfile = os.path.join(directory, r'/input/input_2_biphenyl/biphenyl_test.xyz')
     symmfile = os.path.join(directory, r'/expected_output/expected_output_2_biphenyls/sym.txt')
     resfile = os.path.join(directory, r'/expected_output/expected_output_2_biphenyls/csmresults.log')
-    runtests(molfile, symmfile, resfile, directory, name)
+    #runtests(molfile, symmfile, resfile, directory, name)
 
     name = "cyclopentadiene_test"
     molfile = os.path.join(directory, r'input/input_3_cyclopentadiene/cyclopentadiene-test.xyz')
     symmfile = os.path.join(directory, r'expected_output/expected_output_3_cyclopentadiene/sym.txt')
     resfile = os.path.join(directory, r'expected_output/expected_output_3_cyclopentadiene/csmresults.log')
-    #runtests(molfile, symmfile, resfile, directory, name)
+    runtests(molfile, symmfile, resfile, directory, name)
 
     name = "4cluster_test"
     molfile = os.path.join(directory, r'/input/input_4-clusters/W_Au12_optimized_B3P86.xyz')
     symmfile = os.path.join(directory, r'/expected_output/expected_output_4_clusters/sym.txt')
     resfile = os.path.join(directory, r'/expected_output/expected_output_4_clusters/csmresults.log')
-    #runtests(molfile, symmfile, resfile, directory, name)
+    runtests(molfile, symmfile, resfile, directory, name)
 
 
 if __name__ == '__main__':

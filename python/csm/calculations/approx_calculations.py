@@ -1,48 +1,22 @@
-class Stopwatch:
-    def __init__(self):
-        import time
-        self._start = time.time()
-        self._prev= self._start
-
-    def elapsed(self):
-        import time
-        return time.time() - self._start
-
-    def interval(self):
-        import time
-        interval= time.time()-self._prev
-        self._prev=time.time()
-        return interval
-
-    def report(self, msg):
-        print('\t%6.3f (%6.3f ) %s' % (self.elapsed(), self.interval(), msg))
-
-stopwatch = Stopwatch()
-
-stopwatch.report("Stopwatch started in approx_calculations:")
-
 import numpy as np
-stopwatch.report("Imported numpy")
 import math
-stopwatch.report("Imported math")
 import logging
-stopwatch.report("Imported logging")
-from collections import namedtuple
-stopwatch.report("Imported namedtuple")
+import munkres
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-stopwatch.report("Imported constants (MIN, MAX)")
-from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP, estimate_perm
-stopwatch.report("Imported CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP, estimate_perm")
+from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
+from csm.fast import estimate_perm #as cython_estimate_perm
 from csm.fast import external_get_eigens as cppeigen
-stopwatch.report("Imported external_get_eigens")
-from csm.calculations.csm_calculations import csm_operation, CSMState, create_rotation_matrix, process_results
-stopwatch.report("Imported csm_operation, CSMState, create_rotation_matrix, process_results")
+from csm.calculations.exact_calculations import csm_operation, CSMState, process_results
 from csm.molecule.molecule import Molecule
-stopwatch.report("Imported Molecule")
 
 
 logger = logging.getLogger("csm")
 
+
+def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, hungarian=False, *args, **kwargs):
+    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian)
+    #print(is_legal(results.perm, molecule))
+    return process_results(results)
 
 def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **kwargs):
     if molecule.chains and use_chains:
@@ -101,57 +75,50 @@ def is_legal(perm, molecule):
     return legal
 
 
-
-def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, *args, **kwargs):
-    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains)
-    #print(is_legal(results.perm, molecule))
-    return process_results(results)
-
-
-def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains):
+def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian):
     if op_type == 'CI' or (op_type == 'SN' and op_order == 2):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
-        perm = estimate_perm(op_type, op_order, molecule, dir)
+        #TODO- this code is no longer correct bc chainperm
+        perm = estimate_perm(op_type, op_order, molecule, dir, [], False, hungarian)
         best = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
 
     else:
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
 
         chain_permutations = []
-        if molecule.chains and use_chains:
-            chainkeys = list(molecule.chains.keys())
-            dummy = Molecule.dummy_molecule(len(molecule.chains))
-            permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
-            for state in permuter.permute():
-                chain_permutations.append([i for i in state.perm])
-        else:
-            chain_permutations.append([])
+        #if molecule.chains and use_chains:
+        #chainkeys = list(molecule.chains.keys())
+        dummy = Molecule.dummy_molecule(len(molecule.chains), molecule.chain_equivalences)
+        permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
+        for state in permuter.permute():
+            chain_permutations.append([i for i in state.perm])
+
 
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
         for dir in dirs:
             for chainperm in chain_permutations:
                 # find permutation for this direction of the symmetry axis
-                perm = estimate_perm(op_type, op_order, molecule, dir, chainperm)
+                perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, use_chains, hungarian)
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
                                                                     TruePermChecker, perm, approx=True)
-                print("Dir %s, csm: %s" % (dir, interim_results.csm))
+                #print("Dir %s, csm: %s" % (dir, interim_results.csm))
                 i = 0
                 max_iterations = 50
-                while (i < max_iterations and math.fabs(
-                            old_results.csm - interim_results.csm) > 0.01 and interim_results.csm > 0.0001):
+                while (i < max_iterations and
+                           (math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01) and interim_results.csm > 0.0001):
                     old_results = interim_results
                     i += 1
-                    perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm)
+                    perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains, hungarian)
                     interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
                     if interim_results.csm < best_for_this_dir.csm:
                         best_for_this_dir = interim_results
-            print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
 
+            print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
 
             if best_for_this_dir.csm < best.csm:
                 best = best_for_this_dir
