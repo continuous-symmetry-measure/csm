@@ -1,0 +1,2 @@
+/homes/new/yaffash4/mysym/prod/src/xyzsym -i 's10.xyz' -D '.' 
+#new_CSM.2012.11.05

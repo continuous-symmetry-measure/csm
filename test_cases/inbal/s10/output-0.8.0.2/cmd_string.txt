@@ -1,0 +1,4 @@
+/opt/PKG/Chem/mysym/perl_scripts/2.0/src/xyzsym -i 's10.xyz' -D '.' 
+# /opt/PKG/Chem/mysym/0.6.1/env
+#csm_run.py imported
+
