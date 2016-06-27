@@ -1,6 +1,11 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.8.3
+------------------------
+Fix to bug in calculation of direction
+-0 is printed as 0
+
 Changes in version 0.8.2
 ------------------------
 Added a slow Python implementation of the Hungarian Algorithm. Run with --hungarian
