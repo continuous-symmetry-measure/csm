@@ -1,6 +1,5 @@
 import math
 import numpy as np
-
 cdef class Vector3D
 cdef class Matrix3D
 
@@ -43,10 +42,12 @@ cdef class Cache:
     cdef _cross
     cdef _outer
     cdef _inner
+    cdef _mol
     def __init__(self, mol):
         self._cross= {}
         self._outer = {}
         self._inner={}
+        self._mol=mol
         cdef int i, j
         for group in mol.equivalence_classes:
             for i in group:
@@ -56,13 +57,23 @@ cdef class Cache:
                     self._outer[(i,j)]= outer_product_sum(mol.Q[i],mol.Q[j])
 
     cpdef double inner_product(Cache self, int i, int j):
-        return self._inner[(i,j)]
+        try:
+            return self._inner[(i,j)]
+        except KeyError:
+            return inner_product(self._mol.Q[i],self._mol.Q[j])
 
     cpdef Matrix3D outer_product_sum(Cache self, int i, int j):
-        return self._outer[(i,j)]
+        try:
+            return self._outer[(i,j)]
+        except KeyError:
+            return outer_product_sum(self._mol.Q[i],self._mol.Q[j])
 
     cpdef Vector3D cross(Cache self, int i, int j):
-        return self._cross[(i,j)]
+        try:
+            return self._cross[(i,j)]
+        except KeyError:
+            return cross_product(self._mol.Q[i],self._mol.Q[j])
+
 
 cdef class FakeCache(Cache):
     cdef mol

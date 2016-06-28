@@ -1,7 +1,26 @@
 from csm.molecule.molecule import Molecule
 
 
-def read_inputs(perm_file_name=None, dir_file_name=None, **kwargs):
+def check_perm_structure(mol, perm):
+    for origin, destination in enumerate(perm):
+        for adjacent in mol.atoms[destination].adjacent:
+            if (origin, perm[adjacent]) not in mol.bondset:
+                return False
+    return True
+
+def check_perm_equivalence(mol, perm):
+    for origin, destination in enumerate(perm):
+        if destination not in mol.atoms[origin].equivalency:
+            return False
+    return True
+
+def check_perm_validity(mol, perm):
+    if not check_perm_equivalence(mol, perm):
+        print("Permutation contains switches between non-equivalent atoms")
+    if not check_perm_structure(mol, perm):
+        print("Permutation does not preserve molecule structure")
+
+def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     """
     Reads all the inputs for CSM
     Args:
@@ -18,6 +37,8 @@ def read_inputs(perm_file_name=None, dir_file_name=None, **kwargs):
         if len(perm) != len(molecule.atoms):
             raise ValueError("Invalid permutation - permutation is of size %d but molecule has %d atoms" %
                              (len(perm), len(molecule.atoms)))
+        check_perm_validity(molecule, perm)
+
     else:
         perm = None
 
