@@ -40,6 +40,7 @@ def normalize_coords(coords, masses):
 
     if norm==0: #in the original code, this check was against MINDOUBLE.
         raise(ValueError("Normalization factor equals zero"))
+        #norm=default_value
 
 
     for i in range(size):

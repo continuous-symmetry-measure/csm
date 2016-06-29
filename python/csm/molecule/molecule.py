@@ -24,18 +24,30 @@ class Molecule:
 
     @property
     def Q(self):
+        '''
+        :return: a numpy array of the molecule's atoms' coordinates, each represented as a numpy array
+        '''
         return self._Q
 
     @property
     def atoms(self):
+        '''
+        :return: a list of atom objects
+        '''
         return self._atoms
 
     @property
     def bondset(self):
+        '''
+        :return: a set of tuples, each representing a pair of atoms with a bond between them
+        '''
         return self._bondset
 
     @property
     def equivalence_classes(self):
+        '''
+        :return: a list of the molecule's equivalence classes (themselves represented as lists), sorted in order of length
+        '''
         self._equivalence_classes.sort(key=len)
         return self._equivalence_classes
 
@@ -49,7 +61,25 @@ class Molecule:
 
     @property
     def chains(self):
+        '''
+        :return: a dictionary of the molecule's chains, with keys being the name of the chains
+        '''
         return self._chains
+
+    @property
+    def chainkeys(self):
+        '''
+        :return: a dictionary of the molecule's chains' keys (names), with the values number indexes
+        '''
+        return self._chainkeys
+
+    @property
+    def reversechainkeys(self):
+        '''
+        :return: a dictionary of the molecule's chains' keys (names), with the keys number indexes from chainkeys
+        '''
+        return self._reversechainkeys
+
 
     @property
     def obmol(self):
@@ -57,17 +87,6 @@ class Molecule:
 
     def __len__(self):
         return len(self._atoms)
-
-    def has_bond(self, atom_i, atom_j):
-        if (atom_i, atom_j) in self._bondset:
-            return True
-        return False
-
-    def atom_cords(self):
-        atoms = []
-        for atom in self._atoms:
-            atoms.append(atom.pos)
-        return atoms
 
     def _create_bondset(self):
         for i in range(len(self._atoms)):
@@ -201,11 +220,11 @@ class Molecule:
 
         #2. creates chainkeys, translating between chain names ('A','B') to a chain index (0,1...)
         i=0
-        self.chainkeys= {}
-        self.reversechainkeys={}
+        self._chainkeys= {}
+        self._reversechainkeys={}
         for key in self._chains:
-            self.chainkeys[key]=i
-            self.reversechainkeys[i]=key
+            self._chainkeys[key]=i
+            self._reversechainkeys[i]=key
             i+=1
 
         #3. within each equivalence class, labels by chain
@@ -267,7 +286,6 @@ class Molecule:
         :param kwargs: Place holder for all other csm_args.
         You can call it by passing **csm_args
         """
-
         if ignore_hy or remove_hy:
             self.strip_atoms(remove_hy, ignore_hy)
 
@@ -317,10 +335,6 @@ class Molecule:
             self._atoms[i].pos = norm_coords[i]
         self.create_Q()
 
-    def create_Q(self):
-        self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
-
-
     def de_normalize(self):
         coords = [atom.pos for atom in self._atoms]
         denorm_coords = de_normalize_coords(coords, self.norm_factor)
@@ -328,6 +342,12 @@ class Molecule:
         size = len(self._atoms)
         for i in range(size):
             self._atoms[i].pos = denorm_coords[i]
+
+    def create_Q(self):
+        self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
+
+
+
 
     def _complete_initialization(self, remove_hy, ignore_hy, use_chains):
         """
@@ -351,7 +371,7 @@ class Molecule:
                     chainstring="Group of length " + str(len(chaingroup))+":"
                     for index in chaingroup:
                         chainstring+=" "
-                        chainstring+=str(self.reversechainkeys[index])
+                        chainstring+=str(self._reversechainkeys[index])
                     print(str(chainstring))
 
 
@@ -364,6 +384,12 @@ class Molecule:
 
     @staticmethod
     def dummy_molecule(size, groups):
+        '''
+        The dummy molecule is a fake molecule used in the approx algorithm to generate chain permutations
+        :param size: number of "atoms" in the fake molecule
+        :param groups: the equivalence classes of those "atoms"
+        :return:
+        '''
         atoms=[]
         for i in range(size):
             atom = Atom("XX", (0,0,0), False)
