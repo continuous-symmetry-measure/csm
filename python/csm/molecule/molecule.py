@@ -75,6 +75,32 @@ class Molecule:
                 self._bondset.add((i, match))
 
     def _find_equivalence_classes(self):
+        def is_similar(atoms_group_num, a, b):
+            found = True
+            mark = set()
+
+            valency_a = len(self._atoms[a].adjacent)
+            valency_b = len(self._atoms[b].adjacent)
+
+            # for each of i's neighbours
+            for i in range(valency_a):
+                found = False
+
+                for j in range(valency_b):
+                    if j in mark:
+                        continue
+
+                    if atoms_group_num[self._atoms[a].adjacent[i]] == atoms_group_num[self._atoms[b].adjacent[j]]:
+                        # the i-th neighbour of 'a' belongs to the same group as the j-th neighbour of 'b'
+                        found = True
+                        mark.add(j)
+                        break
+
+                if not found:
+                    break
+
+            return found
+
         group_num = 0
         groups = []
         atoms_size = len(self._atoms)
@@ -124,7 +150,7 @@ class Molecule:
 
                 # for each item in the group (except the first) check if it can be split or not
                 for j in range(1, group_size):
-                    if not self.is_similar(atoms_group_num, group[j], first_elem):
+                    if not is_similar(atoms_group_num, group[j], first_elem):
                         # add elem to new subGroup
                         sub_group.append(group[j])
                         group[j] = -1
@@ -140,7 +166,7 @@ class Molecule:
 
             groups.extend(new_groups)
 
-        logger.debug("Broken into %d groups with %d iterations." % (group_num, num_iters))
+        #print("Broken into %d groups with %d iterations." % (group_num, num_iters))
 
         self._equivalence_classes = groups
         for group in groups:
@@ -233,39 +259,7 @@ class Molecule:
 
 
 
-
-
-
-
-
-
-    def is_similar(self, atoms_group_num, a, b):
-        found = True
-        mark = set()
-
-        valency_a = len(self._atoms[a].adjacent)
-        valency_b = len(self._atoms[b].adjacent)
-
-        # for each of i's neighbours
-        for i in range(valency_a):
-            found = False
-
-            for j in range(valency_b):
-                if j in mark:
-                    continue
-
-                if atoms_group_num[self._atoms[a].adjacent[i]] == atoms_group_num[self._atoms[b].adjacent[j]]:
-                    # the i-th neighbour of 'a' belongs to the same group as the j-th neighbour of 'b'
-                    found = True
-                    mark.add(j)
-                    break
-
-            if not found:
-                break
-
-        return found
-
-    def _calculate_equivalency(self, remove_hy=False, ignore_hy=False):
+    def _calculate_equivalency(self, remove_hy, ignore_hy):
         """
         Preprocess a molecule based on the arguments passed to CSM
         :param remove_hy: True if hydrogen atoms should be removed
@@ -273,86 +267,42 @@ class Molecule:
         :param kwargs: Place holder for all other csm_args.
         You can call it by passing **csm_args
         """
-        if not remove_hy:
-            self._find_equivalence_classes()
 
         if ignore_hy or remove_hy:
-            if self._obmol:
-                self._obmol.DeleteHydrogens()
-            remove_list = ["H", " H"]
-            self.strip_atoms(remove_list, ignore_hy)
-            self._find_equivalence_classes()
+            self.strip_atoms(remove_hy, ignore_hy)
 
-    def strip_atoms(self, remove_list, ignore_hy):
-            """
+        self._find_equivalence_classes()
+
+    def strip_atoms(self, remove_hy, ignore_hy):
+        """
             Creates a new Molecule from m by removing atoms who's symbol is in the remove list
             :param csm_args:
             :param removeList: atomic symbols to remove
-            """
-
-            # find atoms in removeList
-            to_remove = []
-            size = len(self._atoms)
-            for i in range(size):
-                hits = 0
-                for s in remove_list:
-                    if self._atoms[i].symbol == s:
-                        hits += 1
-                        break
-                if hits > 0:
-                    to_remove.append(i)
-            print(hits, "molecules of hydrogen removed or ignored")
-            if len(to_remove) > 0:
-                self.remove_atoms(to_remove, ignore_hy)
-
-    def remove_atoms(self, to_remove, ignore_hy):
         """
-        Removes atoms with indexes in the to_remove list from the molecule
-        :param csm_args:
-        :param to_remove:
-        """
-        move_indexes = {}
-        size = len(self._atoms)
-        j = 0
 
-        for i in range(size):
-            if i == to_remove[j]:
-                j += 1
-            else:
-                move_indexes[i] = i - j
-        j -= 1
+        remove_list = ["H", " H"]
+        removed_atoms=[]
+        # go backwards through the indexes, because we will be popping them, and earlier indexes change later indexes
+        for i in reversed(range(len(self._atoms))):
+            if self._atoms[i].symbol in remove_list:
+                removed_atoms.append(i)
 
-        for i in range(size - 1, 0, -1):
-            if i == to_remove[j]:
-                # remove the atom i
-                self._atoms.pop(i)
-                if not ignore_hy:
-                    if self.obmol:
-                        self.obmol.DeleteAtom(self.obmol.GetAtom(i + 1))
-                j -= 1
-            else:
-                # update the i-th atom adjacents
-                l = len(self._atoms[i].adjacent)
-                for k in range(l - 1, 0, -1):
-                    if self._atoms[i].adjacent[k] in move_indexes:
-                        self._atoms[i].adjacent[k] = move_indexes[self._atoms[i].adjacent[k]]
-                    else:
-                        self._atoms[i].adjacent.pop(k)
+        logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
 
-        if ignore_hy:
-            # update indexes in equivalence classes
-            groups_num = len(self._equivalence_classes)
-            for i in range(groups_num - 1, -1, -1):
-                group_size = len(self._equivalence_classes[i])
-                for j in range(group_size - 1, -1, -1):
-                    if self._equivalence_classes[i][j] in move_indexes:
-                        self._equivalence_classes[i][j] = move_indexes[self._equivalence_classes[i][j]]
-                    else:
-                        self._equivalence_classes[i].pop(j)
-                if len(self._equivalence_classes[i]) == 0:
-                    self._equivalence_classes.pop(i)
-        else:  # removeHy
-            self._find_equivalence_classes()
+        for to_remove in removed_atoms:
+            # remove the atom i from adjacency with its neighbors
+            for adjacent in self._atoms[to_remove].adjacent:
+                try:
+                    self._atoms[adjacent].adjacent.remove(to_remove)
+                except ValueError: #for whatever reason adjacent didn't have to_remove. probabaly bad openbabel input. doesn't matter
+                    pass
+
+            #remove the atom i from _atoms
+            self._atoms.pop(to_remove)
+
+            if remove_hy: #this is meant to affect print at end
+                self.obmol.DeleteAtom(self.obmol.GetAtom(i + 1))
+
 
 
     def normalize(self):
@@ -407,8 +357,8 @@ class Molecule:
 
         print("Breaking molecule into similarity groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
+        print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._process_chains(use_chains)
-        print("Broken into "+str(len(self._equivalence_classes))+" groups")
         #diagnostics()
         self.normalize()
 
@@ -586,5 +536,5 @@ class Molecule:
                         atoms[int(line[j])-1]._chain=chain_name
                         chains[chain_name].append(int(line[j])-1)
             except:
-                pass
+                pass #assume there are no chains
         return Molecule(atoms=atoms, chains=chains)
