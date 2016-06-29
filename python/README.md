@@ -1,6 +1,13 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.8.4
+------------------------
+enabled --useperm with a permutation that swiches between atoms of 
+different type or different connectivity. (prints message informing user)
+fixed bugs in remove_hy/ignore_hy code
+ 
+
 Changes in version 0.8.3
 ------------------------
 Fix to bug in calculation of direction
