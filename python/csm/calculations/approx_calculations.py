@@ -3,7 +3,7 @@ import math
 import logging
 import munkres
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-from csm.fast import CythonPermuter, SinglePermPermuter, TruePermChecker, PQPermChecker, CythonPIP
+from csm.fast import CythonPermuter, SinglePermPermuter
 from csm.fast import estimate_perm #as cython_estimate_perm
 from csm.fast import external_get_eigens as cppeigen
 from csm.calculations.exact_calculations import csm_operation, CSMState, process_results
@@ -24,7 +24,7 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
         chainkeys=list(molecule.chains.keys())
         chain_permutations = []
         dummy = Molecule.dummy_molecule(len(molecule._chains))
-        permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
+        permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
         for state in permuter.permute():
             chain_permutations.append(list(state.perm))
         for chainperm in chain_permutations:
@@ -82,7 +82,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
         dir = [1.0, 0.0, 0.0]
         #TODO- this code is no longer correct bc chainperm
         perm = estimate_perm(op_type, op_order, molecule, dir, [], False, hungarian)
-        best = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm)
+        best = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
 
     else:
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
@@ -91,7 +91,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
         #if molecule.chains and use_chains:
         #chainkeys = list(molecule.chains.keys())
         dummy = Molecule.dummy_molecule(len(molecule.chains), molecule.chain_equivalences)
-        permuter = CythonPermuter(dummy, op_order, op_type, TruePermChecker, perm_class=CythonPIP)
+        permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
         for state in permuter.permute():
             chain_permutations.append([i for i in state.perm])
 
@@ -104,8 +104,8 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                 perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, use_chains, hungarian)
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
-                best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule, SinglePermPermuter,
-                                                                    TruePermChecker, perm, approx=True)
+                best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule,
+                                                                   keep_structure=False, perm=perm)
                 #print("Dir %s, csm: %s" % (dir, interim_results.csm))
                 i = 0
                 max_iterations = 50
@@ -114,7 +114,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                     old_results = interim_results
                     i += 1
                     perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains, hungarian)
-                    interim_results = csm_operation(op_type, op_order, molecule, SinglePermPermuter, TruePermChecker, perm, approx=True)
+                    interim_results = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
                     if interim_results.csm < best_for_this_dir.csm:
                         best_for_this_dir = interim_results
 

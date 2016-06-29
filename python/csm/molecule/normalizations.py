@@ -38,7 +38,7 @@ def normalize_coords(coords, masses):
     norm = math.sqrt(norm)
     logger.debug("Second normalization factor is %lf and average is (%lf, %lf, %lf)" % (norm, x_avg, y_avg, z_avg))
 
-    if norm==0: #in th eoriginal code, this check was against MINDOUBLE.
+    if norm==0: #in the original code, this check was against MINDOUBLE.
         raise(ValueError("Normalization factor equals zero"))
 
 

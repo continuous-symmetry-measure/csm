@@ -17,6 +17,9 @@ cdef class PermsHolder
 __author__ = 'Devora'
 
 cdef class PermChecker:
+    """
+    an 'abstract class', that True and Structure permcheckers both inherit from.
+    """
     def __init__(self):
         pass
 
@@ -24,6 +27,9 @@ cdef class PermChecker:
         raise NotImplemented
 
 cdef class TruePermChecker(PermChecker):
+    """
+    always returns true when asked if a specific step in a permutation is legal
+    """
     def __init__(self, mol):
         pass
 
@@ -31,11 +37,14 @@ cdef class TruePermChecker(PermChecker):
         return True
 
 
-class PQPermChecker(PermChecker):
+class StructurePermChecker(PermChecker):
+    """
+    returns False if the proposed indices break the keepStructure constraint, and True otherwise
+    """
     def __init__(self, mol):
         self.mol = mol
 
-    def is_legal(self, CythonPIP pip, int origin, int destination):
+    def is_legal(self, PermInProgress pip, int origin, int destination):
         cdef int adjacent
         for adjacent in self.mol.atoms[destination].adjacent:
             if pip.p[adjacent] != -1 and (origin, pip.p[adjacent]) not in self.mol.bondset:
@@ -43,6 +52,13 @@ class PQPermChecker(PermChecker):
         return True
 
 cdef class CalcState:
+    """
+    A class that stores the ongoing partial calculation results of
+    the matrix A
+    the vector B
+    and the CSM value
+    as well as the permutation
+    """
     cdef public Matrix3D A
     cdef public Vector3D B
     cdef public PermsHolder perms
@@ -81,14 +97,11 @@ cdef class CalcState:
         def __set__(self, val):
             self.p=val
 
-cdef class CythonPIP:
+cdef class PermInProgress:
     cdef PermChecker permchecker
     cdef public CalcState state
     cdef public int molecule_size
     cdef public int op_order
-    cdef public double[:] costheta
-    cdef public double[:] sintheta
-    cdef double[:] multiplier
     cdef public long[:] p
     cdef public long[:] q
 
@@ -97,22 +110,44 @@ cdef class CythonPIP:
         self.molecule_size =len(mol.atoms)
         self.state = CalcState(len(mol.atoms), op_order, True)
         self.op_order=op_order
-        self.sintheta, self.costheta, self.multiplier= self._precalculate(op_type, op_order)
         self.p = -1 * np.ones((self.molecule_size,), dtype=np.int)  # Numpy array, but created once per molecule so no worries.
         self.q = -1 * np.ones((self.molecule_size,), dtype=np.int)
 
-    cpdef switch(CythonPIP self, int origin, int destination):
+    cpdef switch(PermInProgress self, int origin, int destination):
         if self.permchecker.is_legal(self, origin, destination):
             self.p[origin]=destination
             self.q[destination]=origin
             return True
         return False
 
-    cpdef unswitch(CythonPIP self, int origin, int destination):
+    cpdef unswitch(PermInProgress self, int origin, int destination):
         self.p[origin]= -1
         self.q[destination] = -1
 
-    cdef _precalculate(CythonPIP self, op_type, int op_order):
+    cpdef close_cycle(self, group):
+        self.state.perm=self.p
+        return None
+
+    cpdef unclose_cycle(self,  CalcState old_state):
+        pass
+
+
+
+cdef class PreCalcPIP(PermInProgress):
+    cdef Cache cache
+    cdef public double[:] costheta
+    cdef public double[:] sintheta
+    cdef double[:] multiplier
+    def __init__(self, mol, op_order, op_type, permchecker, use_cache=True):
+        super().__init__(mol, op_order, op_type, permchecker)
+        if use_cache: #and len(mol)<SomeNumber:
+            self.cache = Cache(mol)
+        else:
+            self.cache=FakeCache(mol)
+
+        self.sintheta, self.costheta, self.multiplier= self._precalculate(op_type, op_order)
+
+    cdef _precalculate(PreCalcPIP self, op_type, int op_order):
         cdef bool is_improper = op_type != 'CN'
         cdef bool is_zero_angle = op_type == 'CS'
         cdef double[:] sintheta = np.zeros(op_order)
@@ -131,24 +166,6 @@ cdef class CythonPIP:
             else:
                 multiplier[i] = 1 - cos
         return sintheta, costheta, multiplier
-
-    cpdef close_cycle(self, group):
-        self.state.perm=self.p
-        return None
-
-    cpdef unclose_cycle(self,  CalcState old_state):
-        pass
-
-
-
-cdef class PreCalcPIP(CythonPIP):
-    cdef Cache cache
-    def __init__(self, mol, op_order, op_type, permchecker, approx=False):
-        super().__init__(mol, op_order, op_type, permchecker)
-        if approx:
-            self.cache=FakeCache(mol)
-        else:
-            self.cache = Cache(mol)
 
     cpdef close_cycle(self, group):
         old_state = self.state.copy()
@@ -181,15 +198,25 @@ cdef class PreCalcPIP(CythonPIP):
 
 cdef class CythonPermuter:
     cdef _groups
-    cdef CythonPIP _pip
+    cdef PermInProgress _pip
     cdef _cycle_lengths
     cdef int _max_length
     cdef public int count
     cdef int first_index
 
-    def __init__(self, mol, op_order, op_type, perm_checker, perm_class=PreCalcPIP):
+    def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True):
         self.count=0
         self._groups = mol.equivalence_classes
+
+        if keep_structure:
+            perm_checker=StructurePermChecker
+        else:
+            perm_checker=TruePermChecker
+        if precalculate:
+            perm_class=PreCalcPIP
+        else:
+            perm_class=PermInProgress
+
         self._pip = perm_class(mol, op_order, op_type, perm_checker)
         self._cycle_lengths = (1, op_order)
         if op_type == 'SN':
@@ -263,14 +290,14 @@ cdef class CythonPermuter:
 class SinglePermPermuter:
     """ A permuter that returns just one permutation, used for when the permutation is specified by the user """
     class SinglePIP(PreCalcPIP):
-        def __init__(self, mol, perm, op_order, op_type, approx):
-            super().__init__(mol, op_order, op_type, TruePermChecker, approx)
+        def __init__(self, mol, perm, op_order, op_type):
+            super().__init__(mol, op_order, op_type, TruePermChecker, use_cache=False)
             self.p=perm
             self.close_cycle(perm)
             self.state.perm=perm
 
-    def __init__(self, perm, mol, op_order, op_type, approx=False):
-        self._perm = self.SinglePIP(mol, perm, op_order, op_type, approx)
+    def __init__(self, perm, mol, op_order, op_type):
+        self._perm = self.SinglePIP(mol, perm, op_order, op_type)
         self.count=1
 
     def permute(self):

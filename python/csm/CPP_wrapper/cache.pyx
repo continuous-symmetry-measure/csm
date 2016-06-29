@@ -39,6 +39,12 @@ cdef Matrix3D outer_product_sum(a, b):
     return Matrix3D.buffer_copy(out)
 
 cdef class Cache:
+    """
+    A class that stores the results of cross, outer, and inner products of two vectors.
+    Specifically, it stores all the combinations within each equivalence class.
+    These results can then be retrieved from dictionaries rather than recalculated each time.
+    Cannot be used on larger molecules.
+    """
     cdef _cross
     cdef _outer
     cdef _inner
@@ -76,15 +82,18 @@ cdef class Cache:
 
 
 cdef class FakeCache(Cache):
-    cdef mol
+    """
+    A class that inherits from Cache, and can return the same calculations, but does not actually cache anything.
+    Can be safely used on larger molecules.
+    """
     def __init__(self, mol):
-        self.mol=mol
+        self._mol=mol
 
     cpdef double inner_product(FakeCache self, int i, int j):
-        return inner_product(self.mol.Q[i],self.mol.Q[j])
+        return inner_product(self._mol.Q[i],self._mol.Q[j])
 
     cpdef Matrix3D outer_product_sum(FakeCache self, int i, int j):
-        return outer_product_sum(self.mol.Q[i],self.mol.Q[j])
+        return outer_product_sum(self._mol.Q[i],self._mol.Q[j])
 
     cpdef Vector3D cross(FakeCache self, int i, int j):
-        return cross_product(self.mol.Q[i],self.mol.Q[j])
+        return cross_product(self._mol.Q[i],self._mol.Q[j])
