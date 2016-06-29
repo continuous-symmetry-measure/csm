@@ -150,7 +150,6 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
             count += math.exp(log_num_structs + log_num_perms)
         return count
 
-    perm_checker=TruePermChecker
 
     if not print_perms:
         if not keep_structure:
@@ -160,11 +159,9 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
                 count*=_len_group_permuter(len(group), op_order, op_type=='SN')
             return int(count)
 
-    if keep_structure:
-        perm_checker=StructurePermChecker
 
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
-    permuter = CythonPermuter(molecule, op_order, op_type, perm_checker, perm_class=CythonPIP)
+    permuter = CythonPermuter(molecule, op_order, op_type, keep_structure, precalculate=False)
 
     for state in permuter.permute():
         if csm_state_tracer_func:
