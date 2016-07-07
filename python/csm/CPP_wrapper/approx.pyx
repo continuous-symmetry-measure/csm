@@ -20,8 +20,8 @@ cdef array_distance(double *a, double *b):
 cdef class DistanceMatrix:
     cdef int group_size
     cdef double[:,::1] mv_distances  # Make sure this is a C-order memoryview
-    cdef int[:] _allowed_rows  # _allowd_rows[i] is 1 iff the row is still available for a permutation
-    cdef int[:] _allowed_cols  # Respectively.
+    cdef long[:] _allowed_rows  # _allowd_rows[i] is 1 iff the row is still available for a permutation
+    cdef long[:] _allowed_cols  # Respectively.
 
     def __init__(self, group_size):
         self.group_size = group_size
@@ -49,8 +49,8 @@ cdef class DistanceMatrix:
         cdef double tmp
 
         cdef double *row_ptr
-        cdef int *allowed_rows = &self._allowed_rows[0]
-        cdef int *allowed_cols = &self._allowed_cols[0]
+        cdef long *allowed_rows = &self._allowed_rows[0]
+        cdef long *allowed_cols = &self._allowed_cols[0]
 
         for i in range(self.group_size):
             if self._allowed_rows[i]:
@@ -144,7 +144,7 @@ def get_atom_to_matrix_indices(atom_indices, atom_to_matrix_indices):
         i+=1
     return atom_to_matrix_indices
 
-cdef fill_distance_matrix(len_group, cycle, chain_group, chain_perm, Vector3DHolder rotated_holder, Vector3DHolder Q_holder, int[:] matrix_indices):
+cdef fill_distance_matrix(len_group, cycle, chain_group, chain_perm, Vector3DHolder rotated_holder, Vector3DHolder Q_holder, long[:] matrix_indices):
     cdef double *a
     cdef double *b
     cdef DistanceMatrix distances = DistanceMatrix(len_group)
@@ -178,7 +178,7 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains, hun
     rotated = (rotation_mat @ molecule.Q.T).T
     cdef Vector3DHolder rotated_holder = Vector3DHolder(rotated)
     cdef Vector3DHolder Q_holder = Vector3DHolder(molecule.Q)
-    cdef int[:] atom_to_matrix_indices = np.ones(len(molecule), dtype=int) * -1
+    cdef long[:] atom_to_matrix_indices = np.ones(len(molecule), dtype=int) * -1
     # empty permutation:
     perm = [-1] * len(molecule)
 
