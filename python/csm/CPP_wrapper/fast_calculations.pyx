@@ -10,6 +10,8 @@ cdef class CalcState
 cdef class Vector3D
 cdef class Matrix3D
 
+np.set_printoptions(precision=20)
+
 cdef build_polynomial(Vector3D lambdas, Vector3D m_t_B_2, double *coeffs):
     # The polynomial is described in equation 13.
     # The following code calculates the polynomial's coefficients quickly, and is taken
@@ -88,8 +90,8 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
                     break
                 else:
                     dir.buf[i] += m_t_B.buf[j] / (lambdas.buf[j] - lambda_max) * m.buf[j][i]
-            ##print("i=%d, j=%d" % (i, j))
-            ##print("dir[i] = %f" % dir.buf[i])
+            ###print("i=%d, j=%d" % (i, j))
+            ###print("dir[i] = %f" % dir.buf[i])
 
             m_max_B += dir.buf[i] * B.buf[i]
     return dir, m_max_B
@@ -140,18 +142,19 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
     cdef int i
 
 
-    print("Perm:", str(calc_state.perms.get_perm(1)))
-    log=True
-    if(list(calc_state.perm) ==[6,7,0,1,2,3,4,5]):
-        log = True
+    #print("Perm:", str(calc_state.perms.get_perm(1)))
+    log=False
+    #if(list(calc_state.perm) ==[6,7,0,1,2,3,4,5]):
+    #    log = True
 
     if log:
-        #print("Perm:")
-        #print(calc_state.perms.get_perm(1))
+        print("Perm:")
+        print(calc_state.perms.get_perm(1))
         print("A:")
         print(str(calc_state.A))
         print("B:")
         print(str(calc_state.B))
+
         print("prelimary CSM")
         print(str(calc_state.CSM))
 

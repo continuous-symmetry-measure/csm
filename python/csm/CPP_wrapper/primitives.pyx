@@ -4,6 +4,8 @@ from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
 from libcpp.vector cimport vector
 
+np.set_printoptions(precision=20)
+
 cdef class Matrix3D:
     cdef double buf[3][3]
 
@@ -88,6 +90,9 @@ cdef class Matrix3D:
         return self
 
     def __str__(self):
+        for i in range(3):
+            for j in range(3):
+                print(self.buf[i][j])
         return str(self.to_numpy())
 
     cpdef to_numpy(Matrix3D self):
@@ -193,6 +198,8 @@ cdef class Vector3D:
         return self
 
     def __str__(self):
+        for i in range(3):
+            print(self.buf[i])
         return str(self.to_numpy())
 
 cdef class Vector3DHolder:
