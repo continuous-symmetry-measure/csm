@@ -1,4 +1,0 @@
-CSM starting up
-Going to enumerate over 1 permutations
-Entire run should take approx. 0.00 hours on a 2.0Ghz Computer
-C3 SYMMETRY: 7.1183

@@ -1,3 +1,0 @@
-Going to enumerate over 463096.00 permutations
-Entire run should take approx.  0.00 hours on a 2.0Ghz Computer
-S8 SYMMETRY: 24.0465

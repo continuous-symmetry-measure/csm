@@ -1,4 +1,0 @@
-CSM starting up
-Going to enumerate over 1.16739e+009 permutations
-Entire run should take approx. 4.05 hours on a 2.0Ghz Computer
-INVERSION (S2): 4.6905
