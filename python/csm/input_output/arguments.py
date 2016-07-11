@@ -59,6 +59,7 @@ def _create_parser():
                         help='Allows running program while ignoring computational complexity')
 
     parser.add_argument('--babelbond', action='store_true', default=False, help='Let OpenBabel compute bonding')
+    parser.add_argument('--noBabel',  action='store_true', default=False, help='force suppress automatically using babelbond to create bonds')
     parser.add_argument('--useMass', action='store_true', default=False,
                         help='Use the atomic masses to define center of mass')
     parser.add_argument('--timeOnly', action='store_true', default=False, help="Only print the time and exit")
@@ -180,7 +181,8 @@ def _process_split_arguments(parse_res):
     calc_args['limit_run'] = not parse_res.nolimit
 
 
-    calc_args['keep_structure'] = parse_res.keepStructure
+    calc_args['keep_structure'] =    mol_args['keep_structure']= parse_res.keepStructure
+
 
     calc_args['calc_type'] = 'exact'  # this is the default, which will be changed if relevant
 
@@ -215,6 +217,7 @@ def _process_split_arguments(parse_res):
         # get input file extension
         mol_args['format'] = parse_res.input.split(".")[-1]
     mol_args['babel_bond'] = parse_res.babelbond
+    mol_args['no_babel'] = parse_res.noBabel
     mol_args['use_mass'] = parse_res.useMass
     calc_args['use_chains'] = mol_args['use_chains'] = parse_res.useChains
     if parse_res.writeOpenu:

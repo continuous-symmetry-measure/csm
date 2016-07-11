@@ -413,12 +413,22 @@ class Molecule:
 
     @staticmethod
     def from_file(in_file_name, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False, *args, **kwargs):
+                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False, *args, **kwargs):
         if format == "csm":
             mol = Molecule._read_csm_file(in_file_name, ignore_symm, use_mass)
         else:
             obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
             mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+            if not mol.bondset and (keep_structure or use_chains):
+                if no_babel:
+                    print("Warning: User input --noBabel. Molecule has no connectivity, even though --keepStructure or --useChains were specified")
+                else:
+                    print("Molecule file does not have connectivity information and --keepStructure or --useChains were specified. Using babelbond to create bonds.")
+                    print("(To suppress the automatic creation of bonds via babelbond when using --keepStructure or --useChains without connectivity, use --noBabel)")
+                    obm = Molecule._obm_from_file(in_file_name, format, True)
+                    mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+
+
         if initialize:
             mol._complete_initialization(remove_hy, ignore_hy, use_chains)
         return mol
@@ -491,8 +501,7 @@ class Molecule:
             test= len(atoms)%len(chains[chain])
             if test!=0: #check that length of chain is, at minimum, a divisor of number of atoms
                 equal=False
-        #if not equal:
-        #    raise Exception("Molecule's chains not of expected length: % num of chains, % num of molecules", (len(chains), len(atoms)))
+
         mol = Molecule(atoms=atoms, chains=chains, obmol=obmol)
         return mol
 
