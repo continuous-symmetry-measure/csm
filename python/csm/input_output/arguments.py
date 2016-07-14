@@ -77,6 +77,8 @@ def _create_parser():
                         help='Use chains specified in the PDB file in order to calculate permutations')
     parser.add_argument('--hungarian', action='store_true', default=False,
                         help='Use hungarian algorithm in approx')
+    parser.add_argument('--printApprox', action='store_true', default=False,
+                        help='add some printouts to approx')
 
     return parser
 
@@ -179,7 +181,7 @@ def _process_split_arguments(parse_res):
     calc_args['op_name'] = op.name
     calc_args['sn_max'] = parse_res.sn_max
     calc_args['limit_run'] = not parse_res.nolimit
-
+    calc_args['print_approx']= parse_res.printApprox
 
     calc_args['keep_structure'] =    mol_args['keep_structure']= parse_res.keepStructure
 

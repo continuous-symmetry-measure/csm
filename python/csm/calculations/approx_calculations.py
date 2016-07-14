@@ -12,8 +12,8 @@ from csm.molecule.molecule import Molecule
 
 logger = logging.getLogger("csm")
 
-def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, hungarian=False, *args, **kwargs):
-    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian)
+def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, *args, **kwargs):
+    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx)
     #print(is_legal(results.perm, molecule))
     return process_results(results)
 
@@ -74,7 +74,7 @@ def is_legal(perm, molecule):
     return legal
 
 
-def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian):
+def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx):
     if op_type == 'CI' or (op_type == 'SN' and op_order == 2):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
@@ -97,17 +97,20 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
         for chainperm in chain_permutations:
-            print("Calculating for chain permutation ", chainperm)
+            if print_approx:
+                print("Calculating for chain permutation ", chainperm)
             for dir in dirs:
-                print("\tCalculating for initial direction: ", dir)
+                if print_approx:
+                    print("\tCalculating for initial direction: ", dir)
                 # find permutation for this direction of the symmetry axis
                 perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, use_chains, hungarian)
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
                 best_for_chain_perm = interim_results = csm_operation(op_type, op_order, molecule,
                                                                    keep_structure=False, perm=perm)
-                print("\t\tusing esimated permutation:", str(perm))
-                print("\t\tfirst pass yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5)))
+                if print_approx:
+                    print("\t\tusing esimated permutation:", str(perm))
+                    print("\t\tfirst pass yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5)))
                 if best_for_chain_perm.csm < best.csm:
                     best = best_for_chain_perm
 
@@ -119,21 +122,23 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                     old_results = interim_results
                     i += 1
                     perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains, hungarian)
-                    print("\t\tusing estimated permutation:", str(perm))
+                    if print_approx:
+                        print("\t\tusing estimated permutation:", str(perm))
                     interim_results = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
 
                     if interim_results.csm < best_for_chain_perm.csm:
                         diff = best_for_chain_perm.csm - interim_results.csm
-
-                        print("\t\titeration", i, "yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5))
-                              +", improving previous best csm for this direction by: "+str(round(diff,5)))
+                        if print_approx:
+                            print("\t\titeration", i, "yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5))
+                                +", improving previous best csm for this direction by: "+str(round(diff,5)))
 
 
                         best_for_chain_perm = interim_results
                         if best_for_chain_perm.csm < best.csm:
                             best = best_for_chain_perm
                     else:
-                        print("\t\titeration", i, "yielded no improvement (CSM=" + str(round(interim_results.csm, 5))+")")
+                        if print_approx:
+                            print("\t\titeration", i, "yielded no improvement (CSM=" + str(round(interim_results.csm, 5))+")")
 
     return best
 
