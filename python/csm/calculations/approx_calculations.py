@@ -12,7 +12,6 @@ from csm.molecule.molecule import Molecule
 
 logger = logging.getLogger("csm")
 
-
 def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, hungarian=False, *args, **kwargs):
     results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian)
     #print(is_legal(results.perm, molecule))
@@ -95,33 +94,47 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
         for state in permuter.permute():
             chain_permutations.append([i for i in state.perm])
 
-
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
-        for dir in dirs:
-            for chainperm in chain_permutations:
+        for chainperm in chain_permutations:
+            print("Calculating for chain permutation ", chainperm)
+            for dir in dirs:
+                print("\tCalculating for initial direction: ", dir)
                 # find permutation for this direction of the symmetry axis
                 perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, use_chains, hungarian)
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
-                best_for_this_dir = interim_results =csm_operation(op_type, op_order, molecule,
+                best_for_chain_perm = interim_results = csm_operation(op_type, op_order, molecule,
                                                                    keep_structure=False, perm=perm)
-                #print("Dir %s, csm: %s" % (dir, interim_results.csm))
+                print("\t\tusing esimated permutation:", str(perm))
+                print("\t\tfirst pass yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5)))
+                if best_for_chain_perm.csm < best.csm:
+                    best = best_for_chain_perm
+
+                #iterations:
                 i = 0
                 max_iterations = 50
                 while (i < max_iterations and
-                           (math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01) and interim_results.csm > 0.0001):
+                           (math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01 and interim_results.csm<old_results.csm) and interim_results.csm > 0.0001):
                     old_results = interim_results
                     i += 1
                     perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains, hungarian)
+                    print("\t\tusing estimated permutation:", str(perm))
                     interim_results = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
-                    if interim_results.csm < best_for_this_dir.csm:
-                        best_for_this_dir = interim_results
 
-            print("attempt for dir" + str(dir) + ": best csm is:" + str(best_for_this_dir.csm) + " after " + str(i) + " iterations")
+                    if interim_results.csm < best_for_chain_perm.csm:
+                        diff = best_for_chain_perm.csm - interim_results.csm
 
-            if best_for_this_dir.csm < best.csm:
-                best = best_for_this_dir
+                        print("\t\titeration", i, "yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5))
+                              +", improving previous best csm for this direction by: "+str(round(diff,5)))
+
+
+                        best_for_chain_perm = interim_results
+                        if best_for_chain_perm.csm < best.csm:
+                            best = best_for_chain_perm
+                    else:
+                        print("\t\titeration", i, "yielded no improvement (CSM=" + str(round(interim_results.csm, 5))+")")
+
     return best
 
 

@@ -155,7 +155,7 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
         print("B:")
         print(str(calc_state.B))
 
-        print("prelimary CSM")
+        print("preliminary CSM")
         print(str(calc_state.CSM))
 
     cdef Matrix3D m = Matrix3D()
@@ -201,6 +201,5 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
         print ("CSM step two (fabs(100 * (1.0 - csm / op_order))")
         print("final-csm:")
         print(str(csm))
-        return None
 
     return csm, dir.to_numpy()
