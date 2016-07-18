@@ -75,24 +75,27 @@ def is_legal(perm, molecule):
 
 
 def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx):
+    chain_permutations = []
+    dummy = Molecule.dummy_molecule(len(molecule.chains), molecule.chain_equivalences)
+    permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
+    for state in permuter.permute():
+        chain_permutations.append([i for i in state.perm])
+
+    best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
+
     if op_type == 'CI' or (op_type == 'SN' and op_order == 2):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
         #TODO- this code is no longer correct bc chainperm
-        perm = estimate_perm(op_type, op_order, molecule, dir, [], False, hungarian)
-        best = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
+        for chainperm in chain_permutations:
+            perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, False, hungarian)
+            best_for_chain_perm = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
+            if best_for_chain_perm.csm < best.csm:
+                best = best_for_chain_perm
 
     else:
-        best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
 
-        chain_permutations = []
-        #if molecule.chains and use_chains:
-        #chainkeys = list(molecule.chains.keys())
-        dummy = Molecule.dummy_molecule(len(molecule.chains), molecule.chain_equivalences)
-        permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
-        for state in permuter.permute():
-            chain_permutations.append([i for i in state.perm])
 
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
 
