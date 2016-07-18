@@ -27,8 +27,8 @@ cdef class DistanceMatrix:
         self.group_size = group_size
         # ##print("Creating DistanceMatrix for group of size ", self.group_size)
         self.mv_distances = np.ones((group_size, group_size), order="c") * MAXDOUBLE
-        self._allowed_rows = np.zeros(group_size, dtype='i')
-        self._allowed_cols = np.zeros(group_size, dtype='i')
+        self._allowed_rows = np.zeros(group_size, dtype='long')
+        self._allowed_cols = np.zeros(group_size, dtype='long')
         # ##print("DistanceMatrix created")
 
     def add(self, int from_val, int to_val, double distance=MAXDOUBLE):
