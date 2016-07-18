@@ -183,19 +183,22 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
             oursymm = 'CS' if symm=='MI' else symm  # CS is marked as MI (Mirror)
             operation = get_operation_data(oursymm)
             xyz = molecules[int(index)]
+            if index=="179" or index=="46":
+                print(xyz)
             molecule = Molecule.from_string(xyz, "xyz")
             validate = validation[index, symm]
             result = exact_calculation(operation.type, operation.order, molecule)
             atom_mismatch, res = check_result(result, validate, index, symm)
-            if res['verify']:
+            if True: #res['verify']:   #code modified to check for weird perm behvaiour
                 molecule2 = Molecule.from_string(xyz, "xyz")
-                expected_perm=([p-1 for p in res['perm expected']])
+                expected_perm=result.perm #([p-1 for p in res['perm expected']])
                 verify = exact_calculation(operation.type, operation.order, molecule2, perm=expected_perm)
                 atom_mismatch2, res2 = check_result(verify, validate, index, symm)
-                if res2['status']!= 'OK':
-                    res['verify']=(res2['message'], res2['csm result'], res2['atoms result'])
-                else:
-                    res['verify']="Verified"
+                res['verify']=result.csm - verify.csm
+                #if res2['status']!= 'OK':
+                #    res['verify']=(res2['message'], res2['csm result'], res2['atoms result'])
+                #else:
+                #    res['verify']="Verified"
             writer.writerow(res)
             print()
     print("done")

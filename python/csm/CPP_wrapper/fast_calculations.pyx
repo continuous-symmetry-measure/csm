@@ -109,21 +109,31 @@ cdef PolynomialRoots(double coeffs[7], complex *roots):
 
 cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2, log=False):
     cdef double coeffs[7]
+    cdef double rounded_coeffs[7]
     cdef complex roots[6]
     cdef double lambda_max = -MAXDOUBLE
     cdef int i
+    cdef int j
 
 
 
     build_polynomial(lambdas, m_t_B_2, coeffs)
+
+    for i in range(7):
+        rounded_coeffs[i]=round(coeffs[i],13)
+
     PolynomialRoots(coeffs, roots)
 
     if log:
         print("get lambda max")
         print("lambdas", str(lambdas))
         print("m_t_B_2", str(m_t_B_2))
-        print("coeffs", coeffs)
-        print("roots", roots)
+        print("coeffs and rounded")
+        for i in range(7):
+            print(coeffs[i],"rounded:", rounded_coeffs[i])
+        print("roots")
+        for ro in roots:
+            print(ro)
 
     # lambda_max is a real root of the polynomial equation
     # according to the description above the formula (13) in the paper
@@ -140,6 +150,7 @@ def external_get_eigens(np.ndarray[DTYPE_t, ndim=2, mode="c"] A, np.ndarray[DTYP
 cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
     global log
     cdef int i
+    cdef int j
 
 
     #print("Perm:", str(calc_state.perms.get_perm(1)))
@@ -157,6 +168,7 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
 
         print("preliminary CSM")
         print(str(calc_state.CSM))
+
 
     cdef Matrix3D m = Matrix3D()
     cdef Vector3D lambdas = Vector3D()
