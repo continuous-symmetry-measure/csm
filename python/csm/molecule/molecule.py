@@ -101,9 +101,6 @@ class Molecule:
             valency_a = len(self._atoms[a].adjacent)
             valency_b = len(self._atoms[b].adjacent)
 
-            if valency_a != valency_b:
-                print("why are we even here")
-
             # for each of i's neighbours
             for i in range(valency_a):
                 found = False
@@ -151,7 +148,7 @@ class Molecule:
 
             group_num += 1
 
-        print("initial number of groups:"+ str(group_num))
+        logger.debug("initial number of groups:"+ str(group_num))
         # iteratively refine the breakdown into groups
         # break into subgroups at an infinite depth - as long as there's something to break, it is broken
 
@@ -188,7 +185,7 @@ class Molecule:
 
             groups.extend(new_groups)
 
-        print("Broken into %d groups with %d iterations." % (group_num, num_iters))
+        logger.debug("Broken into %d groups with %d iterations." % (group_num, num_iters))
 
         self._equivalence_classes = groups
         for group in groups:
