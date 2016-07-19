@@ -151,7 +151,7 @@ class Molecule:
 
             group_num += 1
 
-        logger.debug("initial number of groups:"+ str(group_num))
+        print("initial number of groups:"+ str(group_num))
         # iteratively refine the breakdown into groups
         # break into subgroups at an infinite depth - as long as there's something to break, it is broken
 
@@ -188,7 +188,7 @@ class Molecule:
 
             groups.extend(new_groups)
 
-        #print("Broken into %d groups with %d iterations." % (group_num, num_iters))
+        print("Broken into %d groups with %d iterations." % (group_num, num_iters))
 
         self._equivalence_classes = groups
         for group in groups:
@@ -324,7 +324,7 @@ class Molecule:
         for to_remove in reversed(removed_atoms): #reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
             if remove_hy: #this is meant to affect print at end
-                self.obmol.DeleteAtom(self.obmol.GetAtom(i + 1))
+                self.obmol.DeleteAtom(self.obmol.GetAtom(to_remove + 1))
 
         logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
 
