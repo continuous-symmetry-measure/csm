@@ -1,5 +1,9 @@
 The Python CSM Package
 ======================
+Changes in version 0.8.6
+------------------------
+minor bug fixes to 0.8.5
+
 Changes in version 0.8.5
 ------------------------
 
