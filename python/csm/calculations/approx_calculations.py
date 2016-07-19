@@ -87,7 +87,6 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
-        #TODO- this code is no longer correct bc chainperm
         for chainperm in chain_permutations:
             perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, False, hungarian)
             best_for_chain_perm = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
@@ -95,10 +94,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                 best = best_for_chain_perm
 
     else:
-
-
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
-
         for chainperm in chain_permutations:
             if print_approx:
                 print("Calculating for chain permutation ", chainperm)
