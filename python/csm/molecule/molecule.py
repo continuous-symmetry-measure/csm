@@ -101,6 +101,9 @@ class Molecule:
             valency_a = len(self._atoms[a].adjacent)
             valency_b = len(self._atoms[b].adjacent)
 
+            if valency_a != valency_b:
+                print("why are we even here")
+
             # for each of i's neighbours
             for i in range(valency_a):
                 found = False
@@ -110,10 +113,10 @@ class Molecule:
                         continue
 
                     if atoms_group_num[self._atoms[a].adjacent[i]] == atoms_group_num[self._atoms[b].adjacent[j]]:
-                        # the i-th neighbour of 'a' belongs to the same group as the j-th neighbour of 'b'
-                        found = True
-                        mark.add(j)
-                        break
+                            # the i-th neighbour of 'a' belongs to the same group as the j-th neighbour of 'b'
+                            found = True
+                            mark.add(j)
+                            break
 
                 if not found:
                     break
@@ -300,26 +303,30 @@ class Molecule:
 
         remove_list = ["H", " H"]
         removed_atoms=[]
-        # go backwards through the indexes, because we will be popping them, and earlier indexes change later indexes
-        for i in reversed(range(len(self._atoms))):
+        fixed_indexes=[i for i in range(len(self))]
+
+        for i in range(len(self._atoms)):
             if self._atoms[i].symbol in remove_list:
                 removed_atoms.append(i)
+                fixed_indexes[i]=None
+            else:
+                # however many atoms have been removed up to this index is the amount its index needs adjusting by
+                fixed_indexes[i]-=len(removed_atoms)
 
-        logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
+        #adjust the indices before we do any popping whatsoever
+        for atom in self._atoms:
+            adjacent_new=[]
+            for adjacent in atom.adjacent:
+                if fixed_indexes[adjacent]:
+                    adjacent_new.append(fixed_indexes[adjacent])
+            atom.adjacent=adjacent_new
 
-        for to_remove in removed_atoms:
-            # remove the atom i from adjacency with its neighbors
-            for adjacent in self._atoms[to_remove].adjacent:
-                try:
-                    self._atoms[adjacent].adjacent.remove(to_remove)
-                except ValueError: #for whatever reason adjacent didn't have to_remove. probabaly bad openbabel input. doesn't matter
-                    pass
-
-            #remove the atom i from _atoms
+        for to_remove in reversed(removed_atoms): #reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
-
             if remove_hy: #this is meant to affect print at end
                 self.obmol.DeleteAtom(self.obmol.GetAtom(i + 1))
+
+        logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
 
 
 
@@ -392,7 +399,7 @@ class Molecule:
         '''
         atoms=[]
         for i in range(size):
-            atom = Atom("XX", (0,0,0), False)
+            atom = Atom("XX", (0,0,0), i, False)
             atoms.append(atom)
         mol= Molecule(atoms)
         mol._equivalence_classes=groups
@@ -488,7 +495,7 @@ class Molecule:
             if chain not in chains:
                 chains[chain]=[]
             chains[chain].append(i)
-            atom = Atom(symbol, position, use_mass, chain)
+            atom = Atom(symbol, position, i, use_mass, chain)
             adjacent = []
             iter = OBAtomAtomIter(obatom)
             for neighbour_atom in iter:
@@ -533,7 +540,7 @@ class Molecule:
                     else:
                         symbol = line[0]
                     position = (float(line[1]), float(line[2]), float(line[3]))
-                    atom = Atom(symbol, position, use_mass)
+                    atom = Atom(symbol, position, i, use_mass)
                 except (ValueError, IndexError):
                     raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
                 atoms.append(atom)
