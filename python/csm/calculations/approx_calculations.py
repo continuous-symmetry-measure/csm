@@ -36,15 +36,13 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
                 for i in range(len(f_chain)):
                     perm[f_chain[i]]=t_chain[i]
 
-            result = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
-                           TruePermChecker, perm)
+            result = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
             if result.csm < best.csm:
                 best = result
 
     else:
         perm = [i for i in range(len(molecule))]
-        best = csm_operation(op_type, op_order, molecule, SinglePermPermuter,
-                               TruePermChecker, perm)
+        best = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
 
     return process_results(best)
 
