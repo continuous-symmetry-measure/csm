@@ -3,8 +3,8 @@ from csm.molecule.molecule import Molecule
 
 def check_perm_structure(mol, perm):
     for origin, destination in enumerate(perm):
-        for adjacent in mol.atoms[destination].adjacent:
-            if (origin, perm[adjacent]) not in mol.bondset:
+        for adjacent in mol.atoms[origin].adjacent:
+            if (destination, perm[adjacent]) not in mol.bondset:
                 return False
     return True
 

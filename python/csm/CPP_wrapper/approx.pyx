@@ -178,7 +178,7 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains, hun
     rotated = (rotation_mat @ molecule.Q.T).T
     cdef Vector3DHolder rotated_holder = Vector3DHolder(rotated)
     cdef Vector3DHolder Q_holder = Vector3DHolder(molecule.Q)
-    cdef long[:] atom_to_matrix_indices = np.ones(len(molecule), dtype=int) * -1
+    cdef long[:] atom_to_matrix_indices = np.ones(len(molecule), dtype='long') * -1
     # empty permutation:
     perm = [-1] * len(molecule)
 
