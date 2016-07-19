@@ -1,5 +1,27 @@
 The Python CSM Package
 ======================
+Changes in version 0.8.5
+------------------------
+
+Features:
+--print_approx flag has been added, to enable testing of Hungarian algorithm. when flag is used,
+approx will print information about the direction, permutation, and csm of each iteration
+
+if keepStructure or usechains are specified and no bonding information is provided, 
+code will automatically use babelbond unless given flag --noBabel
+
+c2 and s2 in approx now loop through chainperms 
+(without --usechains, they, like all calculations, will simply calculate on a single chain)
+
+Fixes:
+polynomial coeffecients are now rounded to 13 places before being sent to calculation of root
+
+int declarations were changed to long in order to fix compilation bug on openU servers
+
+bug in adjustment of adjacency groups in remove_hy has been fixed
+
+major bug in keep_structure's is_legal checker fixed.
+
 
 Changes in version 0.8.4
 ------------------------
