@@ -2,6 +2,16 @@ The Python CSM Package
 ======================
 Changes in version 0.8.6
 ------------------------
+Numerical instability- order of operations in calculating matrices A and B led to differences in the sixteenth place after the decimal point.
+These differences were compounded by a numerically unstable algorithm implemented in C++ for finding the roots of the sixth degree polynomial,
+leading to differences in the 3rd or 4th place after the decimal.
+The C++ implementation has been replaced with the slower, more stable numpy.roots, at the cost of around 15% program speed.
+
+The symmetric structure is now calculated only at the very end of the approx algorithm (a minor improvement in code efficiency reflecting some code cleanup) 
+
+
+Changes in version 0.8.6
+------------------------
 minor bug fixes to 0.8.5
 
 Changes in version 0.8.5
