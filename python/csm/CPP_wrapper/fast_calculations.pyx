@@ -119,10 +119,7 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2, log=False):
 
     build_polynomial(lambdas, m_t_B_2, coeffs)
 
-    for i in range(7):
-        rounded_coeffs[i]=round(coeffs[i],13)
-
-    PolynomialRoots(rounded_coeffs, roots)
+    roots=np.roots(coeffs)
 
     if log:
         print("get lambda max")
