@@ -223,7 +223,7 @@ def dirs_without_outliers(dirs, positions, op_type):
         for i in range(len(positions)):
             pos = positions[i]
             if op_type == 'CS':
-                dist = math.abs(dir[0] * pos[0] + dir[1] * pos[1] + dir[2] * pos[2])
+                dist = math.fabs(dir[0] * pos[0] + dir[1] * pos[1] + dir[2] * pos[2])
             else:
                 dist = compute_distance_from_line(pos, dir)
             dists.append(dist)
