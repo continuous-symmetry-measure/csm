@@ -4,11 +4,10 @@ import itertools
 import math
 
 import numpy as np
-from csm.calculations.basic_calculations import compute_local_csm, create_symmetric_structure
+from csm.calculations.basic_calculations import compute_local_csm, process_results, CSMState
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import calc_ref_plane
-from collections import namedtuple
-from csm.molecule.normalizations import de_normalize_coords, normalize_coords
+
 from csm.fast import CythonPermuter, SinglePermPermuter
 import logging
 
@@ -18,35 +17,13 @@ logger = logging.getLogger("csm")
 
 __author__ = 'Itay, Devora, Yael'
 
-CSMState = namedtuple('CSMState', ('molecule',
-                                    'op_order',
-                                    'op_type',
-                                    'csm',
-                                    'perm',
-                                    'dir',
-                                    'd_min',
-                                    'symmetric_structure',
-                                    'local_csm',
-                                    'perm_count',))
-CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
+
 
 # When this property is set by an outside caller, it is called every permutation iteration with the current CSMState
 # This is useful for writing all permutations to file during the calculation
 csm_state_tracer_func = None
 
 
-def process_results(results):
-    """
-    Final normalizations and de-normalizations
-    :param results: CSM old_calculations results
-    """
-    #    results.molecule.set_norm_factor(molecule.norm_factor)
-    masses = [atom.mass for atom in results.molecule.atoms]
-    normalize_coords(results.symmetric_structure, masses)
-
-    results.molecule.de_normalize()
-    symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
-    return results._replace(symmetric_structure=symmetric_structure)
 
 
 def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *args, **kwargs):
@@ -239,12 +216,6 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None):
         raise ValueError("Failed to calculate a csm value for %s" % op_type)
 
     best_csm = best_csm._replace(perm_count=permuter.count)
-    d_min = 1.0 - (best_csm.csm / 100 * op_order / (op_order - 1))
-
-    symmetric_structure = create_symmetric_structure(molecule, best_csm.perm, best_csm.dir, best_csm.op_type,
-                                                     best_csm.op_order, d_min)
-    best_csm = best_csm._replace(perm_count = permuter.count, d_min=d_min, symmetric_structure=symmetric_structure)
-
     return best_csm
 
 

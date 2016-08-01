@@ -1,4 +1,38 @@
 import numpy as np
+from csm.molecule.normalizations import de_normalize_coords, normalize_coords
+from collections import namedtuple
+
+CSMState = namedtuple('CSMState', ('molecule',
+                                   'op_order',
+                                   'op_type',
+                                   'csm',
+                                   'perm',
+                                   'dir',
+                                   'd_min',
+                                   'symmetric_structure',
+                                   'local_csm',
+                                   'perm_count',))
+CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
+
+def process_results(results):
+    """
+    Final normalizations and de-normalizations
+    :param results: CSM old_calculations results
+    """
+    #    results.molecule.set_norm_factor(molecule.norm_factor)
+    d_min = 1.0 - (results.csm / 100 * results.op_order / (results.op_order - 1))
+
+    symmetric_structure = create_symmetric_structure(results.molecule, results.perm, results.dir, results.op_type,
+                                                     results.op_order, d_min)
+    results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
+
+
+    masses = [atom.mass for atom in results.molecule.atoms]
+    normalize_coords(results.symmetric_structure, masses)
+
+    results.molecule.de_normalize()
+    symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
+    return results._replace(symmetric_structure=symmetric_structure)
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
     is_improper = op_type != 'CN'

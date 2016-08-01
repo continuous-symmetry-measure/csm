@@ -6,7 +6,8 @@ from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import CythonPermuter, SinglePermPermuter
 from csm.fast import estimate_perm #as cython_estimate_perm
 from csm.fast import external_get_eigens as cppeigen
-from csm.calculations.exact_calculations import csm_operation, CSMState, process_results
+from csm.calculations.exact_calculations import csm_operation
+from csm.calculations.basic_calculations import CSMState, process_results
 from csm.molecule.molecule import Molecule
 
 
