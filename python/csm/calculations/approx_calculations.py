@@ -110,7 +110,6 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                                                                    keep_structure=False, perm=perm)
                 if print_approx:
                     print("\t\tfound initial permutation")
-                    print("\t\trunning csm on chosen permutation")
                     print("\t\tfirst pass yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5)))
 
                 if best_for_chain_perm.csm < best.csm:
@@ -130,7 +129,6 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                         print("\t\titeration", i, ":")
                         print("\t\t\tfound a permutation using dir", old_results.dir, "...")
                         print("\t\t\tthere are", len(perm)-np.sum(np.array(perm)==np.array(old_results.perm)), "differences between new permutation and previous permutation")
-                        print("\t\t\trunning csm on new permutation")
                         print("\t\t\tusing new permutation, found new direction", interim_results.dir)
                         print("\t\t\tthe distance between the new direction and the previous direction is:", str(round(np.linalg.norm(interim_results.dir - old_results.dir),8)))
                         print("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
@@ -138,17 +136,9 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
 
                     if interim_results.csm < best_for_chain_perm.csm:
                         diff = best_for_chain_perm.csm - interim_results.csm
-                        if print_approx:
-
-                            print("\t\t\tThe new CSM improves the previous best csm for this direction by: "+str(round(diff,5)))
-
-
                         best_for_chain_perm = interim_results
                         if best_for_chain_perm.csm < best.csm:
                             best = best_for_chain_perm
-                    else:
-                        if print_approx:
-                            print("\t\t\tno improvement in csm")
 
     return best
 

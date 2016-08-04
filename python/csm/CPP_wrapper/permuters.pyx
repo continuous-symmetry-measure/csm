@@ -107,6 +107,8 @@ cdef class PermInProgress:
     cdef public int op_order
     cdef public long[:] p
     cdef public long[:] q
+    cdef int truecount
+    cdef int falsecount
 
     def __init__(self, mol, op_order, op_type, permchecker):
         self.permchecker = permchecker(mol)
@@ -115,6 +117,8 @@ cdef class PermInProgress:
         self.op_order=op_order
         self.p = -1 * np.ones((self.molecule_size,), dtype=np.int)  # Numpy array, but created once per molecule so no worries.
         self.q = -1 * np.ones((self.molecule_size,), dtype=np.int)
+        self.truecount=0
+        self.falsecount=0
 
     cpdef switch(PermInProgress self, int origin, int destination):
         if self.permchecker.is_legal(self, origin, destination):
@@ -133,6 +137,13 @@ cdef class PermInProgress:
 
     cpdef unclose_cycle(self,  CalcState old_state):
         pass
+
+    property truecount:
+        def __get__(self):
+            return self.truecount
+    property falsecount:
+        def __get__(self):
+            return self.falsecount
 
 
 
@@ -210,7 +221,6 @@ cdef class CythonPermuter:
     def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True):
         self.count=0
         self._groups = mol.equivalence_classes
-
         if keep_structure:
             perm_checker=StructurePermChecker
         else:
@@ -287,6 +297,7 @@ cdef class CythonPermuter:
         for pip in self._recursive_permute(self._groups, self._pip):
             self.count+=1
             pip.state.perm=pip.p
+            #print("This permutation reached", pip.falsecount, "dead ends and", pip.truecount, "continuations in branch of options")
             yield pip.state
 
 
