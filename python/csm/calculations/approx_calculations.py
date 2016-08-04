@@ -94,6 +94,8 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
 
     else:
         dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
+        if print_approx:
+            print("There are", len(dirs), "initial directions to search for the best permutation")
         for chainperm in chain_permutations:
             if print_approx:
                 print("Calculating for chain permutation ", chainperm)
@@ -107,8 +109,10 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                 best_for_chain_perm = interim_results = csm_operation(op_type, op_order, molecule,
                                                                    keep_structure=False, perm=perm)
                 if print_approx:
-                    print("\t\tusing esimated permutation:", str(perm))
+                    print("\t\tfound initial permutation")
+                    print("\t\trunning csm on chosen permutation")
                     print("\t\tfirst pass yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5)))
+
                 if best_for_chain_perm.csm < best.csm:
                     best = best_for_chain_perm
 
@@ -120,15 +124,23 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                     old_results = interim_results
                     i += 1
                     perm = estimate_perm(op_type, op_order, molecule, interim_results.dir, chainperm, use_chains, hungarian)
-                    if print_approx:
-                        print("\t\tusing estimated permutation:", str(perm))
                     interim_results = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
+
+                    if print_approx:
+                        print("\t\titeration", i, ":")
+                        print("\t\t\tfound a permutation using dir", old_results.dir, "...")
+                        print("\t\t\tthere are", len(perm)-np.sum(np.array(perm)==np.array(old_results.perm)), "differences between new permutation and previous permutation")
+                        print("\t\t\trunning csm on new permutation")
+                        print("\t\t\tusing new permutation, found new direction", interim_results.dir)
+                        print("\t\t\tthe distance between the new direction and the previous direction is:", str(round(np.linalg.norm(interim_results.dir - old_results.dir),8)))
+                        print("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
+
 
                     if interim_results.csm < best_for_chain_perm.csm:
                         diff = best_for_chain_perm.csm - interim_results.csm
                         if print_approx:
-                            print("\t\titeration", i, "yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5))
-                                +", improving previous best csm for this direction by: "+str(round(diff,5)))
+
+                            print("\t\t\tThe new CSM improves the previous best csm for this direction by: "+str(round(diff,5)))
 
 
                         best_for_chain_perm = interim_results
@@ -136,7 +148,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
                             best = best_for_chain_perm
                     else:
                         if print_approx:
-                            print("\t\titeration", i, "yielded no improvement (CSM=" + str(round(interim_results.csm, 5))+")")
+                            print("\t\t\tno improvement in csm")
 
     return best
 
