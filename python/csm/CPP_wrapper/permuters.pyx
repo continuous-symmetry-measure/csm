@@ -124,7 +124,9 @@ cdef class PermInProgress:
         if self.permchecker.is_legal(self, origin, destination):
             self.p[origin]=destination
             self.q[destination]=origin
+            self.truecount+=1
             return True
+        self.falsecount+=1
         return False
 
     cpdef unswitch(PermInProgress self, int origin, int destination):
@@ -297,8 +299,14 @@ cdef class CythonPermuter:
         for pip in self._recursive_permute(self._groups, self._pip):
             self.count+=1
             pip.state.perm=pip.p
-            #print("This permutation reached", pip.falsecount, "dead ends and", pip.truecount, "continuations in branch of options")
             yield pip.state
+
+    property truecount:
+        def __get__(self):
+            return self._pip.truecount
+    property falsecount:
+        def __get__(self):
+            return self._pip.falsecount
 
 
 class SinglePermPermuter:
