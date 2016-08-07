@@ -215,9 +215,10 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None):
         # failed to find csm value for any permutation
         raise ValueError("Failed to calculate a csm value for %s" % op_type)
 
-    print("number of permutations:", permuter.count)
-    print("Number of branches in permutation tree:", permuter.truecount)
-    print("Number of dead ends:", permuter.falsecount)
+    if not perm:
+        print("number of permutations:", permuter.count)
+        print("Number of branches in permutation tree:", permuter.truecount)
+        print("Number of dead ends:", permuter.falsecount)
 
     best_csm = best_csm._replace(perm_count=permuter.count)
     return best_csm
