@@ -321,8 +321,11 @@ class SinglePermPermuter:
     def __init__(self, perm, mol, op_order, op_type):
         self._perm = self.SinglePIP(mol, perm, op_order, op_type)
         self.count=1
+        self.truecount=0
+        self.falsecount=0
 
     def permute(self):
         yield self._perm.state
+
 
 
