@@ -1,6 +1,12 @@
 The Python CSM Package
 ======================
-Changes in version 0.8.6
+Changes in version 0.8.8
+------------------------
+
+modified printouts in print_approx: removed print of permutation, added comparison of old and new, tidied up
+added a prinout describing the permutation tree (# of branches, # of dead ends)
+
+Changes in version 0.8.7
 ------------------------
 Numerical instability- order of operations in calculating matrices A and B led to differences in the sixteenth place after the decimal point.
 These differences were compounded by a numerically unstable algorithm implemented in C++ for finding the roots of the sixth degree polynomial,
