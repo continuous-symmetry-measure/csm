@@ -83,6 +83,7 @@ setup(
     entry_points={
         'console_scripts': [
             'csm = csm.main.csm_run:run_no_return',
+            'normcsm = csm.main.normcsm:run_no_return'
         ]
     },
 
