@@ -1,5 +1,11 @@
 The Python CSM Package
 ======================
+Changes in version 0.9.0
+------------------------
+Added the norm_csm commandline command
+Added normalizations to norm_csm: 'standard', 'atom_number', 'fragment_mass_center', 'symmetric_fragment_mass_center'
+All normalizations are currently untested, mathematically.
+
 Changes in version 0.8.8
 ------------------------
 
