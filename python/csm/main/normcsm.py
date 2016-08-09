@@ -30,6 +30,10 @@ def normrun(args=[]):
     args.pop(3) #remove the normalization argument
 
     result= run(args)
+
+    if norm_type=='standard':
+        return
+    
     molecule =result.molecule
     original_norm = molecule.norm_factor
     original_csm= result.csm
