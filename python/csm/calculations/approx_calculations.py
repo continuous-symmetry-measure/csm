@@ -23,7 +23,7 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
         chainkeys=list(molecule.chains.keys())
         chain_permutations = []
-        dummy = Molecule.dummy_molecule(len(molecule._chains))
+        dummy = Molecule.dummy_molecule(len(molecule._chains), molecule.chain_equivalences)
         permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
         for state in permuter.permute():
             chain_permutations.append(list(state.perm))
