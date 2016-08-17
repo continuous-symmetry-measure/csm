@@ -38,7 +38,7 @@ def _create_parser():
                         help='Equivalent to --detectOutliers --findperm together')
 
     parser.add_argument('--use-perm', type=str, help='Only compute for a single permutation')
-    parser.add_argument('--use-dir', type=str, help='Use a predefined axis as a starting point. '
+    parser.add_argument('--use-dir', type=str, help='Use a predefined axis as a starting point and run the approx algorithm on it'
                                                    'This options ignores the --ignore-sym/--ignore-hy/--remove-hy flags')
     parser.add_argument('--find-perm', action='store_true', default=False, help='Attempt to search for a permutation')
     parser.add_argument('--detect-outliers', action='store_true', default=False,
@@ -227,7 +227,8 @@ def _process_split_arguments(parse_res):
     if parse_res.use_perm:
         mol_args['perm_file_name'] = parse_res.use_perm
     if parse_res.use_dir:
-        mol_args['dir_file_name'] = parse_res.use_dir
+        calc_args['calc_type'] = 'approx'
+        mol_args['dir_file_name'] = parse_res.use_dir #mol_args is also in_args
 
     out_args['write_openu'] = parse_res.write_openu
     out_args['print_norm'] = parse_res.print_norm
