@@ -41,43 +41,43 @@ def _create_parser():
     parser.add_argument('--usedir', type=str, help='Use a predefined axis as a starting point. '
                                                    'This options ignores the -ignoreSym/-ignoreHy/-removeHy flags')
     parser.add_argument('--findperm', action='store_true', default=False, help='Attempt to search for a permutation')
-    parser.add_argument('--detectOutliers', action='store_true', default=False,
+    parser.add_argument('--detect-outliers', action='store_true', default=False,
                         help="Use statistical methods to try and improve --findperm's results")
 
-    parser.add_argument('--keepStructure', action='store_true', default=False,
+    parser.add_argument('--keep-structure', action='store_true', default=False,
                         help='Maintain molecule structure from being distorted')
-    parser.add_argument('--ignoreHy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
-    parser.add_argument('--removeHy', action='store_true', default=False,
+    parser.add_argument('--ignore-hy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
+    parser.add_argument('--remove-hy', action='store_true', default=False,
                         help='Remove Hydrogen atoms in computations, rebuild molecule without them and compute')
-    parser.add_argument('--ignoreSym', action='store_true', default=False,
+    parser.add_argument('--ignore-sym', action='store_true', default=False,
                         help='Ignore all atomic symbols, performing a purely geometric operation')
 
     parser.add_argument('--format', help='Use a specific input/output format')
-    parser.add_argument('--writeOpenu', action='store_true', default=False,
+    parser.add_argument('--write-openu', action='store_true', default=False,
                         help='Write output in open university format')
     parser.add_argument('--nolimit', action='store_true', default=False,
                         help='Allows running program while ignoring computational complexity')
 
     parser.add_argument('--babelbond', action='store_true', default=False, help='Let OpenBabel compute bonding')
-    parser.add_argument('--noBabel',  action='store_true', default=False, help='force suppress automatically using babelbond to create bonds')
-    parser.add_argument('--useMass', action='store_true', default=False,
+    parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using babelbond to create bonds')
+    parser.add_argument('--use-mass', action='store_true', default=False,
                         help='Use the atomic masses to define center of mass')
-    parser.add_argument('--timeOnly', action='store_true', default=False, help="Only print the time and exit")
-    parser.add_argument('--babelTest', action='store_true', default=False, help="Test if the molecule is legal or not")
-    parser.add_argument('--sn_max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
-    parser.add_argument('--printNorm', action='store_true', default=False,
+    parser.add_argument('--time-only', action='store_true', default=False, help="Only print the time and exit")
+    parser.add_argument('--babel-test', action='store_true', default=False, help="Test if the molecule is legal or not")
+    parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
+    parser.add_argument('--print-norm', action='store_true', default=False,
                         help='Print the normalization factor as well')
-    parser.add_argument('--printLocal', action='store_true', default=False,
+    parser.add_argument('--print-local', action='store_true', default=False,
                         help='Print the local CSM (csm for each atom) in the output file')
 
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
-    parser.add_argument('--outputPerms', action='store', default=None,
+    parser.add_argument('--output-perms', action='store', default=None,
                         help='Writes all enumerated permutations to file')
-    parser.add_argument('--useChains', action='store_true', default=False,
+    parser.add_argument('--use-chains', action='store_true', default=False,
                         help='Use chains specified in the PDB file in order to calculate permutations')
     parser.add_argument('--hungarian', action='store_true', default=False,
                         help='Use hungarian algorithm in approx')
-    parser.add_argument('--printApprox', action='store_true', default=False,
+    parser.add_argument('--print-approx', action='store_true', default=False,
                         help='add some printouts to approx')
 
     return parser
