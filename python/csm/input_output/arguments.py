@@ -39,7 +39,7 @@ def _create_parser():
 
     parser.add_argument('--useperm', type=str, help='Only compute for a single permutation')
     parser.add_argument('--usedir', type=str, help='Use a predefined axis as a starting point. '
-                                                   'This options ignores the -ignoreSym/-ignoreHy/-removeHy flags')
+                                                   'This options ignores the --ignore-sym/--ignore-hy/--remove-hy flags')
     parser.add_argument('--findperm', action='store_true', default=False, help='Attempt to search for a permutation')
     parser.add_argument('--detect-outliers', action='store_true', default=False,
                         help="Use statistical methods to try and improve --findperm's results")
@@ -212,7 +212,7 @@ def _process_split_arguments(parse_res):
     mol_args['in_file_name'] = parse_res.input
     mol_args['ignore_hy'] = parse_res.ignore_hy
     mol_args['remove_hy'] = parse_res.remove_hy
-    mol_args['ignore_sym'] = parse_res.ignore_sym
+    mol_args['ignore_symm'] = parse_res.ignore_sym
     mol_args['format'] = parse_res.format
     mol_args['useformat'] = mol_args['format'] is not None
     if not mol_args['format']:
