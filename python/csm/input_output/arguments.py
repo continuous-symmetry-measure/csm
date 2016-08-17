@@ -181,9 +181,9 @@ def _process_split_arguments(parse_res):
     calc_args['op_name'] = op.name
     calc_args['sn_max'] = parse_res.sn_max
     calc_args['limit_run'] = not parse_res.nolimit
-    calc_args['print_approx']= parse_res.printApprox
+    calc_args['print_approx']= parse_res.print_approx
 
-    calc_args['keep_structure'] =    mol_args['keep_structure']= parse_res.keepStructure
+    calc_args['keep_structure'] =    mol_args['keep_structure']= parse_res.keep_structure
 
 
     calc_args['calc_type'] = 'exact'  # this is the default, which will be changed if relevant
@@ -195,7 +195,7 @@ def _process_split_arguments(parse_res):
     if parse_res.trivial:
         calc_args['calc_type'] = 'trivial'
 
-    calc_args['detect_outliers'] = parse_res.detectOutliers
+    calc_args['detect_outliers'] = parse_res.detect_outliers
     if parse_res.findperm:
         calc_args['calc_type'] = 'approx'
     # calc_args['find_perm'] = parse_res.findperm
@@ -206,35 +206,35 @@ def _process_split_arguments(parse_res):
     if parse_res.hungarian:
         calc_args['hungarian'] = True
 
-    if parse_res.outputPerms:
+    if parse_res.output_perms:
         calc_args['print_perms'] = True
 
     mol_args['in_file_name'] = parse_res.input
-    mol_args['ignore_hy'] = parse_res.ignoreHy
-    mol_args['remove_hy'] = parse_res.removeHy
-    mol_args['ignore_sym'] = parse_res.ignoreSym
+    mol_args['ignore_hy'] = parse_res.ignore_hy
+    mol_args['remove_hy'] = parse_res.remove_hy
+    mol_args['ignore_sym'] = parse_res.ignore_sym
     mol_args['format'] = parse_res.format
     mol_args['useformat'] = mol_args['format'] is not None
     if not mol_args['format']:
         # get input file extension
         mol_args['format'] = parse_res.input.split(".")[-1]
     mol_args['babel_bond'] = parse_res.babelbond
-    mol_args['no_babel'] = parse_res.noBabel
-    mol_args['use_mass'] = parse_res.useMass
-    calc_args['use_chains'] = mol_args['use_chains'] = parse_res.useChains
-    if parse_res.writeOpenu:
+    mol_args['no_babel'] = parse_res.no_babel
+    mol_args['use_mass'] = parse_res.use_mass
+    calc_args['use_chains'] = mol_args['use_chains'] = parse_res.use_chains
+    if parse_res.write_openu:
         mol_args['format'] = "PDB"
     if parse_res.useperm:
         mol_args['perm_file_name'] = parse_res.useperm
     if parse_res.usedir:
         mol_args['dir_file_name'] = parse_res.usedir
 
-    out_args['write_openu'] = parse_res.writeOpenu
-    out_args['print_norm'] = parse_res.printNorm
-    out_args['print_local'] = parse_res.printLocal
+    out_args['write_openu'] = parse_res.write_openu
+    out_args['print_norm'] = parse_res.print_norm
+    out_args['print_local'] = parse_res.print_local
     out_args['log_file_name'] = parse_res.log
     out_args['out_file_name'] = parse_res.output
-    out_args['perms_csv_name'] = parse_res.outputPerms
+    out_args['perms_csv_name'] = parse_res.output_perms
 
     #_check_arguments(mol_args, calc_args, out_args)
 
