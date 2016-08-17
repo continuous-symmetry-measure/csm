@@ -32,15 +32,15 @@ def _create_parser():
     # Optional arguments (their names start with --)
     parser.add_argument('--trivial', action='store_true', default=False,
                         help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
-    parser.add_argument('--justperms', action='store_true', default=False,
+    parser.add_argument('--just-perms', action='store_true', default=False,
                         help='no calculation of CSM. without --outputPerms, only counts the perm. ')
     parser.add_argument('--approx', action='store_true', default=False,
                         help='Equivalent to --detectOutliers --findperm together')
 
-    parser.add_argument('--useperm', type=str, help='Only compute for a single permutation')
-    parser.add_argument('--usedir', type=str, help='Use a predefined axis as a starting point. '
+    parser.add_argument('--use-perm', type=str, help='Only compute for a single permutation')
+    parser.add_argument('--use-dir', type=str, help='Use a predefined axis as a starting point. '
                                                    'This options ignores the --ignore-sym/--ignore-hy/--remove-hy flags')
-    parser.add_argument('--findperm', action='store_true', default=False, help='Attempt to search for a permutation')
+    parser.add_argument('--find-perm', action='store_true', default=False, help='Attempt to search for a permutation')
     parser.add_argument('--detect-outliers', action='store_true', default=False,
                         help="Use statistical methods to try and improve --findperm's results")
 
@@ -55,10 +55,10 @@ def _create_parser():
     parser.add_argument('--format', help='Use a specific input/output format')
     parser.add_argument('--write-openu', action='store_true', default=False,
                         help='Write output in open university format')
-    parser.add_argument('--nolimit', action='store_true', default=False,
+    parser.add_argument('--no-limit', action='store_true', default=False,
                         help='Allows running program while ignoring computational complexity')
 
-    parser.add_argument('--babelbond', action='store_true', default=False, help='Let OpenBabel compute bonding')
+    parser.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
     parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using babelbond to create bonds')
     parser.add_argument('--use-mass', action='store_true', default=False,
                         help='Use the atomic masses to define center of mass')
@@ -180,7 +180,7 @@ def _process_split_arguments(parse_res):
     calc_args['op_order'] = op.order
     calc_args['op_name'] = op.name
     calc_args['sn_max'] = parse_res.sn_max
-    calc_args['limit_run'] = not parse_res.nolimit
+    calc_args['limit_run'] = not parse_res.no_limit
     calc_args['print_approx']= parse_res.print_approx
 
     calc_args['keep_structure'] =    mol_args['keep_structure']= parse_res.keep_structure
@@ -189,14 +189,14 @@ def _process_split_arguments(parse_res):
     calc_args['calc_type'] = 'exact'  # this is the default, which will be changed if relevant
 
     #calc_args['just_perms'] = parse_res.justperms
-    if parse_res.justperms:
+    if parse_res.just_perms:
         calc_args['calc_type'] = 'just_perms'
 
     if parse_res.trivial:
         calc_args['calc_type'] = 'trivial'
 
     calc_args['detect_outliers'] = parse_res.detect_outliers
-    if parse_res.findperm:
+    if parse_res.find_perm:
         calc_args['calc_type'] = 'approx'
     # calc_args['find_perm'] = parse_res.findperm
     if parse_res.approx:
@@ -218,16 +218,16 @@ def _process_split_arguments(parse_res):
     if not mol_args['format']:
         # get input file extension
         mol_args['format'] = parse_res.input.split(".")[-1]
-    mol_args['babel_bond'] = parse_res.babelbond
+    mol_args['babel_bond'] = parse_res.babel_bond
     mol_args['no_babel'] = parse_res.no_babel
     mol_args['use_mass'] = parse_res.use_mass
     calc_args['use_chains'] = mol_args['use_chains'] = parse_res.use_chains
     if parse_res.write_openu:
         mol_args['format'] = "PDB"
-    if parse_res.useperm:
-        mol_args['perm_file_name'] = parse_res.useperm
-    if parse_res.usedir:
-        mol_args['dir_file_name'] = parse_res.usedir
+    if parse_res.use_perm:
+        mol_args['perm_file_name'] = parse_res.use_perm
+    if parse_res.use_dir:
+        mol_args['dir_file_name'] = parse_res.use_dir
 
     out_args['write_openu'] = parse_res.write_openu
     out_args['print_norm'] = parse_res.print_norm
