@@ -96,32 +96,6 @@ def _create_parser():
     return parser
 
 
-def _check_arguments(in_args, calc_args, out_args):
-    if (calc_args['find_perm'] and 'perm' in calc_args) or (calc_args['find_perm'] and 'dir_file_name' in calc_args) \
-            or ('dir_file_name' in calc_args and 'perm' in calc_args):
-        raise ValueError("--findperm, --useperm and --usedir are mutually exclusive")
-
-    if in_args['remove_hy'] and in_args['ignore_hy']:
-        raise ValueError("--removeHy and --ignoreHy are mutually exclusive")
-
-    if "perm" in calc_args:
-        if calc_args['type'] == 'CH':
-            raise ValueError("Chirality can't be given a permutation, run the specific csm operation instead")
-
-        # In C++ code ignoreSym, ignoreHy and removeHy are used only when usePerm is false
-        if in_args["ignore_sym"]:
-            raise ValueError("--useperm ignores the --ignoreSym option, can't use them together")
-        if in_args["ignore_hy"]:
-            raise ValueError("--useperm ignores the --ignoreHy option, can't use them together")
-        if in_args["remove_hy"]:
-            raise ValueError("--useperm ignores the --removeHy option, can't use them together")
-
-    if calc_args['detect_outliers'] and not calc_args['find_perm']:
-        raise ValueError("--detectOutliers must be used with --findperm")
-
-    #if in_args['use_chains'] and not in_args['molecule'].chains:
-     #   raise ValueError("--useChains specified but no chains provided in the molecule file")
-
 
 OperationCode = namedtuple('OperationCode', ('type', 'order', 'name'))
 _opcode_data = {
@@ -136,6 +110,7 @@ _opcode_data = {
     'c7': ('CN', 7, "C7 SYMMETRY"),
     'c8': ('CN', 8, "C8 SYMMETRY"),
     'c10': ('CN', 10, "C10 SYMMETRY"),
+    's1':('CS', 2, "MIRROR SYMMETRY (S1)"),
     's2': ('SN', 2, "S2 SYMMETRY"),
     's4': ('SN', 4, "S4 SYMMETRY"),
     's6': ('SN', 6, "S6 SYMMETRY"),
@@ -164,6 +139,9 @@ def get_operation_data(opcode):
     if opcode[0]=='c' and isint(opcode[1:]):
         return OperationCode(type='CN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
     if opcode[0]=='s' and isint(opcode[1:]):
+        if opcode[1:]=='1':
+            data = _opcode_data[opcode.lower()]
+            return OperationCode(type=data[0], order=data[1], name=data[2])
         return OperationCode(type='SN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
     try:
         data = _opcode_data[opcode.lower()]
