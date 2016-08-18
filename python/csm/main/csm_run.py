@@ -37,7 +37,7 @@ def run(args=[]):
     try:
         # Read inputs
         in_args, calc_args, out_args = get_split_arguments(args)
-        calc_args['molecule'], calc_args['perm'], calc_args['dir'] = read_inputs(**in_args)
+        calc_args['molecule'], calc_args['perm'], calc_args['dirs'] = read_inputs(**in_args)
 
         # logging:
         init_logging(**out_args)

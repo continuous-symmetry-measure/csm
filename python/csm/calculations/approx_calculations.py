@@ -13,8 +13,8 @@ from csm.molecule.molecule import Molecule
 
 logger = logging.getLogger("csm")
 
-def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, dir=None, *args, **kwargs):
-    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dir)
+def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, dirs=None, *args, **kwargs):
+    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs)
     #print(is_legal(results.perm, molecule))
     return process_results(results)
 
@@ -73,7 +73,7 @@ def is_legal(perm, molecule):
     return legal
 
 
-def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dir):
+def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs):
     chain_permutations = []
     dummy = Molecule.dummy_molecule(len(molecule.chains), molecule.chain_equivalences)
     permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
@@ -82,14 +82,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
 
     best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
 
-    if dir:
-        for chainperm in chain_permutations:
-            perm = estimate_perm(op_type, op_order, molecule, dir, chainperm, False, hungarian)
-            best_for_chain_perm = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
-            if best_for_chain_perm.csm < best.csm:
-                best = best_for_chain_perm
-
-    elif op_type == 'CI' or (op_type == 'SN' and op_order == 2):
+    if op_type == 'CI' or (op_type == 'SN' and op_order == 2):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
@@ -101,7 +94,8 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
 
 
     else:
-        dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
+        if not dirs: #if user did not provide input dirs
+            dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
         if print_approx:
             print("There are", len(dirs), "initial directions to search for the best permutation")
         for chainperm in chain_permutations:

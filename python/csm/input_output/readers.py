@@ -43,10 +43,12 @@ def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
         perm = None
 
     if dir_file_name:
-        dir = read_dir_file(dir_file_name)
+        dirs = read_dir_file(dir_file_name)
+        if not dirs:
+            raise ValueError("provided dir file is empty")
     else:
-        dir = None
-    return molecule, perm, dir
+        dirs = None
+    return molecule, perm, dirs
 
 
 def read_dir_file(filename):
@@ -55,10 +57,16 @@ def read_dir_file(filename):
     :param filename: Name of dir file
     :return: (x,y,z) of the symmetry axis
     """
-    with open(filename, 'r') as f:
-        line = f.readline().split()
-        result = (float(line[0]), float(line[1]), float(line[2]))
-    return result
+    dirs=[]
+    try:
+        with open(filename, 'r') as f:
+            for fileline in f:
+                line = fileline.split()
+                result = (float(line[0]), float(line[1]), float(line[2]))
+                dirs.append(result)
+        return dirs
+    except:
+        raise ValueError("Invalid input for use-dir")
 
 
 def read_perm_file(filename):
