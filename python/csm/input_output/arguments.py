@@ -246,7 +246,7 @@ def _process_split_arguments(parse_res):
 
     out_args['write_openu'] = parse_res.write_openu
     out_args['print_norm'] = parse_res.print_norm
-    out_args['print_local'] = parse_res.print_local
+    out_args['print_local'] = calc_args['calc_local'] = parse_res.print_local
     out_args['log_file_name'] = parse_res.log
 
     out_args['perms_csv_name'] = parse_res.output_perms

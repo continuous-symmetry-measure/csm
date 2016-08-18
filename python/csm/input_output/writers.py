@@ -49,8 +49,8 @@ def print_results(result, in_args, calc_args, out_args):
             f.write("\nLocal CSM: \n")
             size = len(result.molecule.atoms)
             for i in range(size):
-                sum += result.localCSM[i]
-                f.write("%s %7lf\n" % (result.molecule.atoms[i].symbol, non_negative_zero(result.localCSM[i])))
+                sum += result.local_csm[i]
+                f.write("%s %7lf\n" % (result.molecule.atoms[i].symbol, non_negative_zero(result.local_csm[i])))
             f.write("\nsum: %7lf\n" % sum)
 
         # print chirality

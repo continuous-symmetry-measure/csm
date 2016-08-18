@@ -68,7 +68,7 @@ def compute_local_csm(molecule, perm, dir, op_type, op_order):
 
         # apply rotation to each atoms
         rotated = rot @ m_pos[cur_perm[i]]
-        difference = rotated - m_pos[j]
+        difference = rotated - m_pos[i]
         square = np.square(difference)
         sum = np.sum(square)
         local_csm[i] = sum * (100.0 / (2 * op_order))
