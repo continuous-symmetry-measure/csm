@@ -23,6 +23,7 @@ def _create_parser():
     # The first three positional arguments
     c_symmetries = ['c%d' % n for n in range(2, 21)]
     s_symmetries = ['s%d' % n for n in range(2, 21, 2)]
+    s_symmetries.append('s1') #s1 is also allowed and is treated as cs. s2 is treated as ci.
     parser.add_argument('type',
                         choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
                         help='The type of operation')
@@ -30,55 +31,67 @@ def _create_parser():
     parser.add_argument('output', default='output.txt', help='Output file')
 
     # Optional arguments (their names start with --)
+
+    #types of calculations (default is exact):
+    parser.add_argument('--approx', action='store_true', default=False,
+                        help='use the approximate algorithm to estimate the CSM')
     parser.add_argument('--trivial', action='store_true', default=False,
                         help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
     parser.add_argument('--just-perms', action='store_true', default=False,
-                        help='no calculation of CSM. without --outputPerms, only counts the perm. ')
-    parser.add_argument('--approx', action='store_true', default=False,
-                        help='Equivalent to --detectOutliers --findperm together')
+                        help='no calculation of CSM. without --output-perms, only counts the perm. ')
 
-    parser.add_argument('--use-perm', type=str, help='Only compute for a single permutation')
-    parser.add_argument('--use-dir', type=str, help='Use a predefined axis as a starting point and run the approx algorithm on it'
-                                                   'This options ignores the --ignore-sym/--ignore-hy/--remove-hy flags')
-    parser.add_argument('--find-perm', action='store_true', default=False, help='Attempt to search for a permutation')
-    parser.add_argument('--detect-outliers', action='store_true', default=False,
-                        help="Use statistical methods to try and improve --findperm's results")
 
-    parser.add_argument('--keep-structure', action='store_true', default=False,
-                        help='Maintain molecule structure from being distorted')
+    #general input/calculation arguments:
     parser.add_argument('--ignore-hy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
     parser.add_argument('--remove-hy', action='store_true', default=False,
                         help='Remove Hydrogen atoms in computations, rebuild molecule without them and compute')
     parser.add_argument('--ignore-sym', action='store_true', default=False,
                         help='Ignore all atomic symbols, performing a purely geometric operation')
+    parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
+    parser.add_argument('--use-mass', action='store_true', default=False,
+                        help='Use the atomic masses to define center of mass')
+    parser.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
+    parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using babelbond to create bonds')
 
+
+    #calculation arguments that only apply to exact:
+    parser.add_argument('--use-perm', type=str, help='Compute exact CSM, for a single permutation')
+    parser.add_argument('--keep-structure', action='store_true', default=False,
+                        help='Maintain molecule structure from being distorted in the exact calculation')
+
+
+    #calculation arguments that only apply to approx
+    parser.add_argument('--use-dir', type=str,
+                        help='Run the approx algorithm using a predefined axis as the starting point')
+    parser.add_argument('--detect-outliers', action='store_true', default=False,
+                        help="Use outlier detection to improve guesses for initial directions in approx algorithm")
+    parser.add_argument('--use-chains', action='store_true', default=False,
+                        help='Use chains specified in the PDB file in order to calculate permutations in approx algorithm')
+    parser.add_argument('--hungarian', action='store_true', default=False,
+                    help='Use hungarian algorithm in approx')
+
+
+    #output formatting and printing options
     parser.add_argument('--format', help='Use a specific input/output format')
     parser.add_argument('--write-openu', action='store_true', default=False,
                         help='Write output in open university format')
-    parser.add_argument('--no-limit', action='store_true', default=False,
-                        help='Allows running program while ignoring computational complexity')
-
-    parser.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
-    parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using babelbond to create bonds')
-    parser.add_argument('--use-mass', action='store_true', default=False,
-                        help='Use the atomic masses to define center of mass')
-    parser.add_argument('--time-only', action='store_true', default=False, help="Only print the time and exit")
-    parser.add_argument('--babel-test', action='store_true', default=False, help="Test if the molecule is legal or not")
-    parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
     parser.add_argument('--print-norm', action='store_true', default=False,
                         help='Print the normalization factor as well')
     parser.add_argument('--print-local', action='store_true', default=False,
-                        help='Print the local CSM (csm for each atom) in the output file')
-
+                    help='Print the local CSM (csm for each atom) in the output file')
     parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
     parser.add_argument('--output-perms', action='store', default=None,
-                        help='Writes all enumerated permutations to file')
-    parser.add_argument('--use-chains', action='store_true', default=False,
-                        help='Use chains specified in the PDB file in order to calculate permutations')
-    parser.add_argument('--hungarian', action='store_true', default=False,
-                        help='Use hungarian algorithm in approx')
+                    help='Writes all enumerated permutations to file')
     parser.add_argument('--print-approx', action='store_true', default=False,
                         help='add some printouts to approx')
+
+
+
+    #defunct: no longer applied in code
+    #parser.add_argument('--no-limit', action='store_true', default=False, help='Allows running program while ignoring computational complexity')
+    #parser.add_argument('--babel-test', action='store_true', default=False, help="Test if the molecule is legal or not")
+    #parser.add_argument('--time-only', action='store_true', default=False, help="Only print the time and exit")
+
 
     return parser
 
@@ -170,76 +183,114 @@ def _process_split_arguments(parse_res):
 
     """
 
-    mol_args = {}
+    in_args = {}
     calc_args = {}
     out_args = {}
+
+    #the first three positional arguments
 
     op = get_operation_data(parse_res.type)
 
     calc_args['op_type'] = op.type
     calc_args['op_order'] = op.order
     calc_args['op_name'] = op.name
-    calc_args['sn_max'] = parse_res.sn_max
-    calc_args['limit_run'] = not parse_res.no_limit
-    calc_args['print_approx']= parse_res.print_approx
 
-    calc_args['keep_structure'] =    mol_args['keep_structure']= parse_res.keep_structure
+    in_args['in_file_name'] = parse_res.input
 
+    out_args['out_file_name'] = parse_res.output
 
-    calc_args['calc_type'] = 'exact'  # this is the default, which will be changed if relevant
+    #optional arguments:
 
-    #calc_args['just_perms'] = parse_res.justperms
-    if parse_res.just_perms:
-        calc_args['calc_type'] = 'just_perms'
-
-    if parse_res.trivial:
-        calc_args['calc_type'] = 'trivial'
-
-    calc_args['detect_outliers'] = parse_res.detect_outliers
-    if parse_res.find_perm:
-        calc_args['calc_type'] = 'approx'
-    # calc_args['find_perm'] = parse_res.findperm
+    #types of calculations:
+    calc_args['calc_type'] = 'exact'
     if parse_res.approx:
         calc_args['calc_type'] = 'approx'
-        #calc_args['find_perm'] = True
-        calc_args['detect_outliers'] = True
-    if parse_res.hungarian:
-        calc_args['hungarian'] = True
+    if parse_res.just_perms:
+        if parse_res.approx:
+            raise ValueError("--approx and --just-perms are mutually exclusive")
+        calc_args['calc_type'] = 'just_perms'
+    if parse_res.trivial:
+        if parse_res.approx:
+            raise ValueError("--approx and --trivial are mutually exclusive")
+        if parse_res.just_perms:
+            raise ValueError("--just-perms and --trivial are mutually exclusive")
+        calc_args['calc_type'] = 'trivial'
 
-    if parse_res.output_perms:
-        calc_args['print_perms'] = True
+    #general input/calculation arguments:
+    calc_args['sn_max'] = parse_res.sn_max
+    in_args['ignore_hy'] = parse_res.ignore_hy
+    in_args['remove_hy'] = parse_res.remove_hy
+    in_args['ignore_symm'] = parse_res.ignore_sym
 
-    mol_args['in_file_name'] = parse_res.input
-    mol_args['ignore_hy'] = parse_res.ignore_hy
-    mol_args['remove_hy'] = parse_res.remove_hy
-    mol_args['ignore_symm'] = parse_res.ignore_sym
-    mol_args['format'] = parse_res.format
-    mol_args['useformat'] = mol_args['format'] is not None
-    if not mol_args['format']:
-        # get input file extension
-        mol_args['format'] = parse_res.input.split(".")[-1]
-    mol_args['babel_bond'] = parse_res.babel_bond
-    mol_args['no_babel'] = parse_res.no_babel
-    mol_args['use_mass'] = parse_res.use_mass
-    calc_args['use_chains'] = mol_args['use_chains'] = parse_res.use_chains
-    if parse_res.write_openu:
-        mol_args['format'] = "PDB"
-    if parse_res.use_perm:
-        mol_args['perm_file_name'] = parse_res.use_perm
+
+    #calculation arguments for exact only:
+    if calc_args['calc_type'] != 'exact' and parse_res.keep_structure:
+        raise Warning("--keep-structure applies only to exact calculation. --keep-structure will be ignored")
+    calc_args['keep_structure'] = in_args['keep_structure']= parse_res.keep_structure
+    in_args['babel_bond'] = parse_res.babel_bond
+    in_args['no_babel'] = parse_res.no_babel
+    in_args['use_mass'] = parse_res.use_mass
+
+    #calculation arguments for approx only:
+    if calc_args['calc_type'] != 'approx' and parse_res.detect_outliers:
+        raise Warning("--detect-outliers applies only to approx calculation. --detect-outliers will be ignored")
+    calc_args['detect_outliers'] = parse_res.detect_outliers
+
+    if calc_args['calc_type'] != 'approx' and parse_res.hungarian:
+        raise Warning("--hungarian applies only to approx calculation. --hungarian will be ignored")
+    calc_args['hungarian'] = parse_res.hungarian
+
     if parse_res.use_dir:
-        calc_args['calc_type'] = 'approx'
-        mol_args['dir_file_name'] = parse_res.use_dir #mol_args is also in_args
+        if calc_args['calc_type'] != 'approx':
+            raise Warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
+        in_args['dir_file_name'] = parse_res.use_dir
+
+
+    #TODO: Actually, use-chains could apply to several other calculation types. just hasn't been implemented yet.
+    #(it already applies to trivial)
+    calc_args['use_chains'] = in_args['use_chains'] = parse_res.use_chains
+
+
+
+    #output arguments:
+    calc_args['print_approx']= parse_res.print_approx
+    calc_args['print_perms'] = parse_res.output_perms
+    in_args['format'] = parse_res.format
+    in_args['useformat'] = in_args['format'] is not None
+    if not in_args['format']:
+        # get input file extension
+        in_args['format'] = parse_res.input.split(".")[-1]
+    if parse_res.write_openu:
+        in_args['format'] = "PDB"
+    if parse_res.use_perm:
+        in_args['perm_file_name'] = parse_res.use_perm
+
 
     out_args['write_openu'] = parse_res.write_openu
     out_args['print_norm'] = parse_res.print_norm
     out_args['print_local'] = parse_res.print_local
     out_args['log_file_name'] = parse_res.log
-    out_args['out_file_name'] = parse_res.output
+
     out_args['perms_csv_name'] = parse_res.output_perms
 
-    #_check_arguments(mol_args, calc_args, out_args)
 
-    return mol_args, calc_args, out_args
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    #_check_arguments(in_args, calc_args, out_args)
+
+    return in_args, calc_args, out_args
 
 
 def get_split_arguments(args):
@@ -249,5 +300,5 @@ def get_split_arguments(args):
     """
     parser = _create_parser()
     parsed_args = parser.parse_args(args)
-    mol_args, calc_args, out_args = _process_split_arguments(parsed_args)
-    return mol_args, calc_args, out_args
+    in_args, calc_args, out_args = _process_split_arguments(parsed_args)
+    return in_args, calc_args, out_args
