@@ -2,7 +2,8 @@
 Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
-
+import logging
+logger = logging.getLogger(__name__)
 import sys
 
 from collections import namedtuple
@@ -66,7 +67,7 @@ def _create_parser():
     parser.add_argument('--detect-outliers', action='store_true', default=False,
                         help="Use outlier detection to improve guesses for initial directions in approx algorithm")
     parser.add_argument('--use-chains', action='store_true', default=False,
-                        help='Use chains specified in the PDB file in order to calculate permutations in approx algorithm')
+                        help='Use chains specified in the PDB file in order to calculate permutations in approx or trivial algorithm')
     parser.add_argument('--hungarian', action='store_true', default=False,
                     help='Use hungarian algorithm in approx')
 
@@ -203,7 +204,7 @@ def _process_split_arguments(parse_res):
 
     #calculation arguments for exact only:
     if calc_args['calc_type'] != 'exact' and parse_res.keep_structure:
-        raise Warning("--keep-structure applies only to exact calculation. --keep-structure will be ignored")
+        logger.warning("--keep-structure applies only to exact calculation. --keep-structure will be ignored")
     calc_args['keep_structure'] = in_args['keep_structure']= parse_res.keep_structure
     in_args['babel_bond'] = parse_res.babel_bond
     in_args['no_babel'] = parse_res.no_babel
@@ -211,16 +212,16 @@ def _process_split_arguments(parse_res):
 
     #calculation arguments for approx only:
     if calc_args['calc_type'] != 'approx' and parse_res.detect_outliers:
-        raise Warning("--detect-outliers applies only to approx calculation. --detect-outliers will be ignored")
+        logger.warning("--detect-outliers applies only to approx calculation. --detect-outliers will be ignored")
     calc_args['detect_outliers'] = parse_res.detect_outliers
 
     if calc_args['calc_type'] != 'approx' and parse_res.hungarian:
-        raise Warning("--hungarian applies only to approx calculation. --hungarian will be ignored")
+        logger.warning("--hungarian applies only to approx calculation. --hungarian will be ignored")
     calc_args['hungarian'] = parse_res.hungarian
 
     if parse_res.use_dir:
         if calc_args['calc_type'] != 'approx':
-            raise Warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
+            logger.warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
         in_args['dir_file_name'] = parse_res.use_dir
 
 
@@ -241,6 +242,8 @@ def _process_split_arguments(parse_res):
     if parse_res.write_openu:
         in_args['format'] = "PDB"
     if parse_res.use_perm:
+        if calc_args['calc_type'] != 'exact':
+            logger.warning("--use-perm applies only to exact calculation. --use-perm will be ignored")
         in_args['perm_file_name'] = parse_res.use_perm
 
 
