@@ -1,5 +1,32 @@
 The Python CSM Package
 ======================
+
+Changes in version 0.9.2
+------------------------
+
+MAJOR UPDATE
+
+The input arguments (flags) have undergone a complete overhaul.
+As a result, this version breaks backwards compatibility with other versions.
+If you run this version with flags from the previous version it will not work in most cases (except where flags were incidentally left untouched, e.g. one-word flags)
+
+The changes are as follows:
+1. flags are now all in a single standardized format: entirely in lowercase, with words separated by dashes.
+2. some defunct/non-supported flags have been removed. (no-limit, babel-test, time-only). they can be added back if we decide what we want them to do.
+3. several changes have taken place regarding flags related to the approximate algorithm:
+a. --findperm has been removed. --approx, which previously applied both --findperm and --findOutliers, is now equivalent to what --findperm was previously (in other words, --approx now calls the approximate algorithm, and does NOT also call findOutliers. use --find-outliers if you want to find outliers.)
+b. --usedir is no longer a stand-alone argument: it is a modifier to --approx. if --usedir is called without approx, it will be ignored.
+4. some calculation flags apply only to the exact calculation, others only to the approximate calculation. calling a non-applicable flag will print a warning to the user, but the program will continue with the specified type of calculation, ignoring the irrelevant flag.
+Bugfixes:
+fixed bug in --trivial that was causing error message and program exit
+fixed bug with ignore-sym that caused it to not do anything
+fixed bug in use-dir that caused it to not do anything
+added in support for S1 symmetry (equivalent to CS)
+fixed bug that caused sn-max argument to be ignored. when sn-max argument is not provided, default sn_max is 8.
+fixed bug that caused error in --print-local
+
+
+
 Changes in version 0.9.0
 ------------------------
 Added the norm_csm commandline command
