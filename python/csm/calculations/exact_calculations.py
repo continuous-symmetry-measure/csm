@@ -150,10 +150,10 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
     return count
 
 
-def exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=None, calc_local=False, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, *args, **kwargs):
 
     if op_type == 'CH':  # Chirality
-        sn_max = op_order
+        #sn_max = op_order
         # First CS
         best_result = csm_operation('CS', 2, molecule, keep_structure, perm)
         best_result = best_result._replace(op_type='CS') #unclear why this line isn't redundant
@@ -162,8 +162,9 @@ def exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=No
             for op_order in range(2, sn_max + 1, 2):
                 result = csm_operation('SN', op_order, molecule, keep_structure, perm)
                 if result.csm < best_result.csm:
+                    print("##########SN yielded something for once")
                     best_result = result._replace(op_type = 'SN', op_order = op_order)
-                if best_result.csm > MINDOUBLE:
+                if best_result.csm < MINDOUBLE:
                     break
 
     else:
@@ -216,9 +217,10 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None):
         raise ValueError("Failed to calculate a csm value for %s" % op_type)
 
     if not perm:
-        print("number of permutations:", permuter.count)
-        print("Number of branches in permutation tree:", permuter.truecount)
-        print("Number of dead ends:", permuter.falsecount)
+        #print("number of permutations:", permuter.count)
+        #print("Number of branches in permutation tree:", permuter.truecount)
+        #print("Number of dead ends:", permuter.falsecount)
+        pass
 
     best_csm = best_csm._replace(perm_count=permuter.count)
     return best_csm
