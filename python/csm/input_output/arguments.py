@@ -52,7 +52,7 @@ def _create_parser():
     parser.add_argument('--use-mass', action='store_true', default=False,
                         help='Use the atomic masses to define center of mass')
     parser.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
-    parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using babelbond to create bonds')
+    parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
 
 
     #calculation arguments that only apply to exact:
@@ -62,8 +62,8 @@ def _create_parser():
 
 
     #calculation arguments that only apply to approx
-    parser.add_argument('--use-dir', type=str,
-                        help='Run the approx algorithm using a predefined axis as the starting point')
+    #parser.add_argument('--use-dir', type=str,
+    #                    help='Run the approx algorithm using predefined axes as the starting point')
     parser.add_argument('--detect-outliers', action='store_true', default=False,
                         help="Use outlier detection to improve guesses for initial directions in approx algorithm")
     parser.add_argument('--use-chains', action='store_true', default=False,
@@ -219,10 +219,10 @@ def _process_split_arguments(parse_res):
         logger.warning("--hungarian applies only to approx calculation. --hungarian will be ignored")
     calc_args['hungarian'] = parse_res.hungarian
 
-    if parse_res.use_dir:
-        if calc_args['calc_type'] != 'approx':
-            logger.warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
-        in_args['dir_file_name'] = parse_res.use_dir
+    #if parse_res.use_dir:
+    #    if calc_args['calc_type'] != 'approx':
+    #        logger.warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
+    #    in_args['dir_file_name'] = parse_res.use_dir
 
 
     #TODO: Actually, use-chains could apply to several other calculation types. just hasn't been implemented yet.
