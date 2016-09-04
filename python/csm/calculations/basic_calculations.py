@@ -1,4 +1,5 @@
 import numpy as np
+from csm.calculations.constants import MINDOUBLE
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
 from collections import namedtuple
 
@@ -14,6 +15,7 @@ CSMState = namedtuple('CSMState', ('molecule',
                                    'perm_count',))
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
+
 def process_results(results):
     """
     Final normalizations and de-normalizations
@@ -25,14 +27,42 @@ def process_results(results):
     symmetric_structure = create_symmetric_structure(results.molecule, results.perm, results.dir, results.op_type,
                                                      results.op_order, d_min)
     results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
-
-
     masses = [atom.mass for atom in results.molecule.atoms]
     normalize_coords(results.symmetric_structure, masses)
 
     results.molecule.de_normalize()
     symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
-    return results._replace(symmetric_structure=symmetric_structure)
+    results= results._replace(symmetric_structure=symmetric_structure)
+    test2= yaffa_test(results)
+    diff=results.csm - test2
+    if diff>.0001 or diff<-.0001:
+        print("LARGE DIFF:", diff, "yaffa", test2)
+    else:
+        print(diff)
+
+    return results
+
+
+def yaffa_test(result):
+    #step one: get average of all atoms
+    init_avg = np.mean(result.molecule.Q, axis=0)
+    #step two: distance between intial and actual: initial - actual, squared
+    #step three: normal: distance between initial and initial average, (x-x0)^2 + (y-y0)^2 + (z-z0)^2
+    #step four: sum of distances between initial and actual, and then sum of x-y-z
+    #step five: sum of normal
+    distance=np.array([0.0, 0.0, 0.0])
+    normal=0.0
+    for i in range(len(result.molecule.Q)):
+        initminusactual=result.molecule.Q[i]- result.symmetric_structure[i]
+        square1=np.square(initminusactual)
+        square2=initminusactual * initminusactual
+        distance+=(np.square(result.molecule.Q[i]- result.symmetric_structure[i]))
+        normal+=(np.sum(np.square(result.molecule.Q[i]-init_avg )))
+    distance=np.sum(distance)
+    #step six: 100 * step four / step five
+    result= 100* distance /normal
+    return result
+
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
     is_improper = op_type != 'CN'
@@ -105,5 +135,4 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
     symmetric *= normalization
 
     return symmetric
-
 
