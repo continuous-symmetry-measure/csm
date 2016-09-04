@@ -46,15 +46,15 @@ def normalize_csm(norm_type, result):
     denormed_csm = original_csm * original_norm #the result was divided by that factor, so we undo that by multiplication
 
     if norm_type == 'standard':
-        return original_csm
+        return original_norm, original_csm
     if norm_type == 'atom_number':
-        return denormed_csm / len(molecule)
+        return len(molecule), denormed_csm / len(molecule)
     if norm_type == 'fragment_mass_center':
         norm=divide_by_chain_centers(molecule.chains, molecule.Q)
-        return denormed_csm/norm
+        return norm, denormed_csm/norm
     if norm_type == 'symmetric_fragment_mass_center':
         norm=divide_by_chain_centers(molecule.chains, result.symmetric_structure)
-        return denormed_csm/norm
+        return norm, denormed_csm/norm
 
 
 
@@ -67,7 +67,8 @@ def normrun(args=[]):
 
     result = run(args)
 
-    final_csm = normalize_csm(norm_type, result)
+    norm_factor, final_csm = normalize_csm(norm_type, result)
+    print("normalization factor is:", norm_factor)
     print("Csm normalized with", norm_type, "method is:", final_csm)
 
 
