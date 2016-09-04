@@ -13,23 +13,23 @@ from csm.molecule.molecule import Molecule
 
 logger = logging.getLogger("csm")
 
-def approx_calculation(op_type, op_order, molecule, sn_max=8, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, dirs=None, *args, **kwargs):
+def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, dirs=None, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         #sn_max = op_order
         # First CS
-        best_result = find_best_perm('CS', 2, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs)
+        best_result = find_best_perm('CS', 2, molecule, use_best_dir, get_orthogonal, detect_outliers, use_chains, hungarian, print_approx, dirs)
         best_result = best_result._replace(op_type='CS') #unclear why this line isn't redundant
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
-                result = find_best_perm('SN', op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs)
+                result = find_best_perm('SN', op_order, molecule, use_best_dir, get_orthogonal, detect_outliers, use_chains, hungarian, print_approx, dirs)
                 if result.csm < best_result.csm:
                     best_result = result._replace(op_type = 'SN', op_order = op_order)
                 if best_result.csm < MINDOUBLE:
                     break
 
     else:
-        best_result = find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs)
+        best_result = find_best_perm(op_type, op_order, molecule, use_best_dir, get_orthogonal, detect_outliers, use_chains, hungarian, print_approx, dirs)
 
     best_result = process_results(best_result)
     #TODO: is calc_local supposed to be supported in approx?
@@ -95,7 +95,7 @@ def is_legal(perm, molecule):
     return legal
 
 
-def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs):
+def find_best_perm(op_type, op_order, molecule, use_best_dir, get_orthogonal, detect_outliers, use_chains, hungarian, print_approx, dirs):
     chain_permutations = []
     dummy = Molecule.dummy_molecule(len(molecule.chains), molecule.chain_equivalences)
     permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
@@ -117,7 +117,7 @@ def find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hun
 
     else:
         if not dirs: #if user did not provide input dirs
-            dirs = find_symmetry_directions(molecule, detect_outliers, op_type)
+            dirs = find_symmetry_directions(molecule, use_best_dir, get_orthogonal, detect_outliers, op_type)
         if print_approx:
             print("There are", len(dirs), "initial directions to search for the best permutation")
         for chainperm in chain_permutations:
@@ -171,7 +171,7 @@ min_group_for_outliers = 10
 
 
 
-def find_symmetry_directions(molecule, detect_outliers, op_type):
+def find_symmetry_directions(molecule, use_best_dir, get_orthogonal, detect_outliers, op_type):
     # get average position of each equivalence group:
     group_averages = []
     for group in molecule.equivalence_classes:
@@ -182,10 +182,12 @@ def find_symmetry_directions(molecule, detect_outliers, op_type):
         group_averages.append(average)
     group_averages = np.array(group_averages)
 
-    dirs = dir_fit(group_averages)
+    dirs = dir_fit(group_averages, use_best_dir)
+
     if detect_outliers and len(molecule.equivalence_classes) > min_group_for_outliers:
         dirs = dirs_without_outliers(dirs, group_averages, op_type)
-    dirs = dirs_orthogonal(dirs)
+    if get_orthogonal:
+        dirs = dirs_orthogonal(dirs)
     return dirs
 
 
@@ -195,7 +197,7 @@ def normalize_dir(dir):
     dir /= norm
     return dir
 
-def dir_fit(positions):
+def dir_fit(positions, best_dir):
     # get vector of the average position
     sum = np.einsum('ij->j', positions)
     average = sum / len(positions)
@@ -212,6 +214,11 @@ def dir_fit(positions):
     dirs = np.zeros((3, 3), dtype=np.float64, order="c")
     lambdas = np.zeros((3), dtype=np.float64, order="c")
     cppeigen(mat, dirs, lambdas)
+
+    min_index=np.argmin(lambdas)
+    if best_dir:
+        dirs=[dirs[min_index]]
+
 
     # normalize result:
     dirs = np.array([normalize_dir(dir) for dir in dirs])

@@ -70,6 +70,10 @@ def _create_parser():
                         help='Use chains specified in the PDB file in order to calculate permutations in approx or trivial algorithm')
     parser.add_argument('--hungarian', action='store_true', default=False,
                     help='Use hungarian algorithm in approx')
+    parser.add_argument('--no-orthogonal', action='store_true', default=False,
+                        help="Don't add orthogonal directions to calculated directions")
+    parser.add_argument('--use-best-dir', action='store_true', default=False,
+                    help='Only use the best direction')
 
 
     #output formatting and printing options
@@ -218,6 +222,9 @@ def _process_split_arguments(parse_res):
     if calc_args['calc_type'] != 'approx' and parse_res.hungarian:
         logger.warning("--hungarian applies only to approx calculation. --hungarian will be ignored")
     calc_args['hungarian'] = parse_res.hungarian
+
+    calc_args['get_orthogonal'] = not parse_res.no_orthogonal
+    calc_args['use_best_dir'] = parse_res.use_best_dir
 
     #if parse_res.use_dir:
     #    if calc_args['calc_type'] != 'approx':
