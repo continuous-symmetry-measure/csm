@@ -211,7 +211,7 @@ class Molecule:
         try:
             if not use_chains:
                 self._chains = {'Sim': list(range(len(self.atoms)))}  # Default - one chain of all the atoms, "simulated"
-                print("--use-chains not specified. Using one simulated chain of len %d" % len(self._chains['Sim']))
+                #print("--use-chains not specified. Using one simulated chain of len %d" % len(self._chains['Sim']))
             else:
                 self.atoms[0].chain #see if there even are chains
         except:
@@ -346,6 +346,7 @@ class Molecule:
         size = len(self._atoms)
         for i in range(size):
             self._atoms[i].pos = denorm_coords[i]
+        self.create_Q()
 
     def create_Q(self):
         self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
@@ -379,11 +380,11 @@ class Molecule:
                     print(str(chainstring))
 
 
-        print("Breaking molecule into similarity groups")
+        #print("Breaking molecule into similarity groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
-        print("Broken into " + str(len(self._equivalence_classes)) + " groups")
+        #print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._process_chains(use_chains)
-        diagnostics()
+        #diagnostics()
         self.normalize()
 
     @staticmethod
