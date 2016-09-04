@@ -13,10 +13,32 @@ from csm.molecule.molecule import Molecule
 
 logger = logging.getLogger("csm")
 
-def approx_calculation(op_type, op_order, molecule, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, dirs=None, *args, **kwargs):
-    results= find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs)
-    #print(is_legal(results.perm, molecule))
-    return process_results(results)
+def approx_calculation(op_type, op_order, molecule, sn_max=8, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, dirs=None, *args, **kwargs):
+    if op_type == 'CH':  # Chirality
+        #sn_max = op_order
+        # First CS
+        best_result = find_best_perm('CS', 2, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs)
+        best_result = best_result._replace(op_type='CS') #unclear why this line isn't redundant
+        if best_result.csm > MINDOUBLE:
+            # Try the SN's
+            for op_order in range(2, sn_max + 1, 2):
+                result = find_best_perm('SN', op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs)
+                if result.csm < best_result.csm:
+                    best_result = result._replace(op_type = 'SN', op_order = op_order)
+                if best_result.csm < MINDOUBLE:
+                    break
+
+    else:
+        best_result = find_best_perm(op_type, op_order, molecule, detect_outliers, use_chains, hungarian, print_approx, dirs)
+
+    best_result = process_results(best_result)
+    #TODO: is calc_local supposed to be supported in approx?
+    #if calc_local:
+    #    local_csm = compute_local_csm(molecule, best_result.perm, best_result.dir, best_result.op_type,
+    #                                  best_result.op_order)
+    #    best_result = best_result._replace(local_csm=local_csm)
+
+    return best_result
 
 def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **kwargs):
     if molecule.chains and use_chains:
