@@ -35,10 +35,15 @@ def divide_by_chain_centers(chains, positions):
 
 
 def normalize_csm(norm_type, result):
+    '''
+    :param norm_type: the type of normalization factor
+    :param result: we run this after having run CSM, so this is the result we received from running CSM
+    :return:
+    '''
     original_csm = result.csm
     molecule=result.molecule
-    original_norm = molecule.norm_factor
-    denormed_csm = original_csm * original_norm
+    original_norm = molecule.norm_factor #this is the original normalization factor
+    denormed_csm = original_csm * original_norm #the result was divided by that factor, so we undo that by multiplication
 
     if norm_type == 'standard':
         return original_csm
@@ -50,7 +55,6 @@ def normalize_csm(norm_type, result):
     if norm_type == 'symmetric_fragment_mass_center':
         norm=divide_by_chain_centers(molecule.chains, result.symmetric_structure)
         return denormed_csm/norm
-
 
 
 

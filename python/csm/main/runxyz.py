@@ -169,7 +169,7 @@ def check_result(result, validate, mol_index, symm):
 
 
 def runtests(molecule_file, symmetry_file, result_file, directory, name):
-    print(name)
+    #print(name)
     molecules = xyz_split(molecule_file)
     validation = split(result_file)
     filename = os.path.join(directory, name + ".csv")
@@ -179,12 +179,10 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, lineterminator='\n')
         writer.writeheader()
         for index, symm in validation:
-            print (index, symm, '...', end='')
+            #print (index, symm, '...', end='')
             oursymm = 'CS' if symm=='MI' else symm  # CS is marked as MI (Mirror)
             operation = get_operation_data(oursymm)
             xyz = molecules[int(index)]
-            if index=="179" or index=="46":
-                print(xyz)
             molecule = Molecule.from_string(xyz, "xyz")
             validate = validation[index, symm]
             result = exact_calculation(operation.type, operation.order, molecule)
@@ -200,8 +198,8 @@ def runtests(molecule_file, symmetry_file, result_file, directory, name):
                 #else:
                 #    res['verify']="Verified"
             writer.writerow(res)
-            print()
-    print("done")
+            #print()
+    #print("done")
 
 
 def test_individuals(molfile, symmfile, permfile, resfile):

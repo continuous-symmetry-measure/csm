@@ -150,6 +150,7 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
     return count
 
 
+
 def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, *args, **kwargs):
 
     if op_type == 'CH':  # Chirality
@@ -162,7 +163,6 @@ def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=Fals
             for op_order in range(2, sn_max + 1, 2):
                 result = csm_operation('SN', op_order, molecule, keep_structure, perm)
                 if result.csm < best_result.csm:
-                    print("##########SN yielded something for once")
                     best_result = result._replace(op_type = 'SN', op_order = op_order)
                 if best_result.csm < MINDOUBLE:
                     break
