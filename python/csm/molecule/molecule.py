@@ -80,6 +80,9 @@ class Molecule:
         '''
         return self._reversechainkeys
 
+    @property
+    def size(self):
+        return len(self._atoms)
 
     @property
     def obmol(self):
@@ -192,6 +195,7 @@ class Molecule:
             for atom_index in group:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
+
 
 
     def _process_chains(self, use_chains):
@@ -311,10 +315,10 @@ class Molecule:
                 fixed_indexes[i]-=len(removed_atoms)
 
         #adjust the indices before we do any popping whatsoever
-        for atom in self._atoms:
+        for i, atom in enumerate(self._atoms):
             adjacent_new=[]
             for adjacent in atom.adjacent:
-                if fixed_indexes[adjacent]:
+                if fixed_indexes[adjacent] is not None:
                     adjacent_new.append(fixed_indexes[adjacent])
             atom.adjacent=adjacent_new
 
@@ -578,3 +582,40 @@ class Molecule:
             except:
                 pass #assume there are no chains
         return Molecule(atoms=atoms, chains=chains)
+
+
+    def print_debug(self):
+        '''
+        matches same function in C++, used for comparing printouts
+        '''
+        #print("Equivalent Groups:")
+        #for item in self.equivalence_classes:
+        #    print(item)
+
+        print("========DEBUG INFORMATION========")
+
+        #print("molecule:")
+        #print("size=", self.size)
+        #for atom in self.atoms:
+        #    print(atom.symbol, atom.pos)
+
+        print("\nconnectivity:")
+        for i in range(self.size):
+            mystr = str(i+1)
+            for adj in self.atoms[i].adjacent:
+                mystr+=" "
+                mystr+=str(adj+1)
+            mystr+="\t\tTotal="
+            mystr+=str(len(self.atoms[i].adjacent))
+            print(mystr)
+
+        #print("\nComplete Equivalent Groups for each atom:")
+        #for i in range(self.size):
+        #    mystr = str(i+1)
+        #    for adj in self.atoms[i].equivalency:
+        #        mystr+=" "
+        #        mystr+=str(adj+1)
+        #    print(mystr)
+
+
+
