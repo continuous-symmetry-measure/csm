@@ -33,12 +33,6 @@ def process_results(results):
     results.molecule.de_normalize()
     symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
     results= results._replace(symmetric_structure=symmetric_structure)
-    test2= yaffa_test(results)
-    diff=results.csm - test2
-    if diff>.0001 or diff<-.0001:
-        print("LARGE DIFF:", diff, "yaffa", test2)
-    else:
-        print(diff)
 
     return results
 

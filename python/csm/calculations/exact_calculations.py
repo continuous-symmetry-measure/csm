@@ -152,7 +152,6 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
 
 
 def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, *args, **kwargs):
-
     if op_type == 'CH':  # Chirality
         #sn_max = op_order
         # First CS

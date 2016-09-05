@@ -109,7 +109,7 @@ cdef PolynomialRoots(double coeffs[7], complex *roots):
 
 cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2, log=False):
     cdef double coeffs[7]
-    cdef double rounded_coeffs[7]
+    #cdef double rounded_coeffs[7]
     cdef complex roots[6]
     cdef double lambda_max = -MAXDOUBLE
     cdef int i
@@ -125,9 +125,9 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2, log=False):
         print("get lambda max")
         print("lambdas", str(lambdas))
         print("m_t_B_2", str(m_t_B_2))
-        print("coeffs and rounded")
+        print("coeffs")# and rounded")
         for i in range(7):
-            print(coeffs[i],"rounded:", rounded_coeffs[i])
+            print(coeffs[i]) #,"rounded:", rounded_coeffs[i])
         print("roots")
         for ro in roots:
             print(ro)
@@ -189,6 +189,10 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
         print(str(m_t_B_2))
 
     lambda_max=get_lambda_max(lambdas, m_t_B_2, log)
+
+    if log:
+        print("lambda max")
+        print(lambda_max)
 
     dir, m_max_B = calculate_dir(is_op_cs, op_order, lambdas, lambda_max, m, m_t_B, calc_state.B)
 

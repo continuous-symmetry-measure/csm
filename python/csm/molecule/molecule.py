@@ -384,9 +384,9 @@ class Molecule:
                     print(str(chainstring))
 
 
-        #print("Breaking molecule into similarity groups")
+        print("Breaking molecule into similarity groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
-        #print("Broken into " + str(len(self._equivalence_classes)) + " groups")
+        print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._process_chains(use_chains)
         #diagnostics()
         self.normalize()
@@ -423,11 +423,23 @@ class Molecule:
     @staticmethod
     def from_file(in_file_name, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
                   remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False, *args, **kwargs):
+        def get_format(form):
+            conv = OBConversion()
+            if not form:
+                form = conv.FormatFromExt(filename)
+                if not form:
+                    raise ValueError("Error discovering format from filename " + filename)
+            return form
+
         if format == "csm":
             mol = Molecule._read_csm_file(in_file_name, ignore_symm, use_mass)
         else:
+            format=get_format(format)
             obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
             mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+            if format=="pdb" and not babel_bond:
+                mol=Molecule._read_pdb_connectivity(in_file_name, mol)
+
             if not mol.bondset and (keep_structure or use_chains):
                 if no_babel:
                     print("Warning: User input --no-babel. Molecule has no connectivity, even though --keep-structure or --use-chains were specified")
@@ -441,6 +453,18 @@ class Molecule:
         if initialize:
             mol._complete_initialization(remove_hy, ignore_hy, use_chains)
         return mol
+
+    @staticmethod
+    def _read_pdb_connectivity(filename, mol):
+        with open(filename, 'r') as f:
+            for line in f:
+                if "CONECT" in line:
+                    values=line.split()
+                    atom= mol._atoms[int(values[1])-1]
+                    atom.adjacent=[int(ind)-1 for ind in values[2:]]
+        return mol
+
+
 
     @staticmethod
     def _obm_from_string(string, format, babel_bond=None):
@@ -461,12 +485,8 @@ class Molecule:
         :param babelBond:
         :return:
         """
-        conv = OBConversion()
         mol = OBMol()
-        if not format:
-            format = conv.FormatFromExt(filename)
-            if not format:
-                raise ValueError("Error discovering format from filename " + filename)
+        conv = OBConversion()
         if not conv.SetInFormat(format):
             raise ValueError("Error setting openbabel format to" + format)
         if not babel_bond:
