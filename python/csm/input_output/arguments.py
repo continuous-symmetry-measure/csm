@@ -43,7 +43,7 @@ def _create_parser():
 
 
     #general input/calculation arguments:
-    parser.add_argument('--ignore-hy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
+    #parser.add_argument('--ignore-hy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
     parser.add_argument('--remove-hy', action='store_true', default=False,
                         help='Remove Hydrogen atoms in computations, rebuild molecule without them and compute')
     parser.add_argument('--ignore-sym', action='store_true', default=False,
@@ -201,7 +201,7 @@ def _process_split_arguments(parse_res):
 
     #general input/calculation arguments:
     calc_args['sn_max'] = parse_res.sn_max
-    in_args['ignore_hy'] = parse_res.ignore_hy
+    #in_args['ignore_hy'] = parse_res.ignore_hy
     in_args['remove_hy'] = parse_res.remove_hy
     in_args['ignore_symm'] = parse_res.ignore_sym
 
