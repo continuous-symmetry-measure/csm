@@ -1,12 +1,8 @@
 from csm.molecule.molecule import Molecule
+from csm.calculations.basic_calculations import check_perm_structure
+import logging
+logger = logging.getLogger(__name__)
 
-
-def check_perm_structure(mol, perm):
-    for origin, destination in enumerate(perm):
-        for adjacent in mol.atoms[origin].adjacent:
-            if (destination, perm[adjacent]) not in mol.bondset:
-                return False
-    return True
 
 def check_perm_equivalence(mol, perm):
     for origin, destination in enumerate(perm):
@@ -16,9 +12,9 @@ def check_perm_equivalence(mol, perm):
 
 def check_perm_validity(mol, perm):
     if not check_perm_equivalence(mol, perm):
-        print("Permutation contains switches between non-equivalent atoms")
-    if not check_perm_structure(mol, perm):
-        print("Permutation does not preserve molecule structure")
+        logger.warning("Permutation contains switches between non-equivalent atoms")
+    if check_perm_structure(mol, perm) < 1:
+        logger.warning("Permutation does not preserve molecule structure")
 
 def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     """

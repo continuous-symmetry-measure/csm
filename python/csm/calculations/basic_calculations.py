@@ -130,3 +130,14 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
 
     return symmetric
 
+
+def check_perm_structure(mol, perm):
+    broken=0
+    for origin, destination in enumerate(perm):
+        for adjacent in mol.atoms[origin].adjacent:
+            if (destination, perm[adjacent]) not in mol.bondset:
+                broken+=1
+
+    percent_structure= (len(mol.bondset)- broken )/len(mol.bondset)
+
+    return percent_structure
