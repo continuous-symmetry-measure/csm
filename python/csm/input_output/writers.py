@@ -3,6 +3,7 @@ __author__ = 'YAEL'
 import openbabel
 from openbabel import OBConversion
 import math
+from csm.calculations.basic_calculations import check_perm_structure
 
 def non_negative_zero(number):
     if math.fabs(number)<0.00001:
@@ -18,6 +19,7 @@ def print_results(result, in_args, calc_args, out_args):
     :param calc_args: Calculation arguments to CSM
     :param out_args: Output arguments to CSM
     """
+
     if calc_args['calc_type']=='just_perms':
         print(result)
         return
@@ -31,6 +33,9 @@ def print_results(result, in_args, calc_args, out_args):
             print_output(f, result, calc_args)
         else:
             print_output_ob(f, result, in_args, calc_args, out_args)
+
+        percent_structure = check_perm_structure(result.molecule, result.perm)
+        print("The permutation found maintains", str(round(percent_structure*100,2))+ "% of the original molecule's structure")
 
         # print norm
 
