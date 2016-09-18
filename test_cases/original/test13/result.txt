@@ -1,0 +1,188 @@
+INVERSION (S2): 33.2130
+SCALING FACTOR: 0.335740
+
+ INITIAL STRUCTURE COORDINATES
+HEADER                                           22-FEB-06    CUBL              
+TITLE     CSD_CIF_CUBLEQ
+AUTHOR    W.Honle, H.G.von Schnering, A.Schmidpeter, G.Burget                   
+REVDAT   1   22-FEB-06 CUBL    0                                                
+REMARK   4                                                                      
+REMARK   4 CUBL COMPLIES WITH FORMAT V. 2.1, 25-OCT-1996                        
+HET    UNK  A   1      82                                                       
+FORMUL   1  UNK    C18 H48 Li3 N6 P7                                             
+ORIGX1      1.000000  0.000000  0.000000        0.00000                         
+ORIGX2      0.000000  1.000000  0.000000        0.00000                         
+ORIGX3      0.000000  0.000000  1.000000        0.00000                         
+SCALE1      0.061923 -0.000000 -0.000000        0.00000                         
+SCALE2      0.000000  0.050940 -0.000000        0.00000                         
+SCALE3      0.000000  0.000000  0.088417        0.00000                         
+COMPND    csm\test_cases\test13\CUBLEQ.PDB 
+CRYST1   16.149   19.631   11.310  90.00  90.00  90.00 P1          1
+HETATM    1  P1  UNK     1       0.673   0.098   0.647  1.00  0.00           P  
+HETATM    2  P2  UNK     2      -0.656  -0.099  -2.350  1.00  0.00           P  
+HETATM    3  P3  UNK     3      -1.912  -1.243  -0.862  1.00  0.00           P  
+HETATM    4  P4  UNK     4      -2.058   1.003  -0.974  1.00  0.00           P  
+HETATM    5  P5  UNK     5       1.305   0.019  -1.453  1.00  0.00           P  
+HETATM    6  P6  UNK     6      -0.606  -1.701   0.775  1.00  0.00           P  
+HETATM    7  P7  UNK     7      -0.830   1.715   0.637  1.00  0.00           P  
+HETATM    8  C1  UNK     8       2.159   4.271   0.659  1.00  0.00           C  
+HETATM    9  N1  UNK     9       2.369   3.698  -0.577  1.00  0.00           N  
+HETATM   10  C2  UNK    10       2.443   4.621  -1.579  1.00  0.00           C  
+HETATM   11  C3  UNK    11       1.481   5.005  -2.424  1.00  0.00           C  
+HETATM   12  N2  UNK    12       0.394   3.939  -2.648  1.00  0.00           N  
+HETATM   13  C4  UNK    13      -0.871   4.627  -2.471  1.00  0.00           C  
+HETATM   14  C5  UNK    14       0.463   3.299  -3.961  1.00  0.00           C  
+HETATM   15  C6  UNK    15       3.698   2.976  -0.577  1.00  0.00           C  
+HETATM   16  C7  UNK    16      -0.995  -1.241   4.670  1.00  0.00           C  
+HETATM   17  N3  UNK    17      -1.623  -0.022   4.118  1.00  0.00           N  
+HETATM   18  C8  UNK    18      -2.997   0.027   4.624  1.00  0.00           C  
+HETATM   19  C9  UNK    19      -4.010  -0.203   3.824  1.00  0.00           C  
+HETATM   20  N4  UNK    20      -4.036  -0.022   2.435  1.00  0.00           N  
+HETATM   21  C10 UNK    21      -4.811  -1.121   1.799  1.00  0.00           C  
+HETATM   22  C11 UNK    22      -4.572   1.215   2.023  1.00  0.00           C  
+HETATM   23  C12 UNK    23      -0.816   1.091   4.540  1.00  0.00           C  
+HETATM   24  C13 UNK    24       1.237  -3.467  -3.722  1.00  0.00           C  
+HETATM   25  N5  UNK    25       0.916  -3.960  -2.416  1.00  0.00           N  
+HETATM   26  C14 UNK    26       1.904  -4.832  -1.992  1.00  0.00           C  
+HETATM   27  C15 UNK    27       3.100  -4.504  -1.298  1.00  0.00           C  
+HETATM   28  N6  UNK    28       2.710  -3.489  -0.158  1.00  0.00           N  
+HETATM   29  C16 UNK    29       2.487  -4.170   1.130  1.00  0.00           C  
+HETATM   30  C17 UNK    30       3.863  -2.790  -0.000  1.00  0.00           C  
+HETATM   31  C18 UNK    31      -0.378  -4.606  -2.393  1.00  0.00           C  
+HETATM   32 Li1  UNK    32       0.764   2.473  -1.180  1.00  0.00          Li  
+HETATM   33 Li2  UNK    33      -1.980  -0.042   2.052  1.00  0.00          Li  
+HETATM   34 Li3  UNK    34       1.200  -2.551  -0.884  1.00  0.00          Li  
+CONECT    1    7    6                                                 
+CONECT    2    5    4    3                                            
+CONECT    3    2    4    6                                            
+CONECT    4    2    3    7                                            
+CONECT    5    2                                                      
+CONECT    6    3    1                                                 
+CONECT    7    4    1                                                 
+CONECT    8    9                                                      
+CONECT    9   10   32   15    8                                       
+CONECT   10   11    9                                                 
+CONECT   11   12   10                                                 
+CONECT   12   14   13   11                                            
+CONECT   13   12                                                      
+CONECT   14   12                                                      
+CONECT   15    9                                                      
+CONECT   16   17                                                      
+CONECT   17   23   18   16                                            
+CONECT   18   19   17                                                 
+CONECT   19   20   18                                                 
+CONECT   20   21   22   33   19                                       
+CONECT   21   20                                                      
+CONECT   22   20                                                      
+CONECT   23   17                                                      
+CONECT   24   25                                                      
+CONECT   25   24   31   26                                            
+CONECT   26   25   27                                                 
+CONECT   27   26   28                                                 
+CONECT   28   27   34   30   29                                       
+CONECT   29   28                                                      
+CONECT   30   28                                                      
+CONECT   31   25                                                      
+CONECT   32    9                                                      
+CONECT   33   20                                                      
+CONECT   34   28                                                      
+MASTER        0    0    0    0    0    0    0    0   34    0   34    0
+END
+
+
+ RESULTING STRUCTURE COORDINATES
+HEADER                                           22-FEB-06    CUBL              
+TITLE     CSD_CIF_CUBLEQ
+AUTHOR    W.Honle, H.G.von Schnering, A.Schmidpeter, G.Burget                   
+REVDAT   1   22-FEB-06 CUBL    0                                                
+REMARK   4                                                                      
+REMARK   4 CUBL COMPLIES WITH FORMAT V. 2.1, 25-OCT-1996                        
+HET    UNK  A   1      82                                                       
+FORMUL   1  UNK    C18 H48 Li3 N6 P7                                             
+ORIGX1      1.000000  0.000000  0.000000        0.00000                         
+ORIGX2      0.000000  1.000000  0.000000        0.00000                         
+ORIGX3      0.000000  0.000000  1.000000        0.00000                         
+SCALE1      0.061923 -0.000000 -0.000000        0.00000                         
+SCALE2      0.000000  0.050940 -0.000000        0.00000                         
+SCALE3      0.000000  0.000000  0.088417        0.00000                         
+COMPND    csm\test_cases\test13\CUBLEQ.PDB 
+CRYST1   16.149   19.631   11.310  90.00  90.00  90.00 P1          1
+HETATM    1  P1  UNK     1       0.000  -0.000  -0.000  1.00  0.00           P  
+HETATM    2  P2  UNK     2       0.000   0.000  -0.000  1.00  0.00           P  
+HETATM    3  P3  UNK     3       0.089  -1.374   0.069  1.00  0.00           P  
+HETATM    4  P4  UNK     4      -0.089   1.374  -0.069  1.00  0.00           P  
+HETATM    5  P5  UNK     5       0.000   0.000  -0.000  1.00  0.00           P  
+HETATM    6  P6  UNK     6       0.137  -2.090   0.084  1.00  0.00           P  
+HETATM    7  P7  UNK     7      -0.137   2.090  -0.084  1.00  0.00           P  
+HETATM    8  C1  UNK     8      -0.201   5.164  -0.288  1.00  0.00           C  
+HETATM    9  N1  UNK     9       0.000  -0.000   0.000  1.00  0.00           N  
+HETATM   10  C2  UNK    10       0.000   0.000   0.000  1.00  0.00           C  
+HETATM   11  C3  UNK    11      -0.259   6.018  -0.264  1.00  0.00           C  
+HETATM   12  N2  UNK    12       1.234   2.423  -4.140  1.00  0.00           N  
+HETATM   13  C4  UNK    13      -0.302   5.649  -0.048  1.00  0.00           C  
+HETATM   14  C5  UNK    14       0.892   2.778  -5.281  1.00  0.00           C  
+HETATM   15  C6  UNK    15       5.206   2.507  -1.454  1.00  0.00           C  
+HETATM   16  C7  UNK    16      -0.892  -2.778   5.281  1.00  0.00           C  
+HETATM   17  N3  UNK    17      -1.234  -2.423   4.140  1.00  0.00           N  
+HETATM   18  C8  UNK    18       0.000  -0.000  -0.000  1.00  0.00           C  
+HETATM   19  C9  UNK    19      -4.350   2.631   3.134  1.00  0.00           C  
+HETATM   20  N4  UNK    20      -4.127   2.121   1.586  1.00  0.00           N  
+HETATM   21  C10 UNK    21      -5.206  -2.507   1.454  1.00  0.00           C  
+HETATM   22  C11 UNK    22      -5.161   2.450   1.238  1.00  0.00           C  
+HETATM   23  C12 UNK    23      -1.256   2.789   5.055  1.00  0.00           C  
+HETATM   24  C13 UNK    24       1.256  -2.789  -5.055  1.00  0.00           C  
+HETATM   25  N5  UNK    25       0.000   0.000  -0.000  1.00  0.00           N  
+HETATM   26  C14 UNK    26       0.259  -6.018   0.264  1.00  0.00           C  
+HETATM   27  C15 UNK    27       4.350  -2.631  -3.134  1.00  0.00           C  
+HETATM   28  N6  UNK    28       4.127  -2.121  -1.586  1.00  0.00           N  
+HETATM   29  C16 UNK    29       0.201  -5.164   0.288  1.00  0.00           C  
+HETATM   30  C17 UNK    30       5.161  -2.450  -1.238  1.00  0.00           C  
+HETATM   31  C18 UNK    31       0.302  -5.649   0.048  1.00  0.00           C  
+HETATM   32 Li1  UNK    32      -0.267   3.074  -0.181  1.00  0.00          Li  
+HETATM   33 Li2  UNK    33       0.000  -0.000  -0.000  1.00  0.00          Li  
+HETATM   34 Li3  UNK    34       0.267  -3.074   0.181  1.00  0.00          Li  
+CONECT    1    7    6                                                 
+CONECT    2    5    4    3                                            
+CONECT    3    2    4    6                                            
+CONECT    4    2    3    7                                            
+CONECT    5    2                                                      
+CONECT    6    3    1                                                 
+CONECT    7    4    1                                                 
+CONECT    8    9                                                      
+CONECT    9   10   32   15    8                                       
+CONECT   10   11    9                                                 
+CONECT   11   12   10                                                 
+CONECT   12   14   13   11                                            
+CONECT   13   12                                                      
+CONECT   14   12                                                      
+CONECT   15    9                                                      
+CONECT   16   17                                                      
+CONECT   17   23   18   16                                            
+CONECT   18   19   17                                                 
+CONECT   19   20   18                                                 
+CONECT   20   21   22   33   19                                       
+CONECT   21   20                                                      
+CONECT   22   20                                                      
+CONECT   23   17                                                      
+CONECT   24   25                                                      
+CONECT   25   24   31   26                                            
+CONECT   26   25   27                                                 
+CONECT   27   26   28                                                 
+CONECT   28   27   34   30   29                                       
+CONECT   29   28                                                      
+CONECT   30   28                                                      
+CONECT   31   25                                                      
+CONECT   32    9                                                      
+CONECT   33   20                                                      
+CONECT   34   28                                                      
+MASTER        0    0    0    0    0    0    0    0   34    0   34    0
+END
+
+
+ DIRECTIONAL COSINES:
+
+1.000000 0.000000 0.000000
+
+ PERMUTATION:
+
+1 2 4 3 5 7 6 29 9 10 26 17 31 16 21 14 12 18 27 28 15 30 24 23 25 11 19 20 8 22 13 34 33 32 
