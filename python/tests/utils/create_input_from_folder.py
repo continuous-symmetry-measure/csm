@@ -19,6 +19,32 @@ def get_file_names(dir):
     molfile=molfiles[0]
     return argfile, permfile, molfile
 
+def xyz_split(filename, foldername):
+    '''
+    :param filename: name of file containing xyz molecules to be split
+    :param foldername: name of folder to save split xyz molecules in
+    :return:
+    '''
+    index = 0
+    if not os.path.exists(foldername):
+        os.makedirs(foldername)
+
+    with open(filename, 'r') as file:
+        for line in file:
+            try:
+                mol = ""
+                num = int(line)
+                mol = line
+                mol += file.readline()
+                for x in range(num):
+                    mol += file.readline()
+                index += 1
+                filepath=os.path.join(foldername, str(index)+".xyz")
+                with open(filepath, 'w') as f:
+                    f.write(mol)
+
+            except:
+                continue
 
 
 def create_json(dir, test_name):
@@ -43,13 +69,13 @@ def create_json(dir, test_name):
     with open(argfile) as line_args:
         for index, line in enumerate(line_args):
             args=line.split()
-            index_str=str(index)
+            index_str=str(index+1)
             if index<10:
                 index_str="0"+index_str
             run_name="L"+index_str+"_"+args[1]
             runs_dict[run_name]=args[1:]
 
-    in_dict={'molecules':molfile,
+    in_dict={'moleculefile':molfile,
              'eq-perms':permfile,
              'runs':runs_dict
     }
@@ -63,6 +89,8 @@ def save_json(test_name, in_dict):
         os.makedirs(new_test_folder)
     else:
         print("as a heads up, overwriting existing folder")
+
+    xyz_split(in_dict['moleculefile'], os.path.join(new_test_folder, 'molecules'))
 
     with open(os.path.join(new_test_folder, 'input.json'), 'w') as jsonfile:
         json.dump(in_dict, jsonfile)

@@ -22,13 +22,6 @@ def find_between( s, first, last):
     except ValueError:
         return ""
 
-def find_between_r( s, first, last):
-    try:
-        start = s.rindex( first ) + len( first )
-        end = s.rindex( last, start )
-        return s[start:end]
-    except ValueError:
-        return ""
 
 
 def create_json(dir, test_name):
