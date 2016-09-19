@@ -65,6 +65,9 @@ def run(args=[]):
         print_results(result, in_args, calc_args, out_args)
         return result
 
+    except:
+        raise
+
     finally:
         if csv_file:
             csv_file.close()

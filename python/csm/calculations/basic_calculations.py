@@ -12,7 +12,8 @@ CSMState = namedtuple('CSMState', ('molecule',
                                    'd_min',
                                    'symmetric_structure',
                                    'local_csm',
-                                   'perm_count',))
+                                   'perm_count',
+                                   'yaffa_csm',))
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 
@@ -33,6 +34,9 @@ def process_results(results):
     results.molecule.de_normalize()
     symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
     results= results._replace(symmetric_structure=symmetric_structure)
+
+    yaffa_csm=yaffa_test(results)
+    results= results._replace(yaffa_csm=yaffa_csm)
 
     return results
 
@@ -132,6 +136,9 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
 
 
 def check_perm_structure(mol, perm):
+    if len(mol.bondset)==0:
+        return 1.0
+
     broken=0
     for origin, destination in enumerate(perm):
         for adjacent in mol.atoms[origin].adjacent:
