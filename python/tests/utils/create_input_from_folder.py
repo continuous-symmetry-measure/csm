@@ -47,24 +47,44 @@ def xyz_split(filename, foldername):
                 continue
 
 
-def create_json(dir, test_name):
-    argfile, permfile, molfile= get_file_names(dir)
-
-    perms_arr=[]
+def get_equiv_perms(permfile):
+    perms_dict={}
     try:
         with open(permfile) as f:
-            stuff=f.read().split('\n')
-
-        for line in stuff:
-            line=line.split('\t')
-            perms_arr.append(line)
+            test = f.readline()
+            symm=test.strip().split("\t")[2]
+            perms_dict[symm]=[]
+            while True:
+                key=f.readline().strip() #[int(x) for x in f.readline().strip().split()]
+                if not key:
+                    break
+                key_arr=[int(x)-1 for x in key.strip().split()]
+                perms_dict[symm].append([key_arr])
+                while True:
+                    test=f.readline().strip()
+                    if not test: #reached eof
+                        break
+                    if test[0]=='p':
+                        symm = test.split("\t")[2]
+                        if symm not in perms_dict:
+                            perms_dict[symm] = []
+                        break
+                    key_arr = [int(x) - 1 for x in test.split()]
+                    perms_dict[symm][-1].append(key_arr)#[int(x) for x in test.strip().split()])
 
     except FileNotFoundError:
         pass #we don't care, eq perms not required
 
+    finally:
+        return perms_dict
+
+def create_json(dir, test_name):
+    argfile, permfile, molfile= get_file_names(dir)
 
     print("-----------")
     runs_dict={}
+
+    equiv=get_equiv_perms(permfile)
 
     with open(argfile) as line_args:
         for index, line in enumerate(line_args):
@@ -76,7 +96,7 @@ def create_json(dir, test_name):
             runs_dict[run_name]=args[1:]
 
     in_dict={'moleculefile':molfile,
-             'eq-perms':permfile,
+             'equiv_perms':equiv,
              'runs':runs_dict
     }
 
