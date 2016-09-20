@@ -1,2 +1,0 @@
-/homes/shared/mysym/prod/src/xyzsym -i 'cyclopentadiene-test.xyz' -s 'sym-cyclopentadiene.txt' -D '.' 
-#new_CSM.2012.11.05

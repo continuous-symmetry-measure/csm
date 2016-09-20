@@ -1,2 +1,0 @@
-/homes/shared/mysym/devel/src/xyzsym -i 'biphenyl_test.xyz' -D '.' 
-#RH6_CSM.2012.11.05

@@ -1,2 +1,0 @@
-/homes/shared/mysym/prod/src/xyzsym -i 'methane-test1.xyz' -s 'sym-csm.txt' -D '.' 
-#new_CSM.2012.11.05

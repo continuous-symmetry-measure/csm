@@ -1,2 +1,0 @@
-/homes/shared/mysym/devel/src/xyzsym -i 'W_Au12_optimized_B3P86.xyz' -D '.' 
-#RH6_CSM.2012.11.05

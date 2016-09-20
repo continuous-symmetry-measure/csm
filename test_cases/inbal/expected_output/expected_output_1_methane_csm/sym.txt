@@ -1,6 +1,0 @@
- csm c2  __IN__ __OUT__ -formatxyz 
- csm c3  __IN__ __OUT__ -formatxyz 
- csm c4  __IN__ __OUT__ -formatxyz 
- csm s4  __IN__ __OUT__ -formatxyz 
- csm cs  __IN__ __OUT__ -formatxyz 
- csm ch  __IN__ __OUT__ -formatxyz 
