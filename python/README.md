@@ -1,6 +1,31 @@
 The Python CSM Package
 ======================
 
+
+Changes in version 0.9.3
+------------------------
+features added:
+1. added a function yaffa_test that calculates CSM from the final symmetric structure with somewhat different math from the CSM produced by the main algorithm
+2. print normalization factor in normcsm
+3. removed the flags --ignore-hy and --use-dir, at least for now
+4. print the percentage of the original molecule's structure preserved in the permutation found
+5. added an entire testing suite: loading from tests, running tests, etc
+6. added an algorithm for choosing the next atom to use in building a cycle in the permutation
+7. Add ENDMDL to models in pdb file output. (note: currently suspected to be buggy)
+8. Added options to the approx calculation to reduce number of directions used: --use-best-dir, --no-orthogonal
+9. Read connectivity from pdb files that have connectivity
+
+bug fixes:
+1. added chirality support to the approx calculation
+2. redo create_Q on denormalize
+3. bug in remove_hy where values of 0 were responding as if None
+4. uncomment some printouts
+5. various small cleanups
+
+
+
+
+
 Changes in version 0.9.2
 ------------------------
 
