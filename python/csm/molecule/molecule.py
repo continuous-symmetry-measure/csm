@@ -370,7 +370,7 @@ class Molecule:
                 except:
                     lengths[len(group)]=1
             for key in lengths:
-                print("%d group%s of length %d" %(lengths[key], 's' if lengths[key] else '', key))
+                print("%d group%s of length %d" %(lengths[key], 's' if lengths[key] and lengths[key]>1 else '', key))
 
             if use_chains:
                 for chain in self.chains:
@@ -386,9 +386,12 @@ class Molecule:
 
         print("Breaking molecule into similarity groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
-        print("Broken into " + str(len(self._equivalence_classes)) + " groups")
+        #print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._process_chains(use_chains)
-        #diagnostics()
+        try:
+            diagnostics()
+        except:
+            pass
         self.normalize()
 
     @staticmethod
