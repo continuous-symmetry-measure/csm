@@ -1,4 +1,5 @@
 import ctypes
+import random
 
 import numpy as np
 cimport numpy as np
@@ -212,6 +213,9 @@ cdef class PreCalcPIP(PermInProgress):
             self.state.CSM += self.costheta[iop] * dists
 
 
+
+
+
 cdef class CythonPermuter:
     cdef _groups
     cdef PermInProgress _pip
@@ -219,10 +223,28 @@ cdef class CythonPermuter:
     cdef int _max_length
     cdef public int count
     cdef int first_index
+    cdef next_cycle
+    cdef mol
+    cdef choose_cycle
+
+    cdef choose_next_cycle(self, pip, remainder):
+        res=remainder[0]
+        if self.choose_cycle:
+            if len(remainder)==1:
+                return res
+            for i, mol_index in enumerate(remainder):
+                for neighbor in self.mol.atoms[mol_index].adjacent:
+                    if pip.p[neighbor]!=-1:
+                        res=mol_index
+                        return res
+        return res
+
 
     def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True):
         self.count=0
+        self.mol=mol
         self._groups = mol.equivalence_classes
+        self.choose_cycle=keep_structure
         if keep_structure:
             perm_checker=StructurePermChecker
         else:
@@ -263,7 +285,10 @@ cdef class CythonPermuter:
                     else:
                         # cycle has been completed, start a new cycle with remaining atoms
                         # As explained below, the first atom of the next cycle can be chosen arbitrarily
-                        yield from self._group_recursive_permute(pip=pip, curr_atom=remainder[0], cycle_head=remainder[0], built_cycle=list(), cycle_length=1, remainder=remainder[1:])
+                        next_cycle_head=self.choose_next_cycle(pip, remainder)
+                        next_remainder=list(remainder)
+                        next_remainder.remove(next_cycle_head)
+                        yield from self._group_recursive_permute(pip=pip, curr_atom=next_cycle_head, cycle_head=next_cycle_head, built_cycle=list(), cycle_length=1, remainder=next_remainder)
                     pip.unclose_cycle(saved_state)
                     built_cycle.remove(cycle_head)
                     pip.unswitch(curr_atom, cycle_head)  # Undo the last switch
@@ -286,7 +311,10 @@ cdef class CythonPermuter:
         """
         # Start the recursion. It doesn't matter which atom is the first in the cycle, as the cycle's starting points are\
         # meaningless: 1<--2, 2<--3, 3<--1 is the same as 2<--3, 3<--1, 1<--2.
-        yield from self._group_recursive_permute(pip=pip, curr_atom=group[0], cycle_head=group[0], built_cycle=list(), cycle_length=1, remainder=group[1:])
+        next_cycle_head=self.choose_next_cycle(pip, group)
+        next_remainder=list(group)
+        next_remainder.remove(next_cycle_head)
+        yield from self._group_recursive_permute(pip=pip, curr_atom=next_cycle_head, cycle_head=next_cycle_head, built_cycle=list(), cycle_length=1, remainder=next_remainder)
 
     def _recursive_permute(self,groups, pip):
         if not groups:
