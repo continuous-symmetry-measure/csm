@@ -1,7 +1,6 @@
 import numpy as np
 import math
 import logging
-import munkres
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import CythonPermuter, SinglePermPermuter
 from csm.fast import estimate_perm #as cython_estimate_perm
@@ -135,6 +134,7 @@ def find_best_perm(op_type, op_order, molecule, use_best_dir, get_orthogonal, de
                 if print_approx:
                     print("\t\tfound initial permutation")
                     print("\t\tfirst pass yielded dir", interim_results.dir, "and CSM " + str(round(interim_results.csm, 5)))
+                    #print(perm)
 
                 if best_for_chain_perm.csm < best.csm:
                     best = best_for_chain_perm
@@ -156,6 +156,7 @@ def find_best_perm(op_type, op_order, molecule, use_best_dir, get_orthogonal, de
                         print("\t\t\tusing new permutation, found new direction", interim_results.dir)
                         print("\t\t\tthe distance between the new direction and the previous direction is:", str(round(np.linalg.norm(interim_results.dir - old_results.dir),8)))
                         print("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
+                        #print(perm)
 
 
                     if interim_results.csm < best_for_chain_perm.csm:
@@ -301,5 +302,3 @@ def dirs_orthogonal(dirs):
         added_dirs.append(dir2)
 
     return np.array(added_dirs)
-
-

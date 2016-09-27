@@ -4,8 +4,7 @@ import numpy as np
 cimport numpy as np
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.basic_calculations import create_rotation_matrix
-
-from munkres import Munkres
+from munkres import munkres
 
 cdef class Vector3D
 cdef class Matrix3D
@@ -205,15 +204,27 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains, hun
     #print(perm)
     return perm
 
+
+@cython.boundscheck(False)
+def munkres_wrapper(np.ndarray[np.double_t,ndim=2, mode="c"] A not None):
+    cdef int x = A.shape[0]
+    cdef int y = A.shape[1]
+    results=[]
+    res_mat=munkres(A)
+    for i in range(x):
+        for j in range(y):
+            if res_mat[i][j]:
+                results += [(i, j)]
+    return results
+
 def hungarian_perm_builder(op_type, op_order, group, distance_matrix, perm):
-    m = Munkres()
     matrix=distance_matrix.get_matrix()
-    indexes = m.compute(matrix)
+    #m = Munkres()
+    #indexes = m.compute(matrix)
+    indexes=munkres_wrapper(matrix)
     for (from_val, to_val) in indexes:
         perm[group[from_val]]=group[to_val]
     return perm
-
-
 
 def perm_builder(op_type, op_order, group, distance_matrix, perm):
     #print("Building permutation for group of len %d" % len(group))
