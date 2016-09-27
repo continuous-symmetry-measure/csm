@@ -28,14 +28,16 @@ def print_results(result, in_args, calc_args, out_args):
         f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(result.d_min))
 
         # print CSM, initial molecule, resulting structure and direction according to format specified
+        percent_structure = check_perm_structure(result.molecule, result.perm)
+        print("The permutation found maintains",
+              str(round(percent_structure * 100, 2)) + "% of the original molecule's structure\n")
 
         if in_args['format'].lower() == "csm":
             print_output(f, result, calc_args)
         else:
             print_output_ob(f, result, in_args, calc_args, out_args)
 
-        percent_structure = check_perm_structure(result.molecule, result.perm)
-        print("The permutation found maintains", str(round(percent_structure*100,2))+ "% of the original molecule's structure")
+
 
         # print norm
 
@@ -80,7 +82,6 @@ def print_output(f, result, calc_args):
     :param calc_args: Calculation arguments to CSM
     """
 
-    print("%s: %.6lf" % (calc_args['op_name'], abs(result.csm)))
     size = len(result.molecule.atoms)
 
     # print initial molecule
@@ -123,6 +124,9 @@ def print_output(f, result, calc_args):
 
     f.write("\n DIRECTIONAL COSINES:\n\n")
     f.write("%lf %lf %lf\n" % (non_negative_zero(result.dir[0]), non_negative_zero(result.dir[1]), non_negative_zero(result.dir[2])))
+
+    print("%s: %.6lf" % (calc_args['op_name'], abs(result.csm)))
+    print("Yaffa's CSM: %.6lf" % (result.yaffa_csm))
 
 
 def print_output_ob(f, result, in_args, calc_args, out_args):
@@ -176,9 +180,10 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
                                non_negative_zero(result.dir[2])))
 
     if out_args['write_openu']:
-        print("SV* %.4lf *SV\n" % abs(result.csm))
+        print("SV* %.6lf *SV" % abs(result.csm))
     else:
-        print("%s: %.4lf\n" % (calc_args['op_name'], abs(result.csm)))
+        print("%s: %.6lf" % (calc_args['op_name'], abs(result.csm)))
+    print("Yaffa's CSM: %.6lf" %(result.yaffa_csm))
 
 
 

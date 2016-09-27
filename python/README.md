@@ -1,6 +1,9 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.9.3.1
+------------------------
+Added a printout of the result of yaffa_test
 
 Changes in version 0.9.3
 ------------------------
