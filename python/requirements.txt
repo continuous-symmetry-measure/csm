@@ -1,4 +1,7 @@
-Cython==0.24
+colorama==0.3.7
+Cython==0.25
+munkres==1.0.8
 numpy==1.11.0
 openbabel==1.8.4
-munkres==1.0.8
+py==1.4.31
+pytest==3.0.3
