@@ -1,0 +1,1 @@
+{"runs": {"L01_c2": ["c2", "__IN__", "__OUT__"], "L03_s2": ["s2", "__IN__", "__OUT__"], "L02_cs": ["cs", "__IN__", "__OUT__"], "L04_ch": ["ch", "__IN__", "__OUT__"]}, "moleculefile": "D:\\UserData\\devora\\Sources\\csm\\test_cases\\sagiv\\test_cases\\clean_test_cases\\t10-see-saw\\input\\input_1\\TeC2Cl2.xyz", "equiv_perms": {"c2": [[[0, 1, 2, 3, 4], [0, 1, 2, 3, 4]]]}}

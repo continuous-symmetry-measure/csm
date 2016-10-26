@@ -1,0 +1,1380 @@
+D:\UserData\devora\Sources\csm\python\tests\test_cases\t08-cubane
+test: L01_c2
+	molecule:1
+		csm:
+		perm: IDENTICAL[2, 1, 7, 5, 4, 8, 3, 6] [2, 1, 7, 5, 4, 8, 3, 6]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:10
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [-0.885839, 0.463991, 0.001429] [-0.885839  0.463991  0.001429]
+		symmetric structure mismatches: []
+	molecule:11
+		csm:
+		perm: IDENTICAL[5, 7, 8, 6, 1, 4, 2, 3] [5, 7, 8, 6, 1, 4, 2, 3]	dir: [-0.855822, -0.516978, 0.017388] [-0.855822 -0.516978  0.017388]
+		symmetric structure mismatches: []
+	molecule:12
+		csm:
+		perm: IDENTICAL[7, 8, 6, 5, 4, 3, 1, 2] [7, 8, 6, 5, 4, 3, 1, 2]	dir: [0.335232, 0.90427, 0.264417] [ 0.335232  0.90427   0.264417]
+		symmetric structure mismatches: []
+	molecule:13
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [0.236749, 0.966233, 0.101704] [-0.236749 -0.966233 -0.101704]
+		symmetric structure mismatches: []
+	molecule:14
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [-0.650557, -0.70063, 0.293074] [-0.650557 -0.70063   0.293074]
+		symmetric structure mismatches: []
+	molecule:15
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [0.874141, 0.229339, 0.428113] [-0.874141 -0.229339 -0.428113]
+		symmetric structure mismatches: []
+	molecule:16
+		csm:
+		perm: IDENTICAL[6, 8, 4, 3, 7, 1, 5, 2] [6, 8, 4, 3, 7, 1, 5, 2]	dir: [0.48214, 0.517487, 0.706929] [-0.48214  -0.517487 -0.706929]
+		symmetric structure mismatches: []
+	molecule:17
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [0.643485, -0.693292, 0.324458] [-0.643485  0.693292 -0.324458]
+		symmetric structure mismatches: []
+	molecule:18
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [-0.643106, -0.688835, 0.334547] [-0.643106 -0.688835  0.334547]
+		symmetric structure mismatches: []
+	molecule:19
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [-0.858528, -0.474476, 0.194429] [-0.858528 -0.474476  0.194429]
+		symmetric structure mismatches: []
+	molecule:2
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [0.350902, -0.634818, 0.688385] [ 0.350902 -0.634818  0.688385]
+		symmetric structure mismatches: []
+	molecule:20
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [0.005091, 0.980239, 0.197752] [ 0.005091  0.980239  0.197752]
+		symmetric structure mismatches: []
+	molecule:21
+		csm:
+		perm: IDENTICAL[8, 6, 5, 7, 3, 2, 4, 1] [8, 6, 5, 7, 3, 2, 4, 1]	dir: [-0.701548, 0.61658, 0.357295] [-0.701548  0.61658   0.357295]
+		symmetric structure mismatches: []
+	molecule:22
+		csm:
+		perm: IDENTICAL[8, 6, 5, 7, 3, 2, 4, 1] [8, 6, 5, 7, 3, 2, 4, 1]	dir: [-0.822599, 0.561161, 0.091813] [-0.822599  0.561161  0.091813]
+		symmetric structure mismatches: []
+	molecule:23
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [0.566267, 0.707254, 0.423242] [-0.566267 -0.707254 -0.423242]
+		symmetric structure mismatches: []
+	molecule:24
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [0.084933, 0.995345, 0.045551] [-0.084933 -0.995345 -0.045551]
+		symmetric structure mismatches: []
+	molecule:25
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [-0.682647, -0.724273, 0.097069] [-0.682647 -0.724273  0.097069]
+		symmetric structure mismatches: []
+	molecule:26
+		csm:
+		perm: IDENTICAL[3, 4, 1, 2, 8, 7, 6, 5] [3, 4, 1, 2, 8, 7, 6, 5]	dir: [0.862714, 0.219398, 0.45562] [-0.862714 -0.219398 -0.45562 ]
+		symmetric structure mismatches: []
+	molecule:27
+		csm:
+		perm: IDENTICAL[6, 3, 2, 5, 4, 1, 8, 7] [6, 3, 2, 5, 4, 1, 8, 7]	dir: [-0.281741, 0.957005, 0.069022] [-0.281741  0.957005  0.069022]
+		symmetric structure mismatches: []
+	molecule:28
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [0.288378, 0.553914, 0.781036] [-0.288378 -0.553914 -0.781036]
+		symmetric structure mismatches: []
+	molecule:29
+		csm:
+		perm: IDENTICAL[7, 8, 6, 5, 4, 3, 1, 2] [7, 8, 6, 5, 4, 3, 1, 2]	dir: [0.262402, -0.941924, 0.209582] [-0.262402  0.941924 -0.209582]
+		symmetric structure mismatches: []
+	molecule:3
+		csm:
+		perm: IDENTICAL[6, 3, 2, 5, 4, 1, 8, 7] [6, 3, 2, 5, 4, 1, 8, 7]	dir: [-0.785816, 0.430393, 0.444134] [-0.785816  0.430393  0.444134]
+		symmetric structure mismatches: []
+	molecule:30
+		csm:
+		perm: IDENTICAL[7, 8, 6, 5, 4, 3, 1, 2] [7, 8, 6, 5, 4, 3, 1, 2]	dir: [-0.222397, 0.950867, 0.215388] [-0.222397  0.950867  0.215388]
+		symmetric structure mismatches: []
+	molecule:31
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [-0.616001, -0.165228, 0.770222] [-0.616001 -0.165228  0.770222]
+		symmetric structure mismatches: []
+	molecule:32
+		csm:
+		perm: IDENTICAL[2, 1, 7, 5, 4, 8, 3, 6] [2, 1, 7, 5, 4, 8, 3, 6]	dir: [0.585931, 0.039257, 0.80941] [-0.585931 -0.039257 -0.80941 ]
+		symmetric structure mismatches: []
+	molecule:33
+		csm:
+		perm: IDENTICAL[3, 4, 1, 2, 8, 7, 6, 5] [3, 4, 1, 2, 8, 7, 6, 5]	dir: [-0.536642, -0.812576, 0.227454] [-0.536642 -0.812576  0.227454]
+		symmetric structure mismatches: []
+	molecule:34
+		csm:
+		perm: IDENTICAL[8, 6, 5, 7, 3, 2, 4, 1] [8, 6, 5, 7, 3, 2, 4, 1]	dir: [-0.753039, 0.629386, 0.191848] [-0.753039  0.629386  0.191848]
+		symmetric structure mismatches: []
+	molecule:35
+		csm:
+		perm: IDENTICAL[2, 1, 7, 5, 4, 8, 3, 6] [2, 1, 7, 5, 4, 8, 3, 6]	dir: [0.608977, 0.104357, 0.786293] [-0.608977 -0.104357 -0.786293]
+		symmetric structure mismatches: []
+	molecule:36
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [-0.661598, 0.102841, 0.742773] [-0.661598  0.102841  0.742773]
+		symmetric structure mismatches: []
+	molecule:37
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [-0.174891, -0.559081, 0.810457] [ 0.174891  0.559081 -0.810457]
+		symmetric structure mismatches: []
+	molecule:38
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [-0.848727, 0.331336, 0.412163] [-0.848727  0.331336  0.412163]
+		symmetric structure mismatches: []
+	molecule:39
+		csm:
+		perm: IDENTICAL[2, 1, 7, 5, 4, 8, 3, 6] [2, 1, 7, 5, 4, 8, 3, 6]	dir: [-0.977476, 0.121397, 0.172637] [-0.977476  0.121397  0.172637]
+		symmetric structure mismatches: []
+	molecule:4
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [0.808749, -0.036313, 0.587032] [-0.808749  0.036313 -0.587032]
+		symmetric structure mismatches: []
+	molecule:40
+		csm:
+		perm: IDENTICAL[6, 5, 7, 8, 2, 1, 3, 4] [6, 5, 7, 8, 2, 1, 3, 4]	dir: [0.825399, 0.532294, 0.188094] [-0.825399 -0.532294 -0.188094]
+		symmetric structure mismatches: []
+	molecule:41
+		csm:
+		perm: IDENTICAL[5, 7, 8, 6, 1, 4, 2, 3] [5, 7, 8, 6, 1, 4, 2, 3]	dir: [0.871062, -0.119819, 0.476335] [-0.871062  0.119819 -0.476335]
+		symmetric structure mismatches: []
+	molecule:42
+		csm:
+		perm: IDENTICAL[5, 7, 8, 6, 1, 4, 2, 3] [5, 7, 8, 6, 1, 4, 2, 3]	dir: [-0.951018, 0.299653, 0.075986] [-0.951018  0.299653  0.075986]
+		symmetric structure mismatches: []
+	molecule:43
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [0.0, 1.0, 0.0] [ 0.  1.  0.]
+		symmetric structure mismatches: []
+	molecule:44
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [0.0, 1.0, 0.0] [ 0.  1.  0.]
+		symmetric structure mismatches: []
+	molecule:45
+		csm:
+		perm: IDENTICAL[7, 8, 6, 5, 4, 3, 1, 2] [7, 8, 6, 5, 4, 3, 1, 2]	dir: [-0.836094, -0.31865, 0.446553] [-0.836094 -0.31865   0.446553]
+		symmetric structure mismatches: []
+	molecule:46
+		csm:
+		perm: IDENTICAL[6, 8, 4, 3, 7, 1, 5, 2] [6, 8, 4, 3, 7, 1, 5, 2]	dir: [-0.770823, -0.309304, 0.556923] [-0.770823 -0.309304  0.556923]
+		symmetric structure mismatches: []
+	molecule:47
+		csm:
+		perm: IDENTICAL[4, 8, 7, 1, 6, 5, 3, 2] [4, 8, 7, 1, 6, 5, 3, 2]	dir: [-0.352046, -0.557815, 0.751603] [-0.352046 -0.557815  0.751603]
+		symmetric structure mismatches: []
+	molecule:48
+		csm:
+		perm: IDENTICAL[2, 1, 7, 5, 4, 8, 3, 6] [2, 1, 7, 5, 4, 8, 3, 6]	dir: [-0.240267, 0.716117, 0.655323] [-0.240267  0.716117  0.655323]
+		symmetric structure mismatches: []
+	molecule:49
+		csm:
+		perm: IDENTICAL[3, 4, 1, 2, 8, 7, 6, 5] [3, 4, 1, 2, 8, 7, 6, 5]	dir: [-0.955025, 0.28137, 0.093588] [-0.955025  0.28137   0.093588]
+		symmetric structure mismatches: []
+	molecule:5
+		csm:
+		perm: IDENTICAL[2, 1, 7, 5, 4, 8, 3, 6] [2, 1, 7, 5, 4, 8, 3, 6]	dir: [-0.803745, 0.509793, 0.306767] [-0.803745  0.509793  0.306767]
+		symmetric structure mismatches: []
+	molecule:6
+		csm:
+		perm: IDENTICAL[6, 8, 4, 3, 7, 1, 5, 2] [6, 8, 4, 3, 7, 1, 5, 2]	dir: [0.29606, 0.711031, 0.637796] [ 0.29606   0.711031  0.637796]
+		symmetric structure mismatches: []
+	molecule:7
+		csm:
+		perm: IDENTICAL[8, 6, 5, 7, 3, 2, 4, 1] [8, 6, 5, 7, 3, 2, 4, 1]	dir: [0.64603, 0.761791, 0.048162] [-0.64603  -0.761791 -0.048162]
+		symmetric structure mismatches: []
+	molecule:8
+		csm:
+		perm: IDENTICAL[8, 6, 5, 7, 3, 2, 4, 1] [8, 6, 5, 7, 3, 2, 4, 1]	dir: [0.942476, -0.30386, 0.139315] [-0.942476  0.30386  -0.139315]
+		symmetric structure mismatches: []
+	molecule:9
+		csm:
+		perm: IDENTICAL[6, 3, 2, 5, 4, 1, 8, 7] [6, 3, 2, 5, 4, 1, 8, 7]	dir: [-0.639603, -0.197156, 0.742993] [-0.639603 -0.197156  0.742993]
+		symmetric structure mismatches: []
+test: L03_c4
+	molecule:1
+		csm:
+		perm: IDENTICAL[4, 3, 6, 8, 2, 5, 1, 7] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [0.0, 0.988792, -0.149298] [  7.116830e-18   9.887923e-01  -1.492977e-01]
+		symmetric structure mismatches: []
+	molecule:10
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [-0.50063, 0.566165, 0.654849] [-0.50063   0.566165  0.654849]
+		symmetric structure mismatches: []
+	molecule:11
+		csm:
+		perm: EQUIVALENT[2, 3, 4, 1, 6, 8, 5, 7] [4, 1, 2, 3, 7, 5, 8, 6]	dir: [0.193529, -0.288858, 0.937607] [-0.193529  0.288858 -0.937607]
+		symmetric structure mismatches: []
+	molecule:12
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [-0.174273, 0.33533, -0.925842] [-0.174273  0.33533  -0.925842]
+		symmetric structure mismatches: []
+	molecule:13
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [0.957935, -0.214667, -0.190467] [ 0.957935 -0.214667 -0.190467]
+		symmetric structure mismatches: []
+	molecule:14
+		csm:
+		perm: EQUIVALENT[4, 1, 2, 3, 7, 5, 8, 6] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [0.279531, -0.579714, -0.765372] [-0.279531  0.579714  0.765372]
+		symmetric structure mismatches: []
+	molecule:15
+		csm:
+		perm: EQUIVALENT[2, 5, 6, 3, 7, 8, 1, 4] [7, 1, 4, 8, 2, 3, 5, 6]	dir: [-0.067625, -0.815424, 0.5749] [ 0.067625  0.815424 -0.5749  ]
+		symmetric structure mismatches: []
+	molecule:16
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [-0.958492, -0.210113, -0.192733] [-0.958492 -0.210113 -0.192733]
+		symmetric structure mismatches: []
+	molecule:17
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [-0.26589, -0.599928, -0.754579] [-0.26589  -0.599928 -0.754579]
+		symmetric structure mismatches: []
+	molecule:18
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [0.049487, -0.755384, 0.653411] [ 0.049487 -0.755384  0.653411]
+		symmetric structure mismatches: []
+	molecule:19
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [0.270306, -0.74096, -0.614746] [ 0.270306 -0.74096  -0.614746]
+		symmetric structure mismatches: []
+	molecule:2
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [0.692457, 0.049401, 0.719766] [ 0.692457  0.049401  0.719766]
+		symmetric structure mismatches: []
+	molecule:20
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [-0.674093, 0.65662, 0.338303] [-0.674093  0.65662   0.338303]
+		symmetric structure mismatches: []
+	molecule:21
+		csm:
+		perm: MISMATCH[7, 5, 2, 1, 6, 3, 8, 4] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.701547, 0.616586, 0.357286] [ 0.701547 -0.616586 -0.357286]
+		symmetric structure mismatches: []
+	molecule:22
+		csm:
+		perm: IDENTICAL[4, 3, 6, 8, 2, 5, 1, 7] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.822596, 0.561165, 0.091812] [-0.822596  0.561165  0.091812]
+		symmetric structure mismatches: []
+	molecule:23
+		csm:
+		perm: IDENTICAL[4, 1, 2, 3, 7, 5, 8, 6] [4, 1, 2, 3, 7, 5, 8, 6]	dir: [-0.789558, 0.612824, 0.03232] [-0.789558  0.612824  0.03232 ]
+		symmetric structure mismatches: []
+	molecule:24
+		csm:
+		perm: EQUIVALENT[7, 1, 4, 8, 2, 3, 5, 6] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [-0.91421, 0.096021, -0.3937] [ 0.91421  -0.096021  0.3937  ]
+		symmetric structure mismatches: []
+	molecule:25
+		csm:
+		perm: MISMATCH[7, 5, 2, 1, 6, 3, 8, 4] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [0.101173, 0.802023, -0.588662] [-0.101173 -0.802023  0.588662]
+		symmetric structure mismatches: []
+	molecule:26
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [-0.862725, -0.219371, -0.455611] [-0.862725 -0.219371 -0.455611]
+		symmetric structure mismatches: []
+	molecule:27
+		csm:
+		perm: MISMATCH[7, 5, 2, 1, 6, 3, 8, 4] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.109788, -0.812509, 0.572517] [ 0.109788  0.812509 -0.572517]
+		symmetric structure mismatches: []
+	molecule:28
+		csm:
+		perm: MISMATCH[7, 5, 2, 1, 6, 3, 8, 4] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.879085, -0.230941, -0.416984] [ 0.879085  0.230941  0.416984]
+		symmetric structure mismatches: []
+	molecule:29
+		csm:
+		perm: EQUIVALENT[4, 1, 2, 3, 7, 5, 8, 6] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [-0.710575, -0.041687, 0.702385] [ 0.710575  0.041687 -0.702385]
+		symmetric structure mismatches: []
+	molecule:3
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [0.437335, -0.121064, 0.891113] [ 0.437335 -0.121064  0.891113]
+		symmetric structure mismatches: []
+	molecule:30
+		csm:
+		perm: EQUIVALENT[2, 3, 4, 1, 6, 8, 5, 7] [4, 1, 2, 3, 7, 5, 8, 6]	dir: [0.729542, 0.01576, 0.683754] [-0.729542 -0.01576  -0.683754]
+		symmetric structure mismatches: []
+	molecule:31
+		csm:
+		perm: EQUIVALENT[2, 3, 4, 1, 6, 8, 5, 7] [4, 1, 2, 3, 7, 5, 8, 6]	dir: [0.251258, 0.799556, -0.545509] [-0.251258 -0.799556  0.545509]
+		symmetric structure mismatches: []
+	molecule:32
+		csm:
+		perm: MISMATCH[7, 5, 2, 1, 6, 3, 8, 4] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.498715, 0.804741, 0.321987] [ 0.498715 -0.804741 -0.321987]
+		symmetric structure mismatches: []
+	molecule:33
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [0.325016, 0.049714, 0.944401] [ 0.325016  0.049714  0.944401]
+		symmetric structure mismatches: []
+	molecule:34
+		csm:
+		perm: MISMATCH[7, 5, 2, 1, 6, 3, 8, 4] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.753038, 0.629383, 0.191861] [ 0.753038 -0.629383 -0.191861]
+		symmetric structure mismatches: []
+	molecule:35
+		csm:
+		perm: IDENTICAL[4, 3, 6, 8, 2, 5, 1, 7] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [0.7543, 0.230386, -0.614779] [ 0.7543    0.230386 -0.614779]
+		symmetric structure mismatches: []
+	molecule:36
+		csm:
+		perm: IDENTICAL[4, 3, 6, 8, 2, 5, 1, 7] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.644407, -0.60909, 0.462329] [-0.644407 -0.60909   0.462329]
+		symmetric structure mismatches: []
+	molecule:37
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [0.983038, -0.052991, 0.175582] [ 0.983038 -0.052991  0.175582]
+		symmetric structure mismatches: []
+	molecule:38
+		csm:
+		perm: IDENTICAL[7, 5, 2, 1, 6, 3, 8, 4] [7, 5, 2, 1, 6, 3, 8, 4]	dir: [0.925177, 0.365037, -0.103899] [ 0.925177  0.365037 -0.103899]
+		symmetric structure mismatches: []
+	molecule:39
+		csm:
+		perm: EQUIVALENT[7, 1, 4, 8, 2, 3, 5, 6] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [0.560889, -0.715002, -0.417344] [-0.560889  0.715002  0.417344]
+		symmetric structure mismatches: []
+	molecule:4
+		csm:
+		perm: IDENTICAL[4, 1, 2, 3, 7, 5, 8, 6] [4, 1, 2, 3, 7, 5, 8, 6]	dir: [-0.226866, 0.901594, 0.36832] [-0.226866  0.901594  0.36832 ]
+		symmetric structure mismatches: []
+	molecule:40
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [0.498625, -0.843604, 0.199263] [ 0.498625 -0.843604  0.199263]
+		symmetric structure mismatches: []
+	molecule:41
+		csm:
+		perm: EQUIVALENT[7, 1, 4, 8, 2, 3, 5, 6] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [-0.871059, 0.119818, -0.476341] [ 0.871059 -0.119818  0.476341]
+		symmetric structure mismatches: []
+	molecule:42
+		csm:
+		perm: EQUIVALENT[7, 1, 4, 8, 2, 3, 5, 6] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [0.951018, -0.299671, -0.075914] [-0.951018  0.299671  0.075914]
+		symmetric structure mismatches: []
+	molecule:43
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [0.445287, 0.0, -0.895388] [  4.452873e-01  -1.307231e-18  -8.953877e-01]
+		symmetric structure mismatches: []
+	molecule:44
+		csm:
+		perm: IDENTICAL[2, 5, 6, 3, 7, 8, 1, 4] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [-0.447559, -0.0, 0.894254] [-0.447559  0.        0.894254]
+		symmetric structure mismatches: []
+	molecule:45
+		csm:
+		perm: EQUIVALENT[4, 1, 2, 3, 7, 5, 8, 6] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [-0.520533, 0.203869, -0.829146] [ 0.520533 -0.203869  0.829146]
+		symmetric structure mismatches: []
+	molecule:46
+		csm:
+		perm: MISMATCH[7, 5, 2, 1, 6, 3, 8, 4] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.630854, 0.24893, -0.734885] [ 0.630854 -0.24893   0.734885]
+		symmetric structure mismatches: []
+	molecule:47
+		csm:
+		perm: MISMATCH[4, 3, 6, 8, 2, 5, 1, 7] [7, 5, 2, 1, 6, 3, 8, 4]	dir: [-0.249394, 0.132447, -0.959302] [ 0.249394 -0.132447  0.959302]
+		symmetric structure mismatches: []
+	molecule:48
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [-0.046833, 0.998474, -0.029256] [-0.046833  0.998474 -0.029256]
+		symmetric structure mismatches: []
+	molecule:49
+		csm:
+		perm: IDENTICAL[2, 3, 4, 1, 6, 8, 5, 7] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [0.955027, -0.281363, -0.093586] [ 0.955027 -0.281363 -0.093586]
+		symmetric structure mismatches: []
+	molecule:5
+		csm:
+		perm: EQUIVALENT[4, 1, 2, 3, 7, 5, 8, 6] [2, 3, 4, 1, 6, 8, 5, 7]	dir: [0.687193, 0.12676, -0.71533] [-0.687193 -0.12676   0.71533 ]
+		symmetric structure mismatches: []
+	molecule:6
+		csm:
+		perm: MISMATCH[4, 3, 6, 8, 2, 5, 1, 7] [7, 5, 2, 1, 6, 3, 8, 4]	dir: [0.617773, -0.651811, 0.439885] [-0.617773  0.651811 -0.439885]
+		symmetric structure mismatches: []
+	molecule:7
+		csm:
+		perm: EQUIVALENT[7, 1, 4, 8, 2, 3, 5, 6] [2, 5, 6, 3, 7, 8, 1, 4]	dir: [-0.328043, 0.220121, 0.918659] [ 0.328043 -0.220121 -0.918659]
+		symmetric structure mismatches: []
+	molecule:8
+		csm:
+		perm: IDENTICAL[4, 3, 6, 8, 2, 5, 1, 7] [4, 3, 6, 8, 2, 5, 1, 7]	dir: [-0.942474, 0.303863, -0.139317] [-0.942474  0.303863 -0.139317]
+		symmetric structure mismatches: []
+	molecule:9
+		csm:
+		perm: EQUIVALENT[2, 3, 4, 1, 6, 8, 5, 7] [4, 1, 2, 3, 7, 5, 8, 6]	dir: [-0.409137, -0.829916, 0.37927] [ 0.409137  0.829916 -0.37927 ]
+		symmetric structure mismatches: []
+test: L07_ch
+	molecule:1
+		csm:
+		perm: MISMATCH[6, 8, 7, 5, 4, 1, 3, 2] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:10
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.885839, 0.463991, 0.001428] [-0.885839  0.463991  0.001428]
+		symmetric structure mismatches: []
+	molecule:11
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.476057, -0.774069, 0.417357] [-0.476057  0.774069 -0.417357]
+		symmetric structure mismatches: []
+	molecule:12
+		csm:
+		perm: IDENTICAL[1, 7, 8, 4, 5, 6, 2, 3] [1, 7, 8, 4, 5, 6, 2, 3]	dir: [0.753765, 0.082889, 0.651896] [-0.753765 -0.082889 -0.651896]
+		symmetric structure mismatches: []
+	molecule:13
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.64009, -0.70617, 0.30267] [-0.64009  0.70617 -0.30267]
+		symmetric structure mismatches: []
+	molecule:14
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.876009, 0.267601, 0.401245] [-0.876009  0.267601  0.401245]
+		symmetric structure mismatches: []
+	molecule:15
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [0.629723, -0.72767, 0.271929] [-0.629723  0.72767  -0.271929]
+		symmetric structure mismatches: []
+	molecule:16
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [-0.873372, 0.220345, 0.434361] [-0.873372  0.220345  0.434361]
+		symmetric structure mismatches: []
+	molecule:17
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.643485, -0.693292, 0.324458] [-0.643485  0.693292 -0.324458]
+		symmetric structure mismatches: []
+	molecule:18
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.875477, 0.282072, 0.392398] [-0.875477  0.282072  0.392398]
+		symmetric structure mismatches: []
+	molecule:19
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:2
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.352194, 0.893847, 0.277484] [ 0.352194 -0.893847 -0.277484]
+		symmetric structure mismatches: []
+	molecule:20
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:21
+		csm:
+		perm: IDENTICAL[1, 7, 8, 4, 5, 6, 2, 3] [1, 7, 8, 4, 5, 6, 2, 3]	dir: [0.007293, 0.848536, 0.529088] [-0.007293 -0.848536 -0.529088]
+		symmetric structure mismatches: []
+	molecule:22
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.676709, -0.372055, 0.635327] [-0.676709  0.372055 -0.635327]
+		symmetric structure mismatches: []
+	molecule:23
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.566265, 0.707254, 0.423244] [-0.566265 -0.707254 -0.423244]
+		symmetric structure mismatches: []
+	molecule:24
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.80211, 0.561459, 0.203426] [-0.80211   0.561459  0.203426]
+		symmetric structure mismatches: []
+	molecule:25
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.420039, -0.175113, 0.890451] [-0.420039 -0.175113  0.890451]
+		symmetric structure mismatches: []
+	molecule:26
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.423572, -0.17868, 0.888065] [-0.423572 -0.17868   0.888065]
+		symmetric structure mismatches: []
+	molecule:27
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [0.244609, 0.53619, 0.807878] [ 0.244609  0.53619   0.807878]
+		symmetric structure mismatches: []
+	molecule:28
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.672218, -0.729641, 0.125485] [-0.672218 -0.729641  0.125485]
+		symmetric structure mismatches: []
+	molecule:29
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:3
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.483494, -0.748046, 0.4546] [-0.483494  0.748046 -0.4546  ]
+		symmetric structure mismatches: []
+	molecule:30
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:31
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:32
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:33
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.171151, 0.98522, 0.007047] [-0.171151  0.98522   0.007047]
+		symmetric structure mismatches: []
+	molecule:34
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.129804, -0.989151, 0.068785] [-0.129804  0.989151 -0.068785]
+		symmetric structure mismatches: []
+	molecule:35
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:36
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.044293, -0.603464, 0.796159] [ 0.044293 -0.603464  0.796159]
+		symmetric structure mismatches: []
+	molecule:37
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:38
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.839079, -0.035006, 0.542882] [-0.839079  0.035006 -0.542882]
+		symmetric structure mismatches: []
+	molecule:39
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:4
+		csm:
+		perm: IDENTICAL[1, 7, 8, 4, 5, 6, 2, 3] [1, 7, 8, 4, 5, 6, 2, 3]	dir: [-0.836112, 0.440164, 0.327371] [-0.836112  0.440164  0.327371]
+		symmetric structure mismatches: []
+	molecule:40
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:41
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [-0.926633, 0.256732, 0.274665] [-0.926633  0.256732  0.274665]
+		symmetric structure mismatches: []
+	molecule:42
+		csm:
+		perm: IDENTICAL[3, 2, 1, 4, 5, 7, 6, 8] [3, 2, 1, 4, 5, 7, 6, 8]	dir: [-0.558922, 0.402046, 0.725234] [-0.558922  0.402046  0.725234]
+		symmetric structure mismatches: []
+	molecule:43
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:44
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:45
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:46
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:47
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:48
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.882423, -0.027629, 0.469646] [-0.882423 -0.027629  0.469646]
+		symmetric structure mismatches: []
+	molecule:49
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.249801, -0.933529, 0.257144] [-0.249801 -0.933529  0.257144]
+		symmetric structure mismatches: []
+	molecule:5
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.085699, 0.96364, 0.253087] [-0.085699 -0.96364  -0.253087]
+		symmetric structure mismatches: []
+	molecule:6
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.653041, 0.684531, 0.323967] [-0.653041  0.684531  0.323967]
+		symmetric structure mismatches: []
+	molecule:7
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.030548, -0.969494, 0.243205] [ 0.030548 -0.969494  0.243205]
+		symmetric structure mismatches: []
+	molecule:8
+		csm:
+		perm: IDENTICAL[7, 5, 6, 8, 2, 3, 1, 4] [7, 5, 6, 8, 2, 3, 1, 4]	dir: [0.211159, 0.864271, 0.45656] [-0.211159 -0.864271 -0.45656 ]
+		symmetric structure mismatches: []
+	molecule:9
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.060999, 0.976518, 0.206618] [-0.060999  0.976518  0.206618]
+		symmetric structure mismatches: []
+test: L05_s6
+	molecule:1
+		csm:
+		perm: IDENTICAL[7, 1, 2, 5, 4, 3, 8, 6] [7, 1, 2, 5, 4, 3, 8, 6]	dir: [0.0, -0.692784, -0.721146] [ 0.       -0.692784 -0.721146]
+		symmetric structure mismatches: []
+	molecule:10
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.102221, -0.198155, 0.974826] [-0.102221 -0.198155  0.974826]
+		symmetric structure mismatches: []
+	molecule:11
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.328865, 0.596878, 0.731836] [ 0.328865  0.596878  0.731836]
+		symmetric structure mismatches: []
+	molecule:12
+		csm:
+		perm: IDENTICAL[2, 3, 6, 5, 4, 8, 1, 7] [2, 3, 6, 5, 4, 8, 1, 7]	dir: [0.65539, -0.02222, -0.754963] [ 0.65539  -0.02222  -0.754963]
+		symmetric structure mismatches: []
+	molecule:13
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.420623, -0.007572, -0.907204] [ 0.420623 -0.007572 -0.907204]
+		symmetric structure mismatches: []
+	molecule:14
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.415175, -0.004963, 0.909728] [ 0.415175 -0.004963  0.909728]
+		symmetric structure mismatches: []
+	molecule:15
+		csm:
+		perm: MISMATCH[4, 1, 7, 8, 2, 5, 3, 6] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.43173, 0.036821, -0.901251] [-0.43173  -0.036821  0.901251]
+		symmetric structure mismatches: []
+	molecule:16
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.433508, 0.054851, -0.899479] [-0.433508  0.054851 -0.899479]
+		symmetric structure mismatches: []
+	molecule:17
+		csm:
+		perm: MISMATCH[4, 1, 7, 8, 2, 5, 3, 6] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.432562, 0.020353, 0.901374] [ 0.432562 -0.020353 -0.901374]
+		symmetric structure mismatches: []
+	molecule:18
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.421077, 0.046807, 0.905816] [ 0.421077  0.046807  0.905816]
+		symmetric structure mismatches: []
+	molecule:19
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.199794, -0.039672, -0.979034] [-0.199794 -0.039672 -0.979034]
+		symmetric structure mismatches: []
+	molecule:2
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.913903, 0.392382, -0.104011] [ 0.913903  0.392382 -0.104011]
+		symmetric structure mismatches: []
+	molecule:20
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.617803, -0.152416, 0.77142] [-0.617803 -0.152416  0.77142 ]
+		symmetric structure mismatches: []
+	molecule:21
+		csm:
+		perm: MISMATCH[6, 3, 4, 8, 2, 1, 5, 7] [6, 5, 2, 3, 7, 1, 8, 4]	dir: [0.797212, -0.324331, 0.509178] [-0.797212  0.324331 -0.509178]
+		symmetric structure mismatches: []
+	molecule:22
+		csm:
+		perm: MISMATCH[2, 5, 7, 1, 6, 8, 3, 4] [4, 1, 7, 8, 2, 5, 3, 6]	dir: [0.078321, -0.821651, -0.564584] [-0.078321  0.821651  0.564584]
+		symmetric structure mismatches: []
+	molecule:23
+		csm:
+		perm: MISMATCH[2, 5, 7, 1, 6, 8, 3, 4] [4, 1, 7, 8, 2, 5, 3, 6]	dir: [0.262732, -0.641605, 0.720635] [-0.262732  0.641605 -0.720635]
+		symmetric structure mismatches: []
+	molecule:24
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.204262, -0.062143, 0.976942] [ 0.204262 -0.062143  0.976942]
+		symmetric structure mismatches: []
+	molecule:25
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.725084, 0.654807, -0.213265] [-0.725084  0.654807 -0.213265]
+		symmetric structure mismatches: []
+	molecule:26
+		csm:
+		perm: MISMATCH[2, 5, 7, 1, 6, 8, 3, 4] [4, 1, 7, 8, 2, 5, 3, 6]	dir: [-0.723603, 0.656517, -0.213036] [ 0.723603 -0.656517  0.213036]
+		symmetric structure mismatches: []
+	molecule:27
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.723206, -0.655876, 0.216335] [ 0.723206 -0.655876  0.216335]
+		symmetric structure mismatches: []
+	molecule:28
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.738297, 0.648035, -0.186997] [-0.738297  0.648035 -0.186997]
+		symmetric structure mismatches: []
+	molecule:29
+		csm:
+		perm: MISMATCH[7, 1, 2, 5, 4, 3, 8, 6] [2, 3, 6, 5, 4, 8, 1, 7]	dir: [-0.943312, -0.296141, -0.149876] [ 0.943312  0.296141  0.149876]
+		symmetric structure mismatches: []
+	molecule:3
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.389136, 0.281521, 0.877109] [-0.389136  0.281521  0.877109]
+		symmetric structure mismatches: []
+	molecule:30
+		csm:
+		perm: IDENTICAL[4, 8, 6, 3, 7, 5, 1, 2] [4, 8, 6, 3, 7, 5, 1, 2]	dir: [-0.94929, -0.261551, 0.174471] [-0.94929  -0.261551  0.174471]
+		symmetric structure mismatches: []
+	molecule:31
+		csm:
+		perm: MISMATCH[4, 1, 7, 8, 2, 5, 3, 6] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.641906, -0.672037, 0.369218] [-0.641906  0.672037 -0.369218]
+		symmetric structure mismatches: []
+	molecule:32
+		csm:
+		perm: IDENTICAL[2, 3, 6, 5, 4, 8, 1, 7] [2, 3, 6, 5, 4, 8, 1, 7]	dir: [-0.233594, -0.948247, 0.215087] [-0.233594 -0.948247  0.215087]
+		symmetric structure mismatches: []
+	molecule:33
+		csm:
+		perm: MISMATCH[2, 5, 7, 1, 6, 8, 3, 4] [4, 1, 7, 8, 2, 5, 3, 6]	dir: [-0.571752, -0.105141, 0.813661] [ 0.571752  0.105141 -0.813661]
+		symmetric structure mismatches: []
+	molecule:34
+		csm:
+		perm: MISMATCH[4, 8, 6, 3, 7, 5, 1, 2] [7, 8, 4, 1, 6, 3, 5, 2]	dir: [0.953855, 0.143512, 0.263753] [-0.953855 -0.143512 -0.263753]
+		symmetric structure mismatches: []
+	molecule:35
+		csm:
+		perm: MISMATCH[2, 5, 7, 1, 6, 8, 3, 4] [4, 1, 7, 8, 2, 5, 3, 6]	dir: [-0.63578, 0.656951, 0.405216] [ 0.63578  -0.656951 -0.405216]
+		symmetric structure mismatches: []
+	molecule:36
+		csm:
+		perm: MISMATCH[4, 1, 7, 8, 2, 5, 3, 6] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.612117, -0.646217, -0.455759] [ 0.612117  0.646217  0.455759]
+		symmetric structure mismatches: []
+	molecule:37
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.522462, 0.644997, 0.557685] [ 0.522462  0.644997  0.557685]
+		symmetric structure mismatches: []
+	molecule:38
+		csm:
+		perm: MISMATCH[4, 1, 7, 8, 2, 5, 3, 6] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.224354, -0.93138, 0.2867] [ 0.224354  0.93138  -0.2867  ]
+		symmetric structure mismatches: []
+	molecule:39
+		csm:
+		perm: MISMATCH[2, 5, 7, 1, 6, 8, 3, 4] [4, 1, 7, 8, 2, 5, 3, 6]	dir: [0.20986, 0.472468, 0.855998] [-0.20986  -0.472468 -0.855998]
+		symmetric structure mismatches: []
+	molecule:4
+		csm:
+		perm: MISMATCH[6, 5, 2, 3, 7, 1, 8, 4] [6, 3, 4, 8, 2, 1, 5, 7]	dir: [0.312091, 0.872482, -0.375997] [-0.312091 -0.872482  0.375997]
+		symmetric structure mismatches: []
+	molecule:40
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.071732, -0.429356, 0.900282] [ 0.071732 -0.429356  0.900282]
+		symmetric structure mismatches: []
+	molecule:41
+		csm:
+		perm: IDENTICAL[7, 1, 2, 5, 4, 3, 8, 6] [7, 1, 2, 5, 4, 3, 8, 6]	dir: [-0.122533, 0.484466, -0.866186] [-0.122533  0.484466 -0.866186]
+		symmetric structure mismatches: []
+	molecule:42
+		csm:
+		perm: MISMATCH[6, 3, 4, 8, 2, 1, 5, 7] [6, 5, 2, 3, 7, 1, 8, 4]	dir: [0.608922, 0.200251, -0.767537] [-0.608922 -0.200251  0.767537]
+		symmetric structure mismatches: []
+	molecule:43
+		csm:
+		perm: MISMATCH[7, 8, 4, 1, 6, 3, 5, 2] [4, 8, 6, 3, 7, 5, 1, 2]	dir: [0.474031, 0.0, 0.880508] [-0.474031  0.       -0.880508]
+		symmetric structure mismatches: []
+	molecule:44
+		csm:
+		perm: IDENTICAL[4, 8, 6, 3, 7, 5, 1, 2] [4, 8, 6, 3, 7, 5, 1, 2]	dir: [0.471787, -0.0, 0.881713] [ 0.471787  0.        0.881713]
+		symmetric structure mismatches: []
+	molecule:45
+		csm:
+		perm: MISMATCH[2, 3, 6, 5, 4, 8, 1, 7] [7, 1, 2, 5, 4, 3, 8, 6]	dir: [0.15918, 0.638089, 0.753329] [-0.15918  -0.638089 -0.753329]
+		symmetric structure mismatches: []
+	molecule:46
+		csm:
+		perm: IDENTICAL[2, 3, 6, 5, 4, 8, 1, 7] [2, 3, 6, 5, 4, 8, 1, 7]	dir: [0.993589, 0.108867, -0.030483] [ 0.993589  0.108867 -0.030483]
+		symmetric structure mismatches: []
+	molecule:47
+		csm:
+		perm: MISMATCH[4, 1, 7, 8, 2, 5, 3, 6] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.219776, -0.731295, -0.645683] [ 0.219776  0.731295  0.645683]
+		symmetric structure mismatches: []
+	molecule:48
+		csm:
+		perm: MISMATCH[2, 5, 7, 1, 6, 8, 3, 4] [4, 1, 7, 8, 2, 5, 3, 6]	dir: [-0.409261, 0.537428, -0.737344] [ 0.409261 -0.537428  0.737344]
+		symmetric structure mismatches: []
+	molecule:49
+		csm:
+		perm: MISMATCH[7, 8, 4, 1, 6, 3, 5, 2] [4, 8, 6, 3, 7, 5, 1, 2]	dir: [0.755367, 0.599787, -0.26396] [-0.755367 -0.599787  0.26396 ]
+		symmetric structure mismatches: []
+	molecule:5
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.192351, -0.26524, 0.944801] [ 0.192351 -0.26524   0.944801]
+		symmetric structure mismatches: []
+	molecule:6
+		csm:
+		perm: IDENTICAL[6, 3, 4, 8, 2, 1, 5, 7] [6, 3, 4, 8, 2, 1, 5, 7]	dir: [0.951485, -0.160941, -0.262247] [ 0.951485 -0.160941 -0.262247]
+		symmetric structure mismatches: []
+	molecule:7
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [0.960306, -0.039032, -0.276204] [ 0.960306 -0.039032 -0.276204]
+		symmetric structure mismatches: []
+	molecule:8
+		csm:
+		perm: IDENTICAL[7, 1, 2, 5, 4, 3, 8, 6] [7, 1, 2, 5, 4, 3, 8, 6]	dir: [0.571846, -0.442973, -0.690483] [ 0.571846 -0.442973 -0.690483]
+		symmetric structure mismatches: []
+	molecule:9
+		csm:
+		perm: IDENTICAL[2, 5, 7, 1, 6, 8, 3, 4] [2, 5, 7, 1, 6, 8, 3, 4]	dir: [-0.079809, -0.211112, 0.974198] [-0.079809 -0.211112  0.974198]
+		symmetric structure mismatches: []
+test: L04_ci
+	molecule:1
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:10
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:11
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:12
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:13
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:14
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:15
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:16
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:17
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:18
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:19
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:2
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:20
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:21
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:22
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:23
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:24
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:25
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:26
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:27
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:28
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:29
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:3
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:30
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:31
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:32
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:33
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:34
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:35
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:36
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:37
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:38
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:39
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:4
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:40
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:41
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:42
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:43
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:44
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:45
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:46
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:47
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:48
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:49
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:5
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:6
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:7
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:8
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:9
+		csm:
+		perm: IDENTICAL[6, 8, 7, 5, 4, 1, 3, 2] [6, 8, 7, 5, 4, 1, 3, 2]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+test: L06_c3
+	molecule:1
+		csm:
+		perm: IDENTICAL[3, 6, 8, 4, 5, 7, 2, 1] [3, 6, 8, 4, 5, 7, 2, 1]	dir: [0.0, 0.692784, 0.721146] [ 0.        0.692784  0.721146]
+		symmetric structure mismatches: []
+	molecule:10
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.102226, -0.19816, 0.974824] [-0.102226 -0.19816   0.974824]
+		symmetric structure mismatches: []
+	molecule:11
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.328861, 0.596867, 0.731847] [ 0.328861  0.596867  0.731847]
+		symmetric structure mismatches: []
+	molecule:12
+		csm:
+		perm: IDENTICAL[3, 6, 8, 4, 5, 7, 2, 1] [3, 6, 8, 4, 5, 7, 2, 1]	dir: [0.65539, -0.022225, -0.754964] [ 0.65539  -0.022225 -0.754964]
+		symmetric structure mismatches: []
+	molecule:13
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.420624, -0.007571, -0.907204] [ 0.420624 -0.007571 -0.907204]
+		symmetric structure mismatches: []
+	molecule:14
+		csm:
+		perm: IDENTICAL[1, 4, 8, 7, 3, 6, 2, 5] [1, 4, 8, 7, 3, 6, 2, 5]	dir: [-0.737951, 0.674355, -0.025947] [-0.737951  0.674355 -0.025947]
+		symmetric structure mismatches: []
+	molecule:15
+		csm:
+		perm: EQUIVALENT[5, 6, 3, 2, 8, 4, 7, 1] [8, 4, 3, 6, 1, 2, 7, 5]	dir: [-0.431731, -0.036822, 0.901251] [ 0.431731  0.036822 -0.901251]
+		symmetric structure mismatches: []
+	molecule:16
+		csm:
+		perm: IDENTICAL[1, 4, 8, 7, 3, 6, 2, 5] [1, 4, 8, 7, 3, 6, 2, 5]	dir: [0.752947, -0.657284, -0.032382] [ 0.752947 -0.657284 -0.032382]
+		symmetric structure mismatches: []
+	molecule:17
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.432562, -0.020353, -0.901374] [ 0.432562 -0.020353 -0.901374]
+		symmetric structure mismatches: []
+	molecule:18
+		csm:
+		perm: IDENTICAL[1, 7, 5, 2, 8, 6, 4, 3] [1, 7, 5, 2, 8, 6, 4, 3]	dir: [0.743395, -0.666432, 0.056855] [ 0.743395 -0.666432  0.056855]
+		symmetric structure mismatches: []
+	molecule:19
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.199794, -0.039672, -0.979034] [-0.199794 -0.039672 -0.979034]
+		symmetric structure mismatches: []
+	molecule:2
+		csm:
+		perm: EQUIVALENT[8, 4, 3, 6, 1, 2, 7, 5] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.913902, -0.392383, 0.104015] [ 0.913902  0.392383 -0.104015]
+		symmetric structure mismatches: []
+	molecule:20
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.617803, -0.152416, 0.77142] [-0.617803 -0.152416  0.77142 ]
+		symmetric structure mismatches: []
+	molecule:21
+		csm:
+		perm: IDENTICAL[1, 4, 8, 7, 3, 6, 2, 5] [1, 4, 8, 7, 3, 6, 2, 5]	dir: [0.797216, -0.324321, 0.509179] [ 0.797216 -0.324321  0.509179]
+		symmetric structure mismatches: []
+	molecule:22
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.078323, -0.821649, -0.564587] [ 0.078323 -0.821649 -0.564587]
+		symmetric structure mismatches: []
+	molecule:23
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.262731, -0.641606, 0.720635] [ 0.262731 -0.641606  0.720635]
+		symmetric structure mismatches: []
+	molecule:24
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.204263, -0.062147, 0.976941] [ 0.204263 -0.062147  0.976941]
+		symmetric structure mismatches: []
+	molecule:25
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.725093, 0.654795, -0.21327] [-0.725093  0.654795 -0.21327 ]
+		symmetric structure mismatches: []
+	molecule:26
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.723612, 0.656504, -0.213047] [-0.723612  0.656504 -0.213047]
+		symmetric structure mismatches: []
+	molecule:27
+		csm:
+		perm: IDENTICAL[1, 4, 8, 7, 3, 6, 2, 5] [1, 4, 8, 7, 3, 6, 2, 5]	dir: [-0.136322, 0.031287, -0.99017] [-0.136322  0.031287 -0.99017 ]
+		symmetric structure mismatches: []
+	molecule:28
+		csm:
+		perm: IDENTICAL[8, 4, 3, 6, 1, 2, 7, 5] [8, 4, 3, 6, 1, 2, 7, 5]	dir: [0.738299, -0.648032, 0.187002] [ 0.738299 -0.648032  0.187002]
+		symmetric structure mismatches: []
+	molecule:29
+		csm:
+		perm: EQUIVALENT[8, 7, 1, 4, 5, 2, 6, 3] [3, 6, 8, 4, 5, 7, 2, 1]	dir: [-0.943312, -0.296141, -0.149876] [ 0.943312  0.296141  0.149876]
+		symmetric structure mismatches: []
+	molecule:3
+		csm:
+		perm: EQUIVALENT[5, 6, 3, 2, 8, 4, 7, 1] [8, 4, 3, 6, 1, 2, 7, 5]	dir: [-0.389134, 0.281522, 0.877109] [ 0.389134 -0.281522 -0.877109]
+		symmetric structure mismatches: []
+	molecule:30
+		csm:
+		perm: IDENTICAL[5, 2, 1, 7, 3, 4, 6, 8] [5, 2, 1, 7, 3, 4, 6, 8]	dir: [0.94929, 0.261551, -0.174471] [ 0.94929   0.261551 -0.174471]
+		symmetric structure mismatches: []
+	molecule:31
+		csm:
+		perm: EQUIVALENT[8, 4, 3, 6, 1, 2, 7, 5] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.641906, -0.672037, 0.369218] [-0.641906  0.672037 -0.369218]
+		symmetric structure mismatches: []
+	molecule:32
+		csm:
+		perm: IDENTICAL[3, 6, 8, 4, 5, 7, 2, 1] [3, 6, 8, 4, 5, 7, 2, 1]	dir: [-0.233594, -0.948247, 0.215087] [-0.233594 -0.948247  0.215087]
+		symmetric structure mismatches: []
+	molecule:33
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.571746, -0.105146, 0.813665] [-0.571746 -0.105146  0.813665]
+		symmetric structure mismatches: []
+	molecule:34
+		csm:
+		perm: IDENTICAL[3, 2, 5, 6, 1, 7, 4, 8] [3, 2, 5, 6, 1, 7, 4, 8]	dir: [0.953856, 0.143508, 0.263751] [ 0.953856  0.143508  0.263751]
+		symmetric structure mismatches: []
+	molecule:35
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.63578, 0.656951, 0.405216] [-0.63578   0.656951  0.405216]
+		symmetric structure mismatches: []
+	molecule:36
+		csm:
+		perm: EQUIVALENT[8, 4, 3, 6, 1, 2, 7, 5] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.612111, -0.64622, -0.455763] [ 0.612111  0.64622   0.455763]
+		symmetric structure mismatches: []
+	molecule:37
+		csm:
+		perm: EQUIVALENT[5, 6, 3, 2, 8, 4, 7, 1] [8, 4, 3, 6, 1, 2, 7, 5]	dir: [0.522462, 0.644997, 0.557685] [-0.522462 -0.644997 -0.557685]
+		symmetric structure mismatches: []
+	molecule:38
+		csm:
+		perm: EQUIVALENT[8, 4, 3, 6, 1, 2, 7, 5] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.224342, -0.931386, 0.286689] [ 0.224342  0.931386 -0.286689]
+		symmetric structure mismatches: []
+	molecule:39
+		csm:
+		perm: EQUIVALENT[5, 6, 3, 2, 8, 4, 7, 1] [8, 4, 3, 6, 1, 2, 7, 5]	dir: [0.20986, 0.472468, 0.855998] [-0.20986  -0.472468 -0.855998]
+		symmetric structure mismatches: []
+	molecule:4
+		csm:
+		perm: IDENTICAL[1, 4, 8, 7, 3, 6, 2, 5] [1, 4, 8, 7, 3, 6, 2, 5]	dir: [-0.312092, -0.872482, 0.375996] [-0.312092 -0.872482  0.375996]
+		symmetric structure mismatches: []
+	molecule:40
+		csm:
+		perm: EQUIVALENT[5, 6, 3, 2, 8, 4, 7, 1] [8, 4, 3, 6, 1, 2, 7, 5]	dir: [0.071732, -0.429356, 0.900282] [-0.071732  0.429356 -0.900282]
+		symmetric structure mismatches: []
+	molecule:41
+		csm:
+		perm: IDENTICAL[3, 6, 8, 4, 5, 7, 2, 1] [3, 6, 8, 4, 5, 7, 2, 1]	dir: [0.122543, -0.484437, 0.866201] [ 0.122543 -0.484437  0.866201]
+		symmetric structure mismatches: []
+	molecule:42
+		csm:
+		perm: EQUIVALENT[5, 6, 3, 2, 8, 4, 7, 1] [8, 4, 3, 6, 1, 2, 7, 5]	dir: [-0.303843, 0.856744, 0.416736] [ 0.303843 -0.856744 -0.416736]
+		symmetric structure mismatches: []
+	molecule:43
+		csm:
+		perm: IDENTICAL[3, 2, 5, 6, 1, 7, 4, 8] [3, 2, 5, 6, 1, 7, 4, 8]	dir: [-0.474031, 0.0, -0.880508] [-0.474031  0.       -0.880508]
+		symmetric structure mismatches: []
+	molecule:44
+		csm:
+		perm: IDENTICAL[3, 2, 5, 6, 1, 7, 4, 8] [3, 2, 5, 6, 1, 7, 4, 8]	dir: [0.471787, 0.0, 0.881713] [ 0.471787  0.        0.881713]
+		symmetric structure mismatches: []
+	molecule:45
+		csm:
+		perm: IDENTICAL[3, 6, 8, 4, 5, 7, 2, 1] [3, 6, 8, 4, 5, 7, 2, 1]	dir: [0.15918, 0.638089, 0.753329] [ 0.15918   0.638089  0.753329]
+		symmetric structure mismatches: []
+	molecule:46
+		csm:
+		perm: EQUIVALENT[8, 7, 1, 4, 5, 2, 6, 3] [3, 6, 8, 4, 5, 7, 2, 1]	dir: [-0.993589, -0.108867, 0.030483] [ 0.993589  0.108867 -0.030483]
+		symmetric structure mismatches: []
+	molecule:47
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.219776, 0.731295, 0.645683] [ 0.219776  0.731295  0.645683]
+		symmetric structure mismatches: []
+	molecule:48
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.40926, 0.537425, -0.737347] [-0.40926   0.537425 -0.737347]
+		symmetric structure mismatches: []
+	molecule:49
+		csm:
+		perm: IDENTICAL[1, 4, 8, 7, 3, 6, 2, 5] [1, 4, 8, 7, 3, 6, 2, 5]	dir: [0.681765, 0.018997, 0.731325] [ 0.681765  0.018997  0.731325]
+		symmetric structure mismatches: []
+	molecule:5
+		csm:
+		perm: EQUIVALENT[8, 4, 3, 6, 1, 2, 7, 5] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.192332, 0.265247, -0.944803] [ 0.192332 -0.265247  0.944803]
+		symmetric structure mismatches: []
+	molecule:6
+		csm:
+		perm: IDENTICAL[1, 4, 8, 7, 3, 6, 2, 5] [1, 4, 8, 7, 3, 6, 2, 5]	dir: [0.951486, -0.160942, -0.262243] [ 0.951486 -0.160942 -0.262243]
+		symmetric structure mismatches: []
+	molecule:7
+		csm:
+		perm: EQUIVALENT[8, 4, 3, 6, 1, 2, 7, 5] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.960305, 0.03903, 0.276209] [ 0.960305 -0.03903  -0.276209]
+		symmetric structure mismatches: []
+	molecule:8
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [0.516427, 0.092087, 0.851366] [ 0.516427  0.092087  0.851366]
+		symmetric structure mismatches: []
+	molecule:9
+		csm:
+		perm: IDENTICAL[5, 6, 3, 2, 8, 4, 7, 1] [5, 6, 3, 2, 8, 4, 7, 1]	dir: [-0.079791, -0.211111, 0.9742] [-0.079791 -0.211111  0.9742  ]
+		symmetric structure mismatches: []
+test: L02_cs
+	molecule:1
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [1.0, 0.0, 0.0] [ 1.  0.  0.]
+		symmetric structure mismatches: []
+	molecule:10
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.885839, 0.463991, 0.001428] [-0.885839  0.463991  0.001428]
+		symmetric structure mismatches: []
+	molecule:11
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.476057, -0.774069, 0.417357] [-0.476057  0.774069 -0.417357]
+		symmetric structure mismatches: []
+	molecule:12
+		csm:
+		perm: IDENTICAL[1, 7, 8, 4, 5, 6, 2, 3] [1, 7, 8, 4, 5, 6, 2, 3]	dir: [0.753765, 0.082889, 0.651896] [-0.753765 -0.082889 -0.651896]
+		symmetric structure mismatches: []
+	molecule:13
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.64009, -0.70617, 0.30267] [-0.64009  0.70617 -0.30267]
+		symmetric structure mismatches: []
+	molecule:14
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.876009, 0.267601, 0.401245] [-0.876009  0.267601  0.401245]
+		symmetric structure mismatches: []
+	molecule:15
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [0.629723, -0.72767, 0.271929] [-0.629723  0.72767  -0.271929]
+		symmetric structure mismatches: []
+	molecule:16
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [-0.873372, 0.220345, 0.434361] [-0.873372  0.220345  0.434361]
+		symmetric structure mismatches: []
+	molecule:17
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.643485, -0.693292, 0.324458] [-0.643485  0.693292 -0.324458]
+		symmetric structure mismatches: []
+	molecule:18
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.875477, 0.282072, 0.392398] [-0.875477  0.282072  0.392398]
+		symmetric structure mismatches: []
+	molecule:19
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.858528, -0.474476, 0.194429] [-0.858528 -0.474476  0.194429]
+		symmetric structure mismatches: []
+	molecule:2
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.352194, 0.893847, 0.277484] [ 0.352194 -0.893847 -0.277484]
+		symmetric structure mismatches: []
+	molecule:20
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.005091, 0.980239, 0.197752] [-0.005091 -0.980239 -0.197752]
+		symmetric structure mismatches: []
+	molecule:21
+		csm:
+		perm: IDENTICAL[1, 7, 8, 4, 5, 6, 2, 3] [1, 7, 8, 4, 5, 6, 2, 3]	dir: [0.007293, 0.848536, 0.529088] [-0.007293 -0.848536 -0.529088]
+		symmetric structure mismatches: []
+	molecule:22
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.676709, -0.372055, 0.635327] [-0.676709  0.372055 -0.635327]
+		symmetric structure mismatches: []
+	molecule:23
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.566265, 0.707254, 0.423244] [-0.566265 -0.707254 -0.423244]
+		symmetric structure mismatches: []
+	molecule:24
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.80211, 0.561459, 0.203426] [-0.80211   0.561459  0.203426]
+		symmetric structure mismatches: []
+	molecule:25
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.420039, -0.175113, 0.890451] [-0.420039 -0.175113  0.890451]
+		symmetric structure mismatches: []
+	molecule:26
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.423572, -0.17868, 0.888065] [-0.423572 -0.17868   0.888065]
+		symmetric structure mismatches: []
+	molecule:27
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [0.244609, 0.53619, 0.807878] [ 0.244609  0.53619   0.807878]
+		symmetric structure mismatches: []
+	molecule:28
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.672218, -0.729641, 0.125485] [-0.672218 -0.729641  0.125485]
+		symmetric structure mismatches: []
+	molecule:29
+		csm:
+		perm: IDENTICAL[3, 2, 1, 4, 5, 7, 6, 8] [3, 2, 1, 4, 5, 7, 6, 8]	dir: [0.262402, -0.941924, 0.209582] [-0.262402  0.941924 -0.209582]
+		symmetric structure mismatches: []
+	molecule:3
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.483494, -0.748046, 0.4546] [-0.483494  0.748046 -0.4546  ]
+		symmetric structure mismatches: []
+	molecule:30
+		csm:
+		perm: IDENTICAL[3, 2, 1, 4, 5, 7, 6, 8] [3, 2, 1, 4, 5, 7, 6, 8]	dir: [-0.222397, 0.950867, 0.215388] [-0.222397  0.950867  0.215388]
+		symmetric structure mismatches: []
+	molecule:31
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.616001, -0.165228, 0.770222] [-0.616001 -0.165228  0.770222]
+		symmetric structure mismatches: []
+	molecule:32
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [0.585931, 0.039257, 0.80941] [-0.585931 -0.039257 -0.80941 ]
+		symmetric structure mismatches: []
+	molecule:33
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.171151, 0.98522, 0.007047] [-0.171151  0.98522   0.007047]
+		symmetric structure mismatches: []
+	molecule:34
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.129804, -0.989151, 0.068785] [-0.129804  0.989151 -0.068785]
+		symmetric structure mismatches: []
+	molecule:35
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [0.608977, 0.104357, 0.786293] [-0.608977 -0.104357 -0.786293]
+		symmetric structure mismatches: []
+	molecule:36
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.044293, -0.603464, 0.796159] [ 0.044293 -0.603464  0.796159]
+		symmetric structure mismatches: []
+	molecule:37
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.174891, -0.559081, 0.810457] [ 0.174891  0.559081 -0.810457]
+		symmetric structure mismatches: []
+	molecule:38
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.839079, -0.035006, 0.542882] [-0.839079  0.035006 -0.542882]
+		symmetric structure mismatches: []
+	molecule:39
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [-0.977476, 0.121397, 0.172637] [-0.977476  0.121397  0.172637]
+		symmetric structure mismatches: []
+	molecule:4
+		csm:
+		perm: IDENTICAL[1, 7, 8, 4, 5, 6, 2, 3] [1, 7, 8, 4, 5, 6, 2, 3]	dir: [-0.836112, 0.440164, 0.327371] [-0.836112  0.440164  0.327371]
+		symmetric structure mismatches: []
+	molecule:40
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.825399, 0.532294, 0.188094] [-0.825399 -0.532294 -0.188094]
+		symmetric structure mismatches: []
+	molecule:41
+		csm:
+		perm: IDENTICAL[8, 6, 3, 4, 5, 2, 7, 1] [8, 6, 3, 4, 5, 2, 7, 1]	dir: [-0.926633, 0.256732, 0.274665] [-0.926633  0.256732  0.274665]
+		symmetric structure mismatches: []
+	molecule:42
+		csm:
+		perm: IDENTICAL[3, 2, 1, 4, 5, 7, 6, 8] [3, 2, 1, 4, 5, 7, 6, 8]	dir: [-0.558922, 0.402046, 0.725234] [-0.558922  0.402046  0.725234]
+		symmetric structure mismatches: []
+	molecule:43
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.0, 1.0, 0.0] [ 0.  1.  0.]
+		symmetric structure mismatches: []
+	molecule:44
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.0, 1.0, 0.0] [ 0.  1.  0.]
+		symmetric structure mismatches: []
+	molecule:45
+		csm:
+		perm: IDENTICAL[3, 2, 1, 4, 5, 7, 6, 8] [3, 2, 1, 4, 5, 7, 6, 8]	dir: [-0.836094, -0.31865, 0.446553] [-0.836094 -0.31865   0.446553]
+		symmetric structure mismatches: []
+	molecule:46
+		csm:
+		perm: IDENTICAL[1, 2, 5, 7, 3, 6, 4, 8] [1, 2, 5, 7, 3, 6, 4, 8]	dir: [-0.770823, -0.309304, 0.556923] [-0.770823 -0.309304  0.556923]
+		symmetric structure mismatches: []
+	molecule:47
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.352046, -0.557815, 0.751603] [-0.352046 -0.557815  0.751603]
+		symmetric structure mismatches: []
+	molecule:48
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.882423, -0.027629, 0.469646] [-0.882423 -0.027629  0.469646]
+		symmetric structure mismatches: []
+	molecule:49
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [-0.249801, -0.933529, 0.257144] [-0.249801 -0.933529  0.257144]
+		symmetric structure mismatches: []
+	molecule:5
+		csm:
+		perm: IDENTICAL[1, 4, 3, 2, 8, 6, 7, 5] [1, 4, 3, 2, 8, 6, 7, 5]	dir: [0.085699, 0.96364, 0.253087] [-0.085699 -0.96364  -0.253087]
+		symmetric structure mismatches: []
+	molecule:6
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.653041, 0.684531, 0.323967] [-0.653041  0.684531  0.323967]
+		symmetric structure mismatches: []
+	molecule:7
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [0.030548, -0.969494, 0.243205] [ 0.030548 -0.969494  0.243205]
+		symmetric structure mismatches: []
+	molecule:8
+		csm:
+		perm: IDENTICAL[7, 5, 6, 8, 2, 3, 1, 4] [7, 5, 6, 8, 2, 3, 1, 4]	dir: [0.211159, 0.864271, 0.45656] [-0.211159 -0.864271 -0.45656 ]
+		symmetric structure mismatches: []
+	molecule:9
+		csm:
+		perm: IDENTICAL[5, 2, 3, 6, 1, 4, 7, 8] [5, 2, 3, 6, 1, 4, 7, 8]	dir: [-0.060999, 0.976518, 0.206618] [-0.060999  0.976518  0.206618]
+		symmetric structure mismatches: []

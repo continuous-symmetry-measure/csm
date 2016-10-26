@@ -1,0 +1,1 @@
+{"runs": {"L03_c5": ["c5", "__IN__", "__OUT__"], "L01_c2": ["c2", "__IN__", "__OUT__"], "L02_cs": ["cs", "__IN__", "__OUT__"]}, "moleculefile": "D:\\UserData\\devora\\Sources\\csm\\test_cases\\sagiv\\test_cases\\clean_test_cases\\t01_ring5\\input\\input_1\\cyclopentadiene.xyz", "equiv_perms": {"c5": [[[1, 2, 3, 4, 0], [4, 0, 1, 2, 3]]]}}
