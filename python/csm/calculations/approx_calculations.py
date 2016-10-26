@@ -186,7 +186,7 @@ def find_symmetry_directions(molecule, use_best_dir, get_orthogonal, detect_outl
     dirs = dir_fit(group_averages, use_best_dir)
 
     if detect_outliers and len(molecule.equivalence_classes) > min_group_for_outliers:
-        dirs = dirs_without_outliers(dirs, group_averages, op_type)
+        dirs = dirs_without_outliers(dirs, group_averages, op_type, use_best_dir)
     if get_orthogonal:
         dirs = dirs_orthogonal(dirs)
     return dirs
@@ -226,7 +226,7 @@ def dir_fit(positions, best_dir):
 
     return dirs
 
-def dirs_without_outliers(dirs, positions, op_type):
+def dirs_without_outliers(dirs, positions, op_type, use_best_dir):
     def compute_distance_from_line(group_avg_point, test_dir_end):
         def magnitude(point1, point2):
             vec = point2 - point1
@@ -272,7 +272,7 @@ def dirs_without_outliers(dirs, positions, op_type):
             if not (dist / median > 2 or dist / median > 2):
                 with_outliers_removed.append(pos)
         # 4. recompute dirs
-        outliers_dirs = dir_fit(with_outliers_removed)
+        outliers_dirs = dir_fit(with_outliers_removed, use_best_dir)
         more_dirs += list(outliers_dirs)
     return np.array(more_dirs)
 

@@ -68,7 +68,7 @@ def normrun(args=[]):
     result = run(args)
 
     norm_factor, final_csm = normalize_csm(norm_type, result)
-    print("normalization factor is:", norm_factor)
+    print("Normalization factor is:", norm_factor)
     print("Csm normalized with", norm_type, "method is:", final_csm)
 
 
