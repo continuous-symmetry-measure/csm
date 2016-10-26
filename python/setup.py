@@ -27,6 +27,9 @@ FAST_CPPUTILS_DIR = "FastCPPUtils"
 EIGEN_INCLUDE_DIR = "../include"
 CPP_WRAPPER_DIR = "csm/CPP_wrapper"
 
+MUNKRES_DIR = "cython-munkres"
+MUNKRES_INCLUDE_DIR = "cython-munkres/src/cpp"
+
 extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
@@ -53,7 +56,7 @@ setup(
     version=csm_version,
     packages=['csm.calculations', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
-    install_requires=['numpy>=1.10', 'openbabel>=1.8', 'munkres>=1.0.8'],
+    install_requires=['numpy>=1.10', 'openbabel>=1.8'],
     include_package_data=True,
     license='Chelem',  # example license
     description='The Continuous Symmetry Measure',
@@ -68,6 +71,7 @@ setup(
     },
 
     # The Cython extension module
+    # We do not use Cython itself but the Cython output files
     ext_modules=[Extension(
         "csm.fast",
         [os.path.join(CPP_WRAPPER_DIR, "fast.cpp"),
@@ -77,7 +81,15 @@ setup(
         language='c++',
         include_dirs=[EIGEN_INCLUDE_DIR, FAST_CPPUTILS_DIR, numpy.get_include()],
         extra_compile_args=extra_compile_args,
-        extra_link_args=extra_link_args),],
+        extra_link_args=extra_link_args),
+        Extension(
+            "cython_munkres",
+            [os.path.join(MUNKRES_DIR, "src", "cython_munkres.cpp"),
+             os.path.join(MUNKRES_DIR, "src", "cpp", "Munkres.cpp")],
+            language='c++',
+            include_dirs=[MUNKRES_INCLUDE_DIR, numpy.get_include()]
+        )
+    ],
 
     # The csm command
     entry_points={

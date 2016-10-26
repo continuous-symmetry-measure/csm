@@ -1,6 +1,11 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.9.4
+------------------------
+1. Some bug fixes.
+2. Incorporate the Cython wrapper for Munkres
+
 Changes in version 0.9.3.1
 ------------------------
 Added a printout of the result of yaffa_test
