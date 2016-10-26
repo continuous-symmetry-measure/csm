@@ -1,5 +1,3 @@
-print("csm_run.py imported")
-
 import csv
 import logging
 import sys
