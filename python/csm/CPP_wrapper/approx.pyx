@@ -4,7 +4,7 @@ import numpy as np
 cimport numpy as np
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.basic_calculations import create_rotation_matrix
-from munkres import munkres
+from cython_munkres import munkres
 
 cdef class Vector3D
 cdef class Matrix3D
