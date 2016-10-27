@@ -1,10 +1,11 @@
 The Python CSM Package
 ======================
 
-Changes in version 0.9.4
+Changes in version 0.10.0
 ------------------------
-1. Some bug fixes.
-2. Incorporate the Cython wrapper for Munkres
+1. New, faster, cpp-based Munkres
+2. bugfix: printing separate models only for pdbs
+
 
 Changes in version 0.9.3.1
 ------------------------
