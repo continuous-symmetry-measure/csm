@@ -21,7 +21,7 @@ def print_results(result, in_args, calc_args, out_args):
     """
 
     if calc_args['calc_type']=='just_perms':
-        print(result)
+        print("%.4g" % result)
         return
     with open(out_args['out_file_name'], 'w', encoding='utf-8') as f:
         f.write("%s: %.4lf\n" % (calc_args['op_name'], abs(result.csm)))
