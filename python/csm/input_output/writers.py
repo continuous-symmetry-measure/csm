@@ -33,7 +33,7 @@ def print_results(result, in_args, calc_args, out_args):
               str(round(percent_structure * 100, 2)) + "% of the original molecule's structure\n")
 
         if in_args['format'].lower() == "csm":
-            print_output(f, result, calc_args)
+            print_output_csm(f, result, calc_args)
         else:
             print_output_ob(f, result, in_args, calc_args, out_args)
 
@@ -74,19 +74,18 @@ def print_results(result, in_args, calc_args, out_args):
         f.write("\n")
 
 
-def print_output(f, result, calc_args):
+def print_output_csm(f, result, calc_args):
     """
     Prints output in CSM format
     :param f: File to print to
     :param result: The result of the CSM calculation (a CSMState)
     :param calc_args: Calculation arguments to CSM
     """
-
     size = len(result.molecule.atoms)
 
     # print initial molecule
 
-    f.write("\nMODEL 01 INITIAL STRUCTURE COORDINATES\n%i\n\n" % size)
+    f.write("\nINITIAL STRUCTURE COORDINATES\n%i\n\n" % size)
     for i in range(size):
         f.write("%3s%10lf %10lf %10lf\n" %
                 (result.molecule.atoms[i].symbol,
@@ -99,7 +98,6 @@ def print_output(f, result, calc_args):
         for j in result.molecule.atoms[i].adjacent:
             f.write("%d " % (j + 1))
         f.write("\n")
-    f.write("\nENDMDL")
 
     # print resulting structure coordinates
 
@@ -117,8 +115,6 @@ def print_output(f, result, calc_args):
         for j in result.molecule.atoms[i].adjacent:
             f.write("%d " % (j + 1))
         f.write("\n")
-    f.write("\nENDMDL")
-    #f.write("\nEND")
 
     # print dir
 
@@ -217,7 +213,8 @@ def write_ob_molecule(mol, format, f):
         s = conv.WriteString(mol)
     except (TypeError, ValueError, IOError):
         raise ValueError("Error writing data file using OpenBabel")
-    s=s.replace("END", "ENDMDL")
+    if str.lower(format)=='pdb':
+        s=s.replace("END", "ENDMDL")
     f.write(s)
 
 

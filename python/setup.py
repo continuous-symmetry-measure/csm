@@ -65,30 +65,27 @@ setup(
     author='The Research Software Company',
     author_email='itay@chelem.co.il',
 
-    # Files required by the extension
-    package_data={
-        "csm.main": [os.path.join(FAST_CPPUTILS_DIR, "*.*"), 'README.md'],
-    },
-
     # The Cython extension module
     # We do not use Cython itself but the Cython output files
-    ext_modules=[Extension(
-        "csm.fast",
-        [os.path.join(CPP_WRAPPER_DIR, "fast.cpp"),
-         os.path.join(FAST_CPPUTILS_DIR, "rpoly.c"),
-         os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp"),
-         ],
-        language='c++',
-        include_dirs=[EIGEN_INCLUDE_DIR, FAST_CPPUTILS_DIR, numpy.get_include()],
-        extra_compile_args=extra_compile_args,
-        extra_link_args=extra_link_args),
+    # Note that header files that are required by the compilation are specified in MANIFEST.in
+    ext_modules=[
         Extension(
             "cython_munkres",
             [os.path.join(MUNKRES_DIR, "src", "cython_munkres.cpp"),
              os.path.join(MUNKRES_DIR, "src", "cpp", "Munkres.cpp")],
             language='c++',
             include_dirs=[MUNKRES_INCLUDE_DIR, numpy.get_include()]
-        )
+        ),
+        Extension(
+            "csm.fast",
+            [os.path.join(CPP_WRAPPER_DIR, "fast.cpp"),
+             os.path.join(FAST_CPPUTILS_DIR, "rpoly.c"),
+             os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp"),
+             ],
+            language='c++',
+            include_dirs=[EIGEN_INCLUDE_DIR, FAST_CPPUTILS_DIR, numpy.get_include()],
+            extra_compile_args=extra_compile_args,
+            extra_link_args=extra_link_args),
     ],
 
     # The csm command
