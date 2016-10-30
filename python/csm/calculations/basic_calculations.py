@@ -28,15 +28,26 @@ def process_results(results):
     symmetric_structure = create_symmetric_structure(results.molecule, results.perm, results.dir, results.op_type,
                                                      results.op_order, d_min)
     results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
-    masses = [atom.mass for atom in results.molecule.atoms]
-    normalize_coords(results.symmetric_structure, masses)
 
-    results.molecule.de_normalize()
+
+
+    #norm_factor=results.molecule.norm_factor
+    #normalized_mol_coords=np.copy(results.molecule.Q)
+    #masses = [atom.mass for atom in results.molecule.atoms]
+
+    #normalized_mol_coords=results.molecule.Q
+
+    #normalize_coords(results.symmetric_structure, masses)
+
+
     symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
     results= results._replace(symmetric_structure=symmetric_structure)
 
+    results.molecule.de_normalize()
+
     yaffa_csm=yaffa_test(results)
     results= results._replace(yaffa_csm=yaffa_csm)
+
 
     return results
 
@@ -62,6 +73,7 @@ def yaffa_test(result):
     return result
 
 
+
 def create_rotation_matrix(iOp, op_type, op_order, dir):
     is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
@@ -82,27 +94,6 @@ def create_rotation_matrix(iOp, op_type, op_order, dir):
     return rot
 
 
-def compute_local_csm(molecule, perm, dir, op_type, op_order):
-    size = len(molecule.atoms)
-    cur_perm = [i for i in range(size)]
-    local_csm = np.zeros(size)
-    m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
-
-    for i in range(op_order):
-        rot = create_rotation_matrix(i, op_type, op_order, dir)
-
-        # set permutation
-        cur_perm = [perm[cur_perm[j]] for j in range(size)]
-
-        # apply rotation to each atoms
-        rotated = rot @ m_pos[cur_perm[i]]
-        difference = rotated - m_pos[i]
-        square = np.square(difference)
-        sum = np.sum(square)
-        local_csm[i] = sum * (100.0 / (2 * op_order))
-    return local_csm
-
-
 def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
     #logger.debug('create_symmetric_structure called')
 
@@ -111,7 +102,7 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
     m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
     symmetric = np.copy(m_pos)
 
-    normalization = d_min / op_order
+    normalization = 1/ op_order#d_min / op_order
 
     ########calculate and apply transform matrix#########
     ###for i<OpOrder
@@ -133,6 +124,26 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
     symmetric *= normalization
 
     return symmetric
+
+def compute_local_csm(molecule, perm, dir, op_type, op_order):
+    size = len(molecule.atoms)
+    cur_perm = [i for i in range(size)]
+    local_csm = np.zeros(size)
+    m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
+
+    for i in range(op_order):
+        rot = create_rotation_matrix(i, op_type, op_order, dir)
+
+        # set permutation
+        cur_perm = [perm[cur_perm[j]] for j in range(size)]
+
+        # apply rotation to each atoms
+        rotated = rot @ m_pos[cur_perm[i]]
+        difference = rotated - m_pos[i]
+        square = np.square(difference)
+        sum = np.sum(square)
+        local_csm[i] = sum * (100.0 / (2 * op_order))
+    return local_csm
 
 
 def check_perm_structure(mol, perm):
