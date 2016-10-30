@@ -26,22 +26,10 @@ def process_results(results):
     d_min = 1.0 - (results.csm / 100 * results.op_order / (results.op_order - 1))
 
     symmetric_structure = create_symmetric_structure(results.molecule, results.perm, results.dir, results.op_type,
-                                                     results.op_order, d_min)
+                                                     results.op_order)
+
+    symmetric_structure = de_normalize_coords(symmetric_structure, results.molecule.norm_factor)
     results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
-
-
-
-    #norm_factor=results.molecule.norm_factor
-    #normalized_mol_coords=np.copy(results.molecule.Q)
-    #masses = [atom.mass for atom in results.molecule.atoms]
-
-    #normalized_mol_coords=results.molecule.Q
-
-    #normalize_coords(results.symmetric_structure, masses)
-
-
-    symmetric_structure = de_normalize_coords(results.symmetric_structure, results.molecule.norm_factor)
-    results= results._replace(symmetric_structure=symmetric_structure)
 
     results.molecule.de_normalize()
 
@@ -94,7 +82,7 @@ def create_rotation_matrix(iOp, op_type, op_order, dir):
     return rot
 
 
-def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
+def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
     #logger.debug('create_symmetric_structure called')
 
     cur_perm = np.arange(len(perm))  # array of ints...
@@ -102,7 +90,7 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order, d_min):
     m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
     symmetric = np.copy(m_pos)
 
-    normalization = 1/ op_order#d_min / op_order
+    normalization = 1/ op_order
 
     ########calculate and apply transform matrix#########
     ###for i<OpOrder

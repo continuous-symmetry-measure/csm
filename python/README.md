@@ -1,6 +1,12 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.11.0
+------------------------
+MAJOR BUG FIX: correct symmetric structure is calculated at end of code (such that the program's CSM and the equation's CSM are the same)
+minor aesthetic fixes: removed an unnecessary warning, added some scientific-notation printouts.
+
+
 Changes in version 0.10.0
 ------------------------
 1. New, faster, cpp-based Munkres
