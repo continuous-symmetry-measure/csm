@@ -207,8 +207,8 @@ def _process_split_arguments(parse_res):
 
 
     #calculation arguments for exact only:
-    if calc_args['calc_type'] != 'exact' and parse_res.keep_structure:
-        logger.warning("--keep-structure applies only to exact calculation. --keep-structure will be ignored")
+    if calc_args['calc_type'] == 'approx' and parse_res.keep_structure:
+        logger.warning("--keep-structure cannot be used in approx calculation. --keep-structure will be ignored")
     calc_args['keep_structure'] = in_args['keep_structure']= parse_res.keep_structure
     in_args['babel_bond'] = parse_res.babel_bond
     in_args['no_babel'] = parse_res.no_babel
