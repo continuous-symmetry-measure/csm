@@ -9,6 +9,12 @@ import numpy as np
 logger = logging.getLogger("csm")
 
 
+def remove_multi_bonds(bonds):
+    l= list(set(bonds))
+    l.sort()
+    return l
+
+
 class Molecule:
     def __init__(self, atoms={}, chains={}, norm_factor=1.0, obmol=None):
 
@@ -464,7 +470,8 @@ class Molecule:
                 if "CONECT" in line:
                     values=line.split()
                     atom= mol._atoms[int(values[1])-1]
-                    atom.adjacent=[int(ind)-1 for ind in values[2:]]
+                    adjacent=[int(ind)-1 for ind in values[2:]]
+                    atom.adjacent= remove_multi_bonds(adjacent)
         return mol
 
 
@@ -525,7 +532,7 @@ class Molecule:
             iter = OBAtomAtomIter(obatom)
             for neighbour_atom in iter:
                 adjacent.append(neighbour_atom.GetIdx() - 1)
-            atom.adjacent = adjacent
+            atom.adjacent =  remove_multi_bonds(adjacent)
             atoms.append(atom)
 
         equal=True
@@ -589,7 +596,7 @@ class Molecule:
                         raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
                     neighbours.append(neighbour)
 
-                atoms[i].adjacent = neighbours
+                atoms[i].adjacent =  remove_multi_bonds(neighbours)
 
             chains={}
             try:
