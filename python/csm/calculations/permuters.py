@@ -295,6 +295,7 @@ class PIP:
         else:
             self.q = [-1] * len(molecule)
         self.mol=molecule
+        self.state=None
 
     def switch(self, origin, destination):
         self.p[origin]=destination
@@ -333,7 +334,6 @@ class ConstraintManager:
 
     def propagate(self, pip, origin, destination, cycle_length, cycle_head, cycle_tail):
         #this is the function which handles the logic of which additional constraints get added after a placement
-        #it should also be responsible for identifying dead-ends-- but what happens then? alternately, choose_atom?
         #depropagating, for now, is handled by copying old constraints
         
         #the logic of constraints after a placement:
@@ -344,12 +344,12 @@ class ConstraintManager:
         #2: any index which had destination as an option, destination is removed as an option
         self.remove_option(destination)
 
-        #3: origin is removed entirely from the constraints dictionary-- it has been placed, and has nothing left
+        #(4: keep_structure)
+        self.keep_structure(origin, destination)
+
+        #finally: origin is removed entirely from the constraints dictionary-- it has been placed, and has nothing left
         #this is the only time and only way it is legal for an atom to have no options.
         self.constraints.pop(origin)
-
-
-        #(4: keep_structure)
 
 
     def handle_cycles(self, pip, cycle_length, cycle_head, cycle_tail):
@@ -371,24 +371,39 @@ class ConstraintManager:
         else:
             # otherwise, either cycle length is NOT op_order AND not SN:
             # in which case, it is forbidden for cycle_tail to attach to cycle head:
-            if cycle_length>1 and cycle_head in self.constraints[cycle_tail]: #ie 2-1
-                self.constraints[cycle_tail].remove(cycle_head)
+            if cycle_length>1:#ie 2-1
+                self._remove(cycle_tail, cycle_head)
                 if self.op_type == 'SN':
                     second_index=pip.p[cycle_head]
-                    self.constraints[second_index].remove(cycle_head) #because it was SN, this was left unhandled while
+                    self._remove(second_index, cycle_head) #because it was SN, this was left unhandled while
                     # possibility of len2 cycle remained
             else: #it is length two, and is not SN, remove as normal
-                if self.op_type != 'SN' and cycle_head in self.constraints[cycle_tail]:
-                    self.constraints[cycle_tail].remove(cycle_head)
+                if self.op_type != 'SN':
+                    self._remove(cycle_tail, cycle_head)
 
-    def keep_strcture(self):
-        pass
+    def keep_structure(self, origin, destination):
+        #if origin (A) is going to destination (B)
+        #THEN:
+        #1. atoms in A's bondset, can only go to constraints of theirs, that are in B's bondset
+        for atom_in_A_bondset in self.molecule.atoms[origin].adjacent:
+            try:
+                for constraint in self.constraints[atom_in_A_bondset]:
+                    if (destination, constraint) not in self.molecule.bondset:
+                        self._remove(atom_in_A_bondset, constraint)
+            except KeyError:
+                pass
+
+
+
 
     def remove_option(self, forbidden_option):
         #remove a possible destinaiton from *all* constraints
-        for constr in self.constraints:
-            if forbidden_option in self.constraints[constr]:
-                self.constraints[constr].remove(forbidden_option)
+        for key in self.constraints:
+            self._remove(key, forbidden_option)
+
+    def _remove(self, key, forbidden_option):
+        if forbidden_option in self.constraints[key]:
+            self.constraints[key].remove(forbidden_option)
 
     def check(self):
         for key in self.constraints:
@@ -418,7 +433,7 @@ class SimpleAtomChooser:
 
 
 class ConstraintPermuter:
-    def __init__(self, molecule, op_order, op_type, *args, **kwargs):
+    def __init__(self, molecule, op_order, op_type, keep_structure, *args, **kwargs):
         self.molecule=molecule
         self.op_order=op_order
         self.op_type=op_type
@@ -437,7 +452,8 @@ class ConstraintPermuter:
         #step 2: create initial set of constraints
         constraints=ConstraintManager(self.molecule, self.op_order, self.op_type)
         #step 3: call recursive permute
-        yield from self._permute(pip, constraints)
+        for pip in self._permute(pip, constraints):
+            yield pip #.state
 
     def _permute(self, pip, constraints):
         #print(pip.p)
@@ -474,6 +490,8 @@ class ConstraintPermuter:
 
                     #undo the change to
                     pip.unswitch(atom, destination)
+                else:
+                    pass
                 constraints=old_constraints
 
 
@@ -507,5 +525,6 @@ if __name__=="__main__":
     c=ConstraintPermuter(**calc_args)
     count=0
     for perm in c.permute():
+        print (perm.p)
         count+=1
     print(count)
