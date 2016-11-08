@@ -1,1 +1,1 @@
-{"runs": {"L01_c2": ["c2", "__IN__", "__OUT__"], "L04_s4": ["s4", "__IN__", "__OUT__"], "L02_cs": ["cs", "__IN__", "__OUT__"], "L03_c4": ["c4", "__IN__", "__OUT__"]}, "moleculefile": "D:\\UserData\\devora\\Sources\\csm\\test_cases\\sagiv\\test_cases\\clean_test_cases\\t05_crown12\\input\\input_1\\crown12.xyz", "equiv_perms": {"c4": [[[3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2], [9, 10, 11, 0, 1, 2, 3, 4, 5, 6, 7, 8]]]}}
+{}

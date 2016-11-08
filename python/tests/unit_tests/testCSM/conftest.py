@@ -41,12 +41,15 @@ def get_run_tuples(dirs):
 
         for key in in_dict["runs"]:
             for molecule in os.listdir(molecule_folder):
-                molfile=os.path.join(molecule_folder, molecule)
-                mol_index = molecule.split(".")[0]
-                e = output_dict[key][mol_index]
-                expected = Expected(e)
-                my_tuple=(in_dict["runs"][key], molfile, expected, in_dict['equiv_perms'])
-                params.append(my_tuple)
+                try:
+                    molfile=os.path.join(molecule_folder, molecule)
+                    mol_index = molecule.split(".")[0]
+                    e = output_dict[key][mol_index]
+                    expected = Expected(e)
+                    my_tuple=(in_dict["runs"][key], molfile, expected, in_dict['equiv_perms'])
+                    params.append(my_tuple)
+                except KeyError:
+                    pass
 
     return params
 
