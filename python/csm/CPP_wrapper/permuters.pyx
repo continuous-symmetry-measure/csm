@@ -277,7 +277,7 @@ cdef class CythonPermuter:
             # Check if this can be a complete cycle
             if cycle_length in self._cycle_lengths:
                 # Yes it can, attempt to close it
-                if pip.switch(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
+                if pip.assign(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
                     built_cycle.append(cycle_head)
                     saved_state=pip.close_cycle(built_cycle)
                     if not remainder:  # perm has been completed
@@ -291,19 +291,19 @@ cdef class CythonPermuter:
                         yield from self._group_recursive_permute(pip=pip, curr_atom=next_cycle_head, cycle_head=next_cycle_head, built_cycle=list(), cycle_length=1, remainder=next_remainder)
                     pip.unclose_cycle(saved_state)
                     built_cycle.remove(cycle_head)
-                    pip.unswitch(curr_atom, cycle_head)  # Undo the last switch
+                    pip.unassign(curr_atom, cycle_head)  # Undo the last switch
             # We now have a partial cycle of length cycle_length (we already checked it as a full cycle
             # above), now we try to extend it
             if cycle_length < self._max_length:
                 for next_atom in remainder:
                     # Go over all the possibilities for the next atom in the cycle
-                    if pip.switch(curr_atom, next_atom):
+                    if pip.assign(curr_atom, next_atom):
                         next_remainder = list(remainder)
                         next_remainder.remove(next_atom)
                         built_cycle.append(next_atom)
                         yield from self._group_recursive_permute(pip, next_atom, cycle_head, built_cycle, cycle_length + 1, next_remainder)
                         built_cycle.remove(next_atom)
-                        pip.unswitch(curr_atom, next_atom)
+                        pip.unassign(curr_atom, next_atom)
 
     def _group_permuter(self, group, pip):
         """
