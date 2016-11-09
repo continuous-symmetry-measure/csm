@@ -59,6 +59,8 @@ def _create_parser():
     parser.add_argument('--use-perm', type=str, help='Compute exact CSM, for a single permutation')
     parser.add_argument('--keep-structure', action='store_true', default=False,
                         help='Maintain molecule structure from being distorted in the exact calculation')
+    parser.add_argument('--constraint',  action='store_true', default=False,
+                        help='Use the constraints algorithm to traverse the permutation tree')
 
 
     #calculation arguments that only apply to approx
@@ -210,6 +212,7 @@ def _process_split_arguments(parse_res):
     if calc_args['calc_type'] == 'approx' and parse_res.keep_structure:
         logger.warning("--keep-structure cannot be used in approx calculation. --keep-structure will be ignored")
     calc_args['keep_structure'] = in_args['keep_structure']= parse_res.keep_structure
+    calc_args['constraint']=parse_res.constraint
     in_args['babel_bond'] = parse_res.babel_bond
     in_args['no_babel'] = parse_res.no_babel
     in_args['use_mass'] = parse_res.use_mass

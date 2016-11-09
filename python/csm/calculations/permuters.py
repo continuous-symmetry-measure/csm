@@ -489,6 +489,8 @@ class ConstraintPermuter:
         self.op_type=op_type
         self.keep_structure=keep_structure
         self.count=0
+        self.truecount=0
+        self.falsecount=0
 
         #the class/algorithm used for choosing atom. may need to be associated with the class of the constraints, but
         # for now is separate
@@ -528,6 +530,7 @@ class ConstraintPermuter:
                 cycle_head, cycle_tail, cycle_length, cycle=self.calculate_cycle(pip, atom, destination, constraints)
                 constraints.propagate(pip, atom, destination, cycle_length, cycle_head, cycle_tail, self.keep_structure)
                 if constraints.check():
+                    self.truecount+=1
                     # make the change to pip
                     pip.switch(atom, destination)
                     #if completed cycle, close in pip, and save old state
@@ -543,6 +546,8 @@ class ConstraintPermuter:
 
                     #undo the change to
                     pip.unswitch(atom, destination)
+                else:
+                    self.falsecount+=1
                 constraints=old_constraints
 
 
