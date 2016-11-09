@@ -9,6 +9,7 @@ from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import calc_ref_plane
 
 from csm.fast import CythonPermuter, SinglePermPermuter
+from csm.calculations.permuters import ConstraintPermuter
 import logging
 
 np.set_printoptions(precision=6)
@@ -196,7 +197,10 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None):
     else:
         permuter = CythonPermuter(molecule, op_order, op_type, keep_structure)
 
+    permuter=ConstraintPermuter(molecule, op_order, op_type, keep_structure)
+
     for calc_state in permuter.permute():
+        #print([p for p in calc_state.perm])
         if permuter.count%1000000==0:
             print("calculated for", int(permuter.count / 1000000), "million permutations thus far...\t Time:",
                   datetime.now() - start_time)
@@ -213,12 +217,12 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None):
 
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation
-        raise ValueError("Failed to calculate a csm value for %s" % op_type)
+        raise ValueError("Failed to calculate a csm value for %s %d" % (op_type, op_order))
 
     if not perm:
         print("number of permutations: %.4g" % permuter.count)
-        print("Number of branches in permutation tree: %.4g" % permuter.truecount)
-        print("Number of dead ends: %.4g" % permuter.falsecount)
+        #print("Number of branches in permutation tree: %.4g" % permuter.truecount)
+        #print("Number of dead ends: %.4g" % permuter.falsecount)
 
 
     best_csm = best_csm._replace(perm_count=permuter.count)

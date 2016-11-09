@@ -54,6 +54,24 @@ class StructurePermChecker(PermChecker):
 
 
 
+cpdef public calcstate_from_python(pythonstate):
+        cdef CalcState copy = CalcState(pythonstate.molecule_size, pythonstate.op_order, True)
+        cdef double A[3][3]
+        cdef double B[3]
+
+        for i in range(3):
+            B[i]=pythonstate.B[i]
+            for j in range(3):
+                A[i][j]=pythonstate.A[i][j]
+        copy.A= Matrix3D.buffer_copy(A)
+        copy.B= Vector3D.buffer_copy(B)
+        copy.perms=PermsHolder(pythonstate.molecule_size, pythonstate.op_order)
+        for i in range(pythonstate.op_order):
+            copy.perms.set_perm(i, pythonstate.perms[i])
+        copy.CSM=pythonstate.CSM
+        copy.perm=copy.perms.get_perm(1)
+        return copy
+
 
 cdef class CalcState:
     """
@@ -85,7 +103,6 @@ cdef class CalcState:
             for i in range(1,op_order):
                 self.perms.set_perm(i, neg_perm)
             self.CSM=1.0
-
 
     cpdef public CalcState copy(CalcState self):
         cdef CalcState copy = CalcState(self.molecule_size, self.op_order, None)
@@ -199,8 +216,7 @@ cdef class PreCalcPIP(PermInProgress):
         cdef double dists
         for iop in range(1, self.state.op_order):
             dists=0.0
-            for j in range(len(group)):
-                index = group[j]
+            for index in group:
                 permuted_index= self.state.perms.get_perm_value(iop - 1, self.p[index])
                 #1: permute the iopth perm in index j:
                 self.state.perms.set_perm_value(iop,index, permuted_index)
@@ -211,6 +227,9 @@ cdef class PreCalcPIP(PermInProgress):
                 #4:
                 dists += cache.inner_product(index, permuted_index)
             self.state.CSM += self.costheta[iop] * dists
+
+
+
 
 
 
@@ -277,7 +296,7 @@ cdef class CythonPermuter:
             # Check if this can be a complete cycle
             if cycle_length in self._cycle_lengths:
                 # Yes it can, attempt to close it
-                if pip.assign(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
+                if pip.switch(curr_atom, cycle_head):  # complete the cycle (close ends of necklace)
                     built_cycle.append(cycle_head)
                     saved_state=pip.close_cycle(built_cycle)
                     if not remainder:  # perm has been completed
@@ -291,19 +310,19 @@ cdef class CythonPermuter:
                         yield from self._group_recursive_permute(pip=pip, curr_atom=next_cycle_head, cycle_head=next_cycle_head, built_cycle=list(), cycle_length=1, remainder=next_remainder)
                     pip.unclose_cycle(saved_state)
                     built_cycle.remove(cycle_head)
-                    pip.unassign(curr_atom, cycle_head)  # Undo the last switch
+                    pip.unswitch(curr_atom, cycle_head)  # Undo the last switch
             # We now have a partial cycle of length cycle_length (we already checked it as a full cycle
             # above), now we try to extend it
             if cycle_length < self._max_length:
                 for next_atom in remainder:
                     # Go over all the possibilities for the next atom in the cycle
-                    if pip.assign(curr_atom, next_atom):
+                    if pip.switch(curr_atom, next_atom):
                         next_remainder = list(remainder)
                         next_remainder.remove(next_atom)
                         built_cycle.append(next_atom)
                         yield from self._group_recursive_permute(pip, next_atom, cycle_head, built_cycle, cycle_length + 1, next_remainder)
                         built_cycle.remove(next_atom)
-                        pip.unassign(curr_atom, next_atom)
+                        pip.unswitch(curr_atom, next_atom)
 
     def _group_permuter(self, group, pip):
         """

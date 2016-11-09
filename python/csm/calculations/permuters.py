@@ -3,6 +3,7 @@ import itertools
 
 import math
 import numpy as np
+from csm.calculations.cython_duplicates import CalcState, Cache
 
 from csm.calculations.constants import MAXDOUBLE
 
@@ -284,18 +285,17 @@ class SinglePermPermuter:
 
 
 class PIP:
-    #for now, an extremely simple container class. may eventually have cycle completion handling added to it.
-    def __init__(self, molecule, p=None, q=None):
-        if p:
-            self.p=p
-        else:
-            self.p = [-1] * len(molecule)
-        if q:
-            self.q=q
-        else:
-            self.q = [-1] * len(molecule)
+    def __init__(self, molecule, op_type, op_order):
+        self.cache=Cache(molecule)
+        self.p = [-1] * len(molecule)
+        self.q = [-1] * len(molecule)
         self.mol=molecule
-        self.state=None
+        self.state=CalcState(len(molecule), op_order, True)
+        self.sintheta, self.costheta, self.multiplier= self._precalculate(op_type, op_order)
+
+    @property
+    def cython_state(self):
+        return self.state.cython_state
 
     def switch(self, origin, destination):
         self.p[origin]=destination
@@ -306,10 +306,56 @@ class PIP:
         self.q[destination]=-1
 
     def close_cycle(self, atom):
-        return PIP(self.mol, self.p, self.q)
+        old_state=self.state.copy()
+        self._calculate(atom)
+        return old_state
 
-    def unclose_cycle(self, atom):
-        pass
+    def unclose_cycle(self, old_state):
+        self.state=old_state
+
+    def _precalculate(self, op_type, op_order):
+        is_improper = op_type != 'CN'
+        is_zero_angle = op_type == 'CS'
+        sintheta = np.zeros(op_order)
+        costheta = np.zeros(op_order)
+        multiplier = np.zeros(op_order)
+        theta = 0.0
+        for i in range(1, op_order):
+            if not is_zero_angle:
+                theta = 2 * math.pi * i / op_order
+            cos=math.cos(theta)
+            costheta[i]=cos
+            sintheta[i]=math.sin(theta)
+            if is_improper and (i % 2):
+                multiplier[i] = -1 - cos
+            else:
+                multiplier[i] = 1 - cos
+        return sintheta, costheta, multiplier
+
+    def _calculate(self, atom):
+        group=[]
+        index=atom
+        while True:
+            group.append(index)
+            index=self.p[index]
+            #stop condition: reached end of cycle
+            if index==atom:
+                break
+        for iop in range(1, self.state.op_order):
+            dists=0.0
+            for index in group:
+                permuted_index= self.state.perms[iop - 1][self.p[index]]
+                #1: permute the iopth perm in index j:
+                self.state.perms[iop][index]= permuted_index
+                #2: A+= self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
+                self.state.A+= self.cache.outer_product_sum(index, permuted_index) * self.multiplier[iop]  #.add_mul(self.cache.outer_product_sum(index, permuted_index), self.multiplier[iop])
+                #3: B+=self.sintheta[iop]*cache.cross(index, permuted_index)
+                self.state.B+= self.cache.cross(index, permuted_index) * self.sintheta[iop]#.add_mul(self.cache.cross(index, permuted_index), self.sintheta[iop])
+                #4:
+                dists += self.cache.inner_product(index, permuted_index)
+            self.state.CSM += self.costheta[iop] * dists
+
+
 
 
 class ConstraintManager:
@@ -327,12 +373,12 @@ class ConstraintManager:
         #old code that might be sufficient:
         self.constraints={}
         for index, atom in enumerate(self.molecule.atoms):
-            self.constraints[index]=atom.equivalency
+            self.constraints[index]=copy.deepcopy(atom.equivalency)
 
     def copy(self):
         return ConstraintManager(self.molecule, self.op_order, self.op_type, self.constraints)
 
-    def propagate(self, pip, origin, destination, cycle_length, cycle_head, cycle_tail):
+    def propagate(self, pip, origin, destination, cycle_length, cycle_head, cycle_tail, keep_structure):
         #this is the function which handles the logic of which additional constraints get added after a placement
         #depropagating, for now, is handled by copying old constraints
         
@@ -345,7 +391,8 @@ class ConstraintManager:
         self.remove_option(destination)
 
         #(4: keep_structure)
-        self.keep_structure(origin, destination)
+        if keep_structure:
+            self.keep_structure(origin, destination)
 
         #finally: origin is removed entirely from the constraints dictionary-- it has been placed, and has nothing left
         #this is the only time and only way it is legal for an atom to have no options.
@@ -402,8 +449,11 @@ class ConstraintManager:
             self._remove(key, forbidden_option)
 
     def _remove(self, key, forbidden_option):
-        if forbidden_option in self.constraints[key]:
-            self.constraints[key].remove(forbidden_option)
+        try:
+            if forbidden_option in self.constraints[key]:
+                self.constraints[key].remove(forbidden_option)
+        except KeyError:
+            pass
 
     def check(self):
         for key in self.constraints:
@@ -437,6 +487,8 @@ class ConstraintPermuter:
         self.molecule=molecule
         self.op_order=op_order
         self.op_type=op_type
+        self.keep_structure=keep_structure
+        self.count=0
 
         #the class/algorithm used for choosing atom. may need to be associated with the class of the constraints, but
         # for now is separate
@@ -448,15 +500,16 @@ class ConstraintPermuter:
 
     def permute(self):
         #step 1: create initial empty pip and qip
-        pip=PIP(self.molecule)
+        pip=PIP(self.molecule, self.op_type, self.op_order)
         #step 2: create initial set of constraints
         constraints=ConstraintManager(self.molecule, self.op_order, self.op_type)
         #step 3: call recursive permute
         for pip in self._permute(pip, constraints):
-            yield pip #.state
+            #print(pip.p, pip.state.perms[1])
+            self.count+=1
+            yield pip.cython_state
 
     def _permute(self, pip, constraints):
-        #print(pip.p)
         # step one: from the available atoms, choose the one with the least available options:
         atom, options= self.atom_chooser.choose(constraints.constraints)
 
@@ -472,44 +525,49 @@ class ConstraintPermuter:
                 # save current constraints
                 old_constraints=constraints.copy()
                 # propagate changes in constraints
-                cycle_head, cycle_tail, cycle_length=self.calculate_cycle(pip, atom, destination, constraints)
-                constraints.propagate(pip, atom, destination, cycle_length, cycle_head, cycle_tail)
+                cycle_head, cycle_tail, cycle_length, cycle=self.calculate_cycle(pip, atom, destination, constraints)
+                constraints.propagate(pip, atom, destination, cycle_length, cycle_head, cycle_tail, self.keep_structure)
                 if constraints.check():
                     # make the change to pip
                     pip.switch(atom, destination)
-                    #if completed cycle, close in pip, and make
+                    #if completed cycle, close in pip, and save old state
                     if cycle_head==cycle_tail:
-                        old_pip=pip.close_cycle(atom)
+                        old_state=pip.close_cycle(atom)
 
                     #yield from recursive create on the new pip and new constraints
                     yield from self._permute(pip, constraints)
 
-                    #if completed cycle, restore old pip
+                    #if completed cycle, restore old pip state
                     if cycle_head==cycle_tail:
-                        pip=old_pip
+                        pip.unclose_cycle(old_state)
 
                     #undo the change to
                     pip.unswitch(atom, destination)
-                else:
-                    pass
                 constraints=old_constraints
 
 
     def calculate_cycle(self, pip, origin, destination, constraints):
+        cycle=[origin]
         cycle_length = 1
         index = origin
         while pip.q[index] not in [-1, origin]:
+            cycle.append(pip.q[index])
             cycle_length += 1
             index = pip.q[index]
-            pass
+
         cycle_head = index
+
+        if cycle_head==destination:
+            return cycle_head, destination, cycle_length, cycle
+
         # b: if destination has its own destination* (A->B ->X)
         index = destination
-        while pip.p[index] not in [-1, destination]:
+        while pip.p[index] not in [-1, destination, origin]:
+            cycle.append(pip.p[index])
             cycle_length += 1
             index = pip.p[index]
         cycle_tail = index
-        return cycle_head, cycle_tail, cycle_length
+        return cycle_head, cycle_tail, cycle_length, cycle
 
 
 
@@ -523,8 +581,4 @@ if __name__=="__main__":
     in_args, calc_args, out_args = get_split_arguments(args)
     calc_args['molecule'], calc_args['perm'], calc_args['dirs'] = read_inputs(**in_args)
     c=ConstraintPermuter(**calc_args)
-    count=0
-    for perm in c.permute():
-        print (perm.p)
-        count+=1
-    print(count)
+
