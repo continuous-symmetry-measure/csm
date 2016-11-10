@@ -1,3 +1,4 @@
+
 import ctypes
 import random
 
@@ -47,8 +48,10 @@ class StructurePermChecker(PermChecker):
 
     def is_legal(self, PermInProgress pip, int origin, int destination):
         cdef int adjacent
+        #print(origin, destination)
         for adjacent in self.mol.atoms[origin].adjacent:
             if pip.p[adjacent] != -1 and  (destination, pip.p[adjacent]) not in self.mol.bondset:
+                #print("DEADEND")
                 return False
         return True
 
@@ -246,19 +249,6 @@ cdef class CythonPermuter:
     cdef mol
     cdef choose_cycle
 
-    cdef choose_next_cycle(self, pip, remainder):
-        res=remainder[0]
-        if self.choose_cycle:
-            if len(remainder)==1:
-                return res
-            for i, mol_index in enumerate(remainder):
-                for neighbor in self.mol.atoms[mol_index].adjacent:
-                    if pip.p[neighbor]!=-1:
-                        res=mol_index
-                        return res
-        return res
-
-
     def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True):
         self.count=0
         self.mol=mol
@@ -279,6 +269,20 @@ cdef class CythonPermuter:
             self._cycle_lengths = (1, 2, op_order)
         self._max_length = op_order
 
+
+    cdef choose_next_cycle(self, pip, remainder):
+        res=remainder[0]
+        if self.choose_cycle:
+            if len(remainder)==1:
+                return res
+            for i, mol_index in enumerate(remainder):
+                for neighbor in self.mol.atoms[mol_index].adjacent:
+                    if pip.p[neighbor]!=-1:
+                        res=mol_index
+                        return res
+        return res
+
+
     def _group_recursive_permute(self,pip, curr_atom, cycle_head, built_cycle, cycle_length, remainder):
             """
             Genereates the cycles recursively
@@ -292,7 +296,6 @@ cdef class CythonPermuter:
             To start the recursion, current_atom and cycle_head are the same, meaning we have a cycle of length 1
             curr_atom<---curr_atom
             """
-
             # Check if this can be a complete cycle
             if cycle_length in self._cycle_lengths:
                 # Yes it can, attempt to close it
@@ -373,6 +376,7 @@ class SinglePermPermuter:
 
     def permute(self):
         yield self._perm.state
+
 
 
 

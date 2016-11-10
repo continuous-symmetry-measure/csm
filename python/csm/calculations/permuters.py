@@ -305,9 +305,9 @@ class PIP:
         self.p[origin]=-1
         self.q[destination]=-1
 
-    def close_cycle(self, atom):
+    def close_cycle(self, group):
         old_state=self.state.copy()
-        self._calculate(atom)
+        self._calculate(group)
         return old_state
 
     def unclose_cycle(self, old_state):
@@ -332,15 +332,7 @@ class PIP:
                 multiplier[i] = 1 - cos
         return sintheta, costheta, multiplier
 
-    def _calculate(self, atom):
-        group=[]
-        index=atom
-        while True:
-            group.append(index)
-            index=self.p[index]
-            #stop condition: reached end of cycle
-            if index==atom:
-                break
+    def _calculate(self, group):
         for iop in range(1, self.state.op_order):
             dists=0.0
             for index in group:
@@ -431,14 +423,20 @@ class ConstraintManager:
     def keep_structure(self, origin, destination):
         #if origin (A) is going to destination (B)
         #THEN:
+        if origin==6 and destination==6:
+            hi=1
         #1. atoms in A's bondset, can only go to constraints of theirs, that are in B's bondset
         for atom_in_A_bondset in self.molecule.atoms[origin].adjacent:
             try:
+                new_constraints=[]
                 for constraint in self.constraints[atom_in_A_bondset]:
-                    if (destination, constraint) not in self.molecule.bondset:
-                        self._remove(atom_in_A_bondset, constraint)
+                    if (destination, constraint) in self.molecule.bondset:
+                        new_constraints.append(constraint)
+                        #self._remove(atom_in_A_bondset, constraint)
+                self.constraints[atom_in_A_bondset]=new_constraints
             except KeyError:
                 pass
+        #2.
 
 
 
@@ -500,6 +498,17 @@ class ConstraintPermuter:
         if op_type=='SN':
             self.cycle_lengths.append(2)
 
+    def create_cycle(self, atom, pip):
+        group=[]
+        index=atom
+        while True:
+            group.append(index)
+            index=pip.p[index]
+            #stop condition: reached end of cycle
+            if index==atom:
+                break
+        return group
+
     def permute(self):
         #step 1: create initial empty pip and qip
         pip=PIP(self.molecule, self.op_type, self.op_order)
@@ -524,6 +533,7 @@ class ConstraintPermuter:
         # for each option (opt)
         else:
             for destination in options:
+                #print((atom, destination))
                 # save current constraints
                 old_constraints=constraints.copy()
                 # propagate changes in constraints
@@ -535,7 +545,8 @@ class ConstraintPermuter:
                     pip.switch(atom, destination)
                     #if completed cycle, close in pip, and save old state
                     if cycle_head==cycle_tail:
-                        old_state=pip.close_cycle(atom)
+                        cycle=self.create_cycle(atom, pip)
+                        old_state=pip.close_cycle(cycle)
 
                     #yield from recursive create on the new pip and new constraints
                     yield from self._permute(pip, constraints)
@@ -547,6 +558,7 @@ class ConstraintPermuter:
                     #undo the change to
                     pip.unswitch(atom, destination)
                 else:
+                    #print("DEADEND")
                     self.falsecount+=1
                 constraints=old_constraints
 
