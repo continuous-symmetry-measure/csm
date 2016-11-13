@@ -1,6 +1,26 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.12.10
+------------------------
+MAJOR CHANGE: moved from CythonPermuter (which calculated cycles by group) 
+to ConstraintPermuter (which chooses the next atom to place based on constraints).
+
+The new permuter is slower by around 2x than the old, because it is primarily written in not particularly efficient python.
+However, because it traverses the permutation tree significantly more efficiently-- sometimes by several orders of magnitude-- it is 
+capable of handling far more complex molecules and complex symmetries than the previous permuter (to say nothing of the original C++)
+
+Minor changes/bugfixes:
+1. Double bonds stored as only one bond (for calculating equivalence classes, etc)
+2. Added the flag --no-constraint to use the original CythonPermuter instead of the new ConstraintPermuter
+3. The flag --hungarian has been replaced with the flag --no-hungarian: in other words, hungarian is now default, and --no-hungarian indicates
+that program should use the old, non-hungarian approximate algorithm
+4. small fixes to printouts-- prints "CSM by formula" instead of "YAFFA CSM"
+5. when adding bonds from pdb, _create_bondset was not called. This created an incorrect printout, but also meant bondset was inaccurate.
+
+
+
+
 Changes in version 0.11.0
 ------------------------
 MAJOR BUG FIX: correct symmetric structure is calculated at end of code (such that the program's CSM and the equation's CSM are the same)
