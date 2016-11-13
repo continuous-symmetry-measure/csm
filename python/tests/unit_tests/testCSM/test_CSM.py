@@ -21,12 +21,46 @@ class TestCSM(TestClass):
     def test_csm(self, args, molecule, expected, equiv):
         print("CSM")
         result = self.run_test(args, molecule)
-        if not close_enough(result.csm, result.yaffa_csm):
+        if not close_enough(result.csm, result.formula_csm):
             raise YaffaError
         print(expected.csm)
         assert close_enough(result.csm, expected.csm)
 
-class TestSymm(TestClass):
+class xTestPermsSame(TestClass):
+    def test_perm_same(self, args, molecule, expected, equiv):
+        import csv
+        args1=list(args)
+        args1.append("--output-perms")
+        args1.append(r"C:\Users\devora.CHELEM\Sources\olderetired\dumpingground\perms1.csv")
+        result = self.run_test(args1, molecule)
+        set1=set()
+
+        args2=list(args)
+        args2.append("--no-constraint")
+        args2.append("--output-perms")
+        args2.append(r"C:\Users\devora.CHELEM\Sources\olderetired\dumpingground\perms2.csv")
+        result2 = self.run_test(args2, molecule)
+        set2=set()
+
+        with open(r"C:\Users\devora.CHELEM\Sources\olderetired\dumpingground\perms1.csv") as csvfile:
+            with open(r"C:\Users\devora.CHELEM\Sources\olderetired\dumpingground\perms2.csv") as csvfile2:
+                reader = csv.DictReader(csvfile)
+                reader2= csv.DictReader(csvfile2)
+                for row1, row2 in zip(reader, reader2):
+                    set1.add(row1['Permutation'])
+                    set2.add(row2['Permutation'])
+
+        assert len(set1)==len(set2)
+
+        set3=set1.union(set2)
+
+        assert len(set3)==len(set2)
+
+
+
+
+
+class xTestSymm(TestClass):
     def test_symmetric_structure(self, args, molecule, expected, equiv):
         print("SYMM")
         result=self.run_test(args, molecule)
@@ -39,7 +73,7 @@ class TestSymm(TestClass):
                     atom_pos_not_match.append((str(i), index, val1, val2))
         assert(len(atom_pos_not_match)==0)
 
-class TestPerm(TestClass):
+class xTestPerm(TestClass):
     def test_perm(self, args, molecule, expected, equiv):
         print("PERM")
         result=self.run_test(args, molecule)

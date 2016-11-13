@@ -59,7 +59,7 @@ def _create_parser():
     parser.add_argument('--use-perm', type=str, help='Compute exact CSM, for a single permutation')
     parser.add_argument('--keep-structure', action='store_true', default=False,
                         help='Maintain molecule structure from being distorted in the exact calculation')
-    parser.add_argument('--constraint',  action='store_true', default=False,
+    parser.add_argument('--no-constraint',  action='store_true', default=False,
                         help='Use the constraints algorithm to traverse the permutation tree')
 
 
@@ -70,8 +70,8 @@ def _create_parser():
                         help="Use outlier detection to improve guesses for initial directions in approx algorithm")
     parser.add_argument('--use-chains', action='store_true', default=False,
                         help='Use chains specified in the PDB file in order to calculate permutations in approx or trivial algorithm')
-    parser.add_argument('--hungarian', action='store_true', default=False,
-                    help='Use hungarian algorithm in approx')
+    parser.add_argument('--no-hungarian', action='store_true', default=False,
+                    help='Do not use hungarian algorithm in approx')
     parser.add_argument('--no-orthogonal', action='store_true', default=False,
                         help="Don't add orthogonal directions to calculated directions")
     parser.add_argument('--use-best-dir', action='store_true', default=False,
@@ -212,7 +212,7 @@ def _process_split_arguments(parse_res):
     if calc_args['calc_type'] == 'approx' and parse_res.keep_structure:
         logger.warning("--keep-structure cannot be used in approx calculation. --keep-structure will be ignored")
     calc_args['keep_structure'] = in_args['keep_structure']= parse_res.keep_structure
-    calc_args['constraint']=parse_res.constraint
+    calc_args['no_constraint']=parse_res.no_constraint
     in_args['babel_bond'] = parse_res.babel_bond
     in_args['no_babel'] = parse_res.no_babel
     in_args['use_mass'] = parse_res.use_mass
@@ -222,9 +222,9 @@ def _process_split_arguments(parse_res):
         logger.warning("--detect-outliers applies only to approx calculation. --detect-outliers will be ignored")
     calc_args['detect_outliers'] = parse_res.detect_outliers
 
-    if calc_args['calc_type'] != 'approx' and parse_res.hungarian:
-        logger.warning("--hungarian applies only to approx calculation. --hungarian will be ignored")
-    calc_args['hungarian'] = parse_res.hungarian
+    if calc_args['calc_type'] != 'approx' and parse_res.no_hungarian:
+        logger.warning("--no-hungarian applies only to approx calculation. --no-hungarian will be ignored")
+    calc_args['hungarian'] = not parse_res.no_hungarian
 
     calc_args['get_orthogonal'] = not parse_res.no_orthogonal
     calc_args['use_best_dir'] = parse_res.use_best_dir

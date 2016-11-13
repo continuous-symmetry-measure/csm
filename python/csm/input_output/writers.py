@@ -122,7 +122,7 @@ def print_output_csm(f, result, calc_args):
     f.write("%lf %lf %lf\n" % (non_negative_zero(result.dir[0]), non_negative_zero(result.dir[1]), non_negative_zero(result.dir[2])))
 
     print("%s: %.6lf" % (calc_args['op_name'], abs(result.csm)))
-    print("Yaffa's CSM: %.6lf" % (result.yaffa_csm))
+    print("CSM by formula: %.6lf" % (result.formula_csm))
 
 
 def print_output_ob(f, result, in_args, calc_args, out_args):
@@ -179,7 +179,7 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
         print("SV* %.6lf *SV" % abs(result.csm))
     else:
         print("%s: %.6lf" % (calc_args['op_name'], abs(result.csm)))
-    print("Yaffa's CSM: %.6lf" %(result.yaffa_csm))
+    print("CSM by formula: %.6lf" % (result.formula_csm))
 
 
 

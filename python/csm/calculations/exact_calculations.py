@@ -152,23 +152,23 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
 
 
 
-def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, constraint=False, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, no_constraint=False, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         #sn_max = op_order
         # First CS
-        best_result = csm_operation('CS', 2, molecule, keep_structure, perm, constraint)
+        best_result = csm_operation('CS', 2, molecule, keep_structure, perm, no_constraint)
         best_result = best_result._replace(op_type='CS') #unclear why this line isn't redundant
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
-                result = csm_operation('SN', op_order, molecule, keep_structure, perm, constraint)
+                result = csm_operation('SN', op_order, molecule, keep_structure, perm, no_constraint)
                 if result.csm < best_result.csm:
                     best_result = result._replace(op_type = 'SN', op_order = op_order)
                 if best_result.csm < MINDOUBLE:
                     break
 
     else:
-        best_result = csm_operation(op_type, op_order, molecule, keep_structure, perm, constraint)
+        best_result = csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint)
 
     best_result = process_results(best_result)
     if calc_local:
@@ -179,7 +179,7 @@ def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=Fals
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, constraint=False):
+def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -195,12 +195,12 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, 
     if perm:
         permuter = SinglePermPermuter(np.array(perm), molecule, op_order, op_type)
     else:
-        permuter = CythonPermuter(molecule, op_order, op_type, keep_structure)
-        if constraint:
-            permuter=ConstraintPermuter(molecule, op_order, op_type, keep_structure)
+        permuter = ConstraintPermuter(molecule, op_order, op_type, keep_structure)
+        if no_constraint:
+            permuter = CythonPermuter(molecule, op_order, op_type, keep_structure)
+
 
     for calc_state in permuter.permute():
-        #print([p for p in calc_state.perm])
         if permuter.count%1000000==0:
             print("calculated for", int(permuter.count / 1000000), "million permutations thus far...\t Time:",
                   datetime.now() - start_time)

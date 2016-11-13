@@ -4,7 +4,7 @@ import itertools
 import math
 import numpy as np
 from csm.calculations.cython_duplicates import CalcState, Cache
-
+from csm.fast import PreCalcPIP
 from csm.calculations.constants import MAXDOUBLE
 
 __author__ = 'Devora'
@@ -284,34 +284,27 @@ class SinglePermPermuter:
 
 
 
-class PIP:
-    def __init__(self, molecule, op_type, op_order):
+ITYPE=np.int
+DTYPE=np.float64
+
+
+class PythonPIP:
+    def __init__(self, molecule, op_order, op_type, permchecker="Irrelevant", use_cache=True):
         self.cache=Cache(molecule)
-        self.p = [-1] * len(molecule)
-        self.q = [-1] * len(molecule)
         self.mol=molecule
-        self.state=CalcState(len(molecule), op_order, True)
+        self.molecule_size =len(molecule)
+        self.op_order = op_order
+        self.p = -1 * np.ones((self.molecule_size,), dtype=ITYPE)  # Numpy array, but created once per molecule so no worries.
+        self.q = -1 * np.ones((self.molecule_size,), dtype=ITYPE)
+        self._state=CalcState(self.molecule_size, op_order, True)
         self.sintheta, self.costheta, self.multiplier= self._precalculate(op_type, op_order)
+        #self.permchecker = permchecker(mol)
+        #self.truecount=0
+        #self.falsecount=0
 
     @property
-    def cython_state(self):
-        return self.state.cython_state
-
-    def switch(self, origin, destination):
-        self.p[origin]=destination
-        self.q[destination]=origin
-
-    def unswitch(self, origin, destination):
-        self.p[origin]=-1
-        self.q[destination]=-1
-
-    def close_cycle(self, group):
-        old_state=self.state.copy()
-        self._calculate(group)
-        return old_state
-
-    def unclose_cycle(self, old_state):
-        self.state=old_state
+    def state(self):
+        return self._state.cython_state
 
     def _precalculate(self, op_type, op_order):
         is_improper = op_type != 'CN'
@@ -332,20 +325,36 @@ class PIP:
                 multiplier[i] = 1 - cos
         return sintheta, costheta, multiplier
 
-    def _calculate(self, group):
-        for iop in range(1, self.state.op_order):
+    def switch(self, origin, destination):
+        self.p[origin]=destination
+        self.q[destination]=origin
+
+    def unswitch(self, origin, destination):
+        self.p[origin]=-1
+        self.q[destination]=-1
+
+    def close_cycle(self, group):
+        old_state = self._state.copy()
+        self.partial_calculate(group, self.cache)
+        return old_state
+
+    def unclose_cycle(self,  old_state):
+        self._state = old_state
+
+    def partial_calculate(self, group, cache):
+        for iop in range(1, self._state.op_order):
             dists=0.0
             for index in group:
-                permuted_index= self.state.perms[iop - 1][self.p[index]]
+                permuted_index= self._state.perms[iop - 1][self.p[index]]
                 #1: permute the iopth perm in index j:
-                self.state.perms[iop][index]= permuted_index
+                self._state.perms[iop][index]= permuted_index
                 #2: A+= self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
-                self.state.A+= self.cache.outer_product_sum(index, permuted_index) * self.multiplier[iop]  #.add_mul(self.cache.outer_product_sum(index, permuted_index), self.multiplier[iop])
+                self._state.A+= self.cache.outer_product_sum(index, permuted_index) * self.multiplier[iop]  #.add_mul(self.cache.outer_product_sum(index, permuted_index), self.multiplier[iop])
                 #3: B+=self.sintheta[iop]*cache.cross(index, permuted_index)
-                self.state.B+= self.cache.cross(index, permuted_index) * self.sintheta[iop]#.add_mul(self.cache.cross(index, permuted_index), self.sintheta[iop])
+                self._state.B+= self.cache.cross(index, permuted_index) * self.sintheta[iop]#.add_mul(self.cache.cross(index, permuted_index), self.sintheta[iop])
                 #4:
                 dists += self.cache.inner_product(index, permuted_index)
-            self.state.CSM += self.costheta[iop] * dists
+            self._state.CSM += self.costheta[iop] * dists
 
 
 
@@ -511,14 +520,15 @@ class ConstraintPermuter:
 
     def permute(self):
         #step 1: create initial empty pip and qip
-        pip=PIP(self.molecule, self.op_type, self.op_order)
+        pip=PreCalcPIP(self.molecule, self.op_order, self.op_type)
+        #pip = PythonPIP(self.molecule, self.op_order, self.op_type)
         #step 2: create initial set of constraints
         constraints=ConstraintManager(self.molecule, self.op_order, self.op_type)
         #step 3: call recursive permute
         for pip in self._permute(pip, constraints):
             #print(pip.p, pip.state.perms[1])
             self.count+=1
-            yield pip.cython_state
+            yield pip.state
 
     def _permute(self, pip, constraints):
         # step one: from the available atoms, choose the one with the least available options:

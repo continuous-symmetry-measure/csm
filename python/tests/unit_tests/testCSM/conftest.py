@@ -38,18 +38,24 @@ def get_run_tuples(dirs):
         with open(outputjson) as f:
             output_dict = json.load(f)
 
-
-        for key in in_dict["runs"]:
-            for molecule in os.listdir(molecule_folder):
-                try:
-                    molfile=os.path.join(molecule_folder, molecule)
-                    mol_index = molecule.split(".")[0]
-                    e = output_dict[key][mol_index]
-                    expected = Expected(e)
-                    my_tuple=(in_dict["runs"][key], molfile, expected, in_dict['equiv_perms'])
-                    params.append(my_tuple)
-                except KeyError:
-                    pass
+        try:
+            for key in in_dict["runs"]:
+                args = in_dict["runs"][key]
+                args.append("--keep-structure")
+                args.append("--babel-bond")
+                #args.append("--no-constraint")
+                for molecule in os.listdir(molecule_folder):
+                    try:
+                        molfile=os.path.join(molecule_folder, molecule)
+                        mol_index = molecule.split(".")[0]
+                        e = output_dict[key][mol_index]
+                        expected = Expected(e)
+                        my_tuple=(args, molfile, expected, in_dict['equiv_perms'])
+                        params.append(my_tuple)
+                    except KeyError:
+                        pass
+        except:
+                pass #leave me alone
 
     return params
 

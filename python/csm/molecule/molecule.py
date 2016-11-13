@@ -472,6 +472,7 @@ class Molecule:
                     atom= mol._atoms[int(values[1])-1]
                     adjacent=[int(ind)-1 for ind in values[2:]]
                     atom.adjacent= remove_multi_bonds(adjacent)
+        mol._create_bondset()
         return mol
 
 

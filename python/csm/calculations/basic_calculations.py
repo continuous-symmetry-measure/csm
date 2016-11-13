@@ -13,7 +13,7 @@ CSMState = namedtuple('CSMState', ('molecule',
                                    'symmetric_structure',
                                    'local_csm',
                                    'perm_count',
-                                   'yaffa_csm',))
+                                   'formula_csm',))
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 
@@ -33,14 +33,14 @@ def process_results(results):
 
     results.molecule.de_normalize()
 
-    yaffa_csm=yaffa_test(results)
-    results= results._replace(yaffa_csm=yaffa_csm)
+    formula_csm=formula_test(results)
+    results= results._replace(formula_csm=formula_csm)
 
 
     return results
 
 
-def yaffa_test(result):
+def formula_test(result):
     #step one: get average of all atoms
     init_avg = np.mean(result.molecule.Q, axis=0)
     #step two: distance between intial and actual: initial - actual, squared

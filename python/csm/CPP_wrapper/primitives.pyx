@@ -299,3 +299,16 @@ cdef class PermsHolder:
 
         return a
 
+    property perm:
+        def __get__(self):
+            '''
+            NOTE: this function is called in exact_calculations.py, every time we replace the best permutation with something new
+            #TODO: it may be more efficient to somehow *not* reallocate this every time
+            :return:
+            '''
+            cdef long[:] p = np.zeros(self.molecule_size, dtype=np.long)
+            for i in range(self.molecule_size):
+                p[i] = self.get_perm_value(1, i)
+            return p
+
+

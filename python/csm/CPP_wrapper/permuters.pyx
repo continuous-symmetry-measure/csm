@@ -73,6 +73,7 @@ cpdef public calcstate_from_python(pythonstate):
             copy.perms.set_perm(i, pythonstate.perms[i])
         copy.CSM=pythonstate.CSM
         copy.perm=copy.perms.get_perm(1)
+        #print(copy.perm)
         return copy
 
 
@@ -102,6 +103,7 @@ cdef class CalcState:
             self.perms = PermsHolder(molecule_size, op_order)
             identity_perm=np.array([i for i in range(molecule_size)])
             neg_perm=np.array([-1 for i in range(molecule_size)])
+            self.p=neg_perm
             self.perms.set_perm(0, identity_perm)
             for i in range(1,op_order):
                 self.perms.set_perm(i, neg_perm)
@@ -113,12 +115,14 @@ cdef class CalcState:
         copy.B = self.B.copy()
         copy.perms = self.perms.copy()
         copy.CSM=np.copy(self.CSM)
+        #copy.perm=self.perm
         return copy
 
     property perm:
         def __get__(self):
-            return self.p
+            return self.perms.perm
         def __set__(self, val):
+            #print("setting to perm", val)
             self.p=val
 
 cdef class PermInProgress:
@@ -175,7 +179,7 @@ cdef class PreCalcPIP(PermInProgress):
     cdef public double[:] costheta
     cdef public double[:] sintheta
     cdef double[:] multiplier
-    def __init__(self, mol, op_order, op_type, permchecker, use_cache=True):
+    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker, use_cache=True):
         super().__init__(mol, op_order, op_type, permchecker)
         if use_cache: #and len(mol)<SomeNumber:
             self.cache = Cache(mol)
@@ -213,6 +217,7 @@ cdef class PreCalcPIP(PermInProgress):
         self.state = old_state
 
     cdef partial_calculate(PreCalcPIP self, group, Cache cache):
+        #print("entered partial calculate")
         cdef int iop
         cdef int j
         cdef int index, permuted_index
