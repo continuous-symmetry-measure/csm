@@ -1,7 +1,13 @@
 The Python CSM Package
 ======================
 
-Changes in version 0.12.10
+
+Changes in version 0.12.1
+------------------------
+small changes to the arguments-- no limit on number for C and S anymore, fixed help slightly
+
+
+Changes in version 0.12.0
 ------------------------
 MAJOR CHANGE: moved from CythonPermuter (which calculated cycles by group) 
 to ConstraintPermuter (which chooses the next atom to place based on constraints).

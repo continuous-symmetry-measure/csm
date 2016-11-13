@@ -21,13 +21,9 @@ class OurParser(ArgumentParser):
 def _create_parser():
     parser = OurParser(usage="\ncsm type input_molecule output_file [additional arguments]")
 
-    # The first three positional arguments
-    c_symmetries = ['c%d' % n for n in range(2, 21)]
-    s_symmetries = ['s%d' % n for n in range(2, 21, 2)]
-    s_symmetries.append('s1') #s1 is also allowed and is treated as cs. s2 is treated as ci.
     parser.add_argument('type',
-                        choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
-                        help='The type of operation')
+                        #choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
+                        help='The type of operation: cs, ci, ch, cN, sN')
     parser.add_argument('input', help='Input molecule file')
     parser.add_argument('output', default='output.txt', help='Output file')
 
@@ -60,7 +56,7 @@ def _create_parser():
     parser.add_argument('--keep-structure', action='store_true', default=False,
                         help='Maintain molecule structure from being distorted in the exact calculation')
     parser.add_argument('--no-constraint',  action='store_true', default=False,
-                        help='Use the constraints algorithm to traverse the permutation tree')
+                        help='Do not use the constraints algorithm to traverse the permutation tree')
 
 
     #calculation arguments that only apply to approx
@@ -149,6 +145,8 @@ def get_operation_data(opcode):
         if opcode[1:]=='1':
             data = _opcode_data[opcode.lower()]
             return OperationCode(type=data[0], order=data[1], name=data[2])
+        if int(opcode[1:])%2 !=0:
+            raise ValueError("SN values must be even")
         return OperationCode(type='SN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
     try:
         data = _opcode_data[opcode.lower()]
