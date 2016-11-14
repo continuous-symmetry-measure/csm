@@ -28,10 +28,12 @@ def print_results(result, in_args, calc_args, out_args):
         f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(result.d_min))
 
         # print CSM, initial molecule, resulting structure and direction according to format specified
-        percent_structure = check_perm_structure(result.molecule, result.perm)
-        print("The permutation found maintains",
+        try:
+            percent_structure = check_perm_structure(result.molecule, result.perm)
+            print("The permutation found maintains",
               str(round(percent_structure * 100, 2)) + "% of the original molecule's structure\n")
-
+        except ValueError:
+            print("The input molecule does not have bond information and therefore structure integrity cannot be measured")
         if in_args['format'].lower() == "csm":
             print_output_csm(f, result, calc_args)
         else:

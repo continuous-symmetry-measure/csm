@@ -91,7 +91,6 @@ cdef class CalcState:
     cdef public int op_order
     cdef public int molecule_size
     cdef public double CSM
-    cdef public long[:] p
 
     def __init__(self, int molecule_size, int op_order, allocate=True):
         self.op_order = op_order
@@ -103,7 +102,6 @@ cdef class CalcState:
             self.perms = PermsHolder(molecule_size, op_order)
             identity_perm=np.array([i for i in range(molecule_size)])
             neg_perm=np.array([-1 for i in range(molecule_size)])
-            self.p=neg_perm
             self.perms.set_perm(0, identity_perm)
             for i in range(1,op_order):
                 self.perms.set_perm(i, neg_perm)
@@ -122,8 +120,7 @@ cdef class CalcState:
         def __get__(self):
             return self.perms.perm
         def __set__(self, val):
-            #print("setting to perm", val)
-            self.p=val
+            self.perms.perm=val
 
 cdef class PermInProgress:
     cdef PermChecker permchecker

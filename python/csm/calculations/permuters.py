@@ -3,7 +3,6 @@ import itertools
 
 import math
 import numpy as np
-from csm.calculations.cython_duplicates import CalcState, Cache
 from csm.fast import PreCalcPIP
 from csm.calculations.constants import MAXDOUBLE
 
@@ -88,6 +87,76 @@ class TemplatePermInProgress:
 
     def unclose_cycle(self, calc):
         pass
+
+
+
+class PythonPIP:
+    def __init__(self, molecule, op_order, op_type, permchecker="Irrelevant", use_cache=True):
+        self.cache=Cache(molecule)
+        self.mol=molecule
+        self.molecule_size =len(molecule)
+        self.op_order = op_order
+        self.p = -1 * np.ones((self.molecule_size,), dtype=ITYPE)  # Numpy array, but created once per molecule so no worries.
+        self.q = -1 * np.ones((self.molecule_size,), dtype=ITYPE)
+        self._state=CalcState(self.molecule_size, op_order, True)
+        self.sintheta, self.costheta, self.multiplier= self._precalculate(op_type, op_order)
+        #self.permchecker = permchecker(mol)
+        #self.truecount=0
+        #self.falsecount=0
+
+    @property
+    def state(self):
+        return self._state.cython_state
+
+    def _precalculate(self, op_type, op_order):
+        is_improper = op_type != 'CN'
+        is_zero_angle = op_type == 'CS'
+        sintheta = np.zeros(op_order)
+        costheta = np.zeros(op_order)
+        multiplier = np.zeros(op_order)
+        theta = 0.0
+        for i in range(1, op_order):
+            if not is_zero_angle:
+                theta = 2 * math.pi * i / op_order
+            cos=math.cos(theta)
+            costheta[i]=cos
+            sintheta[i]=math.sin(theta)
+            if is_improper and (i % 2):
+                multiplier[i] = -1 - cos
+            else:
+                multiplier[i] = 1 - cos
+        return sintheta, costheta, multiplier
+
+    def switch(self, origin, destination):
+        self.p[origin]=destination
+        self.q[destination]=origin
+
+    def unswitch(self, origin, destination):
+        self.p[origin]=-1
+        self.q[destination]=-1
+
+    def close_cycle(self, group):
+        old_state = self._state.copy()
+        self.partial_calculate(group, self.cache)
+        return old_state
+
+    def unclose_cycle(self,  old_state):
+        self._state = old_state
+
+    def partial_calculate(self, group, cache):
+        for iop in range(1, self._state.op_order):
+            dists=0.0
+            for index in group:
+                permuted_index= self._state.perms[iop - 1][self.p[index]]
+                #1: permute the iopth perm in index j:
+                self._state.perms[iop][index]= permuted_index
+                #2: A+= self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
+                self._state.A+= self.cache.outer_product_sum(index, permuted_index) * self.multiplier[iop]  #.add_mul(self.cache.outer_product_sum(index, permuted_index), self.multiplier[iop])
+                #3: B+=self.sintheta[iop]*cache.cross(index, permuted_index)
+                self._state.B+= self.cache.cross(index, permuted_index) * self.sintheta[iop]#.add_mul(self.cache.cross(index, permuted_index), self.sintheta[iop])
+                #4:
+                dists += self.cache.inner_product(index, permuted_index)
+            self._state.CSM += self.costheta[iop] * dists
 
 
 
@@ -286,77 +355,6 @@ class SinglePermPermuter:
 
 ITYPE=np.int
 DTYPE=np.float64
-
-
-class PythonPIP:
-    def __init__(self, molecule, op_order, op_type, permchecker="Irrelevant", use_cache=True):
-        self.cache=Cache(molecule)
-        self.mol=molecule
-        self.molecule_size =len(molecule)
-        self.op_order = op_order
-        self.p = -1 * np.ones((self.molecule_size,), dtype=ITYPE)  # Numpy array, but created once per molecule so no worries.
-        self.q = -1 * np.ones((self.molecule_size,), dtype=ITYPE)
-        self._state=CalcState(self.molecule_size, op_order, True)
-        self.sintheta, self.costheta, self.multiplier= self._precalculate(op_type, op_order)
-        #self.permchecker = permchecker(mol)
-        #self.truecount=0
-        #self.falsecount=0
-
-    @property
-    def state(self):
-        return self._state.cython_state
-
-    def _precalculate(self, op_type, op_order):
-        is_improper = op_type != 'CN'
-        is_zero_angle = op_type == 'CS'
-        sintheta = np.zeros(op_order)
-        costheta = np.zeros(op_order)
-        multiplier = np.zeros(op_order)
-        theta = 0.0
-        for i in range(1, op_order):
-            if not is_zero_angle:
-                theta = 2 * math.pi * i / op_order
-            cos=math.cos(theta)
-            costheta[i]=cos
-            sintheta[i]=math.sin(theta)
-            if is_improper and (i % 2):
-                multiplier[i] = -1 - cos
-            else:
-                multiplier[i] = 1 - cos
-        return sintheta, costheta, multiplier
-
-    def switch(self, origin, destination):
-        self.p[origin]=destination
-        self.q[destination]=origin
-
-    def unswitch(self, origin, destination):
-        self.p[origin]=-1
-        self.q[destination]=-1
-
-    def close_cycle(self, group):
-        old_state = self._state.copy()
-        self.partial_calculate(group, self.cache)
-        return old_state
-
-    def unclose_cycle(self,  old_state):
-        self._state = old_state
-
-    def partial_calculate(self, group, cache):
-        for iop in range(1, self._state.op_order):
-            dists=0.0
-            for index in group:
-                permuted_index= self._state.perms[iop - 1][self.p[index]]
-                #1: permute the iopth perm in index j:
-                self._state.perms[iop][index]= permuted_index
-                #2: A+= self.multiplier[iop] * cache.outer_product_sum(index, permuted_index)
-                self._state.A+= self.cache.outer_product_sum(index, permuted_index) * self.multiplier[iop]  #.add_mul(self.cache.outer_product_sum(index, permuted_index), self.multiplier[iop])
-                #3: B+=self.sintheta[iop]*cache.cross(index, permuted_index)
-                self._state.B+= self.cache.cross(index, permuted_index) * self.sintheta[iop]#.add_mul(self.cache.cross(index, permuted_index), self.sintheta[iop])
-                #4:
-                dists += self.cache.inner_product(index, permuted_index)
-            self._state.CSM += self.costheta[iop] * dists
-
-
 
 
 class ConstraintManager:

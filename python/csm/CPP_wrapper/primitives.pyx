@@ -306,9 +306,10 @@ cdef class PermsHolder:
             #TODO: it may be more efficient to somehow *not* reallocate this every time
             :return:
             '''
-            cdef long[:] p = np.zeros(self.molecule_size, dtype=np.long)
-            for i in range(self.molecule_size):
-                p[i] = self.get_perm_value(1, i)
-            return p
+            return self.get_perm(1)
+
+        def __set__(self, val):
+                self.set_perm(1, val)
+
 
 
