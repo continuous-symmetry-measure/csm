@@ -33,7 +33,7 @@ def print_results(result, in_args, calc_args, out_args):
             print("The permutation found maintains",
               str(round(percent_structure * 100, 2)) + "% of the original molecule's structure\n")
         except ValueError:
-            print("The input molecule does not have bond information and therefore structure integrity cannot be measured")
+            print("The input molecule does not have bond information and therefore conservation of structure cannot be measured")
         if in_args['format'].lower() == "csm":
             print_output_csm(f, result, calc_args)
         else:

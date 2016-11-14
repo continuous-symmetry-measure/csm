@@ -1,6 +1,13 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.12.1
+------------------------
+BUGFIX: fixed bug in calls to perm from state that was causing 
+singlepermpermuter and hence approx to crash
+
+also modified printout so molecule with no bonds was not reported as 
+100% conserved
 
 Changes in version 0.12.1
 ------------------------
