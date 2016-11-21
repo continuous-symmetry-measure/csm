@@ -1,3 +1,10 @@
+#
+# Calculate the reference plane and CSM based on one permutation
+#
+# The calculations here are taken from the article Analytical Methods for Calculating Continuous Symmetry
+# Measures and the Chirality Measure (Pinsky et al - 2008)
+#
+
 from libc.math cimport fabs
 
 import numpy as np

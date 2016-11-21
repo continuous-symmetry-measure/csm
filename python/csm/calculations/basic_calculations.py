@@ -13,7 +13,9 @@ CSMState = namedtuple('CSMState', ('molecule',
                                    'symmetric_structure',
                                    'local_csm',
                                    'perm_count',
-                                   'formula_csm',))
+                                   'formula_csm',
+                                   'normalized_molecule_coords',
+                                   'normalized_symmetric_structure',))
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 
@@ -22,17 +24,20 @@ def process_results(results):
     Final normalizations and de-normalizations
     :param results: CSM old_calculations results
     """
-    #    results.molecule.set_norm_factor(molecule.norm_factor)
-    d_min = 1.0 - (results.csm / 100 * results.op_order / (results.op_order - 1))
-
+    #    calculate symmetric structure
+    d_min = 1.0 - (results.csm / 100 * results.op_order / (results.op_order - 1)) #this is the scaling factor
     symmetric_structure = create_symmetric_structure(results.molecule, results.perm, results.dir, results.op_type,
                                                      results.op_order)
 
+    #save the normalized coords before we denormalize
+    results = results._replace(normalized_molecule_coords=np.array(results.molecule.Q), normalized_symmetric_structure=symmetric_structure)
+
+    #save denormalized results
     symmetric_structure = de_normalize_coords(symmetric_structure, results.molecule.norm_factor)
     results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
-
     results.molecule.de_normalize()
 
+    #run and save the formula test
     formula_csm=formula_test(results)
     results= results._replace(formula_csm=formula_csm)
 
