@@ -468,10 +468,13 @@ class Molecule:
         with open(filename, 'r') as f:
             for line in f:
                 if "CONECT" in line:
-                    values=line.split()
-                    atom= mol._atoms[int(values[1])-1]
-                    adjacent=[int(ind)-1 for ind in values[2:]]
-                    atom.adjacent= remove_multi_bonds(adjacent)
+                    try:
+                        values=line.split()
+                        atom= mol._atoms[int(values[1])-1]
+                        adjacent=[int(ind)-1 for ind in values[2:]]
+                        atom.adjacent= remove_multi_bonds(adjacent)
+                    except:
+                        raise ValueError("There was a problem reading connectivity from the pdb file.")
         mol._create_bondset()
         return mol
 

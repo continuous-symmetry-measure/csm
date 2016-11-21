@@ -137,7 +137,9 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     :param out_args: Output arguments to CSM
     """
     # print initial molecule
-    f.write("\nMODEL 01 INITIAL STRUCTURE COORDINATES\n")
+    if str.lower(in_args['format'])=='pdb':
+        f.write("\nMODEL 01")
+    f.write("\nINITIAL STRUCTURE COORDINATES\n")
 
     num_atoms = result.molecule.obmol.NumAtoms()
     # update coordinates
@@ -165,10 +167,12 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
         except:
             pass
 
-
-    f.write("\nMODEL 02 RESULTING STRUCTURE COORDINATES\n")
+    if str.lower(in_args['format'])=='pdb':
+        f.write("\nMODEL 02")
+    f.write("\nRESULTING STRUCTURE COORDINATES\n")
     write_ob_molecule(mol, in_args['format'], f)
-    f.write("END\n")
+    if str.lower(in_args['format']) == 'pdb':
+        f.write("END\n")
 
     # print dir
 
