@@ -401,7 +401,7 @@ class Molecule:
         self.normalize()
 
     @staticmethod
-    def dummy_molecule(size, groups):
+    def dummy_molecule_from_size(size, groups):
         '''
         The dummy molecule is a fake molecule used in the approx algorithm to generate chain permutations
         :param size: number of "atoms" in the fake molecule
@@ -414,6 +414,19 @@ class Molecule:
             atoms.append(atom)
         mol= Molecule(atoms)
         mol._equivalence_classes=groups
+        return mol
+
+    @staticmethod
+    def molecule_from_coords(coords, groups=None):
+        atoms=[]
+        for i, coord in enumerate(coords):
+            atom = Atom("XX", coord, i, False)
+            atoms.append(atom)
+        mol= Molecule(atoms)
+        if groups:
+            mol._equivalence_classes=groups
+        else:
+            mol._equivalence_classes=[[i for i in range(len(coords))]]
         return mol
 
     @staticmethod

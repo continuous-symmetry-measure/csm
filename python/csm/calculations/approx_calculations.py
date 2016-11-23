@@ -44,7 +44,7 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
         chainkeys=list(molecule.chains.keys())
         chain_permutations = []
-        dummy = Molecule.dummy_molecule(len(molecule._chains), molecule.chain_equivalences)
+        dummy = Molecule.dummy_molecule_from_size(len(molecule._chains), molecule.chain_equivalences)
         permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
         for state in permuter.permute():
             chain_permutations.append(list(state.perm))
@@ -96,7 +96,7 @@ def is_legal(perm, molecule):
 
 def find_best_perm(op_type, op_order, molecule, use_best_dir, get_orthogonal, detect_outliers, use_chains, hungarian, print_approx, dirs):
     chain_permutations = []
-    dummy = Molecule.dummy_molecule(len(molecule.chains), molecule.chain_equivalences)
+    dummy = Molecule.dummy_molecule_from_size(len(molecule.chains), molecule.chain_equivalences)
     permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
     for state in permuter.permute():
         chain_permutations.append([i for i in state.perm])

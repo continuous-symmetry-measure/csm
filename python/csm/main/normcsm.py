@@ -11,7 +11,7 @@ def get_normalization_type(args):
     parser = _create_parser()
     parser.usage = "\ncsm type input_molecule output_file normalization [additional arguments]"
     parser.add_argument('normalization', default='standard', help='The type of normalization to apply',
-                        choices=['standard', 'atom_number', 'fragment_mass_center', 'symmetric_fragment_mass_center'],
+                        choices=['standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm'],
                         )
     parsed_args = parser.parse_args(args)
     normalization = parsed_args.normalization
@@ -64,7 +64,23 @@ def atom_number_factor(coords, symm, original_norm):
     return norm_factor, new_csm
 
 
+def get_chain_perm(molecule, perm):
+    chain_perm_dict={}
+    for chain in molecule.chains:
+        index= molecule.chains[chain][0]
+        permuted_index= perm[index]
+        for chain2 in molecule.chains:
+            if permuted_index in molecule.chains[chain2]:
+                chain_perm_dict[chain]=chain2
+                break
+    chain_perm=[]
+    for i in range(len(molecule.reversechainkeys)):
+        chain = molecule.reversechainkeys[i]
+        permuted= chain_perm_dict[chain]
+        permuted_index= molecule.chainkeys[permuted]
+        chain_perm.append(permuted_index)
 
+    return chain_perm
 
 def normalize_csm(norm_type, result):
     '''
@@ -74,52 +90,63 @@ def normalize_csm(norm_type, result):
     '''
     original_csm = result.csm
     molecule=result.molecule
-    original_norm = molecule.norm_factor #this is the original normalization factor
-    denormed_csm = original_csm * original_norm #the result was divided by that factor, so we undo that by multiplication
+    original_norm = molecule.norm_factor
     normalized_coords = result.normalized_molecule_coords
     normalized_symm = result.normalized_symmetric_structure
 
     if norm_type == 'standard':  #0
         return original_norm, original_csm
-    if norm_type == '':    #1 center of masses of the fragments
+    if norm_type == 'fragment_center':    #1 center of masses of the fragments
         #find the center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #norm = sum of distance (between center of mass and atom) squared
         norm=get_norm_by_distance_from_centers(normalized_coords, molecule.chains, fragment_centers)
-        #divide by norm (multiply by 100?)
-        return norm, original_csm/norm
-    if norm_type == '':    #2 normalization according to symmetry of fragments, with existing symmetry
-        #find center of mass of each fragment exacrtly as in #1
+        #divide by norm
+        return norm*original_norm, original_csm/norm
+    if norm_type == 'fragment_perm':    #2 normalization according to symmetry of fragments, with existing symmetry
+        #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
-        dummy = Molecule.molecule_from_coords(fragment_centers)
-        #run CSM using the perm (???)
-        perm="need to add way to calculate perm"
+        coordinates_array=[fragment_centers[molecule.reversechainkeys[i]] for i in range(len(molecule.reversechainkeys))]
+        dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
+        #get chain permutation
+        perm=get_chain_perm(molecule, result.perm)
+        #run CSM using the perm
         new_result=exact_calculation(result.op_type, result.op_order, dummy, perm=perm)
         #receive s0
         s0= new_result.csm
         new_symm=result.symmetric_structure
-        #save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir
-        #find normalization factor based on the above step (???)
-        #an additional step (??)
+        #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
+        #find normalization factor based on the above step
+        coordinates_dict={molecule.reversechainkeys[i]:new_symm[i] for i in range(len(molecule.reversechainkeys))}
+        norm = get_norm_by_distance_from_centers(normalized_coords, molecule.chains, coordinates_dict)
 
-        return None
-    if norm_type == '':    #3 normalization according to symmetry of fragments, withOUT existing symmetry
-        #find center of mass of each fragment exacrtly as in #1
+        return norm * original_norm, original_csm / norm
+
+    if norm_type == 'fragment_symm':    #3 normalization according to symmetry of fragments, withOUT existing symmetry
+        #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
-        #make dummy molecuke
-        #run csm without useperm  (<---this is the only line that is different between 2 and 3)
-        # receive s0
-        # save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir
-        # find normalization factor based on the above step (???)
-        # an additional step (??)
-        return None
-    if norm_type == '':    #4 normalization according to averages of approximation to symmetry of fragments
+        #create a dummy molecule made up of atoms located at center of each mass
+        coordinates_array=[fragment_centers[molecule.reversechainkeys[i]] for i in range(len(molecule.reversechainkeys))]
+        dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
+        #run CSM
+        new_result=exact_calculation(result.op_type, result.op_order, dummy)
+        #receive s0
+        s0= new_result.csm
+        new_symm=result.symmetric_structure
+        #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
+        #find normalization factor based on the above step
+        coordinates_dict={molecule.reversechainkeys[i]:new_symm[i] for i in range(len(molecule.reversechainkeys))}
+        norm = get_norm_by_distance_from_centers(normalized_coords, molecule.chains, coordinates_dict)
+
+        return norm * original_norm, original_csm / norm
+
+    if norm_type == 'symmetry_center':    #4 normalization according to averages of approximation to symmetry of fragments
         #find center of mass of each fragment in the symmetric structure
         fragment_centers= get_fragment_centers(molecule.chains, normalized_symm)
-        #create a normalization factor
-        #apply
-        return None
+        norm=get_norm_by_distance_from_centers(normalized_coords, molecule.chains, fragment_centers)
+        #divide by norm
+        return norm*original_norm, original_csm/norm
     if norm_type == 'atom_number': #5 normalization by number of atoms
         #note-- atom_number_factor was refactored as a separate equation because
         #it is possible to test its validity by sending 5*coord, 5*symm and seeing that
