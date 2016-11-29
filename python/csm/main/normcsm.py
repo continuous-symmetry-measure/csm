@@ -9,10 +9,13 @@ import numpy as np
 
 def get_normalization_type(args):
     parser = _create_parser()
-    parser.usage = "\ncsm type input_molecule output_file normalization [additional arguments]"
-    parser.add_argument('normalization', default='standard', help='The type of normalization to apply',
-                        choices=['standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm'],
+    parser.usage = "\nnormalization csm type input_molecule output_file [additional arguments]"
+    norm_argument= parser.add_argument('normalization', default='standard', help='The type of normalization to apply',
+                        choices=['standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm', 'linear_csm'],
+                        nargs='+'
                         )
+    parser._actions.pop()
+    parser._actions.insert(1, norm_argument)
     parsed_args = parser.parse_args(args)
     normalization = parsed_args.normalization
 
@@ -51,14 +54,14 @@ def get_norm_by_distance_from_centers(coords, fragments, centers):
     norm=0
     for fragment in fragments:
         for index in fragments[fragment]:
-            norm += np.linalg.norm(coords[index] - centers[fragment])
+            norm += np.square((np.linalg.norm(coords[index] - centers[fragment])))
     return norm
 
 
 def atom_number_factor(coords, symm, original_norm):
     Pk_Qk = 0
     for i in range(len(coords)):
-        Pk_Qk += np.sqrt(np.sum(np.square(coords[i] - symm[i])))
+        Pk_Qk += np.linalg.norm(coords[i] - symm[i])
     norm_factor = len(coords) / original_norm
     new_csm = Pk_Qk / norm_factor
     return norm_factor, new_csm
@@ -103,7 +106,7 @@ def normalize_csm(norm_type, result):
         norm=get_norm_by_distance_from_centers(normalized_coords, molecule.chains, fragment_centers)
         #divide by norm
         return norm*original_norm, original_csm/norm
-    if norm_type == 'fragment_perm':    #2 normalization according to symmetry of fragments, with existing symmetry
+    if norm_type == 'fragment_perm':    #2 normalization according to symmetry of fragments, with existing perm
         #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
@@ -123,7 +126,7 @@ def normalize_csm(norm_type, result):
 
         return norm * original_norm, original_csm / norm
 
-    if norm_type == 'fragment_symm':    #3 normalization according to symmetry of fragments, withOUT existing symmetry
+    if norm_type == 'fragment_symm':    #3 normalization according to symmetry of fragments, withOUT existing perm
         #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
@@ -147,11 +150,20 @@ def normalize_csm(norm_type, result):
         norm=get_norm_by_distance_from_centers(normalized_coords, molecule.chains, fragment_centers)
         #divide by norm
         return norm*original_norm, original_csm/norm
+
     if norm_type == 'atom_number': #5 normalization by number of atoms
         #note-- atom_number_factor was refactored as a separate equation because
         #it is possible to test its validity by sending 5*coord, 5*symm and seeing that
         #indeed the CSM increases times 5
         return atom_number_factor(normalized_coords, normalized_symm, original_norm)
+
+    if norm_type == 'linear_csm':
+        numerator = denominator = 0
+        for i in range(len(normalized_coords)):
+            numerator += np.linalg.norm(normalized_coords[i] - normalized_symm[i])
+            denominator += np.linalg.norm(normalized_coords[i])  # we assume that the center of mass of the whole molecule is (0,0,0).
+        return denominator * original_norm, numerator / denominator
+
 
 
 
@@ -161,14 +173,16 @@ def normrun(args=[]):
     if not args:
         args = sys.argv[1:]
 
-    norm_type = get_normalization_type(args)
-    args.pop(3)  # remove the normalization argument
+    norm_types = get_normalization_type(args)
+    args=[x for x in args if x not in norm_types]  # remove the normalization argument
 
     result = run(args)
 
-    norm_factor, final_csm = normalize_csm(norm_type, result)
-    print("Csm normalized with", norm_type, "method is:", final_csm)
-    print("Normalization factor is:", norm_factor)
+    for norm_type in norm_types:
+        print("--------")
+        norm_factor, final_csm = normalize_csm(norm_type, result)
+        print("Csm normalized with", norm_type, "method is:", final_csm)
+        print("Normalization factor is:", norm_factor)
 
 
 def run_no_return(args=[]):

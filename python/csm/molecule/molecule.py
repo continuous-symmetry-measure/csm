@@ -427,6 +427,7 @@ class Molecule:
             mol._equivalence_classes=groups
         else:
             mol._equivalence_classes=[[i for i in range(len(coords))]]
+        #mol._norm_factor=1
         return mol
 
     @staticmethod
