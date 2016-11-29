@@ -10,9 +10,10 @@ import numpy as np
 def get_normalization_type(args):
     parser = _create_parser()
     parser.usage = "\nnormalization csm type input_molecule output_file [additional arguments]"
-    norm_argument= parser.add_argument('normalization', default='standard', help='The type of normalization to apply',
+    norm_argument= parser.add_argument('normalization', default='standard',
+                        help = 'Types of normalizations: standard, fragment_center, fragment_perm, fragment_symm, symmetry_center, atom_number, linear_csm',
                         choices=['standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm', 'linear_csm'],
-                        nargs='+'
+                        nargs='+', metavar="normalization"
                         )
     parser._actions.pop()
     parser._actions.insert(1, norm_argument)
@@ -96,6 +97,7 @@ def normalize_csm(norm_type, result):
     original_norm = molecule.norm_factor
     normalized_coords = result.normalized_molecule_coords
     normalized_symm = result.normalized_symmetric_structure
+
 
     if norm_type == 'standard':  #0
         return original_norm, original_csm
