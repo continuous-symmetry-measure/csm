@@ -1,6 +1,20 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.13.0
+------------------------
+Normalization factors: 'standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm', 'linear_csm'
+have been added. (some of these existed in a preliminary form in the older version, however, there were many mathematical errors)
+
+The usage of the norm_csm program has changed.
+instead of: norm_csm type input_molecule output_file normalization [additional arguments]
+where normalization could only be a single type of normalization
+
+the new version is: norm_csm normalization type input_molecule output_file [additional arguments]
+where as many normalizations as desired (of the available 7) can be specified.
+
+
+
 Changes in version 0.12.1
 ------------------------
 BUGFIX: fixed bug in calls to perm from state that was causing 
