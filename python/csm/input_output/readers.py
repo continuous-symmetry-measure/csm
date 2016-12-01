@@ -13,8 +13,11 @@ def check_perm_equivalence(mol, perm):
 def check_perm_validity(mol, perm):
     if not check_perm_equivalence(mol, perm):
         logger.warning("Permutation contains switches between non-equivalent atoms")
-    if check_perm_structure(mol, perm) < 1:
-        logger.warning("Permutation does not preserve molecule structure")
+    try:
+        if check_perm_structure(mol, perm) < 1:
+            logger.warning("Permutation does not preserve molecule structure")
+    except ValueError: #molecule has no structure
+        pass
 
 def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     """

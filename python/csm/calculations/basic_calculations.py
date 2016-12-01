@@ -141,7 +141,7 @@ def compute_local_csm(molecule, perm, dir, op_type, op_order):
 
 def check_perm_structure(mol, perm):
     if len(mol.bondset)==0:
-        raise ValueError
+        raise ValueError("Molecule does not have any bond information")
 
     broken=0
     for origin, destination in enumerate(perm):
