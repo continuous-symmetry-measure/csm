@@ -49,6 +49,7 @@ def _create_parser():
                         help='Use the atomic masses to define center of mass')
     parser.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
     parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
+    parser.add_argument('--use-sequence', action='store_true', default=False, help='create equivalence class for pdb file using sequence information (recommended)')
 
 
     #calculation arguments that only apply to exact:
@@ -204,6 +205,7 @@ def _process_split_arguments(parse_res):
     #in_args['ignore_hy'] = parse_res.ignore_hy
     in_args['remove_hy'] = parse_res.remove_hy
     in_args['ignore_symm'] = parse_res.ignore_sym
+    in_args['use_sequence']= parse_res.use_sequence
 
 
     #calculation arguments for exact only:

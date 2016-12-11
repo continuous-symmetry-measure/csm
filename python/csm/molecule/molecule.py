@@ -445,8 +445,11 @@ class Molecule:
 
     @staticmethod
     def from_file(in_file_name, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False, *args, **kwargs):
+                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False, use_sequence=False,
+                  *args, **kwargs):
         def get_format(form):
+            if format.lower()=="csm":
+                return "csm"
             conv = OBConversion()
             if not form:
                 form = conv.FormatFromExt(filename)
@@ -454,20 +457,25 @@ class Molecule:
                     raise ValueError("Error discovering format from filename " + filename)
             return form
 
-        if format == "csm":
-            mol = Molecule._read_csm_file(in_file_name, ignore_symm, use_mass)
+        format = get_format(format)
+
+        if use_sequence:
+            if format.lower() != 'pdb':
+                print("Use sequence is only relevant for pdb files, and will be ignored")
+            mol = Molecule.create_pdb_molecule(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
+                                               remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
+
+
 
         else:
-            format=get_format(format)
-            if format.lower() == 'pdb':
-                mol = Molecule.create_pdb_molecule(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
-                  remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
-                #if format=="pdb" and not babel_bond:
-                #    mol=Molecule._read_pdb_connectivity(in_file_name, mol)
+            if format == "csm":
+                mol = Molecule._read_csm_file(in_file_name, ignore_symm, use_mass)
 
-            else: #all formats except csm and pdb
+            else:
                 obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
                 mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+                if format=="pdb" and not babel_bond:
+                    mol=Molecule._read_pdb_connectivity(in_file_name, mol)
                 if not mol.bondset and (keep_structure or use_chains):
                     if no_babel:
                         print("Warning: User input --no-babel. Molecule has no connectivity, even though --keep-structure or --use-chains were specified")
@@ -480,22 +488,25 @@ class Molecule:
                 if initialize:
                     mol._complete_initialization(remove_hy, ignore_hy, use_chains)
 
-        #all formats return here:
+        return mol
+
+    @staticmethod
+    def _read_pdb_connectivity(filename, mol):
+        with open(filename, 'r') as file:
+            for line in file:
+                if "CONECT" in line:
+                    try:
+                        values = line.split()
+                        atom = mol._atoms[int(values[1]) - 1]
+                        adjacent = [int(ind) - 1 for ind in values[2:]]
+                        atom.adjacent = remove_multi_bonds(adjacent)
+                    except:
+                        raise ValueError("There was a problem reading connectivity from the pdb file.")
         return mol
 
     @staticmethod
     def create_pdb_molecule(filename, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
                   remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
-
-        def read_pdb_connectivity(line, mol):
-            if "CONECT" in line:
-                try:
-                    values = line.split()
-                    atom = mol._atoms[int(values[1]) - 1]
-                    adjacent = [int(ind) - 1 for ind in values[2:]]
-                    atom.adjacent = remove_multi_bonds(adjacent)
-                except:
-                    raise ValueError("There was a problem reading connectivity from the pdb file.")
 
         def read_atom(line, likeness_dict, index):
             if line[0:4] == "ATOM":
@@ -537,7 +548,6 @@ class Molecule:
 
         with open(filename, 'r') as file:
             for line in file:
-                read_pdb_connectivity(line, mol)
                 index=read_atom(line, likeness_dict, index)
 
         mol._create_bondset()
