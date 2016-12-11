@@ -1,6 +1,15 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.13.1
+------------------------
+
+added flag --use-sequence for pdb molecules.
+
+small bugfix: fixed bug causing --use-perm to crash when checking conservation of structure with no bond information
+
+
+
 Changes in version 0.13.0
 ------------------------
 Normalization factors: 'standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm', 'linear_csm'
