@@ -231,6 +231,7 @@ cdef class PreCalcPIP(PermInProgress):
                 self.state.B.add_mul(cache.cross(index, permuted_index), self.sintheta[iop])
                 #4:
                 dists += cache.inner_product(index, permuted_index)
+
             self.state.CSM += self.costheta[iop] * dists
 
 

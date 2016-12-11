@@ -456,41 +456,99 @@ class Molecule:
 
         if format == "csm":
             mol = Molecule._read_csm_file(in_file_name, ignore_symm, use_mass)
+
         else:
             format=get_format(format)
-            obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
-            mol = Molecule._from_obm(obm, ignore_symm, use_mass)
-            if format=="pdb" and not babel_bond:
-                mol=Molecule._read_pdb_connectivity(in_file_name, mol)
+            if format.lower() == 'pdb':
+                mol = Molecule.create_pdb_molecule(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
+                  remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
+                #if format=="pdb" and not babel_bond:
+                #    mol=Molecule._read_pdb_connectivity(in_file_name, mol)
 
-            if not mol.bondset and (keep_structure or use_chains):
-                if no_babel:
-                    print("Warning: User input --no-babel. Molecule has no connectivity, even though --keep-structure or --use-chains were specified")
-                else:
-                    print("Molecule file does not have connectivity information and --keep-structure or --use-chains were specified. Using babelbond to create bonds.")
-                    print("(To suppress the automatic creation of bonds via Babelbond when using --keep-structure or --use-chains without connectivity, use --no-babel)")
-                    obm = Molecule._obm_from_file(in_file_name, format, True)
-                    mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+            else: #all formats except csm and pdb
+                obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
+                mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+                if not mol.bondset and (keep_structure or use_chains):
+                    if no_babel:
+                        print("Warning: User input --no-babel. Molecule has no connectivity, even though --keep-structure or --use-chains were specified")
+                    else:
+                        print("Molecule file does not have connectivity information and --keep-structure or --use-chains were specified. Using babelbond to create bonds.")
+                        print("(To suppress the automatic creation of bonds via Babelbond when using --keep-structure or --use-chains without connectivity, use --no-babel)")
+                        obm = Molecule._obm_from_file(in_file_name, format, True)
+                        mol = Molecule._from_obm(obm, ignore_symm, use_mass)
 
+                if initialize:
+                    mol._complete_initialization(remove_hy, ignore_hy, use_chains)
 
-        if initialize:
-            mol._complete_initialization(remove_hy, ignore_hy, use_chains)
+        #all formats return here:
         return mol
 
     @staticmethod
-    def _read_pdb_connectivity(filename, mol):
-        with open(filename, 'r') as f:
-            for line in f:
-                if "CONECT" in line:
-                    try:
-                        values=line.split()
-                        atom= mol._atoms[int(values[1])-1]
-                        adjacent=[int(ind)-1 for ind in values[2:]]
-                        atom.adjacent= remove_multi_bonds(adjacent)
-                    except:
-                        raise ValueError("There was a problem reading connectivity from the pdb file.")
+    def create_pdb_molecule(filename, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
+                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
+
+        def read_pdb_connectivity(line, mol):
+            if "CONECT" in line:
+                try:
+                    values = line.split()
+                    atom = mol._atoms[int(values[1]) - 1]
+                    adjacent = [int(ind) - 1 for ind in values[2:]]
+                    atom.adjacent = remove_multi_bonds(adjacent)
+                except:
+                    raise ValueError("There was a problem reading connectivity from the pdb file.")
+
+        def read_atom(line, likeness_dict, index):
+            if line[0:4] == "ATOM":
+                #handle equivalence class:
+                atom_type=line[12:14]
+                remoteness=line[14]
+                serial_number=line[22:26]
+                key=tuple([atom_type, remoteness, serial_number])
+                val=index
+                index+=1
+                if key not in likeness_dict:
+                    likeness_dict[key]=[val]
+                else:
+                    likeness_dict[key].append(val)
+
+                #handle chains:
+                chain=line[21]
+            return index
+
+        def set_equivalence_classes(mol, likeness_dict):
+            groups=[]
+            for key in likeness_dict:
+                groups.append(likeness_dict[key])
+
+            mol._equivalence_classes = groups
+            try:
+                for group in groups:
+                    for atom_index in group:
+                        for equiv_index in group:
+                            mol._atoms[atom_index].add_equivalence(equiv_index)
+            except:
+                pass
+
+        obm = Molecule._obm_from_file(filename, format, babel_bond)
+        mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+
+        likeness_dict={}
+        index=0
+
+        with open(filename, 'r') as file:
+            for line in file:
+                read_pdb_connectivity(line, mol)
+                index=read_atom(line, likeness_dict, index)
+
         mol._create_bondset()
+        set_equivalence_classes(mol, likeness_dict)
+        print(len(likeness_dict), "equivalence groups")
+        mol._process_chains(use_chains)
+        mol.normalize()
+
         return mol
+
+
 
 
 
