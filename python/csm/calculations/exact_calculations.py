@@ -220,7 +220,7 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, 
         raise ValueError("Failed to calculate a csm value for %s %d" % (op_type, op_order))
 
     if not perm:
-        print("number of permutations: %.4g" % permuter.count)
+        print("Number of permutations: %.4g" % permuter.count)
         print("Number of branches in permutation tree: %.4g" % permuter.truecount)
         print("Number of dead ends: %.4g" % permuter.falsecount)
 
