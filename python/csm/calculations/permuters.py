@@ -532,7 +532,11 @@ class ConstraintPermuter:
 
     def permute(self):
         #step 1: create initial empty pip and qip
-        pip=PreCalcPIP(self.molecule, self.op_order, self.op_type)
+        use_cache=True
+        if len(self.molecule)>1000:
+            print("Molecule size exceeds recommended size for using caching. (Perhaps you meant to use --approx?)")
+            use_cache=False
+        pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
         #pip = PythonPIP(self.molecule, self.op_order, self.op_type)
         #step 2: create initial set of constraints
         constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
