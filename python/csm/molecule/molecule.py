@@ -509,7 +509,8 @@ class Molecule:
                   remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
 
         def read_atom(line, likeness_dict, index):
-            if line[0:4] == "ATOM":
+            record_name=line[0:6]
+            if record_name in ["ATOM  ", "HETATM"]:
                 #handle equivalence class:
                 atom_type=line[12:14]
                 remoteness=line[14]
