@@ -1,6 +1,16 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.13.2
+------------------------
+Normalization factor flags have been changed to the numbers 0-6, in order to make typing them in less onerous. 
+The help documentation under -h describes what normalization each number belongs to.
+
+In addition, scientific notation printouts have been adjusted to 5 significant digits before the decimal point and 4 after.
+
+The --log flag has been removed.
+
+
 Changes in version 0.13.1
 ------------------------
 
