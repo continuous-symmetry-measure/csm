@@ -14,7 +14,6 @@ import logging
 
 np.set_printoptions(precision=6)
 
-logger = logging.getLogger("csm")
 
 __author__ = 'Itay, Devora, Yael'
 

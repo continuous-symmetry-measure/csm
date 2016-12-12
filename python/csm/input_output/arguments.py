@@ -83,7 +83,6 @@ def _create_parser():
                         help='Print the normalization factor as well')
     parser.add_argument('--print-local', action='store_true', default=False,
                     help='Print the local CSM (csm for each atom) in the output file')
-    parser.add_argument('--log', type=str, help='Write a detailed log to logfile')
     parser.add_argument('--output-perms', action='store', default=None,
                     help='Writes all enumerated permutations to file')
     parser.add_argument('--print-approx', action='store_true', default=False,
@@ -262,7 +261,6 @@ def _process_split_arguments(parse_res):
     out_args['write_openu'] = parse_res.write_openu
     out_args['print_norm'] = parse_res.print_norm
     out_args['print_local'] = calc_args['calc_local'] = parse_res.print_local
-    out_args['log_file_name'] = parse_res.log
 
     out_args['perms_csv_name'] = parse_res.output_perms
 

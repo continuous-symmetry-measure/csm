@@ -10,7 +10,6 @@ from csm.calculations.basic_calculations import CSMState, process_results
 from csm.molecule.molecule import Molecule
 
 
-logger = logging.getLogger("csm")
 
 def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, dirs=None, *args, **kwargs):
     if op_type == 'CH':  # Chirality
