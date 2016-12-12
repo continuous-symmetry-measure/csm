@@ -6,13 +6,25 @@ from csm.input_output.arguments import _create_parser
 from csm.molecule.molecule import Molecule
 from csm.calculations.exact_calculations import exact_calculation
 import numpy as np
+from argparse import RawTextHelpFormatter
+
 
 def get_normalization_type(args):
     parser = _create_parser()
+    parser.formatter_class=RawTextHelpFormatter
     parser.usage = "\nnorm_csm normalization type input_molecule output_file [additional arguments]"
-    norm_argument= parser.add_argument('normalization', default='standard',
-                        help = 'Types of normalizations: standard, fragment_center, fragment_perm, fragment_symm, symmetry_center, atom_number, linear_csm',
-                        choices=['standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm', 'linear_csm'],
+    norm_argument= parser.add_argument('normalization', default='0',
+                        help = 'Types of normalization available:\n'
+                               '0: standard normalization, according to centers of mass (without scaling)\n'
+                               '1: normalization according to the center of mass of each fragment\n'
+                               '2: normalization according to an approximation of the symmetric structure of the centers'
+                               'of mass of each fragment, based on the solution permutation\n'
+                               '3: normalization according to an approximation of the symmetric structure of the centers'
+                               'of mass of each fragment, without using the solution permutation\n'
+                               '4: normalization according to averages of approximation to symmetry of fragments\n'
+                               '5: normalization according to number of atoms\n'
+                               '6: linear normalization',
+                        choices=['0', '1', '2', '3', '4', '5', '6'],
                         nargs='+', metavar="normalization"
                         )
     parser._actions.pop()
@@ -99,16 +111,16 @@ def normalize_csm(norm_type, result):
     normalized_symm = result.normalized_symmetric_structure
 
 
-    if norm_type == 'standard':  #0
+    if norm_type == '0':  #standard
         return original_norm, original_csm
-    if norm_type == 'fragment_center':    #1 center of masses of the fragments
+    if norm_type == '1':    #1 center of masses of the fragments
         #find the center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #norm = sum of distance (between center of mass and atom) squared
         norm=get_norm_by_distance_from_centers(normalized_coords, molecule.chains, fragment_centers)
         #divide by norm
         return norm*original_norm, original_csm/norm
-    if norm_type == 'fragment_perm':    #2 normalization according to symmetry of fragments, with existing perm
+    if norm_type == '2':    #2 normalization according to symmetry of fragments, with existing perm
         #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
@@ -128,7 +140,7 @@ def normalize_csm(norm_type, result):
 
         return norm * original_norm, original_csm / norm
 
-    if norm_type == 'fragment_symm':    #3 normalization according to symmetry of fragments, withOUT existing perm
+    if norm_type == '3':    #3 normalization according to symmetry of fragments, withOUT existing perm
         #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
@@ -146,20 +158,20 @@ def normalize_csm(norm_type, result):
 
         return norm * original_norm, original_csm / norm
 
-    if norm_type == 'symmetry_center':    #4 normalization according to averages of approximation to symmetry of fragments
+    if norm_type == '4':    #4 normalization according to averages of approximation to symmetry of fragments
         #find center of mass of each fragment in the symmetric structure
         fragment_centers= get_fragment_centers(molecule.chains, normalized_symm)
         norm=get_norm_by_distance_from_centers(normalized_coords, molecule.chains, fragment_centers)
         #divide by norm
         return norm*original_norm, original_csm/norm
 
-    if norm_type == 'atom_number': #5 normalization by number of atoms
+    if norm_type == '5': #5 normalization by number of atoms
         #note-- atom_number_factor was refactored as a separate equation because
         #it is possible to test its validity by sending 5*coord, 5*symm and seeing that
         #indeed the CSM increases times 5
         return atom_number_factor(normalized_coords, normalized_symm, original_norm)
 
-    if norm_type == 'linear_csm':
+    if norm_type == '6':
         numerator = denominator = 0
         for i in range(len(normalized_coords)):
             numerator += np.linalg.norm(normalized_coords[i] - normalized_symm[i])
@@ -168,7 +180,15 @@ def normalize_csm(norm_type, result):
 
 
 
-
+normalization_dict={
+    "0": "standard normalization",
+    "1": "fragment center",
+    "2": "fragment center symmetric structure with perm",
+    "3": "fragment center symmetric structure (no perm)",
+    "4": "averages of approximation of symmetric centers",
+    "5": "number of atoms",
+    "6": "linear normalization"
+}
 
 
 def normrun(args=[]):
@@ -182,9 +202,12 @@ def normrun(args=[]):
 
     for norm_type in norm_types:
         print("--------")
-        norm_factor, final_csm = normalize_csm(norm_type, result)
-        print("Csm normalized with", norm_type, "method is:", final_csm)
-        print("Normalization factor is:", norm_factor)
+        try:
+            norm_factor, final_csm = normalize_csm(norm_type, result)
+            print("Csm normalized with", normalization_dict[norm_type], "("+ norm_type+ ")", "is:", final_csm)
+            print("Normalization factor is:", norm_factor)
+        except:
+            print("FAILED to normalize csm with",  normalization_dict[norm_type], "("+ norm_type+ ")")
 
 
 def run_no_return(args=[]):
