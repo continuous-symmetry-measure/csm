@@ -356,13 +356,156 @@ class SinglePermPermuter:
 ITYPE=np.int
 DTYPE=np.float64
 
+class ConstraintsBase:
+    def __init__(self, molecule, for_copy=False):
+        raise NotImplementedError
 
-class DictionaryConstraints:
+    def _create_constraints(self, molecule):
+        raise NotImplementedError
+
+    def copy(self):
+        '''
+        :return: a copy of the Constraints. entirely by value- must not contain any copying by reference.
+        '''
+        raise NotImplementedError
+
+    def set_constraint(self, index, constraints):
+        '''
+        sets a given index to have the constraints given and only those
+        :param index:
+        :param constraints: an array of indices that are permitted values for the index
+        :return:
+        '''
+        raise NotImplementedError
+
+    def remove_constraint_from_all(self, constraint):
+        '''
+        remove a specific constraint as a permitted value from every index in constraints
+        :param constraint:
+        :return:
+        '''
+        raise NotImplementedError
+
+    def remove_constraint_from_index(self, index, constraint):
+        '''
+        remove a specific constraint from a specific index
+        :param index:
+        :param constraint:
+        :return:
+        '''
+        raise NotImplementedError
+
+    def remove_index(self, index):
+        '''
+        "removing" an index from constraints means ensuring the index is inaccessible to the function choose
+        :param index:
+        :return:
+        '''
+        raise NotImplementedError
+
+    def check(self):
+        '''
+        check ascertains whether a given set of constraints represents a dead end on the permutation tree
+        :return:
+        '''
+        raise NotImplementedError
+
+
+    def __getitem__(self, item):
+        '''returns atom at index, and its options as an array'''
+        raise NotImplementedError
+
+    def choose(self):
+        '''chooses the "best" atom and its options as an array'''
+        raise NotImplementedError
+
+
+class IndexConstraints(ConstraintsBase):
+    '''
+    A class that uses a numpy array of size NxN (N= len(molecule)) to store constraints
+    '''
+    def __init__(self, molecule, for_copy=False):
+        if not for_copy:
+            self._create_constraints(molecule)
+
+    def _create_constraints(self, molecule):
+        self.len = len(molecule)
+        self.constraints=np.zeros((len(molecule), len(molecule)), dtype='int')
+        self.allowed_indices=[i for i in range(len(molecule))]
+        for index, atom in enumerate(molecule.atoms):
+            debug=0
+            for allowed_index in atom.equivalency:
+                self.constraints[index][allowed_index]=1
+
+    def copy(self):
+        ic=IndexConstraints(None, True)
+        ic.constraints=np.array(self.constraints)
+        ic.allowed_indices=[x for x in self.allowed_indices]
+        ic.len=self.len
+        return ic
+
+    def set_constraint(self, index, constraints):
+        self.constraints[index]=np.zeros(self.len)
+        for allowed in constraints:
+            self.constraints[index][allowed]=1
+
+    def remove_constraint_from_all(self, constraint):
+        for index in self.allowed_indices:
+            self.remove_constraint_from_index(index, constraint)
+
+    def remove_constraint_from_index(self, index, constraint):
+        self.constraints[index][constraint]=0
+        debug=None
+
+    def remove_index(self, index):
+        try:
+            self.allowed_indices.remove(index)
+        except:
+            pass
+
+    def check(self):
+        if len(self.allowed_indices)==0:
+            return False
+        for index in self.allowed_indices:
+            sum= np.sum(self.constraints[index])
+            if sum<1:
+                return False
+        return True
+
+    def __getitem__(self, item):
+        vals=self.constraints[item]
+        constraints=[]
+        for i in range(len(vals)):
+            if vals[i]==1:
+                constraints.append(i)
+        return constraints
+
+    def choose(self):
+        if len(self.allowed_indices)==0:
+            return None, None
+        minimum=MAXDOUBLE
+        min_index=-1
+        for index in self.allowed_indices:
+            sum= np.sum(self.constraints[index])
+            if sum<minimum:
+                minimum=sum
+                min_index=index
+        return min_index, [x for x in self.constraints[min_index]]
+
+
+
+
+
+class DictionaryConstraints(ConstraintsBase):
     def __init__(self, molecule, for_copy=False):
         self.constraints={}
         if not for_copy:
-            for index, atom in enumerate(molecule.atoms):
-                self.constraints[index]=list(atom.equivalency)
+            self._create_constraints(molecule)
+
+
+    def _create_constraints(self, molecule):
+        for index, atom in enumerate(molecule.atoms):
+            self.constraints[index] = list(atom.equivalency)
 
     def copy(self):
         dc= DictionaryConstraints(None, True)
@@ -397,45 +540,51 @@ class DictionaryConstraints:
     def __getitem__(self, item):
         return self.constraints[item]
 
-    def __iter__(self):
-        return self.constraints.__iter__()
+    def choose(self):
+        keys = []
+        lengths = []
+        for key in self.constraints:
+            keys.append(key)
+            lengths.append(len(self.constraints[key]))
+
+        if lengths:
+            index = np.argmin(lengths)
+            key = keys[index]
+            return key, list(self.constraints[key])
+
+        return None, None
+
 
 
 
 class ConstraintPropagator:
-    def __init__(self, molecule, op_order, op_type, constraints=None):
+    def __init__(self, molecule, op_order, op_type):
         self.molecule=molecule
         self.op_order=op_order
         self.op_type=op_type
-        if constraints:
-            self.constraints=constraints
-        else:
-            self.constraints=DictionaryConstraints(molecule)
 
-    def copy(self):
-        return ConstraintPropagator(self.molecule, self.op_order, self.op_type, self.constraints.copy())
 
-    def propagate(self, pip, origin, destination, cycle_length, cycle_head, cycle_tail, keep_structure):
+    def propagate(self, constraints, pip, origin, destination, cycle_length, cycle_head, cycle_tail, keep_structure):
         #this is the function which handles the logic of which additional constraints get added after a placement
         #depropagating, for now, is handled by copying old constraints
         
         #the logic of constraints after a placement:
 
         #1: handle cycles
-        self.handle_cycles(pip, cycle_length, cycle_head, cycle_tail)
+        self.handle_cycles(constraints, pip, cycle_length, cycle_head, cycle_tail)
 
         #2: any index which had destination as an option, destination is removed as an option
-        self.constraints.remove_constraint_from_all(destination)
+        constraints.remove_constraint_from_all(destination)
 
         #(4: keep_structure)
         if keep_structure:
-            self.keep_structure(origin, destination)
+            self.keep_structure(constraints, origin, destination)
 
         #finally: origin is removed entirely from the constraints dictionary-- it has been placed, and has nothing left
         #this is the only time and only way it is legal for an atom to have no options.
-        self.constraints.remove_index(origin)
+        constraints.remove_index(origin)
 
-    def handle_cycles(self, pip, cycle_length, cycle_head, cycle_tail):
+    def handle_cycles(self, constraints, pip, cycle_length, cycle_head, cycle_tail):
         #This has been moved to its own function because it wasa growing long and confusing
         # NOTE: cycles of length 1 are inherently "handled" in the next two steps.
         # hence, we are only dealing with cycles of length op_order and, possibly, 2 (if SN)
@@ -448,57 +597,41 @@ class ConstraintPropagator:
 
         # if cycle_length is op_order-1, it MUST attach to cycle_head:
         if cycle_length==self.op_order-1:
-            self.constraints.remove_constraint_from_all(cycle_head)
-            self.constraints.set_constraint(cycle_tail, [cycle_head])
+            constraints.remove_constraint_from_all(cycle_head)
+            constraints.set_constraint(cycle_tail, [cycle_head])
 
         else:
             # otherwise, either cycle length is NOT op_order AND not SN:
             # in which case, it is forbidden for cycle_tail to attach to cycle head:
             if cycle_length>1:#ie 2-1
-                self.constraints.remove_constraint_from_index(cycle_tail, cycle_head)
+                constraints.remove_constraint_from_index(cycle_tail, cycle_head)
                 if self.op_type == 'SN':
                     second_index=pip.p[cycle_head]
-                    self.constraints.remove_constraint_from_index(second_index, cycle_head) #because it was SN, this was left unhandled while
+                    constraints.remove_constraint_from_index(second_index, cycle_head) #because it was SN, this was left unhandled while
                     # possibility of len2 cycle remained
             else: #it is length two, and is not SN, remove as normal
                 if self.op_type != 'SN':
-                    self.constraints.remove_constraint_from_index(cycle_tail, cycle_head)
+                    constraints.remove_constraint_from_index(cycle_tail, cycle_head)
 
-    def keep_structure(self, origin, destination):
+    def keep_structure(self, constraints, origin, destination):
         #1. atoms in A's bondset, can only go to constraints of theirs, that are in B's bondset
         for atom_in_A_bondset in self.molecule.atoms[origin].adjacent:
             try:
                 new_constraints=[]
-                for constraint in self.constraints[atom_in_A_bondset]:
+                for constraint in constraints[atom_in_A_bondset]:
                     if (destination, constraint) in self.molecule.bondset:
                         new_constraints.append(constraint)
                         #self._remove(atom_in_A_bondset, constraint)
-                self.constraints.set_constraint(atom_in_A_bondset, new_constraints)
+                constraints.set_constraint(atom_in_A_bondset, new_constraints)
             except KeyError:
                 pass
+            except:
+                print("aha!")
         #2.
 
 
 
-class SimpleAtomChooser:
-    @staticmethod
-    def choose(constraints):
-        # the function responsible for returning an atom and its options
-        # possible alternate for function responsible for identifying dead ends
 
-        #old code that might still be fine:
-        keys = []
-        lengths = []
-        for key in constraints:
-            keys.append(key)
-            lengths.append(len(constraints[key]))
-
-        if lengths:
-            index = np.argmin(lengths)
-            key = keys[index]
-            return key, list(constraints[key])
-
-        return None, None
 
 
 class ConstraintPermuter:
@@ -510,14 +643,10 @@ class ConstraintPermuter:
         self.count=0
         self.truecount=0
         self.falsecount=0
-
-        #the class/algorithm used for choosing atom. may need to be associated with the class of the constraints, but
-        # for now is separate
-        self.atom_chooser=SimpleAtomChooser
-
         self.cycle_lengths=[1,op_order]
         if op_type=='SN':
             self.cycle_lengths.append(2)
+        self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
 
     def create_cycle(self, atom, pip):
         group=[]
@@ -539,16 +668,17 @@ class ConstraintPermuter:
         pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
         #pip = PythonPIP(self.molecule, self.op_order, self.op_type)
         #step 2: create initial set of constraints
-        constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
+        constraints=DictionaryConstraints(self.molecule)
+        #constraints=IndexConstraints(self.molecule)
         #step 3: call recursive permute
-        for pip in self._permute(pip, constraints_prop):
+        for pip in self._permute(pip, constraints):
             #print(pip.p, pip.state.perms[1])
             self.count+=1
             yield pip.state
 
-    def _permute(self, pip, constraints_prop):
+    def _permute(self, pip, constraints):
         # step one: from the available atoms, choose the one with the least available options:
-        atom, options= self.atom_chooser.choose(constraints_prop.constraints)
+        atom, options= constraints.choose()
 
         # STOP CONDITION: if there are no atoms left, the permutation has been completed. yield permutation
         # (what if permutation is illegal?)
@@ -561,11 +691,13 @@ class ConstraintPermuter:
             for destination in options:
                 #print((atom, destination))
                 # save current constraints
-                old_constraints=constraints_prop.copy()
+                old_constraints=constraints.copy()
                 # propagate changes in constraints
-                cycle_head, cycle_tail, cycle_length, cycle=self.calculate_cycle(pip, atom, destination, constraints_prop)
-                constraints_prop.propagate(pip, atom, destination, cycle_length, cycle_head, cycle_tail, self.keep_structure)
-                if constraints_prop.constraints.check():
+                cycle_head, cycle_tail, cycle_length, cycle=self.calculate_cycle(pip, atom, destination)
+                self.constraints_prop.propagate(constraints, pip, atom, destination, cycle_length, cycle_head, cycle_tail, self.keep_structure)
+                if self.truecount>70:
+                    flag="for debugging inexer"
+                if constraints.check():
                     self.truecount+=1
                     # make the change to pip
                     pip.switch(atom, destination)
@@ -575,7 +707,7 @@ class ConstraintPermuter:
                         old_state=pip.close_cycle(cycle)
 
                     #yield from recursive create on the new pip and new constraints
-                    yield from self._permute(pip, constraints_prop)
+                    yield from self._permute(pip, constraints)
 
                     #if completed cycle, restore old pip state
                     if cycle_head==cycle_tail:
@@ -586,10 +718,10 @@ class ConstraintPermuter:
                 else:
                     #print("DEADEND")
                     self.falsecount+=1
-                constraints_prop=old_constraints
+                constraints=old_constraints
 
 
-    def calculate_cycle(self, pip, origin, destination, constraints):
+    def calculate_cycle(self, pip, origin, destination):
         cycle=[origin]
         cycle_length = 1
         index = origin
