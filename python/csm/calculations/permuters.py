@@ -439,7 +439,7 @@ class IndexConstraints(ConstraintsBase):
 
     def copy(self):
         ic=IndexConstraints(None, True)
-        ic.constraints=np.array(self.constraints)
+        ic.constraints=np.array([np.array(self.constraints[i]) for i in range(self.len)])
         ic.allowed_indices=[x for x in self.allowed_indices]
         ic.len=self.len
         return ic
@@ -452,6 +452,7 @@ class IndexConstraints(ConstraintsBase):
     def remove_constraint_from_all(self, constraint):
         for index in self.allowed_indices:
             self.remove_constraint_from_index(index, constraint)
+        self.choose() #debug
 
     def remove_constraint_from_index(self, index, constraint):
         self.constraints[index][constraint]=0
@@ -464,11 +465,8 @@ class IndexConstraints(ConstraintsBase):
             pass
 
     def check(self):
-        if len(self.allowed_indices)==0:
-            return False
         for index in self.allowed_indices:
-            sum= np.sum(self.constraints[index])
-            if sum<1:
+            if np.sum(self.constraints[index])==0:
                 return False
         return True
 
@@ -481,16 +479,13 @@ class IndexConstraints(ConstraintsBase):
         return constraints
 
     def choose(self):
-        if len(self.allowed_indices)==0:
+        if len(self.allowed_indices)<1:
             return None, None
-        minimum=MAXDOUBLE
-        min_index=-1
-        for index in self.allowed_indices:
-            sum= np.sum(self.constraints[index])
-            if sum<minimum:
-                minimum=sum
-                min_index=index
-        return min_index, [x for x in self.constraints[min_index]]
+        sums= [np.sum(self.constraints[i]) for i in self.allowed_indices]
+        pre_index=np.argmin(sums)
+        min_index=self.allowed_indices[pre_index]
+
+        return min_index, [i for i, val in enumerate(self.constraints[min_index]) if val==1]
 
 
 
@@ -573,16 +568,20 @@ class ConstraintPropagator:
         #1: handle cycles
         self.handle_cycles(constraints, pip, cycle_length, cycle_head, cycle_tail)
 
+
         #2: any index which had destination as an option, destination is removed as an option
         constraints.remove_constraint_from_all(destination)
+
 
         #(4: keep_structure)
         if keep_structure:
             self.keep_structure(constraints, origin, destination)
 
+
         #finally: origin is removed entirely from the constraints dictionary-- it has been placed, and has nothing left
         #this is the only time and only way it is legal for an atom to have no options.
         constraints.remove_index(origin)
+
 
     def handle_cycles(self, constraints, pip, cycle_length, cycle_head, cycle_tail):
         #This has been moved to its own function because it wasa growing long and confusing
@@ -672,7 +671,6 @@ class ConstraintPermuter:
         #constraints=IndexConstraints(self.molecule)
         #step 3: call recursive permute
         for pip in self._permute(pip, constraints):
-            #print(pip.p, pip.state.perms[1])
             self.count+=1
             yield pip.state
 
@@ -695,8 +693,6 @@ class ConstraintPermuter:
                 # propagate changes in constraints
                 cycle_head, cycle_tail, cycle_length, cycle=self.calculate_cycle(pip, atom, destination)
                 self.constraints_prop.propagate(constraints, pip, atom, destination, cycle_length, cycle_head, cycle_tail, self.keep_structure)
-                if self.truecount>70:
-                    flag="for debugging inexer"
                 if constraints.check():
                     self.truecount+=1
                     # make the change to pip
