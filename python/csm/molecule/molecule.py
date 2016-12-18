@@ -464,6 +464,7 @@ class Molecule:
                 print("Use sequence is only relevant for pdb files, and will be ignored")
             mol = Molecule.create_pdb_molecule(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
                                                remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
+            return mol
 
 
 
@@ -485,8 +486,8 @@ class Molecule:
                         obm = Molecule._obm_from_file(in_file_name, format, True)
                         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
 
-                if initialize:
-                    mol._complete_initialization(remove_hy, ignore_hy, use_chains)
+        if initialize:
+            mol._complete_initialization(remove_hy, ignore_hy, use_chains)
 
         return mol
 
