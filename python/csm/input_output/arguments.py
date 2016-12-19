@@ -155,133 +155,115 @@ def get_operation_data(opcode):
     return OperationCode(type=data[0], order=data[1], name=data[2])
 
 
-def _process_split_arguments(parse_res):
+def _process_arguments(parse_res):
     """
     Divides the parsed arguments (from argparse) into three dictionaries
     Args:
         parse_res: Result of argparse
 
     Returns:
-        (in_args, calc_args, out_args) - input arguments, calculation arguments and output arguments
+        dictionary_args - input arguments, calculation arguments and output arguments
 
     """
 
-    in_args = {}
-    calc_args = {}
-    out_args = {}
+    dictionary_args = {}
 
     #the first three positional arguments
 
     op = get_operation_data(parse_res.type)
 
-    calc_args['op_type'] = op.type
-    calc_args['op_order'] = op.order
-    calc_args['op_name'] = op.name
+    dictionary_args['op_type'] = op.type
+    dictionary_args['op_order'] = op.order
+    dictionary_args['op_name'] = op.name
 
-    in_args['in_file_name'] = parse_res.input
+    dictionary_args['in_file_name'] = parse_res.input
 
-    out_args['out_file_name'] = parse_res.output
+    dictionary_args['out_file_name'] = parse_res.output
 
     #optional arguments:
 
     #types of calculations:
-    calc_args['calc_type'] = 'exact'
+    dictionary_args['calc_type'] = 'exact'
     if parse_res.approx:
-        calc_args['calc_type'] = 'approx'
+        dictionary_args['calc_type'] = 'approx'
     if parse_res.just_perms:
         if parse_res.approx:
             raise ValueError("--approx and --just-perms are mutually exclusive")
-        calc_args['calc_type'] = 'just_perms'
+        dictionary_args['calc_type'] = 'just_perms'
     if parse_res.trivial:
         if parse_res.approx:
             raise ValueError("--approx and --trivial are mutually exclusive")
         if parse_res.just_perms:
             raise ValueError("--just-perms and --trivial are mutually exclusive")
-        calc_args['calc_type'] = 'trivial'
+        dictionary_args['calc_type'] = 'trivial'
 
     #general input/calculation arguments:
-    calc_args['sn_max'] = parse_res.sn_max
-    #in_args['ignore_hy'] = parse_res.ignore_hy
-    in_args['remove_hy'] = parse_res.remove_hy
-    in_args['ignore_symm'] = parse_res.ignore_sym
-    in_args['use_sequence']= parse_res.use_sequence
+    dictionary_args['sn_max'] = parse_res.sn_max
+    #dictionary_args['ignore_hy'] = parse_res.ignore_hy
+    dictionary_args['remove_hy'] = parse_res.remove_hy
+    dictionary_args['ignore_symm'] = parse_res.ignore_sym
+    dictionary_args['use_sequence']= parse_res.use_sequence
     if parse_res.use_sequence and parse_res.keep_structure:
         raise ValueError("--keep-structure and --use-sequence are mutually exclusive")
 
 
     #calculation arguments for exact only:
-    if calc_args['calc_type'] == 'approx' and parse_res.keep_structure:
+    if dictionary_args['calc_type'] == 'approx' and parse_res.keep_structure:
         logger.warning("--keep-structure cannot be used in approx calculation. --keep-structure will be ignored")
-    calc_args['keep_structure'] = in_args['keep_structure']= parse_res.keep_structure
-    calc_args['no_constraint']=parse_res.no_constraint
-    in_args['babel_bond'] = parse_res.babel_bond
-    in_args['no_babel'] = parse_res.no_babel
-    in_args['use_mass'] = parse_res.use_mass
+    dictionary_args['keep_structure'] = dictionary_args['keep_structure']= parse_res.keep_structure
+    dictionary_args['no_constraint']=parse_res.no_constraint
+    dictionary_args['babel_bond'] = parse_res.babel_bond
+    dictionary_args['no_babel'] = parse_res.no_babel
+    dictionary_args['use_mass'] = parse_res.use_mass
 
     #calculation arguments for approx only:
-    if calc_args['calc_type'] != 'approx' and parse_res.detect_outliers:
+    if dictionary_args['calc_type'] != 'approx' and parse_res.detect_outliers:
         logger.warning("--detect-outliers applies only to approx calculation. --detect-outliers will be ignored")
-    calc_args['detect_outliers'] = parse_res.detect_outliers
+    dictionary_args['detect_outliers'] = parse_res.detect_outliers
 
-    if calc_args['calc_type'] != 'approx' and parse_res.no_hungarian:
+    if dictionary_args['calc_type'] != 'approx' and parse_res.no_hungarian:
         logger.warning("--no-hungarian applies only to approx calculation. --no-hungarian will be ignored")
-    calc_args['hungarian'] = not parse_res.no_hungarian
+    dictionary_args['hungarian'] = not parse_res.no_hungarian
 
-    calc_args['get_orthogonal'] = not parse_res.no_orthogonal
-    calc_args['use_best_dir'] = parse_res.use_best_dir
+    dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
+    dictionary_args['use_best_dir'] = parse_res.use_best_dir
 
     #if parse_res.use_dir:
-    #    if calc_args['calc_type'] != 'approx':
+    #    if dictionary_args['calc_type'] != 'approx':
     #        logger.warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
-    #    in_args['dir_file_name'] = parse_res.use_dir
+    #    dictionary_args['dir_file_name'] = parse_res.use_dir
 
 
     #TODO: Actually, use-chains could apply to several other calculation types. just hasn't been implemented yet.
     #(it already applies to trivial)
-    calc_args['use_chains'] = in_args['use_chains'] = parse_res.use_chains
+    dictionary_args['use_chains'] = dictionary_args['use_chains'] = parse_res.use_chains
 
 
 
     #output arguments:
-    calc_args['print_approx']= parse_res.print_approx
-    calc_args['print_perms'] = parse_res.output_perms
-    in_args['format'] = parse_res.format
-    in_args['useformat'] = in_args['format'] is not None
-    if not in_args['format']:
+    dictionary_args['print_approx']= parse_res.print_approx
+    dictionary_args['print_perms'] = parse_res.output_perms
+    dictionary_args['format'] = parse_res.format
+    dictionary_args['useformat'] = dictionary_args['format'] is not None
+    if not dictionary_args['format']:
         # get input file extension
-        in_args['format'] = parse_res.input.split(".")[-1]
+        dictionary_args['format'] = parse_res.input.split(".")[-1]
     if parse_res.write_openu:
-        in_args['format'] = "PDB"
+        dictionary_args['format'] = "PDB"
     if parse_res.use_perm:
-        if calc_args['calc_type'] != 'exact':
+        if dictionary_args['calc_type'] != 'exact':
             logger.warning("--use-perm applies only to exact calculation. --use-perm will be ignored")
-        in_args['perm_file_name'] = parse_res.use_perm
+        dictionary_args['perm_file_name'] = parse_res.use_perm
 
 
-    out_args['write_openu'] = parse_res.write_openu
-    out_args['print_norm'] = parse_res.print_norm
-    out_args['print_local'] = calc_args['calc_local'] = parse_res.print_local
+    dictionary_args['write_openu'] = parse_res.write_openu
+    dictionary_args['print_norm'] = parse_res.print_norm
+    dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
-    out_args['perms_csv_name'] = parse_res.output_perms
-
-
+    dictionary_args['perms_csv_name'] = parse_res.output_perms
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    #_check_arguments(in_args, calc_args, out_args)
-
-    return in_args, calc_args, out_args
+    return dictionary_args
 
 
 def get_split_arguments(args):
@@ -291,5 +273,5 @@ def get_split_arguments(args):
     """
     parser = _create_parser()
     parsed_args = parser.parse_args(args)
-    in_args, calc_args, out_args = _process_split_arguments(parsed_args)
-    return in_args, calc_args, out_args
+    dictionary_args = _process_arguments(parsed_args)
+    return dictionary_args

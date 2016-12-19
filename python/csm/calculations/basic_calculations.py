@@ -139,6 +139,50 @@ def compute_local_csm(molecule, perm, dir, op_type, op_order):
     return local_csm
 
 
+def check_perm_cycles(perm, op_order, op_type):
+    checked=[False]*len(perm)
+    num_invalid=0
+    truecount=0
+    falsecount=0
+
+    cycle_counts={}
+
+
+    for i, index in enumerate(perm):
+        if checked[i]:
+            continue
+        checked[i]=True
+        cycle_len = 1
+        while not checked[index]:
+            checked[index] = True
+            index = perm[index]
+            cycle_len += 1
+
+        if cycle_len in cycle_counts:
+            cycle_counts[cycle_len]+=1
+        else:
+            cycle_counts[cycle_len]=1
+
+        if cycle_len == 1 or cycle_len == op_order or (cycle_len == 2 and op_type == 'SN'):
+            truecount += 1
+        else:
+            num_invalid += cycle_len
+            falsecount+=1
+
+
+    return falsecount, num_invalid, cycle_counts
+
+
+
+
+
+
+def check_perm_equivalence(mol, perm):
+    for origin, destination in enumerate(perm):
+        if destination not in mol.atoms[origin].equivalency:
+            return False
+    return True
+
 def check_perm_structure(mol, perm):
     if len(mol.bondset)==0:
         raise ValueError("Molecule does not have any bond information")

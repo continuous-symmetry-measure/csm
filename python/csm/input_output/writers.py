@@ -3,7 +3,7 @@ __author__ = 'YAEL'
 import openbabel
 from openbabel import OBConversion
 import math
-from csm.calculations.basic_calculations import check_perm_structure
+from csm.calculations.basic_calculations import check_perm_structure, check_perm_cycles
 
 def non_negative_zero(number):
     if math.fabs(number)<0.00001:
@@ -11,20 +11,20 @@ def non_negative_zero(number):
     else:
         return number
 
-def print_results(result, in_args, calc_args, out_args):
+def print_results(result, dictionary_args):
     """
     Prints the CSM calculation results
     :param result: The result of the CSM calculation (a CSMState)
-    :param in_args: Input arguments to CSM
-    :param calc_args: Calculation arguments to CSM
-    :param out_args: Output arguments to CSM
+    :param dictionary_args: Input arguments to CSM
+    :param dictionary_args: Calculation arguments to CSM
+    :param dictionary_args: Output arguments to CSM
     """
 
-    if calc_args['calc_type']=='just_perms':
+    if dictionary_args['calc_type']== 'just_perms':
         print("NUMBER OF PERMUTATIONS: %5.4g" % result)
         return
-    with open(out_args['out_file_name'], 'w', encoding='utf-8') as f:
-        f.write("%s: %.4lf\n" % (calc_args['op_name'], abs(result.csm)))
+    with open(dictionary_args['out_file_name'], 'w', encoding='utf-8') as f:
+        f.write("%s: %.4lf\n" % (dictionary_args['op_name'], abs(result.csm)))
         f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(result.d_min))
 
         # print CSM, initial molecule, resulting structure and direction according to format specified
@@ -32,18 +32,29 @@ def print_results(result, in_args, calc_args, out_args):
             percent_structure = check_perm_structure(result.molecule, result.perm)
             print("The permutation found maintains",
               str(round(percent_structure * 100, 2)) + "% of the original molecule's structure\n")
+
         except ValueError:
             print("The input molecule does not have bond information and therefore conservation of structure cannot be measured")
-        if in_args['format'].lower() == "csm":
-            print_output_csm(f, result, calc_args)
+
+        falsecount, num_invalid, cycle_counts = check_perm_cycles(result.perm, dictionary_args['op_order'], dictionary_args['op_type'])
+        if falsecount > 0 or dictionary_args['hungarian']:
+            print("The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" %(falsecount, "cycle" if falsecount==1 else "cycles", 100*(len(result.molecule)-num_invalid) /len(result.molecule) ))
+            for cycle_len in sorted(cycle_counts):
+                valid= cycle_len==1 or cycle_len==dictionary_args['op_order'] or (cycle_len==2 and dictionary_args['op_type']=='SN')
+                count=cycle_counts[cycle_len]
+                print("There %s %d %s %s of length %d" % ("is" if count==1 else "are", count, "invalid" if not valid else "", "cycle" if count==1 else "cycles", cycle_len))
+
+
+        if dictionary_args['format'].lower() == "csm":
+            print_output_csm(f, result, dictionary_args)
         else:
-            print_output_ob(f, result, in_args, calc_args, out_args)
+            print_output_ob(f, result, dictionary_args, dictionary_args, dictionary_args)
 
 
 
         # print norm
 
-        if out_args['print_norm']:
+        if dictionary_args['print_norm']:
             print("NORMALIZATION FACTOR: %7lf" % non_negative_zero(result.molecule.norm_factor))
             print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % non_negative_zero(result.d_min))
             print("DIRECTIONAL COSINES: %lf %lf %lf" % (non_negative_zero(result.dir[0]),
@@ -53,7 +64,7 @@ def print_results(result, in_args, calc_args, out_args):
 
         # print local CSM
 
-        if out_args['print_local']:
+        if dictionary_args['print_local']:
             sum = 0
             f.write("\nLocal CSM: \n")
             size = len(result.molecule.atoms)
@@ -63,7 +74,7 @@ def print_results(result, in_args, calc_args, out_args):
             f.write("\nsum: %7lf\n" % sum)
 
         # print chirality
-        if calc_args['op_type'] == 'CH':
+        if dictionary_args['op_type'] == 'CH':
             if result.op_type == 'CS':
                 f.write("\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n")
             else:

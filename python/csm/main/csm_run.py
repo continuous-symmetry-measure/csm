@@ -20,12 +20,12 @@ def run(args=[]):
     csv_file = None
     try:
         # Read inputs
-        in_args, calc_args, out_args = get_split_arguments(args)
-        calc_args['molecule'], calc_args['perm'], calc_args['dirs'] = read_inputs(**in_args)
+        dictionary_args = get_split_arguments(args)
+        dictionary_args['molecule'], dictionary_args['perm'], dictionary_args['dirs'] = read_inputs(**dictionary_args)
 
         # Outputing permutations
-        if out_args['perms_csv_name']:
-            csv_file = open(out_args['perms_csv_name'], 'w')
+        if dictionary_args['perms_csv_name']:
+            csv_file = open(dictionary_args['perms_csv_name'], 'w')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
             perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
             exact_calculations.csm_state_tracer_func = lambda state: perm_writer.writerow([[p + 1 for p in state.perm],
@@ -33,17 +33,17 @@ def run(args=[]):
                                                                                            state.csm, ])
 
         # run actual calculation
-        if calc_args['calc_type'] == 'approx':
-            result = approx_calculation(**calc_args)
-        elif calc_args['calc_type'] == 'just_perms':
-            result = perm_count(**calc_args)
-        elif calc_args['calc_type'] == 'trivial':
-            result = trivial_calculation(**calc_args)
+        if dictionary_args['calc_type'] == 'approx':
+            result = approx_calculation(**dictionary_args)
+        elif dictionary_args['calc_type'] == 'just_perms':
+            result = perm_count(**dictionary_args)
+        elif dictionary_args['calc_type'] == 'trivial':
+            result = trivial_calculation(**dictionary_args)
         else:
-            result = exact_calculation(**calc_args)
+            result = exact_calculation(**dictionary_args)
 
 
-        print_results(result, in_args, calc_args, out_args)
+        print_results(result, dictionary_args)
         return result
 
     except:

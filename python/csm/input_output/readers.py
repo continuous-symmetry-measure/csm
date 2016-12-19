@@ -1,16 +1,15 @@
 from csm.molecule.molecule import Molecule
-from csm.calculations.basic_calculations import check_perm_structure
+from csm.calculations.basic_calculations import check_perm_structure, check_perm_equivalence, check_perm_cycles
 import logging
 logger = logging.getLogger(__name__)
 
 
-def check_perm_equivalence(mol, perm):
-    for origin, destination in enumerate(perm):
-        if destination not in mol.atoms[origin].equivalency:
-            return False
-    return True
 
-def check_perm_validity(mol, perm):
+
+def check_perm_validity(mol, perm, **kwargs):
+    falsecount, num_invalid, cycle_counts= check_perm_cycles(perm, kwargs['op_order'], kwargs['op_type'])
+    if falsecount>0:
+        logger.warning("Permutation does not maintain cycle structure")
     if not check_perm_equivalence(mol, perm):
         logger.warning("Permutation contains switches between non-equivalent atoms")
     try:
@@ -36,7 +35,7 @@ def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
         if len(perm) != len(molecule.atoms):
             raise ValueError("Invalid permutation - permutation is of size %d but molecule has %d atoms" %
                              (len(perm), len(molecule.atoms)))
-        check_perm_validity(molecule, perm)
+        check_perm_validity(molecule, perm, **kwargs)
 
     else:
         perm = None
