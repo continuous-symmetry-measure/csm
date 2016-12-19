@@ -7,72 +7,113 @@ ITYPE=np.int
 DTYPE=np.float64
 
 class ConstraintsBase:
+    '''
+    this is the class that defines the functiosn expected to be present in any implementation of a constraints data structure,
+    based on how the constraints are used in both the ConstraintPermuter and the ConstraintPropagator. If the decision is
+    made to change something in the interface here, changes would need to be made in those classes accordingly.
+
+    Comments explaining each function are also located here, rather than recopying them in each implementation
+    '''
     def __init__(self, molecule, for_copy=False):
         raise NotImplementedError
 
     def _create_constraints(self, molecule):
+        '''
+        a function, generally called from __init__ if for_copy is false, that creates the intitial set of constraints
+        from a molecule
+        :param molecule:
+        :return: None
+        '''
         raise NotImplementedError
 
     def copy(self):
         '''
+        this function is called by the code in ConstraintPermuter and used for recursivity. That is why copying by value,
+        not reference, is crucial-- the alternative is things breaking in the recursivity and nonsense return values
         :return: a copy of the Constraints. entirely by value- must not contain any copying by reference.
         '''
         raise NotImplementedError
 
     def set_constraint(self, index, constraints):
         '''
-        sets a given index to have the constraints given and only those
+        sets a given index to have the constraints given and only those. this is called in ConstraintPropagator by two
+        functions: handle_cycles and keep_structure
         :param index:
         :param constraints: an array of indices that are permitted values for the index
-        :return:
+        :return: None
         '''
         raise NotImplementedError
 
     def remove_constraint_from_all(self, constraint):
         '''
-        remove a specific constraint as a permitted value from every index in constraints
+        remove a specific constraint as a permitted value from every index in constraints.
+        called twice by ConstraintPropagator-- once to remove the destination as an option for anyone, and once in
+        handle_cycles
         :param constraint:
-        :return:
+        :return: None
         '''
         raise NotImplementedError
 
     def remove_constraint_from_index(self, index, constraint):
         '''
-        remove a specific constraint from a specific index
+        remove a specific constraint from a specific index. used by remove_constraint_from_all,
+        also used in ConstraintPropagator handle_cycles
         :param index:
         :param constraint:
-        :return:
+        :return: None
         '''
         raise NotImplementedError
 
     def remove_index(self, index):
         '''
-        "removing" an index from constraints means ensuring the index is inaccessible to the function choose
+        "removing" an index from constraints means ensuring the index is inaccessible to the function choose.
+        if not correctly implemented, choose may end up picking the same empty set of constraints over and over, creating
+        an infinite loop...
+        it is called once by ConstraintPropagator.
         :param index:
-        :return:
+        :return: None
         '''
         raise NotImplementedError
 
     def check(self):
         '''
         check ascertains whether a given set of constraints represents a dead end on the permutation tree
-        :return:
+        when check returns true, the recursivity in the permuter advances another step inwards. hence, an incorrectly
+        implemented check can create infinite loops or other unpleasantness
+        :return: False if constraints have reached a dead end, True otherwise
         '''
         raise NotImplementedError
 
 
     def __getitem__(self, item):
-        '''returns atom at index, and its options as an array'''
+        '''
+        used by keep_structure in ConstraintPropagator, and in internal uses by the various constraint implementations
+        I am fairly sure this can be a return by reference, not value-- it is used for for loops.
+        :param item: index for which atom to look up constraints for
+        :return: returns atom's constraints as an array
+        '''
         raise NotImplementedError
 
     def choose(self):
-        '''chooses the "best" atom and its options as an array'''
+        '''
+        called by ConstraintPermuter
+        chooses the "best" atom (generally defined as the one with the least options) and its options as an array
+        if there are no atoms left, it returns None, None.
+        A check against None, None is used as a stop condition in ConstraintPermuter's recursion-- it should mean a
+        complete permutation has been built
+        :return: (atom index, options for that atom as array) OR None, None
+        '''
         raise NotImplementedError
 
 
 class IndexConstraints(ConstraintsBase):
     '''
-    A class that uses a numpy array of size NxN (N= len(molecule)) to store constraints
+    A class that uses a numpy array of size NxN (N= len(molecule)), filled with zeros or ones, to store constraints.
+    if constraints[i][j]==1, index i is allowed to permute to index j. similarly constraints[i][j]==0 means i cannot permute to j.
+    Additionally, a python list of "allowed_indices" is maintained. Only indices in this ist are allowed to be chosen by
+    the function choose.
+
+    Currently approximately 4x slower than DictionaryConstraints on molecules tested
     '''
     def __init__(self, molecule, for_copy=False):
         if not for_copy:
@@ -83,7 +124,6 @@ class IndexConstraints(ConstraintsBase):
         self.constraints=np.zeros((len(molecule), len(molecule)), dtype='int')
         self.allowed_indices=[i for i in range(len(molecule))]
         for index, atom in enumerate(molecule.atoms):
-            debug=0
             for allowed_index in atom.equivalency:
                 self.constraints[index][allowed_index]=1
 
@@ -95,18 +135,16 @@ class IndexConstraints(ConstraintsBase):
         return ic
 
     def set_constraint(self, index, constraints):
-        self.constraints[index]=np.zeros(self.len)
+        self.constraints[index]=np.zeros(self.len) #erase whatever was previously in the row
         for allowed in constraints:
-            self.constraints[index][allowed]=1
+            self.constraints[index][allowed]=1 #copy in the new constraints
 
     def remove_constraint_from_all(self, constraint):
         for index in self.allowed_indices:
             self.remove_constraint_from_index(index, constraint)
-        self.choose() #debug
 
     def remove_constraint_from_index(self, index, constraint):
         self.constraints[index][constraint]=0
-        debug=None
 
     def remove_index(self, index):
         try:
@@ -116,11 +154,14 @@ class IndexConstraints(ConstraintsBase):
 
     def check(self):
         for index in self.allowed_indices:
-            if np.sum(self.constraints[index])==0:
+            if np.sum(self.constraints[index])==0: #a row of zeroes only
                 return False
         return True
 
     def __getitem__(self, item):
+        return [i for i, val in enumerate(self.constraints[item]) if val==1]
+
+        #unreachable: more verbose code saying the same thing, also a tiny bit slower
         vals=self.constraints[item]
         constraints=[]
         for i in range(len(vals)):
@@ -131,14 +172,11 @@ class IndexConstraints(ConstraintsBase):
     def choose(self):
         if len(self.allowed_indices)<1:
             return None, None
-        sums= [np.sum(self.constraints[i]) for i in self.allowed_indices]
-        pre_index=np.argmin(sums)
-        min_index=self.allowed_indices[pre_index]
+        sums= [np.sum(self.constraints[i]) for i in self.allowed_indices] #for each allowed index, count the ones- allowed indexes
+        pre_index=np.argmin(sums) #find smallest amount of ones. pre_index is position within allowed_indices, not the actual index
+        min_index=self.allowed_indices[pre_index] #get the actual index
 
-        return min_index, [i for i, val in enumerate(self.constraints[min_index]) if val==1]
-
-
-
+        return min_index, self[min_index]
 
 
 class DictionaryConstraints(ConstraintsBase):
@@ -317,8 +355,8 @@ class ConstraintPermuter:
         pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
         #pip = PythonPIP(self.molecule, self.op_order, self.op_type)
         #step 2: create initial set of constraints
-        constraints=DictionaryConstraints(self.molecule)
-        #constraints=IndexConstraints(self.molecule)
+        #constraints=DictionaryConstraints(self.molecule)
+        constraints=IndexConstraints(self.molecule)
         #step 3: call recursive permute
         for pip in self._permute(pip, constraints):
             self.count+=1
