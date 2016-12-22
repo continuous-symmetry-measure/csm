@@ -1,6 +1,8 @@
 import numpy as np
 from csm.fast import PreCalcPIP
 
+from csm.calculations.constants import MAXDOUBLE
+
 __author__ = 'Devora'
 
 ITYPE=np.int
@@ -96,6 +98,7 @@ class ConstraintsBase:
 
     def choose(self):
         '''
+        MUST return a copy by value, NOT by reference
         called by ConstraintPermuter
         chooses the "best" atom (generally defined as the one with the least options) and its options as an array
         if there are no atoms left, it returns None, None.
@@ -208,7 +211,7 @@ class DictionaryConstraints(ConstraintsBase):
         try:
             if constraint in self.constraints[index]:
                 self.constraints[index].remove(constraint)
-        except KeyError:
+        except KeyError: #the index has already been removed-- this happens, although I am not clear on when
             pass
 
     def remove_index(self, index):
@@ -224,19 +227,17 @@ class DictionaryConstraints(ConstraintsBase):
         return self.constraints[item]
 
     def choose(self):
-        keys = []
-        lengths = []
+        minkey=-1
+        minlen=MAXDOUBLE
         for key in self.constraints:
-            keys.append(key)
-            lengths.append(len(self.constraints[key]))
-
-        if lengths:
-            index = np.argmin(lengths)
-            key = keys[index]
-            return key, list(self.constraints[key])
-
-        return None, None
-
+            length=len(self[key])
+            if length< minlen:
+                minlen=length
+                minkey=key
+        try:
+            return minkey, list(self[minkey])
+        except KeyError:
+            return None, None
 
 
 
@@ -355,8 +356,8 @@ class ConstraintPermuter:
         pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
         #pip = PythonPIP(self.molecule, self.op_order, self.op_type)
         #step 2: create initial set of constraints
-        #constraints=DictionaryConstraints(self.molecule)
-        constraints=IndexConstraints(self.molecule)
+        constraints=DictionaryConstraints(self.molecule)
+        #constraints=IndexConstraints(self.molecule)
         #step 3: call recursive permute
         for pip in self._permute(pip, constraints):
             self.count+=1
