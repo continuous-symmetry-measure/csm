@@ -2,6 +2,8 @@ import sys
 import json
 import math
 import os
+import warnings
+
 from csm.main.csm_run import run
 from csm.molecule.molecule import Molecule
 
@@ -34,7 +36,7 @@ def check(result, exp, equiv, test_folder, symm):
 
         #csm:
         if not close_enough(expected.csm, result.csm):
-            raise TestFailedException
+            raise TestFailedException("Mismatching CSMs")
 
         #perm:
         mystr = "IDENTICAL"
@@ -54,10 +56,10 @@ def check(result, exp, equiv, test_folder, symm):
                 if not close_enough(val1, val2):
                     atom_pos_not_match.append((str(i), index, val1, val2))
         if atom_pos_not_match:
-            raise TestFailedException
+            warnings.warn("Mismatching symmetric structure")
 
-        if not close_enough(result.yaffa_csm, result.csm):
-            raise YaffaError
+        if not close_enough(result.formula_csm, result.csm):
+            raise YaffaError("Yaffa CSM: %f, calculated CSM: %d" % (result.formula_csm, result.csm))
 
     finally:
             with open(os.path.join(test_folder, 'passed'), 'a') as f:
@@ -79,11 +81,14 @@ def run_test(test_folder):
 
 
 
-    molecule_folder =os.path.join(test_folder, 'molecules')
+    molecule_folder = os.path.join(test_folder, 'molecules')
+    if not os.path.isdir(molecule_folder):
+        warnings.warn("No molecule folder for test %s" % test_folder)
+        return
 
     for key in input_dict['runs']:
         args=input_dict['runs'][key]
-        args[2]=os.path.join(r'D:\UserData\devora\Sources\csm\python\tests','whocares.out')
+        args[2] = os.devnull  # Output not going anywhere, we don't need it
         with open(os.path.join(test_folder, 'passed'), 'a') as f:
             f.write("\ntest: " + str(key))
 
