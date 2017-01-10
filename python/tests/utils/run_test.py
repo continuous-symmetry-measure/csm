@@ -100,7 +100,7 @@ def run_test(test_folder):
                 with open(os.path.join(test_output_folder, 'passed.out'), 'a') as f:
                     f.write("\n\tmolecule:" + str(mol_index))
                 expected=output_dict[key][mol_index]
-                check(result, expected, input_dict['equiv_perms'], test_folder_output, args[0])
+                check(result, expected, input_dict['equiv_perms'], test_output_folder, args[0])
 
             except TestFailedException:
                 print("FAILED:", key, mol_index)
