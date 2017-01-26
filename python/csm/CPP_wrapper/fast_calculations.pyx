@@ -73,6 +73,7 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     cdef int i, j
     cdef double min_dist
     cdef int minarg
+    cdef double diff, abs_diff
 
     print("calculate_dir called with iz_zero_angle ", is_zero_angle, " op_order ", op_order)
     print("lambdas: ", lambdas[0], lambdas[1], lambdas[2])
@@ -83,15 +84,15 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     print(m.buf[2][0], m.buf[2][1], m.buf[2][2])
     print("m_t_B: ", m_t_B[0], m_t_B[1], m_t_B[2])
 
-    for i in range(3):
-        print("Comparing %.9f and %.9f" % (lambdas.buf[i], lambda_max))
-        print("Difference is %.9f" % fabs(lambdas.buf[i] - lambda_max))
-        print("Below threshold is %s" % (fabs(lambdas.buf[i] - lambda_max) < 1e-6))
+    diff = lambdas.buf[2] - lambda_max
+    abs_diff = fabs(diff)
+    print("Suspected diff is ", diff)
+    print("Absolute diff is ", abs_diff)
+    print("Below threshold is ", abs_diff < 1e-6)
 
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
     if is_zero_angle or op_order == 2:
-        print("Inside then close, is_zero_angle: ", is_zero_angle, ", op_order: ", op_order)
         # If we are in zero theta case, we should pick the direction matching lambda_max
         min_dist = MAXDOUBLE
         minarg = 0
@@ -113,14 +114,14 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
                     break
                 else:
                     dir.buf[i] += m_t_B.buf[j] / (lambdas.buf[j] - lambda_max) * m.buf[j][i]
-                print("i=%d, j=%d" % (i, j))
-                print("dir[i] = %f" % dir.buf[i])
+                #print("i=%d, j=%d" % (i, j))
+                #print("dir[i] = %f" % dir.buf[i])
 
-            print("i=%d, dir[i] = %f" % (i, dir.buf[i]))
+            #print("i=%d, dir[i] = %f" % (i, dir.buf[i]))
             m_max_B += dir.buf[i] * B.buf[i]
 
-    print("Returning direction ", dir[0], dir[1], dir[2])
-    print("Returning m_max_B ", m_max_B)
+    #print("Returning direction ", dir[0], dir[1], dir[2])
+    #print("Returning m_max_B ", m_max_B)
     return dir, m_max_B
 
 
