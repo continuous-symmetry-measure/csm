@@ -158,7 +158,7 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
 
 
     #print("Perm:", str(calc_state.perms.get_perm(1)))
-    log=False
+    log = True
     #if(list(calc_state.perm) ==[6,7,0,1,2,3,4,5]):
     #    log = True
 

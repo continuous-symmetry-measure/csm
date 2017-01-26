@@ -204,8 +204,6 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, 
             print("calculated for", int(permuter.count / 1000000), "million permutations thus far...\t Time:",
                   datetime.now() - start_time)
         csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
-        print("csm: ", csm)
-        print("dir: ", dir)
 
         if csm_state_tracer_func:
             traced_state = traced_state._replace(csm=csm, perm=calc_state.perm, dir=dir)
