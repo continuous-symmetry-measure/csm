@@ -26,17 +26,14 @@ def process_results(results):
     """
     #    calculate symmetric structure
     d_min = 1.0 - (results.csm / 100 * results.op_order / (results.op_order - 1)) #this is the scaling factor
-    print("d_min is ", d_min)
     symmetric_structure = create_symmetric_structure(results.molecule, results.perm, results.dir, results.op_type,
                                                      results.op_order)
-    print("symmetric_structure", symmetric_structure)
 
     #save the normalized coords before we denormalize
     results = results._replace(normalized_molecule_coords=np.array(results.molecule.Q), normalized_symmetric_structure=symmetric_structure)
 
     #save denormalized results
     symmetric_structure = de_normalize_coords(symmetric_structure, results.molecule.norm_factor)
-    print("Denormalized symmetric_structure", symmetric_structure)
     results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
     results.molecule.de_normalize()
 
@@ -91,7 +88,7 @@ def create_rotation_matrix(iOp, op_type, op_order, dir):
 
 
 def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
-    #logger.debug('create_symmetric_structure called')
+    print('create_symmetric_structure called')
 
     cur_perm = np.arange(len(perm))  # array of ints...
     size = len(perm)
@@ -105,8 +102,8 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
     for i in range(1, op_order):
         # get rotation
         rotation_matrix = create_rotation_matrix(i, op_type, op_order, dir)
-     #   logger.debug("Rotation matrix:\n")
-     #   logger.debug(rotation_matrix)
+        print("Rotation matrix:\n")
+        print(rotation_matrix)
         # rotated_positions = m_pos @ rotation_matrix
 
         # set permutation
@@ -115,6 +112,7 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
         # add correct permuted rotation to atom in outAtoms
         for j in range(len(symmetric)):
             symmetric[j] += rotation_matrix @ m_pos[cur_perm[j]]
+        print("Symmetric: ", symmetric)
 
     # apply normalization:
     symmetric *= normalization
