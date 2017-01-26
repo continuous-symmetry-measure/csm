@@ -26,14 +26,17 @@ def process_results(results):
     """
     #    calculate symmetric structure
     d_min = 1.0 - (results.csm / 100 * results.op_order / (results.op_order - 1)) #this is the scaling factor
+    print("d_min is ", d_min)
     symmetric_structure = create_symmetric_structure(results.molecule, results.perm, results.dir, results.op_type,
                                                      results.op_order)
+    print("symmetric_structure", symmetric_structure)
 
     #save the normalized coords before we denormalize
     results = results._replace(normalized_molecule_coords=np.array(results.molecule.Q), normalized_symmetric_structure=symmetric_structure)
 
     #save denormalized results
     symmetric_structure = de_normalize_coords(symmetric_structure, results.molecule.norm_factor)
+    print("Denormalized symmetric_structure", symmetric_structure)
     results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
     results.molecule.de_normalize()
 
