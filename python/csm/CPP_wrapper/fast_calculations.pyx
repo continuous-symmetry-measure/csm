@@ -74,6 +74,14 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     cdef double min_dist
     cdef int minarg
 
+    print("calculate_dir called with iz_zero_angle ", is_zero_angle, " op_order ", op_order)
+    print("lambdas: ", lambdas[0], lambdas[1], lambdas[2])
+    print("lambda_max: ", lambda_max)
+    print("m: ")
+    print(m.buf[0][0], m.buf[0][1], m.buf[0][2])
+    print(m.buf[1][0], m.buf[1][1], m.buf[1][2])
+    print(m.buf[2][0], m.buf[2][1], m.buf[2][2])
+
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
     if is_zero_angle or op_order == 2:
