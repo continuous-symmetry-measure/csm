@@ -1,6 +1,16 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.13.5
+------------------------
+Compared floating point numbers a little less maticulously, fixing a bug on older compilers. 
+
+Changes in version 0.13.4
+------------------------
+Fix a bug that caused the exact calculation to skip some permutations.
+
+Improve the permuter speed, speeding up the exact calculation by a factor of 2.
+
 Changes in version 0.13.2
 ------------------------
 Normalization factor flags have been changed to the numbers 0-6, in order to make typing them in less onerous. 
