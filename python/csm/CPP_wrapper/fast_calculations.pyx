@@ -77,6 +77,7 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
     if is_zero_angle or op_order == 2:
+        print("Inside then close, is_zero_angle: ", is_zero_angle, ", op_order: ", op_order)
         # If we are in zero theta case, we should pick the direction matching lambda_max
         min_dist = MAXDOUBLE
         minarg = 0
@@ -88,6 +89,7 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
         for i in range(3):
             dir.buf[i] = m.buf[minarg][i]
     else:
+        print("Calculating direction")
         for i in range(3):
             dir.buf[i] = 0.0
             for j in range(3):
@@ -97,8 +99,8 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
                     break
                 else:
                     dir.buf[i] += m_t_B.buf[j] / (lambdas.buf[j] - lambda_max) * m.buf[j][i]
-            ###print("i=%d, j=%d" % (i, j))
-            ###print("dir[i] = %f" % dir.buf[i])
+                print("i=%d, j=%d" % (i, j))
+                print("dir[i] = %f" % dir.buf[i])
 
             m_max_B += dir.buf[i] * B.buf[i]
     return dir, m_max_B
@@ -158,7 +160,7 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
 
 
     #print("Perm:", str(calc_state.perms.get_perm(1)))
-    log = True
+    log = False
     #if(list(calc_state.perm) ==[6,7,0,1,2,3,4,5]):
     #    log = True
 
