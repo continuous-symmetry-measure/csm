@@ -68,7 +68,6 @@ def formula_test(result):
 
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
-    print("Creating rotation matrix iOp: %d, op_type: %s, op_order: %d, dir: %s" % (iOp, op_type, op_order, dir))
     is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
     W = np.array([[0.0, -dir[2], dir[1]], [dir[2], 0.0, -dir[0]], [-dir[1], dir[0], 0.0]])
@@ -89,7 +88,7 @@ def create_rotation_matrix(iOp, op_type, op_order, dir):
 
 
 def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
-    print('create_symmetric_structure called')
+    # print('create_symmetric_structure called')
 
     cur_perm = np.arange(len(perm))  # array of ints...
     size = len(perm)
@@ -103,8 +102,8 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
     for i in range(1, op_order):
         # get rotation
         rotation_matrix = create_rotation_matrix(i, op_type, op_order, dir)
-        print("Rotation matrix:\n")
-        print(rotation_matrix)
+        # print("Rotation matrix:\n")
+        # print(rotation_matrix)
         # rotated_positions = m_pos @ rotation_matrix
 
         # set permutation
@@ -113,7 +112,7 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
         # add correct permuted rotation to atom in outAtoms
         for j in range(len(symmetric)):
             symmetric[j] += rotation_matrix @ m_pos[cur_perm[j]]
-        print("Symmetric: ", symmetric)
+        # print("Symmetric: ", symmetric)
 
     # apply normalization:
     symmetric *= normalization
