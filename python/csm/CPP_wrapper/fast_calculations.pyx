@@ -83,6 +83,11 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     print(m.buf[2][0], m.buf[2][1], m.buf[2][2])
     print("m_t_B: ", m_t_B[0], m_t_B[1], m_t_B[2])
 
+    for i in range(3):
+        print("Comparing %.9f and %.9f" % (lambdas.buf[i], lambda_max))
+        print("Difference is %.9f" % fabs(lambdas.buf[i] - lambda_max))
+        print("Below threshold is %s" % (fabs(lambdas.buf[i] - lambda_max) < 1e-6))
+
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
     if is_zero_angle or op_order == 2:
