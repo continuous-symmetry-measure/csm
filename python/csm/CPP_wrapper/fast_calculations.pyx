@@ -73,22 +73,6 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     cdef int i, j
     cdef double min_dist
     cdef int minarg
-    cdef double diff, abs_diff
-
-    print("calculate_dir called with iz_zero_angle ", is_zero_angle, " op_order ", op_order)
-    print("lambdas: ", lambdas[0], lambdas[1], lambdas[2])
-    print("lambda_max: ", lambda_max)
-    print("m: ")
-    print(m.buf[0][0], m.buf[0][1], m.buf[0][2])
-    print(m.buf[1][0], m.buf[1][1], m.buf[1][2])
-    print(m.buf[2][0], m.buf[2][1], m.buf[2][2])
-    print("m_t_B: ", m_t_B[0], m_t_B[1], m_t_B[2])
-
-    diff = lambdas.buf[2] - lambda_max
-    abs_diff = fabs(diff)
-    print("Suspected diff is ", diff)
-    print("Absolute diff is ", abs_diff)
-    print("Below threshold is ", abs_diff < 1e-6)
 
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
@@ -104,12 +88,12 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
         for i in range(3):
             dir.buf[i] = m.buf[minarg][i]
     else:
-        print("Calculating direction")
+        # print("Calculating direction")
         for i in range(3):
             dir.buf[i] = 0.0
             for j in range(3):
                 # error safety
-                if fabs(lambdas.buf[j] - lambda_max) < 1e-6:
+                if fabs(lambdas.buf[j] - lambda_max) < 1e-5:
                     dir.buf[i] = m.buf[j][i]
                     break
                 else:
