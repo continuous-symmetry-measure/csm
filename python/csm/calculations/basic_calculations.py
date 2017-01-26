@@ -68,6 +68,7 @@ def formula_test(result):
 
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
+    print("Creating rotation matrix iOp: %d, op_type: %s, op_order: %d, dir: %s" % (iOp, op_type, op_order, dir))
     is_improper = op_type != 'CN'
     is_zero_angle = op_type == 'CS'
     W = np.array([[0.0, -dir[2], dir[1]], [dir[2], 0.0, -dir[0]], [-dir[1], dir[0], 0.0]])
