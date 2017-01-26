@@ -81,6 +81,7 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     print(m.buf[0][0], m.buf[0][1], m.buf[0][2])
     print(m.buf[1][0], m.buf[1][1], m.buf[1][2])
     print(m.buf[2][0], m.buf[2][1], m.buf[2][2])
+    print("m_t_B: ", m_t_B[0], m_t_B[1], m_t_B[2])
 
     # dir is calculated below according to formula (14) in the paper.
     # in the paper dir is called 'm_max'
@@ -110,7 +111,11 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
                 print("i=%d, j=%d" % (i, j))
                 print("dir[i] = %f" % dir.buf[i])
 
+            print("i=%d, dir[i] = %f" % (i, dir.buf[i]))
             m_max_B += dir.buf[i] * B.buf[i]
+
+    print("Returning direction ", dir[0], dir[1], dir[2])
+    print("Returning m_max_B ", m_max_B)
     return dir, m_max_B
 
 
