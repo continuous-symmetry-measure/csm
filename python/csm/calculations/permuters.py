@@ -6,6 +6,8 @@ __author__ = 'Devora'
 ITYPE=np.int
 DTYPE=np.float64
 
+print_branches = False
+
 class ConstraintsBase:
     '''
     this is the class that defines the functiosn expected to be present in any implementation of a constraints data structure,
@@ -115,82 +117,10 @@ class ConstraintsBase:
         """
         raise NotImplementedError
 
-class IndexConstraints(ConstraintsBase):
-    '''
-    A class that uses a numpy array of size NxN (N= len(molecule)), filled with zeros or ones, to store constraints.
-    if constraints[i][j]==1, index i is allowed to permute to index j. similarly constraints[i][j]==0 means i cannot permute to j.
-    Additionally, a python list of "allowed_indices" is maintained. Only indices in this ist are allowed to be chosen by
-    the function choose.
-
-    Currently approximately 4x slower than DictionaryConstraints on molecules tested
-    '''
-    def __init__(self, molecule, for_copy=False):
-        if not for_copy:
-            self._create_constraints(molecule)
-
-    def _create_constraints(self, molecule):
-        self.len = len(molecule)
-        self.constraints=np.zeros((len(molecule), len(molecule)), dtype='int')
-        self.allowed_indices=[i for i in range(len(molecule))]
-        for index, atom in enumerate(molecule.atoms):
-            for allowed_index in atom.equivalency:
-                self.constraints[index][allowed_index]=1
-
-    def copy(self):
-        ic=IndexConstraints(None, True)
-        ic.constraints=np.array([np.array(self.constraints[i]) for i in range(self.len)])
-        ic.allowed_indices=[x for x in self.allowed_indices]
-        ic.len=self.len
-        return ic
-
-    def set_constraint(self, index, constraints):
-        self.constraints[index]=np.zeros(self.len) #erase whatever was previously in the row
-        for allowed in constraints:
-            self.constraints[index][allowed]=1 #copy in the new constraints
-
-    def remove_constraint_from_all(self, constraint):
-        for index in self.allowed_indices:
-            self.remove_constraint_from_index(index, constraint)
-
-    def remove_constraint_from_index(self, index, constraint):
-        self.constraints[index][constraint]=0
-
-    def remove_index(self, index):
-        try:
-            self.allowed_indices.remove(index)
-        except:
-            pass
-
-    def check(self):
-        for index in self.allowed_indices:
-            if np.sum(self.constraints[index])==0: #a row of zeroes only
-                return False
-        return True
-
-    def __getitem__(self, item):
-        return [i for i, val in enumerate(self.constraints[item]) if val==1]
-
-        #unreachable: more verbose code saying the same thing, also a tiny bit slower
-        vals=self.constraints[item]
-        constraints=[]
-        for i in range(len(vals)):
-            if vals[i]==1:
-                constraints.append(i)
-        return constraints
-
-    def choose(self):
-        if len(self.allowed_indices)<1:
-            return None, None
-        sums= [np.sum(self.constraints[i]) for i in self.allowed_indices] #for each allowed index, count the ones- allowed indexes
-        pre_index=np.argmin(sums) #find smallest amount of ones. pre_index is position within allowed_indices, not the actual index
-        min_index=self.allowed_indices[pre_index] #get the actual index
-
-        return min_index, self[min_index]
-
 
 class DictionaryConstraints(ConstraintsBase):
     def __init__(self, molecule, for_copy=False):
-        self.constraints={}
+        self.constraints = {}
         if not for_copy:
             self._create_constraints(molecule)
         self.undo = []
@@ -306,7 +236,6 @@ class ConstraintPropagator:
 
     def propagate(self, constraints, pip, origin, destination, cycle_length, cycle_head, cycle_tail, keep_structure):
         # This is the function which handles the logic of which additional constraints get added after a placement
-        # depropagating, for now, is handled by copying old constraints
         # the logic of constraints after a placement:
 
         # 1: handle cycles
@@ -369,12 +298,8 @@ class ConstraintPropagator:
         #2.
 
 
-
-
-
-
 class ConstraintPermuter:
-    def __init__(self, molecule, op_order, op_type, keep_structure, *args, **kwargs):
+    def __init__(self, molecule, op_order, op_type, keep_structure):
         self.molecule=molecule
         self.op_order=op_order
         self.op_type=op_type
@@ -426,7 +351,8 @@ class ConstraintPermuter:
         # for each option (opt)
         else:
             for destination in options:
-                #print((atom, destination))
+                # Try atom->destination
+
                 # save current constraints
                 constraints.mark_checkpoint()
                 # propagate changes in constraints
@@ -435,6 +361,9 @@ class ConstraintPermuter:
                 if constraints.check():
                     self.truecount+=1
                     # make the change to pip
+                    if print_branches:
+                        print("%d ==> %d" % (atom, destination))
+
                     pip.switch(atom, destination)
                     #if completed cycle, close in pip, and save old state
                     if cycle_head==cycle_tail:
@@ -450,9 +379,12 @@ class ConstraintPermuter:
 
                     #undo the change to
                     pip.unswitch(atom, destination)
+                    if print_branches:
+                        print("Undo %d ==> %d" % (atom, destination))
                 else:
-                    #print("DEADEND")
-                    self.falsecount+=1
+                    if print_branches:
+                        print("DEAD END")
+                    self.falsecount += 1
                 constraints.backtrack_checkpoint()
 
 

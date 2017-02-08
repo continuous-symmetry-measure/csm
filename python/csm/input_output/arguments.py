@@ -3,6 +3,9 @@ Parse the CSM command line arguments.
 """
 from argparse import ArgumentParser
 import logging
+
+from csm.calculations import permuters
+
 logger = logging.getLogger(__name__)
 import sys
 
@@ -80,11 +83,14 @@ def _create_parser():
     parser.add_argument('--print-norm', action='store_true', default=False,
                         help='Print the normalization factor as well')
     parser.add_argument('--print-local', action='store_true', default=False,
-                    help='Print the local CSM (csm for each atom) in the output file')
+                        help='Print the local CSM (csm for each atom) in the output file')
     parser.add_argument('--output-perms', action='store', default=None,
-                    help='Writes all enumerated permutations to file')
+                        help='Writes all enumerated permutations to file')
+    parser.add_argument('--output-branches', action='store_true', default=False,
+                        help='Writes all backtracking branches to the console')
     parser.add_argument('--print-approx', action='store_true', default=False,
                         help='add some printouts to approx')
+
 
 
 
@@ -243,24 +249,25 @@ def _process_arguments(parse_res):
     #output arguments:
     dictionary_args['print_approx']= parse_res.print_approx
     dictionary_args['print_perms'] = parse_res.output_perms
+    dictionary_args['print_branches'] = parse_res.output_branches
     dictionary_args['format'] = parse_res.format
     dictionary_args['useformat'] = dictionary_args['format'] is not None
     if not dictionary_args['format']:
         # get input file extension
         dictionary_args['format'] = parse_res.input.split(".")[-1]
-    if parse_res.write_openu:
-        dictionary_args['format'] = "PDB"
     if parse_res.use_perm:
         if dictionary_args['calc_type'] != 'exact':
             logger.warning("--use-perm applies only to exact calculation. --use-perm will be ignored")
         dictionary_args['perm_file_name'] = parse_res.use_perm
 
 
-    dictionary_args['write_openu'] = parse_res.write_openu
+    # dictionary_args['write_openu'] = parse_res.write_openu
     dictionary_args['print_norm'] = parse_res.print_norm
     dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
     dictionary_args['perms_csv_name'] = parse_res.output_perms
+
+    permuters.print_branches = parse_res.output_branches
 
 
     return dictionary_args
