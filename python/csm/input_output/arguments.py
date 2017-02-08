@@ -77,8 +77,6 @@ def _create_parser():
 
     #output formatting and printing options
     parser.add_argument('--format', help='Use a specific input/output format')
-    parser.add_argument('--write-openu', action='store_true', default=False,
-                        help='Write output in open university format')
     parser.add_argument('--print-norm', action='store_true', default=False,
                         help='Print the normalization factor as well')
     parser.add_argument('--print-local', action='store_true', default=False,
@@ -94,6 +92,8 @@ def _create_parser():
     #parser.add_argument('--no-limit', action='store_true', default=False, help='Allows running program while ignoring computational complexity')
     #parser.add_argument('--babel-test', action='store_true', default=False, help="Test if the molecule is legal or not")
     #parser.add_argument('--time-only', action='store_true', default=False, help="Only print the time and exit")
+    #parser.add_argument('--write-openu', action='store_true', default=False,
+    #                    help='Write output in open university format')
 
 
     return parser
