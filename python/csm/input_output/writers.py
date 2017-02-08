@@ -100,7 +100,7 @@ def print_output_csm(f, result, calc_args):
 
     f.write("\nINITIAL STRUCTURE COORDINATES\n%i\n\n" % size)
     for i in range(size):
-        f.write("%3s%10lf %10lf %10lf\n" %
+        f.write("%3s%10.5lf %10.5lf %10.5lf\n" %
                 (result.molecule.atoms[i].symbol,
                  non_negative_zero(result.molecule.atoms[i].pos[0]),
                  non_negative_zero(result.molecule.atoms[i].pos[1]),
@@ -117,7 +117,7 @@ def print_output_csm(f, result, calc_args):
     f.write("\nMODEL 02 RESULTING STRUCTURE COORDINATES\n%i\n" % size)
 
     for i in range(size):
-        f.write("%3s%10lf %10lf %10lf\n" %
+        f.write("%3s%10.5lf %10.5lf %10.5lf\n" %
                 (result.molecule.atoms[i].symbol,
                  non_negative_zero(result.symmetric_structure[i][0]),
                  non_negative_zero(result.symmetric_structure[i][1]),
