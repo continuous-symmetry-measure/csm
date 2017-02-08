@@ -209,8 +209,8 @@ def _process_arguments(parse_res):
     dictionary_args['remove_hy'] = parse_res.remove_hy
     dictionary_args['ignore_symm'] = parse_res.ignore_sym
     dictionary_args['use_sequence']= parse_res.use_sequence
-    if parse_res.use_sequence and parse_res.keep_structure:
-        raise ValueError("--keep-structure and --use-sequence are mutually exclusive")
+    #if parse_res.use_sequence and parse_res.keep_structure:
+    #    raise ValueError("--keep-structure and --use-sequence are mutually exclusive")
 
 
     #calculation arguments for exact only:

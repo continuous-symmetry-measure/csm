@@ -452,18 +452,18 @@ class Molecule:
                 return "csm"
             conv = OBConversion()
             if not form:
-                form = conv.FormatFromExt(filename)
+                form = conv.FormatFromExt(in_file_name)
                 if not form:
-                    raise ValueError("Error discovering format from filename " + filename)
+                    raise ValueError("Error discovering format from filename " + in_file_name)
             return form
 
         format = get_format(format)
 
         if use_sequence:
             if format.lower() != 'pdb':
-                print("Use sequence is only relevant for pdb files, and will be ignored")
-            mol = Molecule.create_pdb_molecule(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
-                                               remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
+                raise ValueError("--use-sequence only works with PDB files")
+            mol = Molecule.create_pdb_with_sequence(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
+                                                    remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
             return mol
 
 
@@ -506,8 +506,8 @@ class Molecule:
         return mol
 
     @staticmethod
-    def create_pdb_molecule(filename, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
+    def create_pdb_with_sequence(filename, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
+                                 remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
 
         def read_atom(line, likeness_dict, index):
             record_name=line[0:6]
