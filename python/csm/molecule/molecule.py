@@ -136,8 +136,6 @@ class Molecule:
 
         atoms_group_num = {}
 
-        logger.debug("Breaking molecule into similarity groups")
-
         # break into initial groups by symbol and valency
         for i in range(atoms_size):
             if i in marked:
@@ -362,40 +360,41 @@ class Molecule:
         self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
 
 
+    def display_info(self, display_chains):
+        """
+        Displays information about equivalence classes and chains
+        """
+        lengths = {}
+        for group in self._equivalence_classes:
+            try:
+                lengths[len(group)] += 1
+            except:
+                lengths[len(group)] = 1
+        for key in lengths:
+            print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
 
+        if display_chains:
+            for chain in self.chains:
+                print("Chain %s of length %d" % (chain, len(self.chains[chain])))
+            print("%d group%s of equivalent chains" % (len(self.chain_equivalences), 's' if lengths[key] else ''))
+            for chaingroup in self.chain_equivalences:
+                chainstring = "Group of length " + str(len(chaingroup)) + ":"
+                for index in chaingroup:
+                    chainstring += " "
+                    chainstring += str(self._reversechainkeys[index])
+                print(str(chainstring))
 
     def _complete_initialization(self, remove_hy, ignore_hy, use_chains):
         """
         Finish creating the molecule after reading the raw data
         """
-        def diagnostics():
-            lengths={}
-            for group in self._equivalence_classes:
-                try:
-                    lengths[len(group)]+=1
-                except:
-                    lengths[len(group)]=1
-            for key in lengths:
-                print("%d group%s of length %d" %(lengths[key], 's' if lengths[key] and lengths[key]>1 else '', key))
 
-            if use_chains:
-                for chain in self.chains:
-                    print ("Chain %s of length %d" % (chain, len(self.chains[chain])))
-                print("%d group%s of equivalent chains" % (len(self.chain_equivalences), 's' if lengths[key] else ''))
-                for chaingroup in self.chain_equivalences:
-                    chainstring="Group of length " + str(len(chaingroup))+":"
-                    for index in chaingroup:
-                        chainstring+=" "
-                        chainstring+=str(self._reversechainkeys[index])
-                    print(str(chainstring))
-
-
-        print("Breaking molecule into similarity groups")
+        print("Breaking molecule into equivalence class groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
         #print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._process_chains(use_chains)
         try:
-            diagnostics()
+            self.display_info(use_chains)
         except:
             pass
         self.normalize()
@@ -542,6 +541,7 @@ class Molecule:
             except:
                 pass
 
+        print("Breaking molecule into equivalency class groups based on protein sequence")
         obm = Molecule._obm_from_file(filename, format, babel_bond)
         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
 
@@ -556,6 +556,7 @@ class Molecule:
         set_equivalence_classes(mol, likeness_dict)
         print(len(likeness_dict), "equivalence groups")
         mol._process_chains(use_chains)
+        mol.display_info(use_chains)
         mol.normalize()
 
         return mol

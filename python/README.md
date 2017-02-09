@@ -1,6 +1,10 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.13.7
+------------------------
+* Display equivalence classes when using --use-sequence
+
 Changes in version 0.13.6
 ------------------------
 * Output csm molecule coordinates with 5 decimal places.
