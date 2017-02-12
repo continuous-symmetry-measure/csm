@@ -127,16 +127,28 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2, log=False):
     cdef int i
     cdef int j
 
+    if log:
+        print("get lambda max")
+        print("lambdas", str(lambdas))
+        print("m_t_B_2", str(m_t_B_2))
 
+    if m_t_B_2[0] < ZERO_IM_PART_MAX and m_t_B_2[1] < ZERO_IM_PART_MAX and m_t_B_2[2] < ZERO_IM_PART_MAX:
+        # In case m_t_B_2 is all zeros, we just get the maximum lambda
+        lambda_max = lambdas[0]
+        if lambdas[1] > lambda_max:
+            lambda_max = lambdas[1]
+        if lambdas[2] > lambda_max:
+            lambda_max = lambdas[2]
+
+        if log:
+            print("m_t_B_2 is zero, returning the maximum lambda as is ", str(lambda_max))
+        return lambda_max
 
     build_polynomial(lambdas, m_t_B_2, coeffs)
 
     roots=np.roots(coeffs)
 
     if log:
-        print("get lambda max")
-        print("lambdas", str(lambdas))
-        print("m_t_B_2", str(m_t_B_2))
         print("coeffs")# and rounded")
         for i in range(7):
             print(coeffs[i]) #,"rounded:", rounded_coeffs[i])
