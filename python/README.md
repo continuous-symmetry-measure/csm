@@ -1,6 +1,11 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.13.8
+------------------------
+* When m_t_B_2 is (0,0,0), find the maximum lambda by looking at the lambdas, instead of finding the polynomial
+ coefficients.
+
 Changes in version 0.13.7
 ------------------------
 * Display equivalence classes when using --use-sequence
