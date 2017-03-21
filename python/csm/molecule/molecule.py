@@ -493,13 +493,29 @@ class Molecule:
     @staticmethod
     def _read_pdb_connectivity(filename, mol):
         with open(filename, 'r') as file:
+            # Count ATOM and HETATM lines, mapping them to our ATOM numbers.
+            # In most PDBs ATOM 1 is our atom 0, and ATOM n is our n-1. However, in some cases
+            # there are TER lines in the PDB, ATOMs after the TER are found at n-2 in our list.
+            atom_map = {}
+            cur_atom = 0
+
             for line in file:
+                parts = line.split()
+                try:
+                    index = int(parts[1])
+                except (ValueError, IndexError):
+                    index = None
+
+                if parts[0] in ['ATOM', 'HETATM']:
+                    atom_map[index] = cur_atom
+                    cur_atom += 1
                 if "CONECT" in line:
                     try:
-                        values = line.split()
-                        atom = mol._atoms[int(values[1]) - 1]
-                        adjacent = [int(ind) - 1 for ind in values[2:]]
-                        atom.adjacent = remove_multi_bonds(adjacent)
+                        our_atom_index = atom_map[index]
+                        atom = mol._atoms[our_atom_index]
+                        adjacent = [int(part) for part in parts[2:]]
+                        our_adjacent = [atom_map[a] for a in adjacent]
+                        atom.adjacent = remove_multi_bonds(our_adjacent)
                     except:
                         raise ValueError("There was a problem reading connectivity from the pdb file.")
         return mol
