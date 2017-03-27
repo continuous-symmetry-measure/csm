@@ -509,13 +509,20 @@ class Molecule:
                 if parts[0] in ['ATOM', 'HETATM']:
                     atom_map[index] = cur_atom
                     cur_atom += 1
-                if "CONECT" in line:
+                if line[0:6] == "CONECT":
+                    # CONECT records are described here: http://www.bmsc.washington.edu/CrystaLinks/man/pdb/part_69.html
+                    # After CONECT appears a series of 5 character atom numbers. There are no separating spaces in case
+                    # the atom numbers have five digits, so we need to split the atom numbers differently
                     try:
-                        our_atom_index = atom_map[index]
-                        atom = mol._atoms[our_atom_index]
-                        adjacent = [int(part) for part in parts[2:]]
-                        our_adjacent = [atom_map[a] for a in adjacent]
-                        atom.adjacent = remove_multi_bonds(our_adjacent)
+                        line = line.strip()  # Remove trailing whitespace
+                        first_atom_index = int(line[6:11])
+                        first_atom = mol._atoms[atom_map[first_atom_index]]
+
+                        adjacent = []
+                        for i in range(11, len(line), 5):
+                            adjacent_atom_index = int(line[i:i+5])
+                            adjacent.append(atom_map[adjacent_atom_index])
+                        first_atom.adjacent = remove_multi_bonds(adjacent)
                     except:
                         raise ValueError("There was a problem reading connectivity from the pdb file.")
         return mol
