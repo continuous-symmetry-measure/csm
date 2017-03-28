@@ -1,6 +1,8 @@
 import math
 
 import numpy as np
+
+from csm.calculations.approx.classic import CythonHungarianApproximator, ClassicApproximator
 from csm.calculations.approx.dirs import find_symmetry_directions
 from csm.calculations.basic_calculations import process_results, CSMState
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
@@ -16,9 +18,11 @@ def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False
         dirs = find_symmetry_directions(molecule, use_best_dir, get_orthogonal, detect_outliers, op_type)
 
     if hungarian:
-        approximator = approximate_perm_hungarian
+        approximator_cls = ClassicApproximator
     else:
-        approximator = approximate_perm_classic
+        approximator_cls = CythonHungarianApproximator
+
+    approximator = approximator_cls(op_type, op_order, molecule, dirs, print_approx)
 
     if op_type == 'CH':  # Chirality
         #sn_max = op_order
@@ -28,14 +32,14 @@ def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
-                result = _find_best_perm('SN', op_order, molecule, print_approx, dirs, approximator)
+                result = approximator.find_best_perm()
                 if result.csm < best_result.csm:
                     best_result = result._replace(op_type = 'SN', op_order = op_order)
                 if best_result.csm < MINDOUBLE:
                     break
 
     else:
-        best_result = _find_best_perm(op_type, op_order, molecule, print_approx, dirs, approximator)
+        best_result = approximator.find_best_perm()
 
     best_result = process_results(best_result)
     #TODO: is calc_local supposed to be supported in approx?
