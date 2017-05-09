@@ -75,8 +75,8 @@ def atom_number_factor(coords, symm, original_norm):
     Pk_Qk = 0
     for i in range(len(coords)):
         Pk_Qk += np.linalg.norm(coords[i] - symm[i])
-    norm_factor = len(coords) / original_norm
-    new_csm = Pk_Qk / norm_factor
+    norm_factor = len(coords)
+    new_csm = Pk_Qk / (norm_factor/original_norm)
     return norm_factor, new_csm
 
 
