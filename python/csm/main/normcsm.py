@@ -171,7 +171,8 @@ def normalize_csm(norm_type, result):
         #indeed the CSM increases times 5
         return atom_number_factor(normalized_coords, normalized_symm, original_norm)
 
-    if norm_type == '6':
+    if norm_type == '6': #6 Linear normalization
+        #similar to standard csm but no squaring in numerator/denominator
         numerator = denominator = 0
         for i in range(len(normalized_coords)):
             numerator += np.linalg.norm(normalized_coords[i] - normalized_symm[i])
