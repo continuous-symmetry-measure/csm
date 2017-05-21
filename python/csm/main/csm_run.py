@@ -1,4 +1,5 @@
 import csv
+import json
 import logging
 import sys
 import timeit
@@ -46,7 +47,14 @@ def run(args=[]):
         print_results(result, dictionary_args)
         return result
 
+
     except:
+        if dictionary_args['json_output']:
+            json_dict={
+                "Error":str(sys.exc_info()[1])
+            }
+            with open(dictionary_args['out_file_name'], 'w', encoding='utf-8') as f:
+                json.dump(json_dict, f)
         raise
 
     finally:

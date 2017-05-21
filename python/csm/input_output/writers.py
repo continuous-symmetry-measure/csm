@@ -1,3 +1,5 @@
+import json
+
 __author__ = 'YAEL'
 
 import openbabel
@@ -11,6 +13,30 @@ def non_negative_zero(number):
     else:
         return number
 
+
+def json_results(result, dictionary_args):
+    json_dict={"Result":
+        {
+        #"molecule": result.molecule,
+        "op_order": result.op_order,
+        "op_type": result.op_type,
+        "csm": result.csm,
+
+        "perm": result.perm,
+        "dir": list(result.dir),
+        "d_min": result.d_min,
+        "symmetric_structure": [list(i) for i in result.symmetric_structure],
+        "local_csm": result.local_csm,
+        "perm_count": result.perm_count,
+        "formula_csm": result.formula_csm,
+        "normalized_molecule_coords": [list(i) for i in result.normalized_molecule_coords],
+        "normalized_symmetric_structure": [list(i) for i in result.normalized_symmetric_structure]
+             }
+           }
+    with open(dictionary_args['out_file_name'], 'w', encoding='utf-8') as f:
+        json.dump(json_dict, f)
+
+
 def print_results(result, dictionary_args):
     """
     Prints the CSM calculation results
@@ -19,6 +45,9 @@ def print_results(result, dictionary_args):
     :param dictionary_args: Calculation arguments to CSM
     :param dictionary_args: Output arguments to CSM
     """
+    if dictionary_args['json_output']:
+        json_results(result, dictionary_args)
+        return
 
     if dictionary_args['calc_type']== 'just_perms':
         print("NUMBER OF PERMUTATIONS: %5.4g" % result)
