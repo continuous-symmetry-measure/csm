@@ -48,10 +48,10 @@ def run(args=[]):
         return result
 
 
-    except:
+    except Exception as e:
         if dictionary_args['json_output']:
             json_dict={
-                "Error":str(sys.exc_info()[1])
+                "Error":str(e)
             }
             with open(dictionary_args['out_file_name'], 'w', encoding='utf-8') as f:
                 json.dump(json_dict, f)
