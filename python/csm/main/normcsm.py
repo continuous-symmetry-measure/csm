@@ -71,12 +71,12 @@ def get_norm_by_distance_from_centers(coords, fragments, centers):
     return norm
 
 
-def atom_number_factor(coords, symm, original_norm):
+def atom_number_factor(coords, symm):
     Pk_Qk = 0
     for i in range(len(coords)):
         Pk_Qk += np.linalg.norm(coords[i] - symm[i])
     norm_factor = len(coords)
-    new_csm = Pk_Qk / (norm_factor/original_norm)
+    new_csm = Pk_Qk / norm_factor
     return norm_factor, new_csm
 
 
@@ -106,7 +106,7 @@ def normalize_csm(norm_type, result):
     '''
     original_csm = result.csm
     molecule=result.molecule
-    original_norm = molecule.norm_factor
+    original_norm = molecule.norm_factor ** 2
     normalized_coords = result.normalized_molecule_coords
     normalized_symm = result.normalized_symmetric_structure
 
@@ -169,7 +169,7 @@ def normalize_csm(norm_type, result):
         #note-- atom_number_factor was refactored as a separate equation because
         #it is possible to test its validity by sending 5*coord, 5*symm and seeing that
         #indeed the CSM increases times 5
-        return atom_number_factor(normalized_coords, normalized_symm, original_norm)
+        return atom_number_factor(normalized_coords, normalized_symm)
 
     if norm_type == '6': #6 Linear normalization
         #similar to standard csm but no squaring in numerator/denominator
@@ -177,7 +177,7 @@ def normalize_csm(norm_type, result):
         for i in range(len(normalized_coords)):
             numerator += np.linalg.norm(normalized_coords[i] - normalized_symm[i])
             denominator += np.linalg.norm(normalized_coords[i])  # we assume that the center of mass of the whole molecule is (0,0,0).
-        return denominator * original_norm, numerator / denominator
+        return denominator * np.sqrt(original_norm), numerator / denominator
 
 
 
