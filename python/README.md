@@ -1,6 +1,10 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.14.0
+------------------------
+* fixed several mathematical errors in normalization factors
+
 Changes in version 0.13.9
 ------------------------
 * Properly handle PDBs with TER lines when reading the PDB connectivity
