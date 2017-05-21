@@ -1,5 +1,10 @@
 The Python CSM Package
 ======================
+Changes in version 0.14.1
+------------------------
+added flag --json-output, for use in website, tests, etc. 
+if there was an error, it returns {"Error":"error message"}
+otherwise it returns {"Result":{"csm":csm, "dir":dir, etc...}}
 
 Changes in version 0.14.0
 ------------------------
