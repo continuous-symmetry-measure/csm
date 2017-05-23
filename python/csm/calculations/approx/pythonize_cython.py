@@ -79,100 +79,7 @@ class DistanceMatrix:
         ##print(self.mv_distances.base)
         pass
 
-def cycle_builder(chainperm):
-        """
-        the only thing this function does is build cycles ON THE BASIS OF CHAINPERM
-        if chainperm has invalid cycles, this will return invalid cycles
-        :param chainperm:
-        :return: a cycle in chainperm
-        """
-        chainperm_copy=list(chainperm)
-        ##print("chainperm_copy", chainperm_copy)
 
-        def recursive_cycle_builder(chain_head, index, cycle):
-            ##print(chain_head, index, cycle)
-            cycle.append(index)
-            chainperm_copy[index]=-1
-            if chainperm[index]==chain_head:
-                ##print("yielding cycle", cycle)
-                yield cycle
-                cycle=[]
-            else:
-                yield from recursive_cycle_builder(chain_head,chainperm[index], cycle)
-
-        for i, val in enumerate(chainperm_copy):
-            ##print("I,val", i,val)
-            if val==-1:
-                continue
-            chainperm_copy[i]=-1
-            ##print("cycle head is", i)
-            yield from recursive_cycle_builder(i, i,[])
-        #find and return cycles
-        pass
-
-
-
-def get_atom_indices(cycle, chain_group):
-    indices=[]
-    for chain_index in cycle:
-        indices+=chain_group[chain_index]
-    return indices
-
-def get_atom_to_matrix_indices(atom_indices, atom_to_matrix_indices):
-    i=0
-    for index in atom_indices:
-        atom_to_matrix_indices[index]=i
-        i+=1
-    return atom_to_matrix_indices
-
-def fill_distance_matrix(len_group, cycle, chain_group, chain_perm, rotated_holder, Q_holder, matrix_indices):
-    distances = DistanceMatrix(len_group)
-
-    for chain_index in cycle: # Use an iterator
-        # Todo: Convert from_chain and to_chain into vector[ints]
-        from_chain = list_to_vector_int(chain_group[chain_index])
-        to_chain = list_to_vector_int(chain_group[chain_perm[chain_index]])
-        for i in range(from_chain.size()):
-            from_chain_index = from_chain[i]
-            for j in range(to_chain.size()):
-                to_chain_index = to_chain[j]
-                a = rotated_holder.get_vector(from_chain_index)
-                b = Q_holder.get_vector(to_chain_index)
-                distance = array_distance(a,b)
-                distances.add(matrix_indices[to_chain_index], matrix_indices[from_chain_index], distance)
-    return distances
-
-def approximate_perm_classic(op_type, op_order, molecule, dir, chain_perm):
-    #print("Inside estimate_perm, dir=%s" % dir)
-    # create rotation matrix
-    rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
-    # run rotation matrix on atoms
-    rotated = (rotation_mat @ molecule.Q.T).T
-    rotated_holder = Vector3DHolder(rotated)
-    Q_holder = Vector3DHolder(molecule.Q)
-    atom_to_matrix_indices = np.ones(len(molecule), dtype='long') * -1
-    # empty permutation:
-    perm = [-1] * len(molecule)
-
-    #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
-    for cycle in cycle_builder(chain_perm):
-        # Todo: Convert cycle into a vector[int]
-        for chains_in_group in molecule.group_chains:
-            #1. create the group of atom indices we will be building a distance matrix with
-            try:
-                current_atom_indices=get_atom_indices(cycle, chains_in_group)
-            except KeyError: #chaingroup does not have chains belonging to current cycle
-                continue #continue to next chain group
-            atom_to_matrix_indices=get_atom_to_matrix_indices(current_atom_indices, atom_to_matrix_indices)
-
-            #2. within that group, go over legal switches and add their distance to the matrix
-            distances=fill_distance_matrix(len(current_atom_indices), cycle, chains_in_group, chain_perm, rotated_holder, Q_holder, atom_to_matrix_indices)
-
-            #3. call the perm builder on the group
-            perm = perm_builder(op_type, op_order, current_atom_indices, distances, perm)
-            #(4. either continue to next group or finish)
-    #print(perm)
-    return perm
 
 
 def approximate_perm_hungarian(op_type, op_order, molecule, dir, chain_perm):
@@ -207,7 +114,7 @@ def approximate_perm_hungarian(op_type, op_order, molecule, dir, chain_perm):
     #print(perm)
     return perm
 
-@cython.boundscheck(False)
+
 def munkres_wrapper(A):
     x = A.shape[0]
     y = A.shape[1]

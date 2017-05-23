@@ -13,14 +13,14 @@ from csm.calculations.exact_calculations import csm_operation
 from csm.molecule.molecule import Molecule
 
 
-def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False,use_chains=False, hungarian=False, print_approx=False, dirs=None, *args, **kwargs):
+def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False,use_chains=False, hungarian=True, print_approx=False, dirs=None, *args, **kwargs):
     if not dirs:
         dirs = find_symmetry_directions(molecule, use_best_dir, get_orthogonal, detect_outliers, op_type)
 
     if hungarian:
-        approximator_cls = ClassicApproximator
-    else:
         approximator_cls = CythonHungarianApproximator
+    else:
+        approximator_cls = ClassicApproximator
 
 
     if op_type == 'CH':  # Chirality
