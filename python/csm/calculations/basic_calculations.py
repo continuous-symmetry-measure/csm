@@ -55,12 +55,10 @@ def formula_test(result):
     distance=np.array([0.0, 0.0, 0.0])
     normal=0.0
     for i in range(len(result.molecule.Q)):
-        initminusactual=result.molecule.Q[i]- result.symmetric_structure[i]
-        square1=np.square(initminusactual)
-        square2=initminusactual * initminusactual
-        distance+=(np.square(result.molecule.Q[i]- result.symmetric_structure[i]))
+        distance+=(np.square(result.molecule.Q[i]- result.symmetric_structure[i])) #square of difference
         normal+=(np.sum(np.square(result.molecule.Q[i]-init_avg )))
     distance=np.sum(distance)
+    print("yaffa normal =", normal)
     #step six: 100 * step four / step five
     result= 100* distance /normal
     return result
