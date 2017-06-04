@@ -239,8 +239,8 @@ def munkres_wrapper(np.ndarray[np.double_t,ndim=2, mode="c"] A not None):
     cdef int x = A.shape[0]
     cdef int y = A.shape[1]
     results=[]
-    res_mat=munkres(A)
-    for i in range(x):
+    res_mat=munkres(A) #return a matrix of booleans with True marking optimal positions
+    for i in range(x): #here we convert that matrix to a list of indices
         for j in range(y):
             if res_mat[i][j]:
                 results += [(i, j)]
