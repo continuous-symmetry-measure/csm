@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from csm.calculations.approx.approximators import CythonHungarianApproximator, ClassicApproximator
+from csm.calculations.approx.approximators import CythonHungarianApproximator, ClassicApproximator, NewApproximator
 from csm.calculations.approx.dirs import find_symmetry_directions
 from csm.calculations.basic_calculations import process_results, CSMState
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
@@ -21,6 +21,7 @@ def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False
         approximator_cls = CythonHungarianApproximator
     else:
         approximator_cls = ClassicApproximator
+    #approximator_cls=NewApproximator
 
 
     if op_type == 'CH':  # Chirality

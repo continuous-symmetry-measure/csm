@@ -40,8 +40,7 @@ class Approximator:
             print("Operation %s - using just one direction: %s" % (op_msg, dir))
 
         for chainperm in self._chain_permutations:
-            if self._print_approx:
-                print("Calculating for chain permutation ", chainperm)
+            self._print("Calculating for chain permutation ", chainperm)
             perm = self._approximate(dir, chainperm)
             best_for_chain_perm = csm_operation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                 perm=perm)
@@ -63,11 +62,10 @@ class Approximator:
 
         #else:
         self._print("There are", len(self._dirs), "initial directions to search for the best permutation")
-
-        for chainperm in self._chain_permutations:
-            self._print("Calculating for chain permutation ", chainperm)
-            for dir in self._dirs:
-                self._print("\tCalculating for initial direction: ", dir)
+        for dir in self._dirs:
+            self._print("Calculating for initial direction: ", dir)
+            for chainperm in self._chain_permutations:
+                self._print("\tCalculating for chain permutation ", chainperm)
                 # find permutation for this direction of the symmetry axis
                 perm = self._approximate(dir, chainperm)
                 # solve using this perm until it converges:

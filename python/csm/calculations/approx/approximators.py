@@ -25,6 +25,49 @@ class CythonHungarianApproximator(Approximator):
         #return cython_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
 
+class NewApproximator(Approximator):
+    def _approximate(self, dir, chainperm):
+        self.placeholder()
+
+    def additional_func(self, frag_i, frag_j):
+        # A3: e = number of equivalence groups in fragment i, of size N1... Ne
+        # 0>k>e
+        # matrix B of size Nk x Nk
+        # Vi..Vnk are the coordinate vectors of fragment i in equivalence class k
+        # Wi..Wnk are the coordinate vectors of fragment j in equivalence class k
+        # T is the symmetric translation appropriate to the given symmetric axis
+        # in position a,b of matrix B we place the square of the distance between T(Va) and Wb
+        # in other words matrix B is a single block from the standard approx algorithm's distance matrix,
+        # specifically the block that matches fragments i, j and equivalence group k
+        # B: We run the hungarian algorithm on matrix B,
+        # and the result (=sum of matrix members on diagonal generalized that hungarian found) ????
+        # we add to A[i,j]
+        pass
+    def placeholder(self):
+    # improved use chains algorithm:
+    # for a given symmetric axis:
+    # M= number of fragments in molecule. 0>i>M, 0>j>M
+        num_fragments=(len(self._molecule.chains))
+    # A1: matrix A of size MxM: initialize with zeros
+        fragment_distance_matrix = np.ones((num_fragments, num_fragments), order="c") * MAXDOUBLE
+    # A2: confirm that there's same number of atoms in each equivalence group between fragment and fragment j
+    # if there isn't, we leave M[i,j]=0 and continue to next ij
+    #(this is already confirmed in molecule setup, so we will use the equivalent chains from mol.chain_equivalences
+        for equivalent_chain_group in self._molecule.chain_equivalences:
+            for frag_i in equivalent_chain_group:
+                for frag_j in equivalent_chain_group:
+                    for equiv_class in self._molecule.group_chains:
+                        fragment_distance_matrix[frag_i, frag_j]+=self.additional_func(frag_i, frag_j)
+
+
+        #
+        # Run thehungarian algorithm on Aij, and thereby find a permutation between the fragments
+        #
+        # C: rerun A3 on the relevant ijs
+        # D: put together into a full permutation
+
+
+
 def array_distance(a,b):
     return np.sqrt(
         (a[0]-b[0])*(a[0]-b[0])
