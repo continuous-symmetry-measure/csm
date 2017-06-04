@@ -59,9 +59,9 @@ def get_fragment_centers(chains, positions):
 
 def get_norm_by_distance_from_centers(coords, fragments, centers):
     '''
-    :param coords: a list of coordinates
-    :param fragments: a dictionary of fragments, whose values are indexes within coordinated
-    :param centers: a dictionary of centers, whose keys match the keys in fragments
+    :param coords: a list of coordinates whose distance from center will be measured
+    :param fragments: a dictionary, key:fragment, value: array of indiced within coords
+    :param centers: a dictionary of centers, key:fragment, value: coordinate of center
     :return:
     '''
     norm=0
@@ -81,6 +81,10 @@ def atom_number_factor(coords, symm, original_norm):
 
 
 def get_chain_perm(molecule, perm):
+    '''
+    finds the existing permutation between chains, in the result
+    :return:
+    '''
     chain_perm_dict={}
     for chain in molecule.chains:
         index= molecule.chains[chain][0]
@@ -90,10 +94,9 @@ def get_chain_perm(molecule, perm):
                 chain_perm_dict[chain]=chain2
                 break
     chain_perm=[]
-    for i in range(len(molecule.reversechainkeys)):
-        chain = molecule.reversechainkeys[i]
+    for chain in molecule.chains:
         permuted= chain_perm_dict[chain]
-        permuted_index= molecule.chainkeys[permuted]
+        permuted_index= molecule.chains.index_map[permuted]
         chain_perm.append(permuted_index)
 
     return chain_perm
@@ -124,7 +127,7 @@ def normalize_csm(norm_type, result):
         #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
-        coordinates_array=[fragment_centers[molecule.reversechainkeys[i]] for i in range(len(molecule.reversechainkeys))]
+        coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
         dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
         #get chain permutation
         perm=get_chain_perm(molecule, result.perm)
@@ -135,7 +138,8 @@ def normalize_csm(norm_type, result):
         new_symm=result.symmetric_structure
         #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
         #find normalization factor based on the above step
-        coordinates_dict={molecule.reversechainkeys[i]:new_symm[i] for i in range(len(molecule.reversechainkeys))}
+
+        coordinates_dict={chain:new_symm[i] for i,chain in enumerate(molecule.chains)}
         norm = get_norm_by_distance_from_centers(normalized_coords, molecule.chains, coordinates_dict)
 
         return norm * original_norm, original_csm / norm
@@ -144,16 +148,16 @@ def normalize_csm(norm_type, result):
         #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
-        coordinates_array=[fragment_centers[molecule.reversechainkeys[i]] for i in range(len(molecule.reversechainkeys))]
+        coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
         dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
         #run CSM
-        new_result=exact_calculation(result.op_type, result.op_order, dummy)
+        new_result=exact_calculation(result.op_type, result.op_order, dummy, no_constraint=True, suppress_print=True)
         #receive s0
         s0= new_result.csm
         new_symm=result.symmetric_structure
         #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
         #find normalization factor based on the above step
-        coordinates_dict={molecule.reversechainkeys[i]:new_symm[i] for i in range(len(molecule.reversechainkeys))}
+        coordinates_dict={chain:new_symm[i] for i,chain in enumerate(molecule.chains)}
         norm = get_norm_by_distance_from_centers(normalized_coords, molecule.chains, coordinates_dict)
 
         return norm * original_norm, original_csm / norm

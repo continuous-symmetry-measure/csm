@@ -151,23 +151,23 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
 
 
 
-def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, no_constraint=False, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, no_constraint=False, suppress_print=False, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         #sn_max = op_order
         # First CS
-        best_result = csm_operation('CS', 2, molecule, keep_structure, perm, no_constraint)
+        best_result = csm_operation('CS', 2, molecule, keep_structure, perm, no_constraint, suppress_print)
         best_result = best_result._replace(op_type='CS') #unclear why this line isn't redundant
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
-                result = csm_operation('SN', op_order, molecule, keep_structure, perm, no_constraint)
+                result = csm_operation('SN', op_order, molecule, keep_structure, perm, no_constraint, suppress_print)
                 if result.csm < best_result.csm:
                     best_result = result._replace(op_type = 'SN', op_order = op_order)
                 if best_result.csm < MINDOUBLE:
                     break
 
     else:
-        best_result = csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint)
+        best_result = csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, suppress_print)
 
     best_result = process_results(best_result)
     if calc_local:
@@ -178,7 +178,7 @@ def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=Fals
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False):
+def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False, suppress_print=False):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -223,7 +223,7 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, 
             return '%d' % num
         return '%.5g' & num
 
-    if not perm:
+    if not perm and not suppress_print:
         print("Number of permutations: %s" % format_number(permuter.count))
         print("Number of branches in permutation tree: %s" % format_number(permuter.truecount))
         print("Number of dead ends: %s" % format_number(permuter.falsecount))
