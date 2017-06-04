@@ -32,9 +32,9 @@ def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     molecule = Molecule.from_file(**kwargs)
     if perm_file_name:
         perm = read_perm_file(perm_file_name)
-        if len(perm) != len(molecule.atoms):
+        if len(perm) != len(molecule):
             raise ValueError("Invalid permutation - permutation is of size %d but molecule has %d atoms" %
-                             (len(perm), len(molecule.atoms)))
+                             (len(perm), len(molecule)))
         check_perm_validity(molecule, perm, **kwargs)
 
     else:

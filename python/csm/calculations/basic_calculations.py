@@ -120,7 +120,7 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
     return symmetric
 
 def compute_local_csm(molecule, perm, dir, op_type, op_order):
-    size = len(molecule.atoms)
+    size = len(molecule)
     cur_perm = [i for i in range(size)]
     local_csm = np.zeros(size)
     m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
