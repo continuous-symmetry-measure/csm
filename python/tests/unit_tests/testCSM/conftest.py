@@ -43,6 +43,7 @@ def get_run_tuples(dirs):
                 args = in_dict["runs"][key]
                 args.append("--keep-structure")
                 args.append("--babel-bond")
+                #args.append("--approx")
                 #args.append("--no-constraint")
                 for molecule in os.listdir(molecule_folder):
                     try:
