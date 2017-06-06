@@ -56,7 +56,7 @@ class NewApproximator(Approximator):
         for equivalent_chain_group in self._molecule.chain_equivalences:
             for frag_i in equivalent_chain_group:
                 for frag_j in equivalent_chain_group:
-                    for equiv_class in self._molecule.group_chains:
+                    for equiv_class in self._molecule.groups_with_internal_chains:
                         fragment_distance_matrix[frag_i, frag_j]+=self.additional_func(frag_i, frag_j)
 
 
@@ -227,7 +227,7 @@ def approximate_perm_hungarian(op_type, op_order, molecule, dir, chain_perm):
     #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
     for cycle in cycle_builder(chain_perm):
         # Todo: Convert cycle into a vector[int]
-        for chains_in_group in molecule.group_chains:
+        for chains_in_group in molecule.groups_with_internal_chains:
             #1. create the group of atom indices we will be building a distance matrix with
             try:
                 current_atom_indices=get_atom_indices(cycle, chains_in_group)

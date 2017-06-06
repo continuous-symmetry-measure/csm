@@ -20,18 +20,30 @@ class Chains(OrderedDict):
         self.index_map={}
         super().__init__()
     def __getitem__(self, key):
-        if isinstance(key, str):
-            return super().__getitem__(key)
         if isinstance(key, int):
-            str_key=self.str_keys[key]
-            return super().__getitem__(str_key)
+            return super().__getitem__(key)
+        if isinstance(key, str):
+            index_key=self.index_map[key]
+            return super().__getitem__(index_key)
         raise ValueError
     def __setitem__(self, key, value):
         if isinstance(key, str):
             self.str_keys.append(key)
-            self.index_map[key]=self.str_keys.index(key)
-            return super().__setitem__(key, value)
+            index_key=self.str_keys.index(key)
+            self.index_map[key]=index_key
+            return super().__setitem__(index_key, value)
         raise ValueError
+
+    def __contains__(self, item):
+        if isinstance(item, int):
+            return item in self.__dict__
+        if isinstance(item, str):
+            try:
+                index_key=self.index_map[item]
+                return super().__contains__(index_key)
+            except:
+                return False
+
 
 
 
@@ -233,70 +245,74 @@ class Molecule:
             print("Molecule has no chains specified. Using one simulated chain of len %d" % len(self.chains['Sim']))
 
 
-        #3. within each equivalence class, labels by chain
-        group_chains=[]
-        for group in self.equivalence_classes:
+
+        #3. within each equivalence class, labels by chain,
+        # within each chain, group by equivalence class
+        groups_with_internal_chains=[]
+        num_equiv=len(self.equivalence_classes)
+        chains_with_internal_groups={chain:[None] * num_equiv for chain in self.chains}
+
+        for group_index, group in enumerate(self.equivalence_classes):
             chaingroup={}
-            for chain_index, atom_index in enumerate(group):
-                try: #get chain-- if no chains, or not use_chains default to chain 0
+            for atom_index in group:
+                # get chain-- if no chains, or not use_chains default to chain 0
+                try:
                     if use_chains:
-                        chain= self.chainkeys[self.atoms[atom_index].chain]
+                        chain_key= self.atoms[atom_index].chain
+                        chain_index= self.chains.index_map[chain_key]
                     else:
-                        chain= 0
-                except:
-                    chain= 0
-
-                try:#add index to array in dict
-                    chaingroup[chain].append(atom_index)
-                except: #create array in dict
-                    chaingroup[chain]=[atom_index]
-            group_chains.append(chaingroup)
-        self.group_chains = group_chains
-
-        #3b within each chain, group by equivalence class
-        classed_chains={}
-        for chain in self.chains:
-            classed_chains[chain]=[]
-            marked=[0]*len(self.chains[chain])
-            for chain_index, atom_index in enumerate(self.chains[chain]):
-                if marked[chain_index]:
-                    continue
-                equivalence_arr=[]
-                for eq_index in self.atoms[atom_index].equivalency:
-                    if eq_index in self.chains[chain]:
-                        equivalence_arr.append(eq_index)
-                        marked[chain_index]=1
-                classed_chains[chain].append(equivalence_arr)
-        self.classed_chains=classed_chains
-
-
-
-
+                        chain_key= 'Sim'
+                except AttributeError:
+                    chain_key= 'Sim'
+                if not chain_index:
+                    chain_index=0
+                # add index to array in chaingroup dict
+                try:
+                    chaingroup[chain_index].append(atom_index)
+                except KeyError:
+                    chaingroup[chain_index]=[atom_index]
+                #add index to classed_chains
+                try:
+                     chains_with_internal_groups[chain_index][group_index].append(atom_index)
+                except AttributeError:
+                    chains_with_internal_groups[chain_index][group_index]=[atom_index]
+            #add the completed chaingroup dict to group_chains arrat
+            groups_with_internal_chains.append(chaingroup)
+        self.groups_with_internal_chains = groups_with_internal_chains
+        self.chains_with_internal_groups = chains_with_internal_groups
 
         #4. Calculates chain equivalencies. (e.g, chains A and B are equivalent, chains C and D are equivalent)
-        chain_equiv=list()
-        marked=np.zeros(len(self.chains))
-        for chain_index, chain in enumerate(self.chains):
-            if marked[chain_index]==1:
+        #we define chains as equivalent if the number of atoms they have in each equivalence class are the same
+        chain_equivalences=[]
+        marked=[False]*len(self.chains)
+
+        for chain_index, chainkey in enumerate(self.chains):
+            if marked[chain_index]:
                 continue
-            equiv=list()
-            for chain_index2, chain2 in enumerate(self.chains):
+            equiv=[]
+            for chain2_index, chainkey2 in enumerate(self.chains):
+                #start with a simple length check to spare checking equivalence classes if chains arent same length to begin with
+                #if len(self.chains[chainkey])!=len(self.chains[chainkey2]):
+                #    continue
                 same_lengths=True
-                for group in group_chains:
+                for group in groups_with_internal_chains:
+                    if not same_lengths:
+                        break
                     try:
-                        length=len(group[chain_index2])
+                        length = len(group[chain_index])
                     except:
                         continue
                     try:
-                        if length!=len(group[chain_index2]):
-                            same_lengths=False
+                        if length != len(group[chain2_index]):
+                            same_lengths = False
                     except KeyError:
-                        same_lengths=False
+                        same_lengths = False
                 if same_lengths:
-                    equiv.append(chain_index2)
-                    marked[chain_index2]=1
-            chain_equiv.append(equiv)
-        self.chain_equivalences=chain_equiv
+                    equiv.append(chain2_index)
+                    marked[chain2_index] = True
+            chain_equivalences.append(equiv)
+        self.chain_equivalences=chain_equivalences
+
 
 
     def _calculate_equivalency(self, remove_hy, ignore_hy):

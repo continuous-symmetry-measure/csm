@@ -184,7 +184,7 @@ def approximate_perm_classic(op_type, op_order, molecule, dir, chain_perm):
     #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
     for cycle in cycle_builder(chain_perm):
         # Todo: Convert cycle into a vector[int]
-        for chains_in_group in molecule.group_chains:
+        for chains_in_group in molecule.groups_with_internal_chains:
             #1. create the group of atom indices we will be building a distance matrix with
             try:
                 current_atom_indices=get_atom_indices(cycle, chains_in_group)
@@ -217,7 +217,7 @@ def approximate_perm_hungarian(op_type, op_order, molecule, dir, chain_perm):
     #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
     for cycle in cycle_builder(chain_perm):
         # Todo: Convert cycle into a vector[int]
-        for chains_in_group in molecule.group_chains:
+        for chains_in_group in molecule.groups_with_internal_chains:
             #1. create the group of atom indices we will be building a distance matrix with
             try:
                 current_atom_indices=get_atom_indices(cycle, chains_in_group)

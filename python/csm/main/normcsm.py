@@ -95,8 +95,7 @@ def get_chain_perm(molecule, perm):
                 break
     chain_perm=[]
     for chain in molecule.chains:
-        permuted= chain_perm_dict[chain]
-        permuted_index= molecule.chains.index_map[permuted]
+        permuted_index= chain_perm_dict[chain]
         chain_perm.append(permuted_index)
 
     return chain_perm

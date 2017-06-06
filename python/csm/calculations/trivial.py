@@ -8,7 +8,6 @@ from csm.molecule.molecule import Molecule
 def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **kwargs):
     if molecule.chains and use_chains:
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
-        chainkeys=list(molecule.chains.keys())
         chain_permutations = []
         dummy = Molecule.dummy_molecule_from_size(len(molecule._chains), molecule.chain_equivalences)
         permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
@@ -17,10 +16,8 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
         for chainperm in chain_permutations:
             perm = [-1 for i in range(len(molecule))]
             for f_index in range(len(chainperm)):
-                f_chain_key=chainkeys[f_index]
-                t_chain_key=chainkeys[chainperm[f_index]]
-                f_chain=molecule.chains[f_chain_key]
-                t_chain = molecule.chains[t_chain_key]
+                f_chain = molecule.chains[f_index]
+                t_chain = molecule.chains[chainperm[f_index]]
                 for i in range(len(f_chain)):
                     perm[f_chain[i]]=t_chain[i]
 
