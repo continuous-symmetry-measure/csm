@@ -236,13 +236,15 @@ class Molecule:
         #1. if there are no chains, creates one large simulated chain
         try:
             if not use_chains:
-                self._chains = {'Sim': list(range(len(self.atoms)))}  # Default - one chain of all the atoms, "simulated"
+                self._chains=Chains()
+                self._chains['Sim'] = list(range(len(self.atoms)))  # Default - one chain of all the atoms, "simulated"
                 #print("--use-chains not specified. Using one simulated chain of len %d" % len(self._chains['Sim']))
             else:
                 self.atoms[0].chain #see if there even are chains
         except:
-            self._chains = {'Sim': list(range(len(self.atoms)))}  # Default - one chain of all the atoms, "simulated"
-            print("Molecule has no chains specified. Using one simulated chain of len %d" % len(self.chains['Sim']))
+            self._chains = Chains()
+            self._chains['Sim'] = list(range(len(self.atoms)))
+            print("Molecule has no chains specified. Using one simulated chain of len %d" % len(self.chains[0]))
 
 
 
@@ -258,14 +260,12 @@ class Molecule:
                 # get chain-- if no chains, or not use_chains default to chain 0
                 try:
                     if use_chains:
-                        chain_key= self.atoms[atom_index].chain
-                        chain_index= self.chains.index_map[chain_key]
+                        chain_index= self.atoms[atom_index].chain
                     else:
-                        chain_key= 'Sim'
+                        chain_index= 0
                 except AttributeError:
-                    chain_key= 'Sim'
-                if not chain_index:
-                    chain_index=0
+                    chain_index= 0
+
                 # add index to array in chaingroup dict
                 try:
                     chaingroup[chain_index].append(atom_index)
@@ -668,7 +668,8 @@ class Molecule:
             if chain not in chains:
                 chains[chain]=[]
             chains[chain].append(i)
-            atom = Atom(symbol, position, i, use_mass, chain)
+
+            atom = Atom(symbol, position, i, use_mass, chains.index_map[chain])
             adjacent = []
             iter = OBAtomAtomIter(obatom)
             for neighbour_atom in iter:
@@ -748,8 +749,10 @@ class Molecule:
                     chain_name= line[0]
                     chains[chain_name]=[]
                     for j in range(1, len(line)):
-                        atoms[int(line[j])-1]._chain=chain_name
-                        chains[chain_name].append(int(line[j])-1)
+                        atom_index=int(line[j]) - 1
+                        chains[chain_name].append(atom_index)
+                        atoms[atom_index]._chain=chains.index_map[chain_name]
+
             except:
                 pass #assume there are no chains
         return Molecule(atoms=atoms, chains=chains)
