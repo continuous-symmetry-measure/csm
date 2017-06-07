@@ -160,7 +160,7 @@ def pre_caching(molecule, op_order, size, p):
     return perms, A,B, p.costheta, p.sintheta
 
 def calc_ref_plane(molecule, p, op_order, op_type):
-    size = len(molecule.atoms)
+    size = len(molecule)
     if p.type[:2]=="AB":
         perms, A,B,costheta, sintheta = p.perms, p.A, p.B,p.costheta, p.sintheta
     else:

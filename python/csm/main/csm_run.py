@@ -1,14 +1,15 @@
 import csv
-import logging
 import sys
 import timeit
-from csm.input_output.arguments import get_split_arguments
-from csm.calculations.exact_calculations import exact_calculation, perm_count
-from csm.calculations.approx_calculations import approx_calculation, trivial_calculation
+
+import csm
 from csm.calculations import exact_calculations
+from csm.calculations.approx.main import approx_calculation
+from csm.calculations.exact_calculations import exact_calculation, perm_count
+from csm.calculations.trivial import trivial_calculation
+from csm.input_output.arguments import get_split_arguments
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results
-import csm
 
 APPROX_RUN_PER_SEC = 8e4
 sys.setrecursionlimit(10000)

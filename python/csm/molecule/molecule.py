@@ -14,6 +14,39 @@ def remove_multi_bonds(bonds):
     l.sort()
     return l
 
+class Chains(OrderedDict):
+    def __init__(self):
+        self.str_keys=[]
+        self.index_map={}
+        super().__init__()
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return super().__getitem__(key)
+        if isinstance(key, str):
+            index_key=self.index_map[key]
+            return super().__getitem__(index_key)
+        raise ValueError
+    def __setitem__(self, key, value):
+        if isinstance(key, str):
+            self.str_keys.append(key)
+            index_key=self.str_keys.index(key)
+            self.index_map[key]=index_key
+            return super().__setitem__(index_key, value)
+        raise ValueError
+
+    def __contains__(self, item):
+        if isinstance(item, int):
+            return item in self.__dict__
+        if isinstance(item, str):
+            try:
+                index_key=self.index_map[item]
+                return super().__contains__(index_key)
+            except:
+                return False
+
+
+
+
 
 class Molecule:
     def __init__(self, atoms={}, chains={}, norm_factor=1.0, obmol=None):
@@ -71,20 +104,6 @@ class Molecule:
         :return: a dictionary of the molecule's chains, with keys being the name of the chains
         '''
         return self._chains
-
-    @property
-    def chainkeys(self):
-        '''
-        :return: a dictionary of the molecule's chains' keys (names), with the values number indexes
-        '''
-        return self._chainkeys
-
-    @property
-    def reversechainkeys(self):
-        '''
-        :return: a dictionary of the molecule's chains' keys (names), with the keys number indexes from chainkeys
-        '''
-        return self._reversechainkeys
 
     @property
     def size(self):
@@ -205,7 +224,6 @@ class Molecule:
     def _process_chains(self, use_chains):
         """
         1. if there are no chains, creates one large simulated chain
-        2. creates chainkeys, translating between chain names ('A','B') to a chain index (0,1...)
         3. within each equivalence class, labels by chain
             self.group_chains=[array of equivalence classes:
                             {dictionary of chains:
@@ -218,71 +236,82 @@ class Molecule:
         #1. if there are no chains, creates one large simulated chain
         try:
             if not use_chains:
-                self._chains = {'Sim': list(range(len(self.atoms)))}  # Default - one chain of all the atoms, "simulated"
+                self._chains=Chains()
+                self._chains['Sim'] = list(range(len(self.atoms)))  # Default - one chain of all the atoms, "simulated"
                 #print("--use-chains not specified. Using one simulated chain of len %d" % len(self._chains['Sim']))
             else:
                 self.atoms[0].chain #see if there even are chains
         except:
-            self._chains = {'Sim': list(range(len(self.atoms)))}  # Default - one chain of all the atoms, "simulated"
-            print("Molecule has no chains specified. Using one simulated chain of len %d" % len(self.chains['Sim']))
+            self._chains = Chains()
+            self._chains['Sim'] = list(range(len(self.atoms)))
+            print("Molecule has no chains specified. Using one simulated chain of len %d" % len(self.chains[0]))
 
-        #2. creates chainkeys, translating between chain names ('A','B') to a chain index (0,1...)
-        i=0
-        self._chainkeys= {}
-        self._reversechainkeys={}
-        for key in self._chains:
-            self._chainkeys[key]=i
-            self._reversechainkeys[i]=key
-            i+=1
 
-        #3. within each equivalence class, labels by chain
-        group_chains=[]
-        for group in self.equivalence_classes:
+
+        #3. within each equivalence class, labels by chain,
+        # within each chain, group by equivalence class
+        groups_with_internal_chains=[]
+        num_equiv=len(self.equivalence_classes)
+        chains_with_internal_groups={chain:[None] * num_equiv for chain in self.chains}
+
+        for group_index, group in enumerate(self.equivalence_classes):
             chaingroup={}
-
-            for i, atom_index in enumerate(group):
-                try: #get chain-- if no chains, or not use_chains default to chain 0
+            for atom_index in group:
+                # get chain-- if no chains, or not use_chains default to chain 0
+                try:
                     if use_chains:
-                        chain= self.chainkeys[self.atoms[atom_index].chain]
+                        chain_index= self.atoms[atom_index].chain
                     else:
-                        chain= 0
-                except:
-                    chain= 0
+                        chain_index= 0
+                except AttributeError:
+                    chain_index= 0
 
-                try:#add index to array in dict
-                    chaingroup[chain].append(atom_index)
-                except: #create array in dict
-                    chaingroup[chain]=[atom_index]
-            group_chains.append(chaingroup)
-        self.group_chains = group_chains
+                # add index to array in chaingroup dict
+                try:
+                    chaingroup[chain_index].append(atom_index)
+                except KeyError:
+                    chaingroup[chain_index]=[atom_index]
+                #add index to classed_chains
+                try:
+                     chains_with_internal_groups[chain_index][group_index].append(atom_index)
+                except AttributeError:
+                    chains_with_internal_groups[chain_index][group_index]=[atom_index]
+            #add the completed chaingroup dict to group_chains arrat
+            groups_with_internal_chains.append(chaingroup)
+        self.groups_with_internal_chains = groups_with_internal_chains
+        self.chains_with_internal_groups = chains_with_internal_groups
 
         #4. Calculates chain equivalencies. (e.g, chains A and B are equivalent, chains C and D are equivalent)
-        chain_equiv=list()
-        marked=np.zeros(len(self.chainkeys))
-        for chain in self.chains:
-            chainkey=self.chainkeys[chain]
-            if marked[chainkey]==1:
+        #we define chains as equivalent if the number of atoms they have in each equivalence class are the same
+        chain_equivalences=[]
+        marked=[False]*len(self.chains)
+
+        for chain_index, chainkey in enumerate(self.chains):
+            if marked[chain_index]:
                 continue
-            equiv=list()
-            for chain in self.chains:
-                chainkey2 = self.chainkeys[chain]
+            equiv=[]
+            for chain2_index, chainkey2 in enumerate(self.chains):
+                #start with a simple length check to spare checking equivalence classes if chains arent same length to begin with
+                #if len(self.chains[chainkey])!=len(self.chains[chainkey2]):
+                #    continue
                 same_lengths=True
-                for group in group_chains:
+                for group in groups_with_internal_chains:
+                    if not same_lengths:
+                        break
                     try:
-                        length=len(group[chainkey])
+                        length = len(group[chain_index])
                     except:
                         continue
                     try:
-                        if length!=len(group[chainkey2]):
-                            same_lengths=False
+                        if length != len(group[chain2_index]):
+                            same_lengths = False
                     except KeyError:
-                        same_lengths=False
+                        same_lengths = False
                 if same_lengths:
-                    equiv.append(int(chainkey2))
-                    marked[chainkey2]=1
-            chain_equiv.append(equiv)
-        self.chain_equivalences=chain_equiv
-
+                    equiv.append(chain2_index)
+                    marked[chain2_index] = True
+            chain_equivalences.append(equiv)
+        self.chain_equivalences=chain_equivalences
 
 
 
@@ -329,7 +358,7 @@ class Molecule:
         for to_remove in reversed(removed_atoms): #reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
             if remove_hy: #this is meant to affect print at end
-                self.obmol.DeleteAtom(self.obmol.GetAtom(to_remove + 1))
+                self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
 
         logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
 
@@ -375,8 +404,8 @@ class Molecule:
 
         if display_chains:
             for chain in self.chains:
-                print("Chain %s of length %d" % (chain, len(self.chains[chain])))
-            print("%d group%s of equivalent chains" % (len(self.chain_equivalences), 's' if lengths[key] else ''))
+                print("Chain %s of length %d" % (self.chains.str_keys[chain], len(self.chains[chain])))
+            print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
             for chaingroup in self.chain_equivalences:
                 chainstring = "Group of length " + str(len(chaingroup)) + ":"
                 for index in chaingroup:
@@ -626,7 +655,7 @@ class Molecule:
         """
         num_atoms = obmol.NumAtoms()
         atoms = []
-        chains = OrderedDict()
+        chains = Chains()
         for i in range(num_atoms):
             obatom = obmol.GetAtom(i + 1)
             if ignore_symm:
@@ -639,7 +668,8 @@ class Molecule:
             if chain not in chains:
                 chains[chain]=[]
             chains[chain].append(i)
-            atom = Atom(symbol, position, i, use_mass, chain)
+
+            atom = Atom(symbol, position, i, use_mass, chains.index_map[chain])
             adjacent = []
             iter = OBAtomAtomIter(obatom)
             for neighbour_atom in iter:
@@ -713,14 +743,16 @@ class Molecule:
             chains={}
             try:
                 numchains=int(f.readline())
-                chains=OrderedDict()
+                chains=Chains()
                 for i in range(numchains):
                     line = f.readline().split()
                     chain_name= line[0]
                     chains[chain_name]=[]
                     for j in range(1, len(line)):
-                        atoms[int(line[j])-1]._chain=chain_name
-                        chains[chain_name].append(int(line[j])-1)
+                        atom_index=int(line[j]) - 1
+                        chains[chain_name].append(atom_index)
+                        atoms[atom_index]._chain=chains.index_map[chain_name]
+
             except:
                 pass #assume there are no chains
         return Molecule(atoms=atoms, chains=chains)

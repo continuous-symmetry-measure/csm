@@ -169,7 +169,7 @@ cdef fill_distance_matrix(len_group, cycle, chain_group, chain_perm, Vector3DHol
                 distances.add(matrix_indices[to_chain_index], matrix_indices[from_chain_index], distance)
     return distances
 
-def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains, hungarian):
+def approximate_perm_classic(op_type, op_order, molecule, dir, chain_perm):
     #print("Inside estimate_perm, dir=%s" % dir)
     # create rotation matrix
     rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
@@ -184,7 +184,7 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains, hun
     #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
     for cycle in cycle_builder(chain_perm):
         # Todo: Convert cycle into a vector[int]
-        for chains_in_group in molecule.group_chains:
+        for chains_in_group in molecule.groups_with_internal_chains:
             #1. create the group of atom indices we will be building a distance matrix with
             try:
                 current_atom_indices=get_atom_indices(cycle, chains_in_group)
@@ -196,22 +196,51 @@ def estimate_perm(op_type, op_order, molecule, dir,  chain_perm, use_chains, hun
             distances=fill_distance_matrix(len(current_atom_indices), cycle, chains_in_group, chain_perm, rotated_holder, Q_holder, atom_to_matrix_indices)
 
             #3. call the perm builder on the group
-            if hungarian:
-                perm = hungarian_perm_builder(op_type, op_order, current_atom_indices, distances, perm)
-            else:
-                perm = perm_builder(op_type, op_order, current_atom_indices, distances, perm)
+            perm = perm_builder(op_type, op_order, current_atom_indices, distances, perm)
             #(4. either continue to next group or finish)
     #print(perm)
     return perm
 
+
+def approximate_perm_hungarian(op_type, op_order, molecule, dir, chain_perm):
+    #print("Inside estimate_perm, dir=%s" % dir)
+    # create rotation matrix
+    rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
+    # run rotation matrix on atoms
+    rotated = (rotation_mat @ molecule.Q.T).T
+    cdef Vector3DHolder rotated_holder = Vector3DHolder(rotated)
+    cdef Vector3DHolder Q_holder = Vector3DHolder(molecule.Q)
+    cdef long[:] atom_to_matrix_indices = np.ones(len(molecule), dtype='long') * -1
+    # empty permutation:
+    perm = [-1] * len(molecule)
+
+    #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
+    for cycle in cycle_builder(chain_perm):
+        # Todo: Convert cycle into a vector[int]
+        for chains_in_group in molecule.groups_with_internal_chains:
+            #1. create the group of atom indices we will be building a distance matrix with
+            try:
+                current_atom_indices=get_atom_indices(cycle, chains_in_group)
+            except KeyError: #chaingroup does not have chains belonging to current cycle
+                continue #continue to next chain group
+            atom_to_matrix_indices=get_atom_to_matrix_indices(current_atom_indices, atom_to_matrix_indices)
+
+            #2. within that group, go over legal switches and add their distance to the matrix
+            distances=fill_distance_matrix(len(current_atom_indices), cycle, chains_in_group, chain_perm, rotated_holder, Q_holder, atom_to_matrix_indices)
+
+            #3. call the perm builder on the group
+            perm = hungarian_perm_builder(op_type, op_order, current_atom_indices, distances, perm)
+            #(4. either continue to next group or finish)
+    #print(perm)
+    return perm
 
 @cython.boundscheck(False)
 def munkres_wrapper(np.ndarray[np.double_t,ndim=2, mode="c"] A not None):
     cdef int x = A.shape[0]
     cdef int y = A.shape[1]
     results=[]
-    res_mat=munkres(A)
-    for i in range(x):
+    res_mat=munkres(A) #return a matrix of booleans with True marking optimal positions
+    for i in range(x): #here we convert that matrix to a list of indices
         for j in range(y):
             if res_mat[i][j]:
                 results += [(i, j)]

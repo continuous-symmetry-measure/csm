@@ -55,12 +55,10 @@ def formula_test(result):
     distance=np.array([0.0, 0.0, 0.0])
     normal=0.0
     for i in range(len(result.molecule.Q)):
-        initminusactual=result.molecule.Q[i]- result.symmetric_structure[i]
-        square1=np.square(initminusactual)
-        square2=initminusactual * initminusactual
-        distance+=(np.square(result.molecule.Q[i]- result.symmetric_structure[i]))
+        distance+=(np.square(result.molecule.Q[i]- result.symmetric_structure[i])) #square of difference
         normal+=(np.sum(np.square(result.molecule.Q[i]-init_avg )))
     distance=np.sum(distance)
+    #print("yaffa normal =", normal)
     #step six: 100 * step four / step five
     result= 100* distance /normal
     return result
@@ -120,7 +118,7 @@ def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
     return symmetric
 
 def compute_local_csm(molecule, perm, dir, op_type, op_order):
-    size = len(molecule.atoms)
+    size = len(molecule)
     cur_perm = [i for i in range(size)]
     local_csm = np.zeros(size)
     m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
@@ -197,3 +195,10 @@ def check_perm_structure(mol, perm):
     percent_structure= (len(mol.bondset)- broken )/len(mol.bondset)
 
     return percent_structure
+
+
+def array_distance(a, b):
+    return np.sqrt(
+        (a[0] - b[0]) * (a[0] - b[0])
+        + (a[1] - b[1]) * (a[1] - b[1])
+        + (a[2] - b[2]) * (a[2] - b[2]))

@@ -37,7 +37,7 @@ def outer_product_sum(a, b):
 class PairCache:
     def __init__(self,mol):
         self.mol=mol
-        size=len(mol.atoms)
+        size=len(mol)
         self._cross=np.empty((size,size,3),dtype=np.float64)
         self._inner=np.empty((size,size),dtype=np.float64)
         self._outer=np.zeros((size,size,3,3,),dtype=np.float64)
