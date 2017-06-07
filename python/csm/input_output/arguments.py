@@ -86,6 +86,8 @@ def _create_parser():
 
     #output formatting and printing options
     parser.add_argument('--format', help='Use a specific input/output format')
+    parser.add_argument('--json-output', action='store_true', default=False,
+                        help='Print output in json format to a file')
     parser.add_argument('--print-norm', action='store_true', default=False,
                         help='Print the normalization factor as well')
     parser.add_argument('--print-local', action='store_true', default=False,
@@ -253,6 +255,7 @@ def _process_arguments(parse_res):
 
 
     #output arguments:
+    dictionary_args['json_output']=parse_res.json_output
     dictionary_args['print_approx']= parse_res.print_approx
     dictionary_args['print_perms'] = parse_res.output_perms
     dictionary_args['print_branches'] = parse_res.output_branches
