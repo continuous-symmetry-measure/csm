@@ -1,50 +1,76 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.13.9
+------------------------
+* Properly handle PDBs with TER lines when reading the PDB connectivity
+
+Changes in version 0.13.8
+------------------------
+* When m_t_B_2 is (0,0,0), find the maximum lambda by looking at the lambdas, instead of finding the polynomial
+ coefficients.
+
+Changes in version 0.13.7
+------------------------
+* Display equivalence classes when using --use-sequence
+
+Changes in version 0.13.6
+------------------------
+* Output csm molecule coordinates with 5 decimal places.
+* Add the --output-branches flag
+* Minor fixes to the --use-sequence flag
+
+Changes in version 0.13.5
+------------------------
+* Compared floating point numbers a little less maticulously, fixing a bug on older compilers. 
+
+Changes in version 0.13.4
+------------------------
+* Fix a bug that caused the exact calculation to skip some permutations.
+* Improve the permuter speed, speeding up the exact calculation by a factor of 2.
+
 Changes in version 0.13.2
 ------------------------
-Normalization factor flags have been changed to the numbers 0-6, in order to make typing them in less onerous. 
+* Normalization factor flags have been changed to the numbers 0-6, in order to make typing them in less onerous. 
 The help documentation under -h describes what normalization each number belongs to.
 
-In addition, scientific notation printouts have been adjusted to 5 significant digits before the decimal point and 4 after.
+* Scientific notation printouts have been adjusted to 5 significant digits before the decimal point and 4 after.
 
-The --log flag has been removed.
+* The --log flag has been removed.
 
 
 Changes in version 0.13.1
 ------------------------
 
-added flag --use-sequence for pdb molecules.
-
-small bugfix: fixed bug causing --use-perm to crash when checking conservation of structure with no bond information
-
+* Added flag --use-sequence for pdb molecules.
+* Small bugfix: fixed bug causing --use-perm to crash when checking conservation of structure with no bond information
 
 
 Changes in version 0.13.0
 ------------------------
-Normalization factors: 'standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm', 'linear_csm'
+* Normalization factors: 'standard', 'atom_number', 'fragment_center', 'symmetry_center', 'fragment_symm', 'fragment_perm', 'linear_csm'
 have been added. (some of these existed in a preliminary form in the older version, however, there were many mathematical errors)
 
-The usage of the norm_csm program has changed.
+* The usage of the norm_csm program has changed.
 instead of: norm_csm type input_molecule output_file normalization [additional arguments]
 where normalization could only be a single type of normalization
 
-the new version is: norm_csm normalization type input_molecule output_file [additional arguments]
+  the new version is: norm_csm normalization type input_molecule output_file [additional arguments]
 where as many normalizations as desired (of the available 7) can be specified.
 
 
 
 Changes in version 0.12.1
 ------------------------
-BUGFIX: fixed bug in calls to perm from state that was causing 
+* Fixed bug in calls to perm from state that was causing 
 singlepermpermuter and hence approx to crash
 
-also modified printout so molecule with no bonds was not reported as 
+* Modified printout so molecule with no bonds was not reported as 
 100% conserved
 
 Changes in version 0.12.1
 ------------------------
-small changes to the arguments-- no limit on number for C and S anymore, fixed help slightly
+* small changes to the arguments-- no limit on number for C and S anymore, fixed help slightly
 
 
 Changes in version 0.12.0

@@ -88,19 +88,24 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
         for i in range(3):
             dir.buf[i] = m.buf[minarg][i]
     else:
+        # print("Calculating direction")
         for i in range(3):
             dir.buf[i] = 0.0
             for j in range(3):
                 # error safety
-                if fabs(lambdas.buf[j] - lambda_max) < 1e-6:
+                if fabs(lambdas.buf[j] - lambda_max) < 1e-5:
                     dir.buf[i] = m.buf[j][i]
                     break
                 else:
                     dir.buf[i] += m_t_B.buf[j] / (lambdas.buf[j] - lambda_max) * m.buf[j][i]
-            ###print("i=%d, j=%d" % (i, j))
-            ###print("dir[i] = %f" % dir.buf[i])
+                #print("i=%d, j=%d" % (i, j))
+                #print("dir[i] = %f" % dir.buf[i])
 
+            #print("i=%d, dir[i] = %f" % (i, dir.buf[i]))
             m_max_B += dir.buf[i] * B.buf[i]
+
+    #print("Returning direction ", dir[0], dir[1], dir[2])
+    #print("Returning m_max_B ", m_max_B)
     return dir, m_max_B
 
 
@@ -122,16 +127,28 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2, log=False):
     cdef int i
     cdef int j
 
+    if log:
+        print("get lambda max")
+        print("lambdas", str(lambdas))
+        print("m_t_B_2", str(m_t_B_2))
 
+    if m_t_B_2[0] < ZERO_IM_PART_MAX and m_t_B_2[1] < ZERO_IM_PART_MAX and m_t_B_2[2] < ZERO_IM_PART_MAX:
+        # In case m_t_B_2 is all zeros, we just get the maximum lambda
+        lambda_max = lambdas[0]
+        if lambdas[1] > lambda_max:
+            lambda_max = lambdas[1]
+        if lambdas[2] > lambda_max:
+            lambda_max = lambdas[2]
+
+        if log:
+            print("m_t_B_2 is zero, returning the maximum lambda as is ", str(lambda_max))
+        return lambda_max
 
     build_polynomial(lambdas, m_t_B_2, coeffs)
 
     roots=np.roots(coeffs)
 
     if log:
-        print("get lambda max")
-        print("lambdas", str(lambdas))
-        print("m_t_B_2", str(m_t_B_2))
         print("coeffs")# and rounded")
         for i in range(7):
             print(coeffs[i]) #,"rounded:", rounded_coeffs[i])
@@ -158,7 +175,7 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
 
 
     #print("Perm:", str(calc_state.perms.get_perm(1)))
-    log=False
+    log = False
     #if(list(calc_state.perm) ==[6,7,0,1,2,3,4,5]):
     #    log = True
 

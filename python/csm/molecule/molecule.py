@@ -136,8 +136,6 @@ class Molecule:
 
         atoms_group_num = {}
 
-        logger.debug("Breaking molecule into similarity groups")
-
         # break into initial groups by symbol and valency
         for i in range(atoms_size):
             if i in marked:
@@ -362,40 +360,41 @@ class Molecule:
         self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
 
 
+    def display_info(self, display_chains):
+        """
+        Displays information about equivalence classes and chains
+        """
+        lengths = {}
+        for group in self._equivalence_classes:
+            try:
+                lengths[len(group)] += 1
+            except:
+                lengths[len(group)] = 1
+        for key in lengths:
+            print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
 
+        if display_chains:
+            for chain in self.chains:
+                print("Chain %s of length %d" % (chain, len(self.chains[chain])))
+            print("%d group%s of equivalent chains" % (len(self.chain_equivalences), 's' if lengths[key] else ''))
+            for chaingroup in self.chain_equivalences:
+                chainstring = "Group of length " + str(len(chaingroup)) + ":"
+                for index in chaingroup:
+                    chainstring += " "
+                    chainstring += str(self._reversechainkeys[index])
+                print(str(chainstring))
 
     def _complete_initialization(self, remove_hy, ignore_hy, use_chains):
         """
         Finish creating the molecule after reading the raw data
         """
-        def diagnostics():
-            lengths={}
-            for group in self._equivalence_classes:
-                try:
-                    lengths[len(group)]+=1
-                except:
-                    lengths[len(group)]=1
-            for key in lengths:
-                print("%d group%s of length %d" %(lengths[key], 's' if lengths[key] and lengths[key]>1 else '', key))
 
-            if use_chains:
-                for chain in self.chains:
-                    print ("Chain %s of length %d" % (chain, len(self.chains[chain])))
-                print("%d group%s of equivalent chains" % (len(self.chain_equivalences), 's' if lengths[key] else ''))
-                for chaingroup in self.chain_equivalences:
-                    chainstring="Group of length " + str(len(chaingroup))+":"
-                    for index in chaingroup:
-                        chainstring+=" "
-                        chainstring+=str(self._reversechainkeys[index])
-                    print(str(chainstring))
-
-
-        print("Breaking molecule into similarity groups")
+        print("Breaking molecule into equivalence class groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
         #print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._process_chains(use_chains)
         try:
-            diagnostics()
+            self.display_info(use_chains)
         except:
             pass
         self.normalize()
@@ -452,18 +451,18 @@ class Molecule:
                 return "csm"
             conv = OBConversion()
             if not form:
-                form = conv.FormatFromExt(filename)
+                form = conv.FormatFromExt(in_file_name)
                 if not form:
-                    raise ValueError("Error discovering format from filename " + filename)
+                    raise ValueError("Error discovering format from filename " + in_file_name)
             return form
 
         format = get_format(format)
 
         if use_sequence:
             if format.lower() != 'pdb':
-                print("Use sequence is only relevant for pdb files, and will be ignored")
-            mol = Molecule.create_pdb_molecule(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
-                                               remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
+                raise ValueError("--use-sequence only works with PDB files")
+            mol = Molecule.create_pdb_with_sequence(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
+                                                    remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
             return mol
 
 
@@ -494,20 +493,43 @@ class Molecule:
     @staticmethod
     def _read_pdb_connectivity(filename, mol):
         with open(filename, 'r') as file:
+            # Count ATOM and HETATM lines, mapping them to our ATOM numbers.
+            # In most PDBs ATOM 1 is our atom 0, and ATOM n is our n-1. However, in some cases
+            # there are TER lines in the PDB, ATOMs after the TER are found at n-2 in our list.
+            atom_map = {}
+            cur_atom = 0
+
             for line in file:
-                if "CONECT" in line:
+                parts = line.split()
+                try:
+                    index = int(parts[1])
+                except (ValueError, IndexError):
+                    index = None
+
+                if parts[0] in ['ATOM', 'HETATM']:
+                    atom_map[index] = cur_atom
+                    cur_atom += 1
+                if line[0:6] == "CONECT":
+                    # CONECT records are described here: http://www.bmsc.washington.edu/CrystaLinks/man/pdb/part_69.html
+                    # After CONECT appears a series of 5 character atom numbers. There are no separating spaces in case
+                    # the atom numbers have five digits, so we need to split the atom numbers differently
                     try:
-                        values = line.split()
-                        atom = mol._atoms[int(values[1]) - 1]
-                        adjacent = [int(ind) - 1 for ind in values[2:]]
-                        atom.adjacent = remove_multi_bonds(adjacent)
+                        line = line.strip()  # Remove trailing whitespace
+                        first_atom_index = int(line[6:11])
+                        first_atom = mol._atoms[atom_map[first_atom_index]]
+
+                        adjacent = []
+                        for i in range(11, len(line), 5):
+                            adjacent_atom_index = int(line[i:i+5])
+                            adjacent.append(atom_map[adjacent_atom_index])
+                        first_atom.adjacent = remove_multi_bonds(adjacent)
                     except:
                         raise ValueError("There was a problem reading connectivity from the pdb file.")
         return mol
 
     @staticmethod
-    def create_pdb_molecule(filename, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
+    def create_pdb_with_sequence(filename, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
+                                 remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
 
         def read_atom(line, likeness_dict, index):
             record_name=line[0:6]
@@ -542,6 +564,7 @@ class Molecule:
             except:
                 pass
 
+        print("Breaking molecule into equivalency class groups based on protein sequence")
         obm = Molecule._obm_from_file(filename, format, babel_bond)
         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
 
@@ -556,6 +579,7 @@ class Molecule:
         set_equivalence_classes(mol, likeness_dict)
         print(len(likeness_dict), "equivalence groups")
         mol._process_chains(use_chains)
+        mol.display_info(use_chains)
         mol.normalize()
 
         return mol
