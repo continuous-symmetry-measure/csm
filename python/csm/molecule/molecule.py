@@ -240,7 +240,7 @@ class Molecule:
                 self._chains['Sim'] = list(range(len(self.atoms)))  # Default - one chain of all the atoms, "simulated"
                 #print("--use-chains not specified. Using one simulated chain of len %d" % len(self._chains['Sim']))
             else:
-                self.atoms[0].chain #see if there even are chains
+                check=self.atoms[0].chain #see if there even are chains
         except:
             self._chains = Chains()
             self._chains['Sim'] = list(range(len(self.atoms)))
@@ -740,10 +740,9 @@ class Molecule:
 
                 atoms[i].adjacent =  remove_multi_bonds(neighbours)
 
-            chains={}
+            chains = Chains()
             try:
                 numchains=int(f.readline())
-                chains=Chains()
                 for i in range(numchains):
                     line = f.readline().split()
                     chain_name= line[0]

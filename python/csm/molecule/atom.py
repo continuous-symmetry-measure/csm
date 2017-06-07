@@ -30,7 +30,7 @@ def GetAtomicSymbol(atomic_num):
 class Atom:
     """ A single atom, alogn with its position and neighbors
     """
-    def __init__(self, symbol, pos, index, useMass=True, chain=''):
+    def __init__(self, symbol, pos, index, useMass=True, chain=None):
         self.index=index
         self._symbol = symbol
         self.adjacent = []
@@ -39,7 +39,8 @@ class Atom:
             self._mass = GetAtomicMass(symbol)
         else:
             self._mass = 1.0
-        self._chain = chain
+        if chain:
+            self._chain = chain
         self._equivalency=[]
 
     @property
