@@ -8,14 +8,15 @@ from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 
 
 
-def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False,use_chains=False, hungarian=True, print_approx=False, dirs=None, *args, **kwargs):
+def approx_calculation(op_type, op_order, molecule, sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False,use_chains=False, hungarian=True, print_approx=False, dirs=None, new_chains=False, *args, **kwargs):
 
     #step one: choose and create the appropriate Approximator
     if hungarian:
         approximator_cls = HungarianApproximator
     else:
         approximator_cls = OldApproximator
-    approximator_cls=NewChainsApproximator
+    if new_chains:
+        approximator_cls=NewChainsApproximator
 
     #step two: run the appropriate approximator
     if op_type == 'CH':  # Chirality

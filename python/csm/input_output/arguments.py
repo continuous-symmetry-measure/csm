@@ -56,26 +56,32 @@ def _create_parser():
 
 
     #calculation arguments that only apply to exact:
-    parser.add_argument('--use-perm', type=str, help='Compute exact CSM, for a single permutation')
+    parser.add_argument('--use-perm', type=str,
+                        help='EXACT ONLY: Compute exact CSM for a single permutation')
     parser.add_argument('--keep-structure', action='store_true', default=False,
-                        help='Maintain molecule structure from being distorted in the exact calculation')
+                        help='EXACT ONLY: Maintain molecule structure from being distorted in the exact calculation')
     parser.add_argument('--no-constraint',  action='store_true', default=False,
-                        help='Do not use the constraints algorithm to traverse the permutation tree')
+                        help='EXACT ONLY: Do not use the constraints algorithm to traverse the permutation tree')
 
 
+    #approx + trivial:
+    parser.add_argument('--use-chains', action='store_true', default=False,
+                        help='Use chains specified in the PDB file in order to calculate permutations in approx or trivial algorithm')
     #calculation arguments that only apply to approx
     #parser.add_argument('--use-dir', type=str,
     #                    help='Run the approx algorithm using predefined axes as the starting point')
     parser.add_argument('--detect-outliers', action='store_true', default=False,
-                        help="Use outlier detection to improve guesses for initial directions in approx algorithm")
-    parser.add_argument('--use-chains', action='store_true', default=False,
-                        help='Use chains specified in the PDB file in order to calculate permutations in approx or trivial algorithm')
-    parser.add_argument('--no-hungarian', action='store_true', default=False,
-                    help='Do not use hungarian algorithm in approx')
+                        help="APPROX ONLY:Use outlier detection to improve guesses for initial directions in approx algorithm")
     parser.add_argument('--no-orthogonal', action='store_true', default=False,
-                        help="Don't add orthogonal directions to calculated directions")
+                        help="APPROX ONLY:Don't add orthogonal directions to calculated directions")
     parser.add_argument('--use-best-dir', action='store_true', default=False,
-                    help='Only use the best direction')
+                    help='APPROX ONLY:Only use the best direction')
+    parser.add_argument('--new-chains', action='store_true', default=False,
+                    help='APPROX ONLY: Use the new chains algorithm')
+    parser.add_argument('--no-hungarian', action='store_true', default=False,
+                    help='APPROX ONLY: use the old approx algorithm')
+
+
 
 
     #output formatting and printing options
@@ -233,7 +239,7 @@ def _process_arguments(parse_res):
 
     dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
     dictionary_args['use_best_dir'] = parse_res.use_best_dir
-
+    dictionary_args['new_chains'] = parse_res.new_chains
     #if parse_res.use_dir:
     #    if dictionary_args['calc_type'] != 'approx':
     #        logger.warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
