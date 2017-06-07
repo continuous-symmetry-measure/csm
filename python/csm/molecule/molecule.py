@@ -358,7 +358,7 @@ class Molecule:
         for to_remove in reversed(removed_atoms): #reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
             if remove_hy: #this is meant to affect print at end
-                self.obmol.DeleteAtom(self.obmol.GetAtom(to_remove + 1))
+                self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
 
         logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
 

@@ -18,7 +18,10 @@ class Approximator:
         self._op_order = op_order
         self._molecule = molecule
         self._print_approx = print_approx
-        self._initial_directions=self._choose_initial_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
+        if dirs:
+            self._initial_directions=dirs
+        else:
+            self._initial_directions=self._choose_initial_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
                                                             op_type)
 
     def _print(self, *strings):

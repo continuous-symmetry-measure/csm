@@ -281,7 +281,46 @@ class HungarianApproximator(OldApproximator):
 
 class NewChainsApproximator(Approximator):
     def _approximate_from_initial_dir(self, dir):
+        best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
+        old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
+                               csm=MAXDOUBLE)
+
+        perm = self._approximate(dir)
+        interim_results = csm_operation(self._op_type, self._op_order, self._molecule,
+                      keep_structure=False, perm=perm)
+
+        # iterations:
+        i = 0
+        max_iterations = 50
+        while (i < max_iterations and
+                   (math.fabs(old_results.csm - interim_results.csm) / math.fabs(
+                       old_results.csm) > 0.01
+                    and interim_results.csm < old_results.csm)
+                    and interim_results.csm > 0.0001):
+            old_results = interim_results
+            i += 1
+            perm = self._approximate(interim_results.dir)
+            interim_results = csm_operation(self._op_type, self._op_order, self._molecule, keep_structure=False,
+                                            perm=perm)
+
+            self._print("\t\titeration", i, ":")
+            self._print("\t\t\tfound a permutation using dir", old_results.dir, "...")
+            self._print("\t\t\tthere are",
+                        len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
+                        "differences between new permutation and previous permutation")
+            self._print("\t\t\tusing new permutation, found new direction", interim_results.dir)
+            self._print("\t\t\tthe distance between the new direction and the previous direction is:",
+                        str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
+            self._print("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
+
+            if interim_results.csm < best.csm:
+                best =interim_results
+
+        return best
+
+    def _approximate(self, dir):
         rotation_mat = create_rotation_matrix(1, self._op_type, self._op_order, dir)
+        perm = [-1] * len(self._molecule)
         # improved use chains algorithm:
         # for a given symmetric axis:
         # M= number of fragments in molecule. 0>i>M, 0>j>M
@@ -292,45 +331,59 @@ class NewChainsApproximator(Approximator):
         # if there isn't, we leave M[i,j]=0 and continue to next ij
         # (this is already confirmed in molecule setup, so we will use the equivalent chains from mol.chain_equivalences
         for equivalent_chain_group in self._molecule.chain_equivalences:
-            for frag_i in equivalent_chain_group:
-                for frag_j in equivalent_chain_group:
-                    pass
+            for i, frag_i in enumerate(equivalent_chain_group):
+                for j, frag_j in enumerate(equivalent_chain_group):
+                    fragment_distance_matrix[i,j]=self._get_fragment_distance(frag_i, frag_j, rotation_mat)
+
+        # Run the hungarian algorithm on Aij, and thereby find a permutation between the fragments
+        indexes = munkres_wrapper(fragment_distance_matrix)
+        # C: rerun A3 on the relevant ijs
+        for (i,j) in indexes:
+            frag_i_groups=self._molecule.chains_with_internal_groups[i]
+            frag_j_groups=self._molecule.chains_with_internal_groups[j]
+        # D: put together into a full permutation
+            for k, group_k in enumerate(frag_i_groups):
+                group_m=frag_j_groups[k]
+                indexes, group_distance_matrix= self._hungarian_on_groups(group_k, group_m, rotation_mat   )
+                for (from_val, to_val) in indexes:
+                    perm[group_k[from_val]] = group_m[to_val]
+        return perm
 
 
-                    #
-                    # Run thehungarian algorithm on Aij, and thereby find a permutation between the fragments
-                    #
-                    # C: rerun A3 on the relevant ijs
-                    # D: put together into a full permutation
-        pass
-
-    def _internal_func(self, frag_i, frag_j):
-        groups_i = self._molecule.chains_with_internal_groups[frag_i]
-        groups_j = self._molecule.chains_with_internal_groups[frag_j]
+    def _get_fragment_distance(self, frag_i, frag_j, rotation_mat):
+        total_distance=0
+        frag_i_groups = self._molecule.chains_with_internal_groups[frag_i]
+        frag_j_groups = self._molecule.chains_with_internal_groups[frag_j]
         # A3: e = number of equivalence groups in fragment i, of size N1... Ne
         # 0>k>e
-        for k, group_k in enumerate(groups_i):
-            # matrix B of size Nk x Nk
-            size=len(group_k)
-            group_distance_matrix= np.ones((size, size), order="c") * MAXDOUBLE
-            # Vi..Vnk are the coordinate vectors of fragment i in equivalence class k
-            # Wi..Wnk are the coordinate vectors of fragment j in equivalence class k
-            for a, index_v in enumerate(group_k):
-                for b, index_w in enumerate(groups_j[k]):
-                    coord_v=self._molecule.Q[index_v]
-                    coord_w=self._molecule.Q[index_w]
-                    # T is the symmetric translation appropriate to the given symmetric axis
-                    translated_v=self.rotation_mat @ coord_v
-                    distance = array_distance(translated_v, coord_w)
-                    group_distance_matrix[a,b]=distance
+        for k, group_k in enumerate(frag_i_groups):
+            group_m=frag_j_groups[k]
+            indexes, group_distance_matrix= self._hungarian_on_groups(group_k, group_m, rotation_mat)
+            # and the result (=sum of matrix members on diagonal generalized that hungarian found) ????
+            # we add to A[i,j]
+            for (i, j) in indexes:
+                total_distance+=group_distance_matrix[i,j]
+        return total_distance
 
-
-        # in position a,b of matrix B we place the square of the distance between T(Va) and Wb
-        # in other words matrix B is a single block from the standard approx algorithm's distance matrix,
-        # specifically the block that matches fragments i, j and equivalence group k
+    def _hungarian_on_groups(self, group_k, group_m, rotation_mat):
+        # matrix B of size Nk x Nk
+        if not group_k:
+            return [], []  # the way we built chains with internal groups, groups with no members are None
+        size = len(group_k)
+        group_distance_matrix = np.ones((size, size), order="c") * MAXDOUBLE
+        # Vi..Vnk are the coordinate vectors of fragment i in equivalence class k
+        # Wi..Wnk are the coordinate vectors of fragment j in equivalence class k
+        for a, index_v in enumerate(group_k):
+            for b, index_w in enumerate(group_m):
+                coord_v = self._molecule.Q[index_v]
+                coord_w = self._molecule.Q[index_w]
+                # T is the symmetric translation appropriate to the given symmetric axis
+                translated_v = rotation_mat @ coord_v
+                # in position a,b of matrix B we place the square of the distance between T(Va) and Wb
+                # in other words matrix B is a single block from the standard approx algorithm's distance matrix,
+                # specifically the block that matches fragments i, j and equivalence group k
+                distance = array_distance(translated_v, coord_w)
+                group_distance_matrix[a, b] = distance
         # B: We run the hungarian algorithm on matrix B,
-        # and the result (=sum of matrix members on diagonal generalized that hungarian found) ????
-        # we add to A[i,j]
-        pass
-
-
+        indexes = munkres_wrapper(group_distance_matrix)
+        return indexes, group_distance_matrix
