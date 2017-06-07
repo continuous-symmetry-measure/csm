@@ -195,3 +195,10 @@ def check_perm_structure(mol, perm):
     percent_structure= (len(mol.bondset)- broken )/len(mol.bondset)
 
     return percent_structure
+
+
+def array_distance(a, b):
+    return np.sqrt(
+        (a[0] - b[0]) * (a[0] - b[0])
+        + (a[1] - b[1]) * (a[1] - b[1])
+        + (a[2] - b[2]) * (a[2] - b[2]))

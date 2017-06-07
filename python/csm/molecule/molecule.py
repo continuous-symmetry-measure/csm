@@ -404,8 +404,8 @@ class Molecule:
 
         if display_chains:
             for chain in self.chains:
-                print("Chain %s of length %d" % (chain, len(self.chains[chain])))
-            print("%d group%s of equivalent chains" % (len(self.chain_equivalences), 's' if lengths[key] else ''))
+                print("Chain %s of length %d" % (self.chains.str_keys[chain], len(self.chains[chain])))
+            print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
             for chaingroup in self.chain_equivalences:
                 chainstring = "Group of length " + str(len(chaingroup)) + ":"
                 for index in chaingroup:
