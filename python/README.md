@@ -1,10 +1,20 @@
 The Python CSM Package
 ======================
+
+Changes in version 0.15.0
+-------------------------
+* Major change: Completely restructured internal structure of approx algorithm, to faciliate addition of new chains approx algorithm (and potentially other algorithms)
+* added flag --new-chains. New chains refers to the new chains algorithm, which, given a direction, chooses the best chain permutation and then the best permutation using that chain permutation.
+* fixed a bug in normcsm that was causing normalization option 3 to always fail
+* some internal tidying up of the Molecule class, including adding/removing properties
+* fixed a bug where chain_equivalences was always simply a list of all the chains
+* added a series of tests to the testing suite that offer a more diverse set of options and molecule types than the large .xyz-based tests
+
 Changes in version 0.14.1
 ------------------------
-added flag --json-output, for use in website, tests, etc. 
-if there was an error, it returns {"Error":"error message"}
-otherwise it returns {"Result":{"csm":csm, "dir":dir, etc...}}
+* added flag --json-output, for use in website, tests, etc. 
+* if there was an error, it returns {"Error":"error message"} 
+  otherwise it returns {"Result":{"csm":csm, "dir":dir, etc...}}
 
 Changes in version 0.14.0
 ------------------------
