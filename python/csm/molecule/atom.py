@@ -39,7 +39,7 @@ class Atom:
             self._mass = GetAtomicMass(symbol)
         else:
             self._mass = 1.0
-        if chain:
+        if chain is not None:
             self._chain = chain
         self._equivalency=[]
 
