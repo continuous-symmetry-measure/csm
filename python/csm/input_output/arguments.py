@@ -76,10 +76,10 @@ def _create_parser():
                         help="APPROX ONLY:Don't add orthogonal directions to calculated directions")
     parser.add_argument('--use-best-dir', action='store_true', default=False,
                     help='APPROX ONLY:Only use the best direction')
-    parser.add_argument('--new-chains', action='store_true', default=False,
-                    help='APPROX ONLY: Use the new chains algorithm')
-    parser.add_argument('--no-hungarian', action='store_true', default=False,
-                    help='APPROX ONLY: use the old approx algorithm')
+    parser.add_argument('--many-chains', action='store_true', default=False,
+                    help='APPROX ONLY: Use the new chains algorithm for many chains. Automatically sets use-chains to true')
+    parser.add_argument('--greedy', action='store_true', default=False,
+                    help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
 
 
 
@@ -212,45 +212,70 @@ def _process_arguments(parse_res):
         dictionary_args['calc_type'] = 'trivial'
 
     #general input/calculation arguments:
-    dictionary_args['sn_max'] = parse_res.sn_max
     #dictionary_args['ignore_hy'] = parse_res.ignore_hy
     dictionary_args['remove_hy'] = parse_res.remove_hy
     dictionary_args['ignore_symm'] = parse_res.ignore_sym
+    dictionary_args['sn_max'] = parse_res.sn_max
+    dictionary_args['use_mass'] = parse_res.use_mass
+    dictionary_args['babel_bond'] = parse_res.babel_bond
+    dictionary_args['no_babel'] = parse_res.no_babel
     dictionary_args['use_sequence']= parse_res.use_sequence
     #if parse_res.use_sequence and parse_res.keep_structure:
     #    raise ValueError("--keep-structure and --use-sequence are mutually exclusive")
 
 
     #calculation arguments for exact only:
-    if dictionary_args['calc_type'] == 'approx' and parse_res.keep_structure:
-        logger.warning("--keep-structure cannot be used in approx calculation. --keep-structure will be ignored")
-    dictionary_args['keep_structure'] = dictionary_args['keep_structure']= parse_res.keep_structure
+    if parse_res.use_perm:
+        if dictionary_args['calc_type'] != 'exact':
+            logger.warning("--use-perm applies only to exact calculation. --use-perm will be ignored")
+        dictionary_args['perm_file_name'] = parse_res.use_perm
+
+    dictionary_args['keep_structure'] = parse_res.keep_structure
+    if dictionary_args['calc_type'] != 'exact' and parse_res.keep_structure:
+        logger.warning("--keep-structure can only be used in exact calculation. --keep-structure will be ignored")
+
     dictionary_args['no_constraint']=parse_res.no_constraint
-    dictionary_args['babel_bond'] = parse_res.babel_bond
-    dictionary_args['no_babel'] = parse_res.no_babel
-    dictionary_args['use_mass'] = parse_res.use_mass
+    if dictionary_args['calc_type'] != 'exact' and parse_res.no_constraint:
+        logger.warning("--no-constraint applies only to exact calculation. --no-constraint will be ignored")
+
+
+    #use chains:
+    dictionary_args['use_chains'] = parse_res.use_chains
+
 
     #calculation arguments for approx only:
+    dictionary_args['approx_algorithm'] = 'hungarian'
+    if parse_res.many_chains:
+        if dictionary_args['calc_type'] != 'approx':
+            logger.warning("--many-chains applies only to approx calculation. --many-chains will be ignored")
+        if parse_res.greedy:
+            raise ValueError("--many-chains and --greedy are mutually exclusive")
+        if not parse_res.use_chains:
+            dictionary_args['use_chains']=True
+        dictionary_args['approx_algorithm'] = 'many-chains'
+    if parse_res.greedy:
+        if dictionary_args['calc_type'] != 'approx':
+            logger.warning("--greedy applies only to approx calculation. --greedy will be ignored")
+        dictionary_args['approx_algorithm'] = 'greedy'
+
+
+    dictionary_args['detect_outliers'] = parse_res.detect_outliers
     if dictionary_args['calc_type'] != 'approx' and parse_res.detect_outliers:
         logger.warning("--detect-outliers applies only to approx calculation. --detect-outliers will be ignored")
-    dictionary_args['detect_outliers'] = parse_res.detect_outliers
-
-    if dictionary_args['calc_type'] != 'approx' and parse_res.no_hungarian:
-        logger.warning("--no-hungarian applies only to approx calculation. --no-hungarian will be ignored")
-    dictionary_args['hungarian'] = not parse_res.no_hungarian
 
     dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
+    if dictionary_args['calc_type'] != 'approx' and not parse_res.no_orthogonal:
+        logger.warning("--no-orthogonal applies only to approx calculation. --no-orthogonal will be ignored")
+
     dictionary_args['use_best_dir'] = parse_res.use_best_dir
-    dictionary_args['new_chains'] = parse_res.new_chains
+    if dictionary_args['calc_type'] != 'approx' and parse_res.use_best_dir:
+        logger.warning("--use-best-dir applies only to approx calculation. --use-best-dir will be ignored")
+
     #if parse_res.use_dir:
     #    if dictionary_args['calc_type'] != 'approx':
     #        logger.warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
     #    dictionary_args['dir_file_name'] = parse_res.use_dir
 
-
-    #TODO: Actually, use-chains could apply to several other calculation types. just hasn't been implemented yet.
-    #(it already applies to trivial)
-    dictionary_args['use_chains'] = dictionary_args['use_chains'] = parse_res.use_chains
 
 
 
@@ -264,10 +289,7 @@ def _process_arguments(parse_res):
     if not dictionary_args['format']:
         # get input file extension
         dictionary_args['format'] = parse_res.input.split(".")[-1]
-    if parse_res.use_perm:
-        if dictionary_args['calc_type'] != 'exact':
-            logger.warning("--use-perm applies only to exact calculation. --use-perm will be ignored")
-        dictionary_args['perm_file_name'] = parse_res.use_perm
+
 
 
     # dictionary_args['write_openu'] = parse_res.write_openu

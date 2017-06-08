@@ -20,11 +20,10 @@ def run(args=[]):
     if not args:
         args = sys.argv[1:]
     csv_file = None
-    try:
         # Read inputs
-        dictionary_args = get_split_arguments(args)
+    dictionary_args = get_split_arguments(args)
+    try:
         dictionary_args['molecule'], dictionary_args['perm'], dictionary_args['dirs'] = read_inputs(**dictionary_args)
-
         # Outputing permutations
         if dictionary_args['perms_csv_name']:
             csv_file = open(dictionary_args['perms_csv_name'], 'w')

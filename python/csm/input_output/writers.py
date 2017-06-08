@@ -66,7 +66,7 @@ def print_results(result, dictionary_args):
             print("The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
         falsecount, num_invalid, cycle_counts = check_perm_cycles(result.perm, dictionary_args['op_order'], dictionary_args['op_type'])
-        if falsecount > 0 or dictionary_args['hungarian']:
+        if falsecount > 0 or dictionary_args['calc_type']=='approx':
             print("The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" %(falsecount, "cycle" if falsecount==1 else "cycles", 100*(len(result.molecule)-num_invalid) /len(result.molecule) ))
             for cycle_len in sorted(cycle_counts):
                 valid= cycle_len==1 or cycle_len==dictionary_args['op_order'] or (cycle_len==2 and dictionary_args['op_type']=='SN')

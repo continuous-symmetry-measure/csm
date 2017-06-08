@@ -71,13 +71,6 @@ def get_norm_by_distance_from_centers(coords, fragments, centers):
     return norm
 
 
-def atom_number_factor(coords, symm):
-    Pk_Qk = 0
-    for i in range(len(coords)):
-        Pk_Qk += np.linalg.norm(coords[i] - symm[i])
-    norm_factor = len(coords)
-    new_csm = Pk_Qk / norm_factor
-    return norm_factor, new_csm
 
 
 def get_chain_perm(molecule, perm):
@@ -164,23 +157,28 @@ def normalize_csm(norm_type, result):
     if norm_type == '4':    #4 normalization according to averages of approximation to symmetry of fragments
         #find center of mass of each fragment in the symmetric structure
         fragment_centers= get_fragment_centers(molecule.chains, normalized_symm)
-        norm=get_norm_by_distance_from_centers(normalized_coords, molecule.chains, fragment_centers)
+        norm_factor =get_norm_by_distance_from_centers(normalized_coords, molecule.chains, fragment_centers)
         #divide by norm
-        return norm*original_norm, original_csm/norm
+        return norm_factor * original_norm, original_csm/norm_factor
 
     if norm_type == '5': #5 normalization by number of atoms
-        #note-- atom_number_factor was refactored as a separate equation because
-        #it is possible to test its validity by sending 5*coord, 5*symm and seeing that
-        #indeed the CSM increases times 5
-        return atom_number_factor(normalized_coords, normalized_symm)
+        #atom factor validity can be tested by:
+        #  multiplying normalized_coords and normalized_symm by x
+        #  and verifying that the returned csm is also mutiplied by x
+        numerator = 0
+        for i in range(len(normalized_coords)):
+            numerator += np.linalg.norm(normalized_coords[i] - normalized_symm[i])
+        norm_factor = len(normalized_coords)
+        return norm_factor, numerator/norm_factor
+
 
     if norm_type == '6': #6 Linear normalization
         #similar to standard csm but no squaring in numerator/denominator
-        numerator = denominator = 0
+        numerator = norm_factor = 0
         for i in range(len(normalized_coords)):
             numerator += np.linalg.norm(normalized_coords[i] - normalized_symm[i])
-            denominator += np.linalg.norm(normalized_coords[i])  # we assume that the center of mass of the whole molecule is (0,0,0).
-        return denominator * np.sqrt(original_norm), numerator / denominator
+            norm_factor += np.linalg.norm(normalized_coords[i])  # we assume that the center of mass of the whole molecule is (0,0,0).
+        return norm_factor * np.sqrt(original_norm), numerator / norm_factor
 
 
 
