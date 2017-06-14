@@ -1,5 +1,11 @@
 The Python CSM Package
 ======================
+Changes in version 0.15.1
+-------------------------
+* changes to flags: --no-hungarian removed, classic algorithm is now accessed via --greedy flag, --new-chains is now --many-chains. --use-chains has been set to default, and replaced with the flag --no-chains to override the default instead. 
+* babelbond is called unless --no-babel is specified, under all circumstances (previously only with --use-chains or --keep-structure)
+* if normalization factors 1-4 are requested on a molecule without multiple fragments, a warning is printed to the user
+* bug fix: normalization factor 5 has a square root taken from the factor
 
 Changes in version 0.15.0
 -------------------------
