@@ -7,7 +7,8 @@ from csm.molecule.molecule import Molecule
 from csm.calculations.exact_calculations import exact_calculation
 import numpy as np
 from argparse import RawTextHelpFormatter
-
+import logging
+logger = logging.getLogger(__name__)
 
 def get_normalization_type(args):
     parser = _create_parser()
@@ -116,6 +117,7 @@ def normalize_csm(norm_type, result):
         #divide by norm
         return norm*original_norm, original_csm/norm
     if norm_type == '2':    #2 normalization according to symmetry of fragments, with existing perm
+        #This will raise a DivideByZero error if there's no fragments
         #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
@@ -137,6 +139,7 @@ def normalize_csm(norm_type, result):
         return norm * original_norm, original_csm / norm
 
     if norm_type == '3':    #3 normalization according to symmetry of fragments, withOUT existing perm
+        #This will raise a DivideByZero error if there's no fragments
         #find center of mass of each fragment
         fragment_centers= get_fragment_centers(molecule.chains, normalized_coords)
         #create a dummy molecule made up of atoms located at center of each mass
@@ -169,7 +172,7 @@ def normalize_csm(norm_type, result):
         for i in range(len(normalized_coords)):
             numerator += np.linalg.norm(normalized_coords[i] - normalized_symm[i])
         norm_factor = len(normalized_coords)
-        return norm_factor, numerator/norm_factor
+        return norm_factor * np.sqrt(original_norm), numerator/norm_factor
 
 
     if norm_type == '6': #6 Linear normalization
@@ -201,6 +204,11 @@ def normrun(args=[]):
     args=[x for x in args if x not in norm_types]  # remove the normalization argument
 
     result = run(args)
+
+    if len(result.molecule.chains)<=1:
+        if not set(norm_types).isdisjoint(('1','2','3','4')):
+            logger.warning("Normalization types 1,2,3,4 are based on the molecule's fragments, "
+                           "and the input molecule does not have multiple fragments")
 
     for norm_type in norm_types:
         print("--------")
