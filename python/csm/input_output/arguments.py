@@ -264,7 +264,7 @@ def _process_arguments(parse_res):
         logger.warning("--detect-outliers applies only to approx calculation. --detect-outliers will be ignored")
 
     dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
-    if dictionary_args['calc_type'] != 'approx' and not parse_res.no_orthogonal:
+    if dictionary_args['calc_type'] != 'approx' and parse_res.no_orthogonal:
         logger.warning("--no-orthogonal applies only to approx calculation. --no-orthogonal will be ignored")
 
     dictionary_args['use_best_dir'] = parse_res.use_best_dir
