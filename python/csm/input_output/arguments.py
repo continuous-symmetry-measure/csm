@@ -65,8 +65,8 @@ def _create_parser():
 
 
     #approx + trivial:
-    parser.add_argument('--use-chains', action='store_true', default=False,
-                        help='Use chains specified in the PDB file in order to calculate permutations in approx or trivial algorithm')
+    parser.add_argument('--no-chains', action='store_true', default=False,
+                        help='Do NOT use chains from molecule when it is possible to do so.')
     #calculation arguments that only apply to approx
     #parser.add_argument('--use-dir', type=str,
     #                    help='Run the approx algorithm using predefined axes as the starting point')
@@ -77,7 +77,7 @@ def _create_parser():
     parser.add_argument('--use-best-dir', action='store_true', default=False,
                     help='APPROX ONLY:Only use the best direction')
     parser.add_argument('--many-chains', action='store_true', default=False,
-                    help='APPROX ONLY: Use the new chains algorithm for many chains. Automatically sets use-chains to true')
+                    help='APPROX ONLY: Use the new chains algorithm for many chains. Will ignore no-chains')
     parser.add_argument('--greedy', action='store_true', default=False,
                     help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
 
@@ -240,7 +240,7 @@ def _process_arguments(parse_res):
 
 
     #use chains:
-    dictionary_args['use_chains'] = parse_res.use_chains
+    dictionary_args['use_chains'] = not parse_res.no_chains
 
 
     #calculation arguments for approx only:
@@ -250,8 +250,8 @@ def _process_arguments(parse_res):
             logger.warning("--many-chains applies only to approx calculation. --many-chains will be ignored")
         if parse_res.greedy:
             raise ValueError("--many-chains and --greedy are mutually exclusive")
-        if not parse_res.use_chains:
-            dictionary_args['use_chains']=True
+        if parse_res.no_chains:
+            logger.warning("--no-chains was specified with --many-chains. --no-chains will be ignored")
         dictionary_args['approx_algorithm'] = 'many-chains'
     if parse_res.greedy:
         if dictionary_args['calc_type'] != 'approx':

@@ -74,7 +74,6 @@ def test_approx(args, expected):
         args.append('--approx')
         #args.append('--no-hungarian')
         #args.append('--new-chains')
-        #args.append('--use-chains')
         result = csmrun(args)
         if not close_enough(result.csm, result.formula_csm):
             print("Yaffa!")

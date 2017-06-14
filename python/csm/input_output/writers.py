@@ -60,7 +60,7 @@ def print_results(result, dictionary_args):
         try:
             percent_structure = check_perm_structure(result.molecule, result.perm)
             print("The permutation found maintains",
-              str(round(percent_structure * 100, 2)) + "% of the original molecule's structure\n")
+              str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
 
         except ValueError:
             print("The input molecule does not have bond information and therefore conservation of structure cannot be measured")

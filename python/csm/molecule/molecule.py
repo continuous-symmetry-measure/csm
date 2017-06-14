@@ -238,7 +238,7 @@ class Molecule:
             if not use_chains:
                 self._chains=Chains()
                 self._chains['Sim'] = list(range(len(self.atoms)))  # Default - one chain of all the atoms, "simulated"
-                #print("--use-chains not specified. Using one simulated chain of len %d" % len(self._chains['Sim']))
+                #print("--no-chains specified. Using one simulated chain of len %d" % len(self._chains['Sim']))
             else:
                 check=self.atoms[0].chain #see if there even are chains
         except:
@@ -505,12 +505,12 @@ class Molecule:
                 mol = Molecule._from_obm(obm, ignore_symm, use_mass)
                 if format=="pdb" and not babel_bond:
                     mol=Molecule._read_pdb_connectivity(in_file_name, mol)
-                if not mol.bondset and (keep_structure or use_chains):
+                if not mol.bondset:
                     if no_babel:
-                        print("Warning: User input --no-babel. Molecule has no connectivity, even though --keep-structure or --use-chains were specified")
+                        logger.warning("User input --no-babel and molecule file does not have its own connectivity information.")
                     else:
-                        print("Molecule file does not have connectivity information and --keep-structure or --use-chains were specified. Using babelbond to create bonds.")
-                        print("(To suppress the automatic creation of bonds via Babelbond when using --keep-structure or --use-chains without connectivity, use --no-babel)")
+                        print("Molecule file does not have connectivity information. Using babelbond to create bonds.")
+                        print("(To suppress the automatic creation of bonds via Babelbond, use --no-babel")
                         obm = Molecule._obm_from_file(in_file_name, format, True)
                         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
 
