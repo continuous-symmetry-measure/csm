@@ -38,22 +38,23 @@ def _create_parser():
     parser.add_argument('--trivial', action='store_true', default=False,
                         help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
     parser.add_argument('--just-perms', action='store_true', default=False,
-                        help='no calculation of CSM. without --output-perms, only counts the perm. ')
+                        help='no calculation of CSM. without --output-perms, only counts the permutations ')
 
 
     #general input/calculation arguments:
     #parser.add_argument('--ignore-hy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
     parser.add_argument('--remove-hy', action='store_true', default=False,
-                        help='Remove Hydrogen atoms in computations, rebuild molecule without them and compute')
+                        help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
     parser.add_argument('--ignore-sym', action='store_true', default=False,
                         help='Ignore all atomic symbols, performing a purely geometric operation')
-    parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
     parser.add_argument('--use-mass', action='store_true', default=False,
                         help='Use the atomic masses to define center of mass')
     parser.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
     parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
-    parser.add_argument('--use-sequence', action='store_true', default=False, help='create equivalence class for pdb file using sequence information (recommended)')
-
+    parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
+    parser.add_argument('--use-sequence', action='store_true', default=False, help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
+    parser.add_argument('--use-chains', action='store_true', default=False,
+                        help='Use chains from molecule when it is possible to do so (affects trivial, approx)')
 
     #calculation arguments that only apply to exact:
     parser.add_argument('--use-perm', type=str,
@@ -64,9 +65,7 @@ def _create_parser():
                         help='EXACT ONLY: Do not use the constraints algorithm to traverse the permutation tree')
 
 
-    #approx + trivial:
-    parser.add_argument('--no-chains', action='store_true', default=False,
-                        help='Do NOT use chains from molecule when it is possible to do so.')
+
     #calculation arguments that only apply to approx
     #parser.add_argument('--use-dir', type=str,
     #                    help='Run the approx algorithm using predefined axes as the starting point')
@@ -77,7 +76,7 @@ def _create_parser():
     parser.add_argument('--use-best-dir', action='store_true', default=False,
                     help='APPROX ONLY:Only use the best direction')
     parser.add_argument('--many-chains', action='store_true', default=False,
-                    help='APPROX ONLY: Use the new chains algorithm for many chains. Will ignore no-chains')
+                    help='APPROX ONLY: Use the new chains algorithm for many chains. Will automatically apply use-chains')
     parser.add_argument('--greedy', action='store_true', default=False,
                     help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
 
@@ -88,8 +87,6 @@ def _create_parser():
     parser.add_argument('--format', help='Use a specific input/output format')
     parser.add_argument('--json-output', action='store_true', default=False,
                         help='Print output in json format to a file')
-    parser.add_argument('--print-norm', action='store_true', default=False,
-                        help='Print the normalization factor as well')
     parser.add_argument('--print-local', action='store_true', default=False,
                         help='Print the local CSM (csm for each atom) in the output file')
     parser.add_argument('--output-perms', action='store', default=None,
@@ -240,7 +237,7 @@ def _process_arguments(parse_res):
 
 
     #use chains:
-    dictionary_args['use_chains'] = not parse_res.no_chains
+    dictionary_args['use_chains'] = parse_res.use_chains
 
 
     #calculation arguments for approx only:
@@ -250,8 +247,7 @@ def _process_arguments(parse_res):
             logger.warning("--many-chains applies only to approx calculation. --many-chains will be ignored")
         if parse_res.greedy:
             raise ValueError("--many-chains and --greedy are mutually exclusive")
-        if parse_res.no_chains:
-            logger.warning("--no-chains was specified with --many-chains. --no-chains will be ignored")
+        dictionary_args['use_chains'] = True
         dictionary_args['approx_algorithm'] = 'many-chains'
     if parse_res.greedy:
         if dictionary_args['calc_type'] != 'approx':
@@ -293,7 +289,6 @@ def _process_arguments(parse_res):
 
 
     # dictionary_args['write_openu'] = parse_res.write_openu
-    dictionary_args['print_norm'] = parse_res.print_norm
     dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
     dictionary_args['perms_csv_name'] = parse_res.output_perms

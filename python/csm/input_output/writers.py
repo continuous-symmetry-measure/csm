@@ -80,17 +80,6 @@ def print_results(result, dictionary_args):
             print_output_ob(f, result, dictionary_args, dictionary_args, dictionary_args)
 
 
-
-        # print norm
-
-        if dictionary_args['print_norm']:
-            print("NORMALIZATION FACTOR: %7lf" % non_negative_zero(result.molecule.norm_factor))
-            print("SCALING FACTOR OF SYMMETRIC STRUCTURE: %7lf" % non_negative_zero(result.d_min))
-            print("DIRECTIONAL COSINES: %lf %lf %lf" % (non_negative_zero(result.dir[0]),
-                                                        non_negative_zero(result.dir[1]),
-                                                        non_negative_zero(result.dir[2])))
-            print("NUMBER OF EQUIVALENCE GROUPS: %d" % len(result.molecule.equivalence_classes))
-
         # print local CSM
 
         if dictionary_args['print_local']:
