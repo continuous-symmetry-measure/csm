@@ -410,7 +410,7 @@ class Molecule:
                 chainstring = "Group of length " + str(len(chaingroup)) + ":"
                 for index in chaingroup:
                     chainstring += " "
-                    chainstring += str(self._reversechainkeys[index])
+                    chainstring += str(self.chains.str_keys[index])
                 print(str(chainstring))
 
     def _complete_initialization(self, remove_hy, ignore_hy, use_chains):
