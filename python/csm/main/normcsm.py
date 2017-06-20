@@ -51,13 +51,20 @@ def get_normalization_type(args):
 def get_fragments():
     pass
 
-def get_fragment_centers(chains, positions):
+def get_fragment_centers(chains, positions, file):
     fragment_centers={}
     for chain in chains:
         fragment_centers[chain]=np.array([0.0, 0.0, 0.0])
         for index in chains[chain]:
             fragment_centers[chain]+=positions[index]
         fragment_centers[chain]/=len(chains[chain])
+
+    if file:
+        file.write("\nfragment centers:\n")
+        for chainkey in fragment_centers:
+            file.write("chain " + str(chainkey))
+            file.write(str(fragment_centers[chainkey]))
+            file.write("\n")
     return fragment_centers
 
 #def divide_by_chain_centers(chains, positions):
@@ -107,20 +114,23 @@ def get_chain_perm(molecule, perm):
 
     return chain_perm
 
-def print_new_molecule(file, new_result):
+def print_new_molecule(file, result):
     if file:
         file.write("dummy molecule coordinates\n")
-        file.write(str(new_result.molecule.Q))
-        file.write("\ndummy molecule's equivalence classes\n")
-        file.write(str(new_result.molecule.equivalence_classes))
-        file.write("\ncsm of dummy molecule\n")
-        file.write(str(new_result.csm))
-        file.write("\nperm\n")
-        file.write(str([i+1 for i in new_result.perm]))
+        print_coords(file, result.molecule.atoms)
         file.write("\nsymmetric structure\n")
-        file.write(str(new_result.symmetric_structure))
+        print_coords(file, result.molecule.atoms, result.symmetric_structure)
+        file.write("\n")
+        file.write("\ndummy molecule's equivalence classes\n")
+        file.write(str(result.molecule.equivalence_classes))
+        file.write("\ncsm of dummy molecule\n")
+        file.write(str(result.csm))
+        file.write("\nperm\n")
+        file.write(str([i+1 for i in result.perm]))
         file.write("\n\n")
 
+def print_coords(file, atoms, positions=None):
+    file.write(Molecule.xyz_string(atoms, positions))
 
 def normalize_csm(norm_type, result, file):
     '''
@@ -131,21 +141,23 @@ def normalize_csm(norm_type, result, file):
     original_csm = result.csm
     molecule=result.molecule
     original_norm = molecule.norm_factor ** 2
-    coords = result.normalized_molecule_coords
-    symm = result.normalized_symmetric_structure
-    #coords=[atom.pos for atom in result.molecule.atoms]
-    #symm=result.symmetric_structure
+    #coords = result.normalized_molecule_coords
+    #symm = result.normalized_symmetric_structure
+    coords=[atom.pos for atom in result.molecule.atoms]
+    symm=result.symmetric_structure
 
-    fragment_centers = get_fragment_centers(molecule.chains, coords)
 
     if norm_type == '0':  #standard
         return original_norm, original_csm
     if norm_type == '1':    #1 center of masses of the fragments
+        coords = result.normalized_molecule_coords
+        fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #norm = sum of distance (between center of mass and atom) squared
         norm=get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
         #divide by norm
         return norm*original_norm, original_csm/norm
     if norm_type == '2':    #2 normalization according to symmetry of fragments, with existing perm
+        fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #create a dummy molecule made up of atoms located at center of each mass
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
         dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
@@ -164,6 +176,7 @@ def normalize_csm(norm_type, result, file):
         return norm*original_norm, original_csm / norm
 
     if norm_type == '3':    #3 normalization according to symmetry of fragments, withOUT existing perm
+        fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #create a dummy molecule made up of atoms located at center of each mass
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
         dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
@@ -180,10 +193,10 @@ def normalize_csm(norm_type, result, file):
 
     if norm_type == '4':    #4 normalization according to averages of approximation to symmetry of fragments
         #find center of mass of each fragment in the symmetric structure
-        fragment_centers= get_fragment_centers(molecule.chains, symm)
+        fragment_centers= get_fragment_centers(molecule.chains, symm, file)
         norm_factor =get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
         #divide by norm
-        return norm_factor*original_norm, original_csm/norm_factor
+        return norm_factor, original_csm/norm_factor
 
     if norm_type == '5': #5 normalization by number of atoms
         #atom factor validity can be tested by:
@@ -232,24 +245,15 @@ def normrun(args=[]):
 
 
     if not set(norm_types).isdisjoint(('1','2','3','4')):
-        fragment_centers = get_fragment_centers(result.molecule.chains, [atom.pos for atom in result.molecule.atoms])
         if len(result.molecule.chains) <= 1:
             raise ValueError("Normalization types 1,2,3,4 are based on the molecule's fragments, "
                            "and the input molecule does not have multiple fragments.")
 
     file=None
     if norm_file:
-        file= open(norm_file, 'w')
-        file.write("normalized coordinates:\n")
-        file.write(str(result.normalized_molecule_coords))
-        file.write("\n")
-
-        if fragment_centers:
-            file.write("\nfragment centers:\n")
-            for chainkey in fragment_centers:
-                file.write("chain "+str(chainkey))
-                file.write(str(fragment_centers[chainkey]))
-                file.write("\n")
+        file = open(norm_file, 'w')
+        file.write("Normalized coords:\n")
+        print_coords(file, result.molecule.atoms, result.normalized_molecule_coords)
 
     for norm_type in norm_types:
         if file:

@@ -438,7 +438,7 @@ class Molecule:
         '''
         atoms=[]
         for i in range(size):
-            atom = Atom("XX", (0,0,0), i, False)
+            atom = Atom("C", (0,0,0), i, False)
             atoms.append(atom)
         mol= Molecule(atoms)
         mol._equivalence_classes=groups
@@ -448,7 +448,7 @@ class Molecule:
     def molecule_from_coords(coords, groups=None):
         atoms=[]
         for i, coord in enumerate(coords):
-            atom = Atom("XX", coord, i, False)
+            atom = Atom("C", coord, i, False)
             atoms.append(atom)
         mol= Molecule(atoms)
         if groups:
@@ -790,5 +790,24 @@ class Molecule:
         #        mystr+=str(adj+1)
         #    print(mystr)
 
+    @staticmethod
+    def xyz_string(atoms, positions=None):
+        '''
+        :param atoms: an array of atoms
+        :param positions: optional, an array of positions to overwrite positions in the array of atoms
+        :return:
+        '''
+        coords=str(len(atoms))
+        coords+="\nheader\n"
+        for i, atom in enumerate(atoms):
+            coords+=str(atom.symbol)
+            for index, coor in enumerate(atom.pos):
+                coords+="\t"
+                if positions is not None:
+                    coords+=str(positions[i][index])
+                else:
+                    coords+=str(coor)
+            coords+="\n"
+        return coords
 
 
