@@ -114,12 +114,12 @@ def get_chain_perm(molecule, perm):
 
     return chain_perm
 
-def print_new_molecule(file, result):
+def write_new_molecule(file, result):
     if file:
         file.write("\n")
-        print_coords(file, result.molecule.atoms, "dummy molecule coordinates")
+        write_coords(file, result.molecule.atoms, "dummy molecule coordinates")
         file.write("\n")
-        print_coords(file, result.molecule.atoms, "symmetric structure", result.symmetric_structure)
+        write_coords(file, result.molecule.atoms, "symmetric structure", result.symmetric_structure)
         file.write("\n")
         file.write("\ndummy molecule's equivalence classes\n")
         file.write(str(result.molecule.equivalence_classes))
@@ -129,9 +129,16 @@ def print_new_molecule(file, result):
         file.write(str([i+1 for i in result.perm]))
         file.write("\n\n")
 
-def print_coords(file, atoms, header="", positions=None):
+def write_coords(file, atoms, header="", positions=None):
     file.write(Molecule.xyz_string(atoms, positions, header))
 
+def print_numdenom(file, numerator, denominator):
+    if file:
+        file.write("\nNumerator: ")
+        file.write(str(numerator))
+        file.write("\nDenominator: ")
+        file.write(str(denominator))
+        file.write("\n")
 
 def normalize_csm(norm_type, result, file):
     '''
@@ -156,6 +163,7 @@ def normalize_csm(norm_type, result, file):
         #norm = sum of distance (between center of mass and atom) squared
         norm=get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
         #divide by norm
+        print_numdenom(file, original_csm, norm)
         return norm*original_norm, original_csm/norm
     if norm_type == '2':    #2 normalization according to symmetry of fragments, with existing perm
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
@@ -166,14 +174,14 @@ def normalize_csm(norm_type, result, file):
         perm=get_chain_perm(molecule, result.perm)
         #run CSM using the perm
         new_result=exact_calculation(result.op_type, result.op_order, dummy, perm=perm)
-        print_new_molecule(file, new_result)
+        write_new_molecule(file, new_result)
         new_symm=result.symmetric_structure
         #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
         #find normalization factor based on the above step
         coords=result.normalized_molecule_coords
         coordinates_dict={chain:new_symm[i] for i,chain in enumerate(molecule.chains)}
         norm = get_norm_by_distance_from_centers(coords, molecule.chains, coordinates_dict)
-
+        print_numdenom(file, original_csm*original_norm, norm)
         return norm, original_csm*original_norm/norm
 
     if norm_type == '3':    #3 normalization according to symmetry of fragments, withOUT existing perm
@@ -183,13 +191,13 @@ def normalize_csm(norm_type, result, file):
         dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
         #run CSM
         new_result=exact_calculation(result.op_type, result.op_order, dummy, no_constraint=True, suppress_print=True)
-        print_new_molecule(file, new_result)
+        write_new_molecule(file, new_result)
         new_symm=result.symmetric_structure
         #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
         #find normalization factor based on the above step
         coordinates_dict={chain:new_symm[i] for i,chain in enumerate(molecule.chains)}
         norm = get_norm_by_distance_from_centers(coords, molecule.chains, coordinates_dict)
-
+        print_numdenom(file, original_csm*original_norm, norm)
         return norm, original_csm*original_norm/norm
 
     if norm_type == '4':    #4 normalization according to averages of approximation to symmetry of fragments
@@ -197,6 +205,7 @@ def normalize_csm(norm_type, result, file):
         fragment_centers= get_fragment_centers(molecule.chains, symm, file)
         norm =get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
         #divide by norm
+        print_numdenom(file, original_csm*original_norm, norm)
         return norm, original_csm*original_norm/norm
 
     if norm_type == '5': #5 normalization by number of atoms
@@ -206,21 +215,19 @@ def normalize_csm(norm_type, result, file):
         numerator = 0
         for i in range(len(coords)):
             numerator += np.linalg.norm(coords[i] - symm[i])
-        norm_factor = len(coords)
-        file.write("numerator: ")
-        file.write(str(numerator))
-        return norm_factor, numerator*100 / norm_factor
+        norm = len(coords)
+        print_numdenom(file, numerator*100, norm)
+        return norm, numerator*100 / norm
 
 
     if norm_type == '6': #6 Linear normalization
         #similar to standard csm but no squaring in numerator/denominator
-        numerator = norm_factor = 0
+        numerator = norm = 0
         for i in range(len(coords)):
             numerator += np.linalg.norm(coords[i] - symm[i])
-            norm_factor += np.linalg.norm(coords[i])  # we assume that the center of mass of the whole molecule is (0,0,0).
-        file.write("numerator: ")
-        file.write(str(numerator))
-        return norm_factor, numerator*100 / norm_factor
+            norm += np.linalg.norm(coords[i])  # we assume that the center of mass of the whole molecule is (0,0,0).
+        print_numdenom(file, numerator*100, norm)
+        return norm, numerator*100 / norm
 
 
 
@@ -253,7 +260,7 @@ def normrun(args=[]):
     file=None
     if norm_file:
         file = open(norm_file, 'w')
-        print_coords(file, result.molecule.atoms, "Normalized coords", result.normalized_molecule_coords)
+        write_coords(file, result.molecule.atoms, "Normalized coords", result.normalized_molecule_coords)
 
     for norm_type in norm_types:
         if file:
