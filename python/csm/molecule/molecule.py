@@ -506,13 +506,14 @@ class Molecule:
                 if format=="pdb" and not babel_bond:
                     mol=Molecule._read_pdb_connectivity(in_file_name, mol)
                 if not mol.bondset:
-                    if no_babel:
-                        logger.warning("User input --no-babel and molecule file does not have its own connectivity information.")
-                    else:
+                    if keep_structure:
+                        raise ValueError("User input --keep-structure but input molecule has no bonds. Did you forget --babel-bond?")
+                    if babel_bond:
                         print("Molecule file does not have connectivity information. Using babelbond to create bonds.")
-                        print("(To suppress the automatic creation of bonds via Babelbond, use --no-babel")
                         obm = Molecule._obm_from_file(in_file_name, format, True)
                         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+                    else:
+                        logger.warn("Input molecule has no bond information")
 
         if initialize:
             mol._complete_initialization(remove_hy, ignore_hy, use_chains)
