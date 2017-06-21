@@ -221,7 +221,7 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, 
     def format_number(num):
         if abs(num) < 1000000:
             return '%d' % num
-        return '%.5g' & num
+        return '%.5g' % num
 
     if not perm and not suppress_print:
         print("Number of permutations: %s" % format_number(permuter.count))
