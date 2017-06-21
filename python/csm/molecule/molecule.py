@@ -791,14 +791,14 @@ class Molecule:
         #    print(mystr)
 
     @staticmethod
-    def xyz_string(atoms, positions=None):
+    def xyz_string(atoms, positions=None, header=""):
         '''
         :param atoms: an array of atoms
         :param positions: optional, an array of positions to overwrite positions in the array of atoms
         :return:
         '''
         coords=str(len(atoms))
-        coords+="\nheader\n"
+        coords+="\n"+header+"\n"
         for i, atom in enumerate(atoms):
             coords+=str(atom.symbol)
             for index, coor in enumerate(atom.pos):
