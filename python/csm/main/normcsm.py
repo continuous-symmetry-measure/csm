@@ -174,7 +174,7 @@ def normalize_csm(norm_type, result, file):
         coordinates_dict={chain:new_symm[i] for i,chain in enumerate(molecule.chains)}
         norm = get_norm_by_distance_from_centers(coords, molecule.chains, coordinates_dict)
 
-        return norm, original_csm / norm
+        return norm, original_csm*original_norm/norm
 
     if norm_type == '3':    #3 normalization according to symmetry of fragments, withOUT existing perm
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
@@ -190,14 +190,14 @@ def normalize_csm(norm_type, result, file):
         coordinates_dict={chain:new_symm[i] for i,chain in enumerate(molecule.chains)}
         norm = get_norm_by_distance_from_centers(coords, molecule.chains, coordinates_dict)
 
-        return norm, original_csm / norm
+        return norm, original_csm*original_norm/norm
 
     if norm_type == '4':    #4 normalization according to averages of approximation to symmetry of fragments
         #find center of mass of each fragment in the symmetric structure
         fragment_centers= get_fragment_centers(molecule.chains, symm, file)
-        norm_factor =get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
+        norm =get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
         #divide by norm
-        return norm_factor, original_csm/norm_factor
+        return norm, original_csm*original_norm/norm
 
     if norm_type == '5': #5 normalization by number of atoms
         #atom factor validity can be tested by:
