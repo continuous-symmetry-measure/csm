@@ -151,8 +151,7 @@ def normalize_csm(norm_type, result, file):
     original_norm = molecule.norm_factor ** 2
     #coords = result.normalized_molecule_coords
     #symm = result.normalized_symmetric_structure
-    coords=[atom.pos for atom in result.molecule.atoms]
-    symm=result.symmetric_structure
+
 
 
     if norm_type == '0':  #standard
@@ -160,12 +159,11 @@ def normalize_csm(norm_type, result, file):
     if norm_type == '1':    #1 center of masses of the fragments
         coords = result.normalized_molecule_coords
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
-        #norm = sum of distance (between center of mass and atom) squared
         norm=get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
-        #divide by norm
         print_numdenom(file, original_csm, norm)
         return norm*original_norm, original_csm/norm
     if norm_type == '2':    #2 normalization according to symmetry of fragments, with existing perm
+        coords = [atom.pos for atom in result.molecule.atoms]
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #create a dummy molecule made up of atoms located at center of each mass
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
@@ -175,16 +173,15 @@ def normalize_csm(norm_type, result, file):
         #run CSM using the perm
         new_result=exact_calculation(result.op_type, result.op_order, dummy, perm=perm)
         write_new_molecule(file, new_result)
-        new_symm=result.symmetric_structure
-        #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
+        new_symm=new_result.symmetric_structure
         #find normalization factor based on the above step
-        coords=result.normalized_molecule_coords
         coordinates_dict={chain:new_symm[i] for i,chain in enumerate(molecule.chains)}
         norm = get_norm_by_distance_from_centers(coords, molecule.chains, coordinates_dict)
         print_numdenom(file, original_csm*original_norm, norm)
         return norm, original_csm*original_norm/norm
 
     if norm_type == '3':    #3 normalization according to symmetry of fragments, withOUT existing perm
+        coords = [atom.pos for atom in result.molecule.atoms]
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #create a dummy molecule made up of atoms located at center of each mass
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
@@ -192,7 +189,7 @@ def normalize_csm(norm_type, result, file):
         #run CSM
         new_result=exact_calculation(result.op_type, result.op_order, dummy, no_constraint=True, suppress_print=True)
         write_new_molecule(file, new_result)
-        new_symm=result.symmetric_structure
+        new_symm=new_result.symmetric_structure
         #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
         #find normalization factor based on the above step
         coordinates_dict={chain:new_symm[i] for i,chain in enumerate(molecule.chains)}
@@ -201,6 +198,8 @@ def normalize_csm(norm_type, result, file):
         return norm, original_csm*original_norm/norm
 
     if norm_type == '4':    #4 normalization according to averages of approximation to symmetry of fragments
+        coords = [atom.pos for atom in result.molecule.atoms]
+        symm = result.symmetric_structure
         #find center of mass of each fragment in the symmetric structure
         fragment_centers= get_fragment_centers(molecule.chains, symm, file)
         norm =get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
@@ -212,6 +211,8 @@ def normalize_csm(norm_type, result, file):
         #atom factor validity can be tested by:
         #  multiplying normalized_coords and normalized_symm by x
         #  and verifying that the returned csm is also mutiplied by x
+        coords = [atom.pos for atom in result.molecule.atoms]
+        symm = result.symmetric_structure
         numerator = 0
         for i in range(len(coords)):
             numerator += np.linalg.norm(coords[i] - symm[i])
@@ -222,6 +223,8 @@ def normalize_csm(norm_type, result, file):
 
     if norm_type == '6': #6 Linear normalization
         #similar to standard csm but no squaring in numerator/denominator
+        coords = [atom.pos for atom in result.molecule.atoms]
+        symm = result.symmetric_structure
         numerator = norm = 0
         for i in range(len(coords)):
             numerator += np.linalg.norm(coords[i] - symm[i])
