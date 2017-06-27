@@ -224,16 +224,16 @@ def _process_arguments(parse_res):
     #calculation arguments for exact only:
     if parse_res.use_perm:
         if dictionary_args['calc_type'] != 'exact':
-            logger.warning("--use-perm applies only to exact calculation. --use-perm will be ignored")
+            logger.warning("--use-perm applies only to exact calculation.")
         dictionary_args['perm_file_name'] = parse_res.use_perm
 
     dictionary_args['keep_structure'] = parse_res.keep_structure
-    if dictionary_args['calc_type'] != 'exact' and parse_res.keep_structure:
-        logger.warning("--keep-structure can only be used in exact calculation. --keep-structure will be ignored")
+    if dictionary_args['calc_type'] in ['approx', 'trivial'] and parse_res.keep_structure:
+        logger.warning("--keep-structure has no effect on approximate or trivial algorithms.")
 
     dictionary_args['no_constraint']=parse_res.no_constraint
-    if dictionary_args['calc_type'] != 'exact' and parse_res.no_constraint:
-        logger.warning("--no-constraint applies only to exact calculation. --no-constraint will be ignored")
+    if dictionary_args['calc_type'] in ['approx', 'trivial'] and parse_res.no_constraint:
+        logger.warning("--no-constraint has no effect on approximate or trivial algorithms.")
 
 
     #use chains:
