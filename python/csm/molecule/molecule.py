@@ -670,12 +670,15 @@ class Molecule:
                 # get symbol by atomic number
                 symbol = GetAtomicSymbol(obatom.GetAtomicNum())
             position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
-            chain = obatom.GetResidue().GetChain()
-            if chain not in chains:
-                chains[chain]=[]
-            chains[chain].append(i)
-
-            atom = Atom(symbol, position, i, use_mass, chains.index_map[chain])
+            try:
+                chain = obatom.GetResidue().GetChain()
+                if chain not in chains:
+                    chains[chain]=[]
+                chains[chain].append(i)
+                atom = Atom(symbol, position, i, use_mass, chains.index_map[chain])
+            except AttributeError:
+                #molecule doesn't have chains, stuck with empty chains
+                atom = Atom(symbol, position, i, use_mass)
             adjacent = []
             iter = OBAtomAtomIter(obatom)
             for neighbour_atom in iter:
