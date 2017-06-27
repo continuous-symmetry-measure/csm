@@ -26,7 +26,7 @@ csm_state_tracer_func = None
 
 
 
-def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *args, **kwargs):
+def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, no_constraint=False, *args, **kwargs):
     def _len_group_permuter(group_size, cycle_size, add_cycles_of_two):
         """
         Returns the length of the group permuter.
@@ -138,7 +138,9 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, *
 
 
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
-    permuter = CythonPermuter(molecule, op_order, op_type, keep_structure, precalculate=False)
+    permuter = ConstraintPermuter(molecule, op_order, op_type, keep_structure, precalculate=False)
+    if no_constraint:
+        permuter=CythonPermuter(molecule, op_order, op_type, keep_structure, precalculate=False)
 
     for state in permuter.permute():
         if csm_state_tracer_func:
