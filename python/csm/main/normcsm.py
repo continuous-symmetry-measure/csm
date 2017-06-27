@@ -187,7 +187,7 @@ def normalize_csm(norm_type, result, file):
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
         dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
         #run CSM
-        new_result=exact_calculation(result.op_type, result.op_order, dummy, no_constraint=True, suppress_print=True)
+        new_result=exact_calculation(result.op_type, result.op_order, dummy, suppress_print=True)
         write_new_molecule(file, new_result)
         new_symm=new_result.symmetric_structure
         #(save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)

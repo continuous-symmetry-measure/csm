@@ -437,6 +437,7 @@ class Molecule:
         :return:
         '''
         atoms=[]
+
         for i in range(size):
             atom = Atom("C", (0,0,0), i, False)
             atoms.append(atom)
@@ -447,15 +448,19 @@ class Molecule:
     @staticmethod
     def molecule_from_coords(coords, groups=None):
         atoms=[]
-        for i, coord in enumerate(coords):
-            atom = Atom("C", coord, i, False)
-            atoms.append(atom)
+
+        if groups is None:
+            groups=[[i for i in range(len(coords))]]
+
+        for fake_atom, group in enumerate(groups):
+            for atom_index in group:
+                coord=coords[atom_index]
+                atom=Atom(str(fake_atom), coord, atom_index, False)
+                atoms.append(atom)
+
         mol= Molecule(atoms)
-        if groups:
-            mol._equivalence_classes=groups
-        else:
-            mol._equivalence_classes=[[i for i in range(len(coords))]]
-        #mol._norm_factor=1
+        mol._calculate_equivalency(False, False)
+        mol.normalize()
         return mol
 
     @staticmethod
