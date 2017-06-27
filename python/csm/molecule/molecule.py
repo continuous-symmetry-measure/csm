@@ -20,11 +20,12 @@ class Chains(OrderedDict):
         self.index_map={}
         super().__init__()
     def __getitem__(self, key):
-        if isinstance(key, int):
-            return super().__getitem__(key)
         if isinstance(key, str):
             index_key=self.index_map[key]
             return super().__getitem__(index_key)
+        if isinstance(key, int):
+            return super().__getitem__(key)
+
         raise ValueError
     def __setitem__(self, key, value):
         if isinstance(key, str):
@@ -532,7 +533,9 @@ class Molecule:
             # In most PDBs ATOM 1 is our atom 0, and ATOM n is our n-1. However, in some cases
             # there are TER lines in the PDB, ATOMs after the TER are found at n-2 in our list.
             atom_map = {}
+            chain_map={}
             cur_atom = 0
+            chains=Chains()
 
             for line in file:
                 parts = line.split()
@@ -543,12 +546,14 @@ class Molecule:
 
                 if parts[0] in ['ATOM', 'HETATM']:
                     atom_map[index] = cur_atom
+                    chain_map[index] = line[25:26]
                     cur_atom += 1
+
                 if line[0:6] == "CONECT":
                     # CONECT records are described here: http://www.bmsc.washington.edu/CrystaLinks/man/pdb/part_69.html
                     # After CONECT appears a series of 5 character atom numbers. There are no separating spaces in case
                     # the atom numbers have five digits, so we need to split the atom numbers differently
-                    try:
+                    if False:
                         line = line.strip()  # Remove trailing whitespace
                         first_atom_index = int(line[6:11])
                         first_atom = mol._atoms[atom_map[first_atom_index]]
@@ -558,8 +563,21 @@ class Molecule:
                             adjacent_atom_index = int(line[i:i+5])
                             adjacent.append(atom_map[adjacent_atom_index])
                         first_atom.adjacent = remove_multi_bonds(adjacent)
-                    except:
-                        raise ValueError("There was a problem reading connectivity from the pdb file.")
+                    try:
+                        line = line.strip()  # Remove trailing whitespace
+                        fake_atom_index = int(line[6:11])
+                        atom_index=atom_map[fake_atom_index]
+                        atom = mol._atoms[atom_index]
+
+                        #add chains
+                        chain=chain_map[fake_atom_index]
+                        if chain not in chains:
+                            chains[chain] = []
+                        chains[chain].append(atom_index)
+                        mol._atoms[atom_index]._chain=chains.index_map[chain] #we store atom chain as int
+                    except Exception as e:
+                        raise ValueError("There was a problem reading connectivity from the pdb file." + str(e))
+        mol._chains=chains
         return mol
 
     @staticmethod
@@ -671,12 +689,13 @@ class Molecule:
                 symbol = GetAtomicSymbol(obatom.GetAtomicNum())
             position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
             try:
-                chain = obatom.GetResidue().GetChain()
-                if chain not in chains:
-                    chains[chain]=[]
+                chain = obatom.GetResidue().GetChain().strip()
+                if chain:
+                    if chain not in chains:
+                        chains[chain]=[]
                 chains[chain].append(i)
                 atom = Atom(symbol, position, i, use_mass, chains.index_map[chain])
-            except AttributeError:
+            except (AttributeError, KeyError):
                 #molecule doesn't have chains, stuck with empty chains
                 atom = Atom(symbol, position, i, use_mass)
             adjacent = []
