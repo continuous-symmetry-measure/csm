@@ -178,7 +178,7 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
             atom.SetVector(non_negative_zero(result.molecule.atoms[i].pos[0]),
                        non_negative_zero(result.molecule.atoms[i].pos[1]),
                        non_negative_zero(result.molecule.atoms[i].pos[2]))
-        except:
+        except Exception as e:
             pass
 
     write_ob_molecule(result.molecule.obmol, in_args['format'], f)
@@ -193,7 +193,7 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
             a.SetVector(non_negative_zero(result.symmetric_structure[i][0]),
                        non_negative_zero(result.symmetric_structure[i][1]),
                        non_negative_zero(result.symmetric_structure[i][2]))
-        except:
+        except Exception as e:
             pass
 
     if str.lower(in_args['format'])=='pdb':

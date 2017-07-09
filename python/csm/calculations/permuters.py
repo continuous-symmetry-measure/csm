@@ -293,8 +293,6 @@ class ConstraintPropagator:
                 constraints.set_constraint(atom_in_A_bondset, new_constraints)
             except KeyError:
                 pass
-            except:
-                print("aha!")
         #2.
 
 

@@ -63,7 +63,7 @@ def read_dir_file(filename):
                 result = (float(line[0]), float(line[1]), float(line[2]))
                 dirs.append(result)
         return dirs
-    except:
+    except Exception as e:
         raise ValueError("Invalid input for use-dir")
 
 

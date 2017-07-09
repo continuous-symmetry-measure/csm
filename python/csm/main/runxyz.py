@@ -53,7 +53,7 @@ def split(filename):
                 (filler, blank, dir, blank2, filler2, blank3, perm) = results.strip().split("\n")
                 mol_dict[index, symm] = {"in_coord": input, "out_atoms": output, "csm": csm,
                                          "scalingfactor": scalingfactor, "dir": dir, "perm": perm}
-            except:
+            except Exception as e:
                 continue
     return mol_dict
 
@@ -76,7 +76,7 @@ def xyz_split(filename):
                     mol += file.readline()
                 index += 1
                 mol_dict[index] = mol
-            except:
+            except Exception as e:
                 continue
     return mol_dict
 
