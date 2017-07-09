@@ -167,7 +167,7 @@ def normalize_csm(norm_type, result, file):
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #create a dummy molecule made up of atoms located at center of each mass
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
-        dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
+        dummy = Molecule.dummy_molecule_from_coords(coordinates_array, molecule.chain_equivalences)
         #get chain permutation
         perm=get_chain_perm(molecule, result.perm)
         #run CSM using the perm
@@ -185,7 +185,7 @@ def normalize_csm(norm_type, result, file):
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #create a dummy molecule made up of atoms located at center of each mass
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
-        dummy = Molecule.molecule_from_coords(coordinates_array, molecule.chain_equivalences)
+        dummy = Molecule.dummy_molecule_from_coords(coordinates_array, molecule.chain_equivalences)
         #run CSM
         new_result=exact_calculation(result.op_type, result.op_order, dummy, suppress_print=True)
         write_new_molecule(file, new_result)
