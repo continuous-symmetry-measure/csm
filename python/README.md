@@ -1,5 +1,22 @@
 The Python CSM Package
 ======================
+
+Changes in version 0.15.2
+-------------------------
+* main change: normalization factors are now working as expected
+* bug fixes like a bad print, program crashing on no chains.
+* sightly improved printouts
+* coutning perms is done with constraints permuter unless --no-constraints is specified
+* babel-bond no longer default. if there's no bonds with keep-structure, program exits. otherwise with no bonds program prints warning and continues
+
+
+Changes in version 0.15.1.5
+-------------------------
+* reverse some changes to flags. --use-chains is back, --no-chains is gone. 
+* got rid of the outdated flag --print-norm, now that we have an entire separate command for printing normalization information
+* added the flag --output-norm FILE which prints various information from the normalization process to a file. may be removed in future versions.
+* various changes to the normalization calculations, which are still buggy.
+
 Changes in version 0.15.1
 -------------------------
 * changes to flags: --no-hungarian removed, classic algorithm is now accessed via --greedy flag, --new-chains is now --many-chains. --use-chains has been set to default, and replaced with the flag --no-chains to override the default instead. 
