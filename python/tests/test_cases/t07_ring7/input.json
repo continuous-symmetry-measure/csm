@@ -1,1 +1,0 @@
-{"runs": {"L01_c2": ["c2", "__IN__", "__OUT__"], "L02_cs": ["cs", "__IN__", "__OUT__"], "L03_c7": ["c7", "__IN__", "__OUT__"]}, "moleculefile": "D:\\UserData\\devora\\Sources\\csm\\test_cases\\sagiv\\test_cases\\clean_test_cases\\t07_ring7\\input\\input_1\\ring7.xyz", "equiv_perms": {"c7": [[[1, 2, 3, 4, 5, 6, 0], [6, 0, 1, 2, 3, 4, 5]]]}}
