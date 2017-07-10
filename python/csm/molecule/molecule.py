@@ -471,8 +471,9 @@ class Molecule:
         return mol
 
     @staticmethod
-    def from_string(string, format, initialize=True, use_chains=False, babel_bond=False, ignore_hy=False,
-                    remove_hy=False, ignore_symm=False, use_mass=False):
+    def from_string(string, format, initialize=True,
+                    use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
+                    ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False):
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
 
         # step one: get the molecule object
@@ -484,8 +485,9 @@ class Molecule:
         return mol
 
     @staticmethod
-    def from_file(in_file_name, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False, use_sequence=False,
+    def from_file(in_file_name, format=None, initialize=True,
+                  use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
+                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False,
                   *args, **kwargs):
         def get_format(form):
             if format.lower()=="csm":
@@ -502,8 +504,7 @@ class Molecule:
         if use_sequence:
             if format.lower() != 'pdb':
                 raise ValueError("--use-sequence only works with PDB files")
-            mol = Molecule.create_pdb_with_sequence(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
-                                                    remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
+            mol = Molecule.create_pdb_with_sequence(in_file_name, **kwargs)
             #we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             return mol
 
@@ -779,9 +780,10 @@ class Molecule:
 
 
     @staticmethod
-    def create_pdb_with_sequence(filename, initialize=True, format=None, use_chains=False, babel_bond=False,
-                                 ignore_hy=False,
-                                 remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
+    def create_pdb_with_sequence(in_file_name, format=None, initialize=True,
+                  use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
+                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False,
+                  *args, **kwargs):
         def read_atom(line, likeness_dict, index):
             record_name = line[0:6]
             if record_name in ["ATOM  ", "HETATM"]:
@@ -816,13 +818,13 @@ class Molecule:
                 pass
 
         print("Breaking molecule into equivalency class groups based on protein sequence")
-        obm = Molecule._obm_from_file(filename, format, babel_bond)
+        obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
 
         likeness_dict = {}
         index = 0
 
-        with open(filename, 'r') as file:
+        with open(in_file_name, 'r') as file:
             for line in file:
                 index = read_atom(line, likeness_dict, index)
 

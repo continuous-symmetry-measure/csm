@@ -55,8 +55,8 @@ def get_run_tuples(dirs):
                         params.append(my_tuple)
                     except KeyError:
                         pass
-        except:
-                pass #leave me alone
+        except Exception as e:
+            print(e)
 
     return params
 
