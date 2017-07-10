@@ -169,6 +169,8 @@ class Molecule:
         chains=Chains()
         for i, atom in enumerate(self.atoms):
             chain=atom.chain
+            if not use_chains:
+                chain='Simulated chain'
             if chain not in chains:
                 chains[chain] = []
             chains[chain].append(i)
@@ -487,7 +489,7 @@ class Molecule:
 
         # step one: get the molecule object
         obm = Molecule._obm_from_string(string, format, babel_bond)
-        mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+        mol = Molecule._from_obm(obm, ignore_symm, use_mass, read_fragments)
         if initialize:
             mol._complete_initialization(remove_hy, ignore_hy, use_chains)
 
@@ -522,7 +524,7 @@ class Molecule:
 
         else:
                 obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
-                mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+                mol = Molecule._from_obm(obm, ignore_symm, use_mass, read_fragments)
                 if format=="pdb" and not babel_bond:
                     mol=Molecule._read_pdb_connectivity(in_file_name, mol)
                 if not mol.bondset:
@@ -573,7 +575,7 @@ class Molecule:
         return obmols
 
     @staticmethod
-    def _from_obm(obmols, ignore_symm=False, use_mass=False, read_fragments=False, use_chains=False):
+    def _from_obm(obmols, ignore_symm=False, use_mass=False, read_fragments=False):
         """
         :param obmol: OBmol molecule
         :param args_dict: dictionary of processed command line arguments
@@ -581,11 +583,8 @@ class Molecule:
         """
         if not read_fragments:
             obmols=obmols[:1]
-        num_atoms=0
         atoms = []
-        for obmol in obmols:
-            num_atoms += obmol.NumAtoms()
-
+        for obmol_id, obmol in enumerate(obmols):
             for i, obatom in enumerate(OBMolAtomIter(obmol)):
                 if ignore_symm:
                     symbol = "XX"
@@ -594,7 +593,10 @@ class Molecule:
                     symbol = GetAtomicSymbol(obatom.GetAtomicNum())
                     position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
                 try:
-                    chain = obatom.GetResidue().GetChain().strip()
+                    if read_fragments:
+                        chain=str(obmol_id)
+                    else:
+                        chain = obatom.GetResidue().GetChain().strip()
                     atom = Atom(symbol, position, i, use_mass, chain)
                 except (AttributeError, KeyError):
                     #molecule doesn't have chains, stuck with empty chains
