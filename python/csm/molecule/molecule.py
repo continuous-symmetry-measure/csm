@@ -14,38 +14,47 @@ def remove_multi_bonds(bonds):
     l.sort()
     return l
 
+
+
 class Chains(OrderedDict):
+    '''
+    two sets of keys, string keys and integer keys that match the index of the chain
+    the inner dict is composed of integer keys, string keys must be translated to int before sending on to inner dict
+    '''
     def __init__(self):
-        self.str_keys=[]
-        self.index_map={}
+        self._indexes_to_string=[]
+        self._strings_to_indexes={}
         super().__init__()
+
     def __getitem__(self, key):
-        if isinstance(key, str):
-            index_key=self.index_map[key]
-            return super().__getitem__(index_key)
         if isinstance(key, int):
             return super().__getitem__(key)
-
-        raise ValueError
-    def __setitem__(self, key, value):
         if isinstance(key, str):
-            self.str_keys.append(key)
-            index_key=self.str_keys.index(key)
-            self.index_map[key]=index_key
-            return super().__setitem__(index_key, value)
+            return super().__getitem__(self._strings_to_indexes[key])
         raise ValueError
+
+    def __setitem__(self, key, value):
+        '''
+        :param key: expects a string and will force ints to string
+        :param value:
+        :return:
+        '''
+        if isinstance(key, int):
+            key=str(key)
+        self._indexes_to_string.append(key)
+        index=self._indexes_to_string.index(key)
+        self._strings_to_indexes[key]=index
+        return super().__setitem__(index, value)
+
 
     def __contains__(self, item):
         if isinstance(item, int):
-            return item in self.__dict__
+            return item < len(self._indexes_to_string)
         if isinstance(item, str):
             try:
-                index_key=self.index_map[item]
-                return super().__contains__(index_key)
+                return self._strings_to_indexes.__contains__(item)
             except KeyError:
                 return False
-
-
 
 
 
@@ -163,7 +172,7 @@ class Molecule:
             if chain not in chains:
                 chains[chain] = []
             chains[chain].append(i)
-            atom.chain=chains.index_map[chain]
+            atom.chain=chains._strings_to_indexes[chain]
         self._chains=chains
 
         #within each equivalence class, labels by chain,
@@ -653,16 +662,16 @@ class Molecule:
 
                 atoms[i].adjacent =  remove_multi_bonds(neighbours)
 
-            chains = Chains()
+            #chains = Chains() #used to get chain indices???
             try:
                 numchains=int(f.readline())
                 for i in range(numchains):
                     line = f.readline().split()
                     chain_name= line[0]
-                    chains[chain_name]=[]
+            #        chains[chain_name]=[]
                     for j in range(1, len(line)):
                         atom_index=int(line[j]) - 1
-                        chains[chain_name].append(atom_index)
+            #            chains[chain_name].append(atom_index)
                         atoms[atom_index]._chain=chains.index_map[chain_name]
 
             except:
@@ -733,7 +742,7 @@ class Molecule:
             atom_map = {}
             chain_map = {}
             cur_atom = 0
-            chains = Chains()
+            #chains = Chains()
 
             for line in file:
                 parts = line.split()
@@ -751,16 +760,7 @@ class Molecule:
                     # CONECT records are described here: http://www.bmsc.washington.edu/CrystaLinks/man/pdb/part_69.html
                     # After CONECT appears a series of 5 character atom numbers. There are no separating spaces in case
                     # the atom numbers have five digits, so we need to split the atom numbers differently
-                    if False:
-                        line = line.strip()  # Remove trailing whitespace
-                        first_atom_index = int(line[6:11])
-                        first_atom = mol._atoms[atom_map[first_atom_index]]
 
-                        adjacent = []
-                        for i in range(11, len(line), 5):
-                            adjacent_atom_index = int(line[i:i + 5])
-                            adjacent.append(atom_map[adjacent_atom_index])
-                        first_atom.adjacent = remove_multi_bonds(adjacent)
                     try:
                         line = line.strip()  # Remove trailing whitespace
                         fake_atom_index = int(line[6:11])
@@ -769,13 +769,16 @@ class Molecule:
 
                         # add chains
                         chain = chain_map[fake_atom_index]
-                        if chain not in chains:
-                            chains[chain] = []
-                        chains[chain].append(atom_index)
-                        mol._atoms[atom_index]._chain = chains.index_map[chain]  # we store atom chain as int
+                        mol._atoms[atom_index]._chain = str(chain)
+
+                        #add adjacency
+                        adjacent = []
+                        for i in range(11, len(line), 5):
+                            adjacent_atom_index = int(line[i:i + 5])
+                            adjacent.append(atom_map[adjacent_atom_index])
+                        atom.adjacent = remove_multi_bonds(adjacent)
                     except Exception as e:
                         raise ValueError("There was a problem reading connectivity from the pdb file." + str(e))
-        mol._chains = chains
         return mol
 
 
