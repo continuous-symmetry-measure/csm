@@ -22,7 +22,7 @@ class Chains(OrderedDict):
     the inner dict is composed of integer keys, string keys must be translated to int before sending on to inner dict
     '''
     def __init__(self):
-        self._indexes_to_string=[]
+        self._indexes_to_strings=[]
         self._strings_to_indexes={}
         super().__init__()
 
@@ -41,15 +41,15 @@ class Chains(OrderedDict):
         '''
         if isinstance(key, int):
             key=str(key)
-        self._indexes_to_string.append(key)
-        index=self._indexes_to_string.index(key)
+        self._indexes_to_strings.append(key)
+        index=self._indexes_to_strings.index(key)
         self._strings_to_indexes[key]=index
         return super().__setitem__(index, value)
 
 
     def __contains__(self, item):
         if isinstance(item, int):
-            return item < len(self._indexes_to_string)
+            return item < len(self._indexes_to_strings)
         if isinstance(item, str):
             try:
                 return self._strings_to_indexes.__contains__(item)
@@ -420,13 +420,13 @@ class Molecule:
 
         if display_chains:
             for chain in self.chains:
-                print("Chain %s of length %d" % (self.chains.str_keys[chain], len(self.chains[chain])))
+                print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
             print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
             for chaingroup in self.chain_equivalences:
                 chainstring = "Group of length " + str(len(chaingroup)) + ":"
                 for index in chaingroup:
                     chainstring += " "
-                    chainstring += str(self.chains.str_keys[index])
+                    chainstring += str(self.chains._indexes_to_strings[index])
                 print(str(chainstring))
 
     def _complete_initialization(self, remove_hy, ignore_hy, use_chains):
@@ -441,7 +441,7 @@ class Molecule:
         try:
             self.display_info(use_chains)
         except Exception as e:
-            pass
+            print(e)
         self.normalize()
 
     @staticmethod
