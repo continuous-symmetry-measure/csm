@@ -1,0 +1,29 @@
+MIRROR SYMMETRY: 0.0019
+SCALING FACTOR: 0.999962
+
+MODEL 01 INITIAL STRUCTURE COORDINATES
+5
+mol_index=9; TURKOI  **FRAG**        1
+C          0.00000        0.00000       -1.28315
+C         -0.92334       -0.74218       -0.32470
+C         -0.56105       -0.46375        0.96627
+C          0.56105        0.46374        0.96627
+C          0.92334        0.74217       -0.32470
+
+MODEL 02 RESULTING STRUCTURE COORDINATES
+5
+mol_index=9; TURKOI  **FRAG**        1
+C          0.00000        0.00000       -1.28316
+C         -0.92055       -0.74563       -0.32470
+C         -0.56561       -0.45813        0.96628
+C          0.56561        0.45813        0.96628
+C          0.92055        0.74563       -0.32470
+END
+
+ DIRECTIONAL COSINES:
+
+-0.777070 -0.629414 0.000000
+
+ PERMUTATION:
+
+1 5 4 3 2 

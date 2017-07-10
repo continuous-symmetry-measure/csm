@@ -246,6 +246,7 @@ normalization_dict={
 
 
 def normrun(args=[]):
+
     if not args:
         args = sys.argv[1:]
 
@@ -260,29 +261,32 @@ def normrun(args=[]):
             raise ValueError("Normalization types 1,2,3,4 are based on the molecule's fragments, "
                            "and the input molecule does not have multiple fragments.")
 
+    normalization_results={}
+
     file=None
-    if norm_file:
-        file = open(norm_file, 'w')
-        write_coords(file, result.molecule.atoms, "Normalized coords", result.normalized_molecule_coords)
+    try:
+        if norm_file:
+            file = open(norm_file, 'w')
+            write_coords(file, result.molecule.atoms, "Normalized coords", result.normalized_molecule_coords)
 
-    for norm_type in norm_types:
+        for norm_type in norm_types:
+            if file:
+                file.write("\n***Normalization "+ norm_type +":***\n")
+            print("--------")
+            try:
+                norm_factor, final_csm = normalize_csm(norm_type, result, file)
+                normalization_results[norm_type]=(norm_factor, final_csm)
+                print("Csm normalized with", normalization_dict[norm_type], "("+ norm_type+ ")", "is:", final_csm)
+                print("Normalization factor is:", norm_factor)
+            except Exception as e:
+                print("FAILED to normalize csm with",  normalization_dict[norm_type], "("+ norm_type+ ")")
+                print("Cause:", str(e))
+        return normalization_results
+
+    finally:
         if file:
-            file.write("\n***Normalization "+ norm_type +":***\n")
-        print("--------")
-        try:
-            norm_factor, final_csm = normalize_csm(norm_type, result, file)
-            print("Csm normalized with", normalization_dict[norm_type], "("+ norm_type+ ")", "is:", final_csm)
-            print("Normalization factor is:", norm_factor)
-        except Exception as e:
-            print("FAILED to normalize csm with",  normalization_dict[norm_type], "("+ norm_type+ ")")
-            print("Cause:", str(e))
+            file.close()
 
-    if file:
-        file.close()
-
-
-def run_no_return(args=[]):
-    normrun(args)
 
 
 if __name__ == '__main__':

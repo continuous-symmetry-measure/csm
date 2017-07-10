@@ -21,9 +21,9 @@ class Expected:
         self.symmetric_structure=Molecule.from_string(dict['symmetric'], 'xyz', initialize=False)._Q
         self.molecule=Molecule.from_string(dict['normalized'], 'xyz')
 
-def close_enough(val1, val2):
+def close_enough(val1, val2, tolerance=.0001):
     test=math.fabs(val1-val2)
-    if test>.0001:
+    if test>tolerance:
         return False
     return True
 
