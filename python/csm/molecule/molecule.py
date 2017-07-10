@@ -397,7 +397,7 @@ class Molecule:
         for group in self._equivalence_classes:
             try:
                 lengths[len(group)] += 1
-            except:
+            except KeyError:
                 lengths[len(group)] = 1
         for key in lengths:
             print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))

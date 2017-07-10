@@ -75,4 +75,4 @@ if __name__ == '__main__':
     #timer = timeit.Timer(lambda: run_many_times())
     timer = timeit.Timer(lambda: run(args=sys.argv[1:]))
     time = timer.timeit(number=1)
-    print("Runtime:", time)
+    print("Runtime:", time, "seconds")
