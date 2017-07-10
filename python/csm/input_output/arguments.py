@@ -55,8 +55,6 @@ def _create_parser():
     parser.add_argument('--use-sequence', action='store_true', default=False, help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
     parser.add_argument('--use-chains', action='store_true', default=False,
                         help='Use chains from molecule when it is possible to do so (affects trivial, approx)')
-    parser.add_argument('--read-fragments',  action='store_true', default=False,
-                        help='Read fragments from .mol or .pdb file as chains')
 
     #calculation arguments that only apply to exact:
     parser.add_argument('--use-perm', type=str,
@@ -219,10 +217,6 @@ def _process_arguments(parse_res):
     dictionary_args['babel_bond'] = parse_res.babel_bond
     dictionary_args['no_babel'] = parse_res.no_babel
     dictionary_args['use_sequence']= parse_res.use_sequence
-    dictionary_args['read_fragments'] = parse_res.read_fragments
-
-    if not parse_res.use_chains and parse_res.read_fragments:
-        raise ValueError("--read-fragments is only relevant when --use-chains has been specified")
     #if parse_res.use_sequence and parse_res.keep_structure:
     #    raise ValueError("--keep-structure and --use-sequence are mutually exclusive")
 
