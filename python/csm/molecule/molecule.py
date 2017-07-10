@@ -227,7 +227,7 @@ class Molecule:
 
 
 
-    def _calculate_equivalency(self, remove_hy, ignore_hy):
+    def _calculate_equivalency(self, remove_hy):
         """
         Preprocess a molecule based on the arguments passed to CSM
         :param remove_hy: True if hydrogen atoms should be removed
@@ -235,8 +235,8 @@ class Molecule:
         :param kwargs: Place holder for all other csm_args.
         You can call it by passing **csm_args
         """
-        if ignore_hy or remove_hy:
-            self.strip_atoms(remove_hy, ignore_hy)
+        if remove_hy:
+            self.strip_atoms()
 
         def is_similar(atoms_group_num, a, b):
             found = True
@@ -335,7 +335,7 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-    def strip_atoms(self, remove_hy, ignore_hy):
+    def strip_atoms(self):
         """
             Creates a new Molecule from m by removing atoms who's symbol is in the remove list
             :param csm_args:
@@ -364,8 +364,7 @@ class Molecule:
 
         for to_remove in reversed(removed_atoms): #reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
-            if remove_hy: #this is meant to affect print at end
-                self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
+            self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
 
         logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
 
@@ -420,13 +419,13 @@ class Molecule:
                     chainstring += str(self.chains.str_keys[index])
                 print(str(chainstring))
 
-    def _complete_initialization(self, remove_hy, ignore_hy, use_chains):
+    def _complete_initialization(self, remove_hy, use_chains):
         """
         Finish creating the molecule after reading the raw data
         """
 
         print("Breaking molecule into equivalence class groups")
-        self._calculate_equivalency(remove_hy, ignore_hy)
+        self._calculate_equivalency(remove_hy)
         #print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._initialize_chains(use_chains)
         try:
@@ -466,26 +465,29 @@ class Molecule:
                 atoms.append(atom)
 
         mol= Molecule(atoms)
-        mol._calculate_equivalency(False, False)
+        mol._calculate_equivalency(False)
         mol.normalize()
         return mol
 
     @staticmethod
-    def from_string(string, format, initialize=True, use_chains=False, babel_bond=False, ignore_hy=False,
-                    remove_hy=False, ignore_symm=False, use_mass=False):
+    def from_string(string, format, initialize=True,
+                    use_chains=False, babel_bond=False, read_fragments=False, #use_sequence=False,
+                    remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False,
+                   ):
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
 
         # step one: get the molecule object
         obm = Molecule._obm_from_string(string, format, babel_bond)
-        mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+        mol = Molecule._from_obm(obm, ignore_symm, use_mass, read_fragments, use_chains)
         if initialize:
             mol._complete_initialization(remove_hy, ignore_hy, use_chains)
 
         return mol
 
     @staticmethod
-    def from_file(in_file_name, initialize=True, format=None, use_chains=False, babel_bond=False, ignore_hy=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False, use_sequence=False,
+    def from_file(in_file_name, format=None, initialize=True,
+                  use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
+                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False,
                   *args, **kwargs):
         def get_format(form):
             if format.lower()=="csm":
@@ -502,8 +504,7 @@ class Molecule:
         if use_sequence:
             if format.lower() != 'pdb':
                 raise ValueError("--use-sequence only works with PDB files")
-            mol = Molecule.create_pdb_with_sequence(in_file_name, initialize, format, use_chains, babel_bond, ignore_hy,
-                                                    remove_hy, ignore_symm, use_mass, keep_structure, no_babel)
+            mol = Molecule.create_pdb_with_sequence(in_file_name, **kwargs)
             #we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             return mol
 
@@ -512,7 +513,7 @@ class Molecule:
 
         else:
                 obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
-                mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+                mol = Molecule._from_obm(obm, ignore_symm, use_mass, read_fragments, use_chains)
                 if format=="pdb" and not babel_bond:
                     mol=Molecule._read_pdb_connectivity(in_file_name, mol)
                 if not mol.bondset:
@@ -522,7 +523,7 @@ class Molecule:
                         logger.warn("Input molecule has no bond information")
 
         if initialize:
-            mol._complete_initialization(remove_hy, ignore_hy, use_chains)
+            mol._complete_initialization(remove_hy, use_chains)
 
         return mol
 
@@ -779,9 +780,10 @@ class Molecule:
 
 
     @staticmethod
-    def create_pdb_with_sequence(filename, initialize=True, format=None, use_chains=False, babel_bond=False,
-                                 ignore_hy=False,
-                                 remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False, no_babel=False):
+    def create_pdb_with_sequence(in_file_name, format=None, initialize=True,
+                  use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
+                  remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False,
+                  *args, **kwargs):
         def read_atom(line, likeness_dict, index):
             record_name = line[0:6]
             if record_name in ["ATOM  ", "HETATM"]:
@@ -816,13 +818,13 @@ class Molecule:
                 pass
 
         print("Breaking molecule into equivalency class groups based on protein sequence")
-        obm = Molecule._obm_from_file(filename, format, babel_bond)
+        obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
 
         likeness_dict = {}
         index = 0
 
-        with open(filename, 'r') as file:
+        with open(in_file_name, 'r') as file:
             for line in file:
                 index = read_atom(line, likeness_dict, index)
 
@@ -838,7 +840,7 @@ class Molecule:
         mol.normalize()
 
         '''
-        self._calculate_equivalency(remove_hy, ignore_hy)
+        self._calculate_equivalency(remove_hy)
         self._initialize_chains(use_chains)
         self.display_info(use_chains)
         self.normalize()
