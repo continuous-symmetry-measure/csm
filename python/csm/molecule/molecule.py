@@ -46,7 +46,6 @@ class Chains(OrderedDict):
         self._strings_to_indexes[key]=index
         return super().__setitem__(index, value)
 
-
     def __contains__(self, item):
         if isinstance(item, int):
             return item < len(self._indexes_to_strings)
@@ -223,7 +222,7 @@ class Molecule:
                         break
                     try:
                         length = len(group[chain_index])
-                    except IndexError:
+                    except KeyError: #that chain is notn in this equivalence group
                         continue
                     try:
                         if length != len(group[chain2_index]):
@@ -748,6 +747,8 @@ class Molecule:
 
             for line in file:
                 parts = line.split()
+                if not parts:
+                    continue
                 try:
                     index = int(parts[1])
                 except (ValueError, IndexError):
@@ -755,7 +756,15 @@ class Molecule:
 
                 if parts[0] in ['ATOM', 'HETATM']:
                     atom_map[index] = cur_atom
-                    chain_map[index] = line[25:26]
+
+                    #ATOMxxxxxx1xxNxxxLYSxA
+                    #HETATMxxxx3xxHxxxHOHxxxxx1
+                    if parts[0]=='ATOM':
+                        chain_designation=line[21]
+                    if parts[0]=='HETATM':
+                        chain_designation = line[25]
+                    chain_map[index]=chain_designation
+
                     cur_atom += 1
 
                 if line[0:6] == "CONECT":
