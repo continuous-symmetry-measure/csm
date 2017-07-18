@@ -6,7 +6,7 @@ Changes in version 0.15.2
 * main change: normalization factors are now working as expected
 * bug fixes like a bad print, program crashing on no chains.
 * sightly improved printouts
-* coutning perms is done with constraints permuter unless --no-constraints is specified
+* counting perms is done with constraints permuter unless --no-constraints is specified
 * babel-bond no longer default. if there's no bonds with keep-structure, program exits. otherwise with no bonds program prints warning and continues
 
 

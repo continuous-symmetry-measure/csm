@@ -45,12 +45,16 @@ def test_mol_with_multiple_no_frag():
     file = os.path.join(inbal_folder, 'water-6.mol')
     m = Molecule.from_file(file, format='mol', use_chains=True)
     assert (len(m.chains) == 1)
+    assert (len(m)==3)
 
 def test_mol_with_multiple_no_chain():
     file = os.path.join(inbal_folder, 'water-6.mol')
     m = Molecule.from_file(file, format='mol')
     assert (len(m.chains) == 1)
 
+def test_pdb_with_chains_hetatm_and_nonequal_equivalence_classes():
+    file=r'D:\UserData\devora\Sources\csm\test_cases\old_test_cases\inbal\proteins\2xql.pdb'
+    m=Molecule.from_file(file, format='pdb', use_chains=True)
 #test for the following calculation types:
 #approx with use-chains
 #approx without use-chains
