@@ -4,7 +4,7 @@ Cython==0.25.2
 execnet==1.4.1
 munkres==1.0.8
 numpy==1.11.0
-openbabel==1.8.4
+openbabel==2.4.1
 py==1.4.32
 pytest==3.0.5
 pytest-xdist==1.15.0
