@@ -287,7 +287,6 @@ def _process_arguments(parse_res):
     dictionary_args['print_perms'] = parse_res.output_perms
     dictionary_args['print_branches'] = parse_res.output_branches
     dictionary_args['format'] = parse_res.format
-    dictionary_args['useformat'] = dictionary_args['format'] is not None
     if not dictionary_args['format']:
         # get input file extension
         dictionary_args['format'] = parse_res.input.split(".")[-1]

@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter
+from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, OBMolBondIter
 from csm.molecule.atom import Atom, GetAtomicSymbol
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords
 import logging
@@ -495,21 +495,10 @@ class Molecule:
         return mol
 
     @staticmethod
-    def from_file(in_file_name, format=None, initialize=True,
+    def from_file(in_file_name, format, initialize=True,
                   use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
                   ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False,
                   *args, **kwargs):
-        def get_format(form):
-            if format.lower()=="csm":
-                return "csm"
-            conv = OBConversion()
-            if not form:
-                form = conv.FormatFromExt(in_file_name)
-                if not form:
-                    raise ValueError("Error discovering format from filename " + in_file_name)
-            return form
-
-        format = get_format(format)
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -556,6 +545,8 @@ class Molecule:
         :param babelBond:
         :return:
         """
+        import pybel
+        mols = list(pybel.readfile(format, filename))
         obmol = OBMol()
         conv = OBConversion()
         if not conv.SetInFormat(format):
@@ -571,6 +562,8 @@ class Molecule:
             obmol = OBMol()
             notatend = conv.Read(obmol)
 
+        pymol_1=mols[0]
+        pymol_2=pybel.Molecule(obmols[0])
         return obmols
 
     @staticmethod
