@@ -8,3 +8,4 @@ openbabel==1.8.4
 py==1.4.32
 pytest==3.0.5
 pytest-xdist==1.15.0
+pytest-capturelog==0.7
