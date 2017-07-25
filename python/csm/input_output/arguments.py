@@ -219,12 +219,19 @@ def _process_arguments(parse_res):
     dictionary_args['babel_bond'] = parse_res.babel_bond
     dictionary_args['no_babel'] = parse_res.no_babel
     dictionary_args['use_sequence']= parse_res.use_sequence
-    dictionary_args['read_fragments'] = parse_res.read_fragments
 
-    if not parse_res.use_chains and parse_res.read_fragments:
-        raise ValueError("--read-fragments is only relevant when --use-chains has been specified")
     #if parse_res.use_sequence and parse_res.keep_structure:
     #    raise ValueError("--keep-structure and --use-sequence are mutually exclusive")
+
+
+
+    #use chains and fragments
+    dictionary_args['use_chains'] = parse_res.use_chains
+    dictionary_args['read_fragments'] = parse_res.read_fragments
+
+    if not dictionary_args['use_chains'] and parse_res.read_fragments:
+        dictionary_args['use_chains']=True
+        logger.warn("--read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
 
     #calculation arguments for exact only:
@@ -240,10 +247,6 @@ def _process_arguments(parse_res):
     dictionary_args['no_constraint']=parse_res.no_constraint
     if dictionary_args['calc_type'] in ['approx', 'trivial'] and parse_res.no_constraint:
         logger.warning("--no-constraint has no effect on approximate or trivial algorithms.")
-
-
-    #use chains:
-    dictionary_args['use_chains'] = parse_res.use_chains
 
 
     #calculation arguments for approx only:

@@ -66,5 +66,5 @@ class Atom:
         self._equivalency.append(index)
 
     def __str__(self):
-        return "Symbol: %s\tPos: %s\tAdjacent: %s" % (self.symbol, self.pos, self.adjacent)
+        return "Symbol: %s\tPos: %s\tChain: %s\tAdjacent: %s" % (self.symbol, self.pos, self.chain, self.adjacent)
 
