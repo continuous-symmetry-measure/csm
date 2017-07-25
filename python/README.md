@@ -1,6 +1,14 @@
 The Python CSM Package
 ======================
 
+
+Changes in version 0.15.3
+-------------------------
+* added reading multiple molecules from a file ("fragments") as chains, with the argument --read-fragments
+* added support for HETATM chain IDs when using --use-chains
+
+
+
 Changes in version 0.15.2
 -------------------------
 * main change: normalization factors are now working as expected
