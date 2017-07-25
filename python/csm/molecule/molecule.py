@@ -420,17 +420,20 @@ class Molecule:
             print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
 
         if display_chains:
-            for chain in self.chains:
-                print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
-            print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
-            for chaingroup in self.chain_equivalences:
-                chainstring = "Group of length " + str(len(chaingroup)) + ":"
-                for index in chaingroup:
-                    chainstring += " "
-                    chainstring += str(self.chains._indexes_to_strings[index])
-                print(str(chainstring))
+            if len(self.chains)>1:
+                for chain in self.chains:
+                    print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
+                print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
+                for chaingroup in self.chain_equivalences:
+                    chainstring = "Group of length " + str(len(chaingroup)) + ":"
+                    for index in chaingroup:
+                        chainstring += " "
+                        chainstring += str(self.chains._indexes_to_strings[index])
+                    print(str(chainstring))
+            else:
+                print("Molecule has no chains")
 
-    def _complete_initialization(self, remove_hy, ignore_hy, use_chains):
+    def _complete_initialization(self, use_chains, remove_hy, ignore_hy=False ):
         """
         Finish creating the molecule after reading the raw data
         """
@@ -439,10 +442,6 @@ class Molecule:
         self._calculate_equivalency(remove_hy, ignore_hy)
         #print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._initialize_chains(use_chains)
-        try:
-            self.display_info(use_chains)
-        except Exception as e:
-            print(e)
         self.normalize()
 
     @staticmethod
@@ -482,22 +481,25 @@ class Molecule:
 
     @staticmethod
     def from_string(string, format, initialize=True,
-                    use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
-                    ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False):
+                    use_chains=False, babel_bond=False,
+                    remove_hy=False, ignore_symm=False, use_mass=False):
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
-
         # step one: get the molecule object
         obm = Molecule._obm_from_string(string, format, babel_bond)
-        mol = Molecule._from_obm(obm, ignore_symm, use_mass, read_fragments)
+        mol = Molecule._from_obm(obm, ignore_symm, use_mass)
+
+
         if initialize:
-            mol._complete_initialization(remove_hy, ignore_hy, use_chains)
+            mol._complete_initialization(use_chains, remove_hy)
 
         return mol
 
     @staticmethod
     def from_file(in_file_name, format=None, initialize=True,
-                  use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
-                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False,
+                  use_chains=False, babel_bond=False,
+                  remove_hy=False, ignore_symm=False, use_mass=False,
+                  read_fragments=False, use_sequence=False,
+                  keep_structure=False,
                   *args, **kwargs):
         def get_format(form):
             if format.lower()=="csm":
@@ -524,8 +526,8 @@ class Molecule:
         else:
                 obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
                 mol = Molecule._from_obm(obm, ignore_symm, use_mass, read_fragments)
-                if format=="pdb" and not babel_bond:
-                    mol=Molecule._read_pdb_connectivity(in_file_name, mol)
+                if format=="pdb":
+                    mol=Molecule._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
                 if not mol.bondset:
                     if keep_structure:
                         raise ValueError("User input --keep-structure but input molecule has no bonds. Did you forget --babel-bond?")
@@ -533,7 +535,17 @@ class Molecule:
                         logger.warn("Input molecule has no bond information")
 
         if initialize:
-            mol._complete_initialization(remove_hy, ignore_hy, use_chains)
+            mol._complete_initialization(use_chains, remove_hy)
+            if len(mol.chains)<2:
+                if read_fragments:
+                    logger.warn("Although you input --read-fragments, no fragments were found in file. "
+                            "Fragments are marked by $$$ in mol files or by model/endmdl in pdb files")
+                elif use_chains:
+                    logger.warn("You specified --use-chains but molecule only has one chain")
+            try:
+                mol.display_info(use_chains)
+            except Exception as e:
+                print(e)
 
         return mol
 
@@ -735,13 +747,13 @@ class Molecule:
 
 
     @staticmethod
-    def _read_pdb_connectivity(filename, mol):
+    def _read_pdb_connectivity_and_chains(filename, mol, read_fragments, babel_bond):
         with open(filename, 'r') as file:
             # Count ATOM and HETATM lines, mapping them to our ATOM numbers.
             # In most PDBs ATOM 1 is our atom 0, and ATOM n is our n-1. However, in some cases
             # there are TER lines in the PDB, ATOMs after the TER are found at n-(TERCOUNT+1) in our list.
+            #Some pdb files have multiple models even though we're only reading the first
             atom_map = {}
-            chain_map = {}
             cur_atom = 0
             #chains = Chains()
 
@@ -754,49 +766,53 @@ class Molecule:
                 except (ValueError, IndexError):
                     index = None
 
-                if parts[0] in ['ATOM', 'HETATM']:
+                if parts[0] in ['ATOM','HETATM'] and cur_atom<len(mol):
                     atom_map[index] = cur_atom
 
+                    #handle chains
                     #ATOMxxxxxx1xxNxxxLYSxA
                     #HETATMxxxx3xxHxxxHOHxxxxx1
                     if parts[0]=='ATOM':
                         chain_designation=line[21]
                     if parts[0]=='HETATM':
                         chain_designation = line[25]
-                    chain_map[index]=chain_designation
+                    if not read_fragments:
+                        mol._atoms[cur_atom]._chain = str(chain_designation)
 
                     cur_atom += 1
 
-                if line[0:6] == "CONECT":
-                    # CONECT records are described here: http://www.bmsc.washington.edu/CrystaLinks/man/pdb/part_69.html
-                    # After CONECT appears a series of 5 character atom numbers. There are no separating spaces in case
-                    # the atom numbers have five digits, so we need to split the atom numbers differently
+                if not babel_bond:
+                    if line[0:6] == "CONECT":
+                        # CONECT records are described here: http://www.bmsc.washington.edu/CrystaLinks/man/pdb/part_69.html
+                        # After CONECT appears a series of 5 character atom numbers. There are no separating spaces in case
+                        # the atom numbers have five digits, so we need to split the atom numbers differently
 
-                    try:
-                        line = line.strip()  # Remove trailing whitespace
-                        fake_atom_index = int(line[6:11])
-                        atom_index = atom_map[fake_atom_index]
-                        atom = mol._atoms[atom_index]
+                        try:
+                            line = line.strip()  # Remove trailing whitespace
+                            fake_atom_index = int(line[6:11])
+                            try:
+                                atom_index = atom_map[fake_atom_index]
+                            except KeyError:
+                                if fake_atom_index>len(mol):
+                                    continue
+                            atom = mol._atoms[atom_index]
 
-                        # add chains
-                        chain = chain_map[fake_atom_index]
-                        mol._atoms[atom_index]._chain = str(chain)
 
-                        #add adjacency
-                        adjacent = []
-                        for i in range(11, len(line), 5):
-                            adjacent_atom_index = int(line[i:i + 5])
-                            adjacent.append(atom_map[adjacent_atom_index])
-                        atom.adjacent = remove_multi_bonds(adjacent)
-                    except Exception as e:
-                        raise ValueError("There was a problem reading connectivity from the pdb file." + str(e))
+                            #add adjacency
+                            adjacent = []
+                            for i in range(11, len(line), 5):
+                                adjacent_atom_index = int(line[i:i + 5])
+                                adjacent.append(atom_map[adjacent_atom_index])
+                            atom.adjacent = remove_multi_bonds(adjacent)
+                        except Exception as e:
+                            raise ValueError("There was a problem reading connectivity from the pdb file." + str(e))
         return mol
 
 
     @staticmethod
     def create_pdb_with_sequence(in_file_name, format=None, initialize=True,
                   use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
-                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False, keep_structure=False,
+                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False,
                   *args, **kwargs):
         def read_atom(line, likeness_dict, index):
             record_name = line[0:6]

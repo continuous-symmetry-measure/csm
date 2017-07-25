@@ -1,180 +1,204 @@
 import os
 import pytest
 from csm.molecule.molecule import Molecule
+from csm.input_output.arguments import get_split_arguments
+import logging
 
-inbal_folder=r'C:\Users\devora.CHELEM\Sources\csm\test_cases\inbal\reading fragments'
-
-#mol with fragments
-os.path.join(inbal_folder,'water-6.mol')
-#mol with fragments but no fragment flag
-os.path.join(inbal_folder,'water-6.mol')
-#mol without fragments
-r'C:\Users\devora.CHELEM\Sources\csm\test_cases\original\test16\tetralin.mol'
-#csm with chains
-#csm without chains
-#xyz
-r'C:\Users\devora.CHELEM\Sources\csm\test_cases\original\test1\AgCu10p1.xyz'
-#cif
-
-
-#mol with fragments, no flags
-def test_should_only_read_first_molecule_without_read_fragments():
-    file = os.path.join(inbal_folder, 'water-6.mol')
-    m = Molecule.from_file(file, format='mol')
-    assert (len(m.chains) == 1)
-    assert (len(m)==3)
-
-#mol with fragments, --use-chains
-#print: no chains
-#How can i test if there is a printout?
-def test_should_only_read_first_molecule_without_read_fragments_ignore_use_chains(caplog):
-    file = os.path.join(inbal_folder, 'water-6.mol')
-    m = Molecule.from_file(file, format='mol', use_chains=True)
-    for record in caplog.records():
-        hi=1
-    assert (len(m.chains) == 1)
-    assert (len(m)==3)
-
-#mol with fragments, --read-fragments
-#print: added use chains automatically
-def test_should_read_molecules_as_chains_with_read_fragments(capsys):
-    file=os.path.join(inbal_folder, 'water-6.mol')
-    m=Molecule.from_file(file, format='mol', read_fragments=True)
-    out, err = capsys.readouterr()
-    assert(len(m.chains)==6)
-    assert(len(m)==18)
-
-#mol with fragments, --use-chains, -read-fragments
-def test_should_read_molecules_as_chains_with_read_fragments():
-    file=os.path.join(inbal_folder, 'water-6.mol')
-    m=Molecule.from_file(file, format='mol', read_fragments=True, use_chains=True)
-    assert(len(m.chains)==6)
-    assert(len(m)==18)
-
-#pdb with endmdl, no flags
-
-#pdb with endmdl, --use-chains
-
-#pdb with endmdl, --read-fragments
-
-#pdb with endmdl, --use-chains, --read-fragments
-
-#pdb with chains(ter), no flags
-
-#pdb with chains(ter), --use-chains
-
-#pdb with chains(ter), --read-fragments
-
-#pdb with chains(ter), --use-chains, --read-fragments
-
-#pdb with chains and endmdl, flags irrelevant:
-
-
-#pdb with endmdl, --ignore-hetatm
-
-#pdb with endmdl, --use-chains, --ignore-hetatm
-
-#pdb with endmdl, --read-fragments, --ignore-hetatm
-
-#pdb with endmdl, --use-chains, --read-fragments, --ignore-hetatm
-
-#pdb with chains(ter), --ignore-hetatm
-
-#pdb with chains(ter), --use-chains, --ignore-hetatm
-
-#pdb with chains(ter), --read-fragments, --ignore-hetatm
-
-#pdb with chains(ter), --use-chains, --read-fragments, --ignore-hetatm
+test_folder=r'C:\Users\devora.CHELEM\Sources\csm\python\tests\unit_tests\molecules for tests'
 
 
 
+class baseClass:
+    format="pdb"
+    def no_flags(self):
+        args = get_split_arguments(['c2', self.path, 'bla.txt'])
+        m = Molecule.from_file(**args)
+        assert (len(m.chains) == 1)
+        return m
 
-#pdb without chains
-#pdb with chains
-#pdb with hetatm
-#pdb with hetatm no flag
-#pdb with use-sequence
-def test_pdb_with_hetatm():
-    file=os.path.join(inbal_folder, 'water-6.pdb')
-    m=Molecule.from_file(file, format='pdb', read_fragments=True, use_chains=True)
-    assert(len(m.chains)==6)
+    def read_fragments(self, caplog):
+        args = get_split_arguments(['c2', self.path, 'bla.txt', '--read-fragments'])
+        assert args['use_chains']==True
+        m = Molecule.from_file(**args)
+        return m
 
-def test_pdb_with_hetatm_no_frag():
-    file=os.path.join(inbal_folder, 'water-6.pdb')
-    m=Molecule.from_file(file, format='pdb', use_chains=True)
-    assert(len(m.chains)==6)
+    def use_chains(self, caplog):
+        args = get_split_arguments(['c2', self.path, 'bla.txt', '--use-chains'])
+        m = Molecule.from_file(**args)
+        return m
 
-def test_pdb_with_hetatm_no_chain():
-    file=os.path.join(inbal_folder, 'water-6.pdb')
-    m=Molecule.from_file(file, format='pdb')
-    assert(len(m.chains)==1)
-
-def test_mol_with_multiple():
-    file=os.path.join(inbal_folder, 'water-6.mol')
-    m=Molecule.from_file(file, format='mol', read_fragments=True, use_chains=True)
-    assert(len(m.chains)==6)
-
-def test_mol_with_multiple_no_frag():
-    file = os.path.join(inbal_folder, 'water-6.mol')
-    m = Molecule.from_file(file, format='mol', use_chains=True)
-    assert (len(m.chains) == 1)
-    assert (len(m)==3)
-
-def test_mol_with_multiple_no_chain():
-    file = os.path.join(inbal_folder, 'water-6.mol')
-    m = Molecule.from_file(file, format='mol')
-    assert (len(m.chains) == 1)
-
-def test_pdb_with_chains_hetatm_and_nonequal_equivalence_classes():
-    file=r'D:\UserData\devora\Sources\csm\test_cases\old_test_cases\inbal\proteins\2xql.pdb'
-    m=Molecule.from_file(file, format='pdb', use_chains=True)
-#test for the following calculation types:
-#approx with use-chains
-#approx without use-chains
-#trivial with use-chains
-#trivial without use-chains
-#exact with keep-structure
-#normalizations with use-chains, 0-6
-
-#add ignore_hetatms
-
-#scenario: mol file with 3 molecules separated by $$$,  user selected no flags
-#result: a single molecule matching the first molecule in the file
-
-#scenario: mol file with 3 molecules separated by $$$,  user selected --use-chains
-#result: a single molecule matching the first molecule in the file
+    def read_fragments_use_chains(self):
+        args = get_split_arguments(['c2', self.path, 'bla.txt', '--read-fragments', '--use-chains'])
+        m = Molecule.from_file(**args)
+        return m
 
 
-#scenario: mol file with 3 molecules separated by $$$,  user selected --read-fragments
-#result: a single molecule composed of 3 chains, each one matching the atoms described for their respective molecule in the file
-#(currently this scenario raises an error and asks that the user also select --use-chains. since I understood from your email that that's not the desired behavior, I would change this so that inputting --read-fragments automatically selects --use-chains as well)
-#(theoretical alternate result: a single molecule with the atoms from all three molecules and no chains. it sounds like you don't want this)
+class TestMolWithMultiple(baseClass):
+    path = os.path.join(test_folder, 'water-6.mol')
+    format = "mol"
 
-#scenario: mol file with 3 molecules separated by $$$,  user selected --read-fragments, --use-chains
-#result: a single molecule composed of 3 chains, each one matching the atoms described for their respective molecule in the file
+    # scenario: mol file with 3 molecules separated by $$$,  user selected no flags
+    # result: a single molecule matching the first molecule in the file
+    def test_no_flags(self):
+        m = super().no_flags()
+        assert len(m) == 3
 
-#scenario: mol file with 1 molecule,  user selected --read-fragments, --use-chains
-#result: a single molecule matching the 1 molecule. no chains
-#prints message
+    # scenario: mol file with 3 molecules separated by $$$,  user selected --use-chains
+    # result: a single molecule matching the first molecule in the file
+    def test_use_chains(self, caplog):
+        m = super().use_chains(caplog)
+        assert len(m) == 3
 
-#scenario: pdb model that contains chains and hetatms. user selected no flags
-#result: a single molecule with no chains, containing all the atoms marked ATOM and HETATM in the pdb file
+    # scenario: mol file with 3 molecules separated by $$$,  user selected --read-fragments
+    # result: a single molecule composed of 3 chains, each one matching the atoms described for their respective molecule in the file
+    def test_read_fragments(self, caplog):
+        m = super().read_fragments(caplog)
+        assert len(m) == 18
+        assert len(m.chains) == 6
 
-#naming chains-- other than chains in pdb, all chains get a oridnal number
-
-#scenario: pdb model that contains chains and hetatms. user selected --use-chains
-#result: a single molecule with chains matching those indicated in the pdb file. should the hetatms also be marked as chains?
-
-#scenario: pdb model that contains chains and hetatms. user selected --use-chains, --read-fragments
-#result: a single molecule with chains matching those indicated in the pdb file, plus hetatms as chains??
-
-#scenario: pdb with two models, no chains. user selected read-fragments
-#result: a single molecule with two chains matching the two models
-
-
-#scenario: pdb with two models, each with 2 chains. user selected read-fragments
-#result: a single molecule with two chains matching the two models, and no chaisn from the chains
+    # scenario: mol file with 3 molecules separated by $$$,  user selected --read-fragments, --use-chains
+    # result: a single molecule composed of 3 chains, each one matching the atoms described for their respective molecule in the file (the --use-chains is redundant, as it is assumed by --read-fragments)
+    def test_read_fragments_use_chains(self):
+        m = super().read_fragments_use_chains()
+        assert len(m) == 18
+        assert len(m.chains) == 6
 
 
-#scenario: pdb with two models, each with 2 chains. user selected read-fragments, use-chains
-#result: a single molecule with 4 chains?
+class TestModelEndMdlWithIDS(baseClass):
+    path=os.path.join(test_folder, 'model-endmdl-withIDs.pdb')
+    def test_no_flags(self):
+        m=super().no_flags()
+        assert len(m)==6
+        assert len(m.chains)==1
+
+    #scenario: pdb with three models, each with 3 chains. user selected read-fragments
+    #result: a single molecule with three chains matching the three models. No chains from the internal chains.
+    def test_read_fragments(self, caplog):
+        m=super().read_fragments(caplog)
+        assert len(m)==18
+        assert len(m.chains)==3
+
+    # scenario: pdb with three models, each with 3 chains. user selected use-chains
+    # result: the first molecule, with three chains matching the three internal chains.
+    def test_use_chains(self, caplog):
+        m=super().use_chains(caplog)
+        assert len(m)==6
+        assert len(m.chains)==3
+
+    #scenario: pdb with three models, each with 3 chains. user selected read-fragments, use-chains
+    #result: a single molecule with three chains matching the three models. No chains from the internal chains.
+    def test_read_fragments_use_chains(self, caplog):
+        m=super().read_fragments_use_chains()
+        assert len(m)==18
+        assert len(m.chains)==3
+
+
+class TestHetAtmWithIDS(baseClass):
+    path = os.path.join(test_folder, 'hetatm-with-IDs.pdb')
+
+    def test_no_flags(self):
+        m=super().no_flags()
+        assert len(m)==18
+        assert len(m.chains)==1
+
+    def test_read_fragments(self, caplog):
+        m=super().read_fragments(caplog)
+        assert len(m)==18
+        assert len(m.chains)==1
+
+    def test_use_chains(self, caplog):
+        m=super().use_chains(caplog)
+        assert len(m)==18
+        assert len(m.chains)==6
+
+    def test_read_fragments_use_chains(self):
+        m=super().read_fragments_use_chains()
+        assert len(m)==18
+        assert len(m.chains)==1
+
+
+class TestMolWithSingle(baseClass):
+    path=os.path.join(test_folder, "just-one-mol.mol")
+    format="mol"
+
+    def test_no_flags(self):
+        m=super().no_flags()
+        assert len(m)==3
+        assert len(m.chains)==1
+
+    def test_read_fragments(self, caplog):
+        m=super().read_fragments(caplog)
+        assert len(m)==3
+        assert len(m.chains)==1
+
+    def test_use_chains(self, caplog):
+        m=super().use_chains(caplog)
+        assert len(m)==3
+        assert len(m.chains)==1
+
+    #scenario: mol file with 1 molecule,  user selected --read-fragments, --use-chains
+    #result: a single molecule matching the 1 molecule, no chains (and a message to user that file has no fragments)
+    def test_read_fragments_use_chains(self):
+        m=super().read_fragments_use_chains()
+        assert len(m)==3
+        assert len(m.chains)==1
+
+
+
+class xTestModelEndMdlWithoutIDS(baseClass):
+    path = os.path.join(test_folder, 'model-endmdl-withoutIDs.pdb')
+    #This is supposedly a broken pdb and doesn't work, but for some reason it does, so I don't get what's going on
+    def test_no_flags(self):
+        m= super().no_flags()
+
+
+
+
+class xTestPDBWithMixOFHETATMandATOM(baseClass):
+    file=""
+    #scenario: pdb model that contains chains and hetatms. user selected no flags
+    #result: a single molecule with no chains, containing all the atoms marked ATOM and HETATM in the pdb file
+
+    #scenario: pdb model that contains chains and hetatms. user selected --use-chains
+    #result: a single molecule with chains matching those indicated in the pdb file, including the chains of the HETATMs
+
+    #scenario: pdb model that contains chains and hetatms. user selected --use-chains, --read-fragments
+    #result: a single molecule with no chains, and a mesage to user that the file has no fragments
+
+
+
+
+
+
+
+class xTestTER(baseClass):
+        path = os.path.join(test_folder, 'TER.pdb')
+
+        def test_read_fragments(self, caplog):
+            m = super().test_read_fragments(caplog)
+            assert len(m) == 18
+            assert len(m.chains) == 6
+
+
+
+#scenario: file with hetatm and chainid
+#with --use-chains, the hetatms will be assigned chains accordingly to chainID
+# with --read-fragments, the chain-id will be ignored.
+
+#file with hetatm without chainID and endmodel
+#result: openbabel error
+
+#file with hetatm and endmdl
+#with --use-chains, the first model will be read, and hetatms will be assigned chains according to their chain id.
+#with --read-fragments, all the molecules will be read as chains, and the ID will be ignored.
+
+#file with mixture of alphabetic HETATM and ATOM
+#The program expects Hetatm chain IDS to always be in column 26.
+#If the Hetatm chain id is not in column 26, this will currently cause problems. (program probabaly won't crash, but rather will provide a wrong chain ID)
+
+#file with mixture of non-alphabetic HETATM, and ATOM
+#the program does not recognize this as a problem, and will assign the Hetatm a chainID from column 26 and continue onwards. It is the user's responsibility to fix the file before running csm.
+
+#file with mixture of chainID and endmdl
+#if the user selects --use-chains, only the first molecule will be read, and the chainID information will be used
+#if the user selects --read-fragments, the molecules will be read as chains, and the internal chain information will be ignored.
