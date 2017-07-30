@@ -516,7 +516,9 @@ class Molecule:
         if use_sequence:
             if format.lower() != 'pdb':
                 raise ValueError("--use-sequence only works with PDB files")
-            mol = Molecule.create_pdb_with_sequence(in_file_name, **kwargs)
+
+            mol = Molecule.create_pdb_with_sequence(in_file_name, format, use_chains=use_chains, babel_bond=babel_bond,
+                            read_fragments=read_fragments, remove_hy=remove_hy, ignore_symm=ignore_symm, use_mass=use_mass)
             #we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             return mol
 
@@ -810,28 +812,19 @@ class Molecule:
 
 
     @staticmethod
-    def create_pdb_with_sequence(in_file_name, format=None, initialize=True,
-                  use_chains=False, babel_bond=False, use_sequence=False, read_fragments=False,
-                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False,
-                  *args, **kwargs):
-        def read_atom(line, likeness_dict, index):
-            record_name = line[0:6]
-            if record_name in ["ATOM  ", "HETATM"]:
-                # handle equivalence class:
-                atom_type = line[12:14]
-                remoteness = line[14]
-                serial_number = line[22:26]
-                key = tuple([atom_type, remoteness, serial_number])
-                val = index
-                index += 1
-                if key not in likeness_dict:
-                    likeness_dict[key] = [val]
-                else:
-                    likeness_dict[key].append(val)
+    def create_pdb_with_sequence(in_file_name, format="pdb", initialize=True,
+                  use_chains=False, babel_bond=False, read_fragments=False,
+                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
+        def read_atom(line, likeness_dict, cur_atom):
+            atom_type = line[12:14]
+            remoteness = line[14]
+            serial_number = line[22:26]
+            key = tuple([atom_type, remoteness, serial_number])
+            if key not in likeness_dict:
+                likeness_dict[key] = [cur_atom]
+            else:
+                likeness_dict[key].append(cur_atom)
 
-                # handle chains:
-                chain = line[21]
-            return index
 
         def set_equivalence_classes(mol, likeness_dict):
             groups = []
@@ -850,13 +843,16 @@ class Molecule:
         print("Breaking molecule into equivalency class groups based on protein sequence")
         obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
         mol = Molecule._from_obm(obm, ignore_symm, use_mass)
-
+        mol = Molecule._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
         likeness_dict = {}
-        index = 0
+        cur_atom=0
 
         with open(in_file_name, 'r') as file:
             for line in file:
-                index = read_atom(line, likeness_dict, index)
+                parts=line.split()
+                if parts[0] in ['ATOM','HETATM'] and cur_atom<len(mol):
+                    read_atom(line, likeness_dict, cur_atom)
+                    cur_atom+=1
 
         mol._create_bondset()
         mol.create_Q()
