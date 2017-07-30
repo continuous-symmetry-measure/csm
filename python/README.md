@@ -1,6 +1,10 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.15.4
+-------------------------
+* bug fixes to reading molecules
+
 
 Changes in version 0.15.3
 -------------------------
