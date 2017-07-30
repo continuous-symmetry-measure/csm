@@ -2,10 +2,10 @@ import os
 import pytest
 from csm.main.csm_run import run as csmrun
 from tests.utils.run_test import close_enough, YaffaError
+from conftest import test_folder, output_file, my_tolerance
 
-output_file=r'C:\Users\devora.CHELEM\Sources\temp\csm_tests_output.txt'
-testdir=r'C:\Users\devora.CHELEM\Sources\csm\test_cases\old_test_cases\original_test_cases'
-os.chdir(testdir)
+
+os.chdir(test_folder)
 
 @pytest.mark.parametrize("args, expected",[
     (['c2', r'test1\AgCu10p1.xyz', output_file], 6.5620),
