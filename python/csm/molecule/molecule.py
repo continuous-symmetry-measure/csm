@@ -597,12 +597,12 @@ class Molecule:
         atoms = []
         for obmol_id, obmol in enumerate(obmols):
             for i, obatom in enumerate(OBMolAtomIter(obmol)):
+                position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
                 if ignore_symm:
                     symbol = "XX"
                 else:
                     # get symbol by atomic number
                     symbol = GetAtomicSymbol(obatom.GetAtomicNum())
-                    position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
                 try:
                     if read_fragments:
                         chain=str(obmol_id)
