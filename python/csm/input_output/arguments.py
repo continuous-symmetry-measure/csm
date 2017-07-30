@@ -50,7 +50,7 @@ def _create_parser():
     parser.add_argument('--use-mass', action='store_true', default=False,
                         help='Use the atomic masses to define center of mass')
     parser.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
-    parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
+    #parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
     parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
     parser.add_argument('--use-sequence', action='store_true', default=False, help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
     parser.add_argument('--use-chains', action='store_true', default=False,
@@ -217,7 +217,7 @@ def _process_arguments(parse_res):
     dictionary_args['sn_max'] = parse_res.sn_max
     dictionary_args['use_mass'] = parse_res.use_mass
     dictionary_args['babel_bond'] = parse_res.babel_bond
-    dictionary_args['no_babel'] = parse_res.no_babel
+    #dictionary_args['no_babel'] = parse_res.no_babel
     dictionary_args['use_sequence']= parse_res.use_sequence
 
     #if parse_res.use_sequence and parse_res.keep_structure:
