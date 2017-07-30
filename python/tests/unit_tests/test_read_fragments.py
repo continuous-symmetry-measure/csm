@@ -3,8 +3,7 @@ import pytest
 from csm.molecule.molecule import Molecule
 from csm.input_output.arguments import get_split_arguments
 import logging
-
-test_folder=r'C:\Users\devora.CHELEM\Sources\csm\python\tests\unit_tests\molecules for tests'
+from conftest import test_folder
 
 
 
