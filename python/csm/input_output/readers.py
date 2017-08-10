@@ -40,13 +40,14 @@ def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     else:
         perm = None
 
-    if dir_file_name:
-        dirs = read_dir_file(dir_file_name)
-        if not dirs:
-            raise ValueError("provided dir file is empty")
-    else:
-        dirs = None
-    return molecule, perm, dirs
+    #RETIRED: we no longer allow dir files, instead a single dir can be specified
+    #if dir_file_name:
+    #    dirs = read_dir_file(dir_file_name)
+    #    if not dirs:
+    #        raise ValueError("provided dir file is empty")
+    #else:
+    #    dirs = None
+    return molecule, perm
 
 
 def read_dir_file(filename):

@@ -23,7 +23,7 @@ def run(args=[]):
         # Read inputs
     dictionary_args = get_split_arguments(args)
     try:
-        dictionary_args['molecule'], dictionary_args['perm'], dictionary_args['dirs'] = read_inputs(**dictionary_args)
+        dictionary_args['molecule'], dictionary_args['perm'] = read_inputs(**dictionary_args)
         # Outputing permutations
         if dictionary_args['perms_csv_name']:
             csv_file = open(dictionary_args['perms_csv_name'], 'w')

@@ -81,6 +81,8 @@ def _create_parser():
                     help='APPROX ONLY: Use the new chains algorithm for many chains. Will automatically apply use-chains')
     parser.add_argument('--greedy', action='store_true', default=False,
                     help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
+    parser.add_argument('--dir', nargs=3, type=float,
+                        help='run approximate algorithm using a specific starting direction')
 
 
 
@@ -276,6 +278,9 @@ def _process_arguments(parse_res):
     if dictionary_args['calc_type'] != 'approx' and parse_res.use_best_dir:
         logger.warning("--use-best-dir applies only to approx calculation. --use-best-dir will be ignored")
 
+    dir=parse_res.dir
+    if dir:
+        dictionary_args['dirs']=[dir]
     #if parse_res.use_dir:
     #    if dictionary_args['calc_type'] != 'approx':
     #        logger.warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
@@ -314,6 +319,6 @@ def get_split_arguments(args):
     :return:
     """
     parser = _create_parser()
-    parsed_args = parser.parse_args(args)
+    parsed_args, leftovers = parser.parse_known_args(args)
     dictionary_args = _process_arguments(parsed_args)
     return dictionary_args
