@@ -777,8 +777,11 @@ class Molecule:
                     if parts[0]=='ATOM':
                         chain_designation=line[21]
                     if parts[0]=='HETATM':
-                        chain_designation = line[25]
-                    if not read_fragments:
+                        if line[21]!=" ":
+                            chain_designation = line[21]
+                        else:
+                            chain_designation = line[25]
+                    if chain_designation!=" ":
                         mol._atoms[cur_atom]._chain = str(chain_designation)
 
                     cur_atom += 1
@@ -808,6 +811,7 @@ class Molecule:
                             atom.adjacent = remove_multi_bonds(adjacent)
                         except Exception as e:
                             raise ValueError("There was a problem reading connectivity from the pdb file." + str(e))
+                    mol._create_bondset() #refresh the bondset
         return mol
 
 
