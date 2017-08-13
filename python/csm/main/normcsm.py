@@ -287,7 +287,8 @@ def normrun(args=[]):
         if file:
             file.close()
 
-
+def run_no_return(args=[]):
+    normrun(args)
 
 if __name__ == '__main__':
     normrun(args=sys.argv[1:])
