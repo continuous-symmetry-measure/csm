@@ -12,6 +12,11 @@ def xtest_pdb_with_chains_hetatm_and_nonequal_equivalence_classes():
 
     args= "--approx --use-chains --remove-hy --many-chains"
 
+def xtest_bonds_exist():
+    '''
+    read connectivity didn't call create bond set and as a result the check for existent bonds failed.
+    '''
+    pass
 
 #File "C:\Users\devora.CHELEM\Sources\csm\python\csm\calculations\approx\approximators.py", line 347, in _approximate
 #indexes, group_distance_matrix= self._hungarian_on_groups(group_k, group_m, rotation_mat   )
