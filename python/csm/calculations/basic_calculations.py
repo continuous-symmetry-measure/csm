@@ -3,7 +3,8 @@ from csm.calculations.constants import MINDOUBLE
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
 from collections import namedtuple
 
-CSMState = namedtuple('CSMState', ('molecule',
+
+class CSMState(namedtuple('CSMState', ['molecule',
                                    'op_order',
                                    'op_type',
                                    'csm',
@@ -15,9 +16,10 @@ CSMState = namedtuple('CSMState', ('molecule',
                                    'perm_count',
                                    'formula_csm',
                                    'normalized_molecule_coords',
-                                   'normalized_symmetric_structure',))
-CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
+                                   'normalized_symmetric_structure'])):
+    pass
 
+CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 def process_results(results):
     """

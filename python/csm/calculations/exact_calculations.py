@@ -23,7 +23,11 @@ __author__ = 'Itay, Devora, Yael'
 # This is useful for writing all permutations to file during the calculation
 csm_state_tracer_func = None
 
-
+class CSMValueError(ValueError):
+    def __init__(self, arg1, CSMState):
+        self.arg1 = arg1
+        self.CSMState = CSMState
+        super().__init__(arg1)
 
 
 def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, no_constraint=False, *args, **kwargs):
@@ -214,11 +218,10 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, 
         if csm < best_csm.csm:
             best_csm = best_csm._replace(csm=csm, dir=dir, perm=list(calc_state.perm))
 
-
-
     if best_csm.csm == MAXDOUBLE:
         # failed to find csm value for any permutation
-        raise ValueError("Failed to calculate a csm value for %s %d" % (op_type, op_order))
+        best_csm = best_csm._replace(csm=csm, dir=dir, perm=list(calc_state.perm))
+        raise CSMValueError("Failed to calculate a csm value for %s %d" % (op_type, op_order), best_csm)
 
     def format_number(num):
         if abs(num) < 1000000:
