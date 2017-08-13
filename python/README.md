@@ -1,6 +1,15 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.15.5
+-------------------------
+* fixed bug that caused bondset not to be created/updated for pdbs
+* fixed critical bug causing norm_csm to crash
+* added priority for chain identification-- first alphabetic at 22, then numeric at 26, 
+then fragment number if relevant
+* fixed bug in remove-hy
+
+
 Changes in version 0.15.4
 -------------------------
 * bug fixes to reading molecules
