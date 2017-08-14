@@ -1,11 +1,15 @@
 import sys
 import os
 import random
+import numpy as np
 from argparse import RawTextHelpFormatter
+
+from csm.calculations.approx.dirs import dirs_orthogonal
+from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import exact_calculation, CSMValueError
 from csm.calculations.approx.main import approx_calculation
 from csm.input_output.arguments import _create_parser, get_split_arguments
-from csm.molecule.molecule import Molecule
+from csm.molecule.molecule import Molecule, MoleculeFactory
 
 __author__ = 'Devora Witty'
 
@@ -57,30 +61,43 @@ def choose_directions(direction_choice, dirs_file, k, molecule, csm_args):
 
     if direction_choice == 'exact-structure':
         result=exact_calculation(op_type, op_order, molecule, keep_structure=True, suppress_print=True)
+        print("Running exact calculation with keep-structure yielded CSM", result.csm)
         dirs.append(result.dir)
 
     if direction_choice == 'greedy-first':
         result=approx_calculation(op_type, op_order, molecule, approx_algorithm='greedy')
+        print("Running approx calculation with greedy algorithm yielded CSM", result.csm)
         dirs.append(result.dir)
 
     if direction_choice == 'random-k':
+        seed = random.randrange(sys.maxsize)
+        rng = random.Random(seed)
+        print("Seed was:", seed)
+
         for i in range(k):
             dir = []
             for j in range(3):
-                dir.append(random.uniform(-1, 1))
+                dir.append(rng.uniform(-1, 1))
             dirs.append(dir)
 
     if direction_choice == 'cube-corners':
         pass
-    if direction_choice == 'atom-vectors':
-        pass
+
+    if direction_choice == 'atom-vectors' or 'atom-vectors-orth':
+        for atom in molecule.atoms:
+            dir = [atom.pos[0] - molecule.center_of_mass[0],
+                  atom.pos[1] - molecule.center_of_mass[1],
+                  atom.pos[2] - molecule.center_of_mass[2]]
+            dir /= np.linalg.norm(dir)
+            dirs.append(dir)
+
     if direction_choice == 'atom-vectors-orth':
-        pass
+        dirs=dirs_orthogonal(dirs)
 
     return dirs
 
 
-def run(args=[], os=None):
+def run(args=[]):
     if not args:
         args = sys.argv[1:]
     if '--approx' not in args:
@@ -99,21 +116,29 @@ def run(args=[], os=None):
     csm_args = get_split_arguments(args)
     # csm_args['op_type'], csm_args['op_order'], molecule, dir=dir,
 
-    molecule  = Molecule.from_file(**csm_args)
+    molecule  = MoleculeFactory.from_file(**csm_args)
     dirs = choose_directions(direction_choice, dirs_file, k, molecule, csm_args)
 
+    best_csm=MAXDOUBLE
+    best_dir=None
+
     for dir in dirs:
-        csm_args['molecule'] = Molecule.from_file(**csm_args)
+        csm_args['molecule'] = molecule.copy()
         csm_args['dirs'] = [dir]
         if True:
             try:
                 result = approx_calculation(**csm_args)
                 print("For initial direction", dir, ", the CSM value found was", result.csm, "with a final dir of",
                   result.dir)
+                if result.csm<best_csm:
+                    best_csm=result.csm
+                    best_dir=dir
             except CSMValueError as e:
                 result=e.CSMState
                 print("***ERROR*** For initial direction", dir, ", the CSM value found was", result.csm, "with a final dir of",
                       result.dir)
+
+    print("The best csm:", best_csm, "was found with the initial dir", best_dir)
 
 
 if __name__ == '__main__':
