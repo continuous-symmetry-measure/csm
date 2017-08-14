@@ -1,4 +1,4 @@
-from csm.main.csm_run import run
+from csm.main.csm_run import run as csmrun
 import sys
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords
 from argparse import ArgumentParser
@@ -245,7 +245,7 @@ normalization_dict={
 }
 
 
-def normrun(args=[]):
+def run(args=[]):
 
     if not args:
         args = sys.argv[1:]
@@ -253,7 +253,7 @@ def normrun(args=[]):
     norm_types, norm_file = get_normalization_type(args)
     args=[x for x in args if x not in norm_types]  # remove the normalization argument
 
-    result = run(args)
+    result = csmrun(args)
 
 
     if not set(norm_types).isdisjoint(('1','2','3','4')):
@@ -288,8 +288,8 @@ def normrun(args=[]):
             file.close()
 
 
-def run_no_return(args=[]):
-    normrun(args)
+def run_norm_no_return(args=[]):
+    run(args)
 
 if __name__ == '__main__':
-    normrun(args=sys.argv[1:])
+    run(args=sys.argv[1:])

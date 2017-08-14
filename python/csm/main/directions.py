@@ -24,7 +24,7 @@ def direction_parser():
     parser.usage = "\ndirection_test direction_choice type input_molecule output_file [additional arguments]"
     dir_argument = parser.add_argument('direction_choice',
                                        help='Types of direction choice available:\n'
-                                            'user-input: user inputs the dirs to be chosen with "--dirs file" \n'
+                                            'user-input: user inputs the dirs to be chosen with "--dirs-file" \n'
                                             'exact-structure: program runs exact with keep structure and uses that direction for approx\n'
                                             'greedy-first: program runs standard greedy approx and uses final result direction for hungarian\n'
                                             'random-k: K directions are chosen randomly. Default is 10, user can specify --k K.\n'

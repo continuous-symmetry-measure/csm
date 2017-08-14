@@ -1,6 +1,14 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.16.0
+-------------------------
+ Added new script, "test_direction". Can be run from command line with
+ 'run_direction <direction choice> symmetry in-file out-file additional-args'. 
+ The available direction choices are user-input, exact-structure, greedy-first, 
+ random-k, cube-corners, atom-vectors, atom-vectors-orth.
+ 
+
 Changes in version 0.15.5
 -------------------------
 * fixed bug that caused bondset not to be created/updated for pdbs
