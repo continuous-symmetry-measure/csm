@@ -1,6 +1,6 @@
 import os
 import pytest
-from csm.molecule.molecule import Molecule
+from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.input_output.arguments import get_split_arguments
 import logging
 from conftest import test_folder
@@ -11,24 +11,24 @@ class baseClass:
     format="pdb"
     def no_flags(self):
         args = get_split_arguments(['c2', self.path, 'bla.txt'])
-        m = Molecule.from_file(**args)
+        m = MoleculeFactory.from_file(**args)
         assert (len(m.chains) == 1)
         return m
 
     def read_fragments(self, caplog):
         args = get_split_arguments(['c2', self.path, 'bla.txt', '--read-fragments'])
         assert args['use_chains']==True
-        m = Molecule.from_file(**args)
+        m = MoleculeFactory.from_file(**args)
         return m
 
     def use_chains(self, caplog):
         args = get_split_arguments(['c2', self.path, 'bla.txt', '--use-chains'])
-        m = Molecule.from_file(**args)
+        m = MoleculeFactory.from_file(**args)
         return m
 
     def read_fragments_use_chains(self):
         args = get_split_arguments(['c2', self.path, 'bla.txt', '--read-fragments', '--use-chains'])
-        m = Molecule.from_file(**args)
+        m = MoleculeFactory.from_file(**args)
         return m
 
 

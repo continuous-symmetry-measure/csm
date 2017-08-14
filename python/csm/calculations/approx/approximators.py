@@ -6,14 +6,14 @@ from csm.fast import approximate_perm_hungarian as cython_hungarian
 from csm.calculations.exact_calculations import csm_operation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
 from csm.calculations.constants import MAXDOUBLE
-from csm.molecule.molecule import Molecule
+from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
 
 
 class OldApproximator(Approximator):
     def _calc_chain_permutations(self):
         chain_permutations = []
-        dummy = Molecule.dummy_molecule_from_size(len(self._molecule.chains), self._molecule.chain_equivalences)
+        dummy = MoleculeFactory.dummy_molecule_from_size(len(self._molecule.chains), self._molecule.chain_equivalences)
         permuter = CythonPermuter(dummy, self._op_order, self._op_type, keep_structure=False, precalculate=False)
         for state in permuter.permute():
             chain_permutations.append([i for i in state.perm])

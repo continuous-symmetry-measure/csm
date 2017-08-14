@@ -5,7 +5,8 @@ import os
 import warnings
 
 from csm.main.csm_run import run
-from csm.molecule.molecule import Molecule
+from csm.molecule.molecule import Molecule, MoleculeFactory
+
 
 class TestFailedException(Exception):
     pass
@@ -18,8 +19,8 @@ class Expected:
         self.csm=dict['csm']
         self.dir=dict['dir']
         self.perm=[x-1 for x in dict['perm']]
-        self.symmetric_structure=Molecule.from_string(dict['symmetric'], 'xyz', initialize=False)._Q
-        self.molecule=Molecule.from_string(dict['normalized'], 'xyz')
+        self.symmetric_structure=MoleculeFactory.from_string(dict['symmetric'], 'xyz', initialize=False)._Q
+        self.molecule=MoleculeFactory.from_string(dict['normalized'], 'xyz')
 
 def close_enough(val1, val2, tolerance=.0001):
     test=math.fabs(val1-val2)
