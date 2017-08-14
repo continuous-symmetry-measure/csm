@@ -153,7 +153,7 @@ def run(args=[]):
                     best_dir = dir
             except CSMValueError as e:
                 result = e.CSMState
-                print("***ERROR*** For initial direction", dir, ", the CSM value found was", result.csm,
+                print("***FAILED TO FIND CSM*** For initial direction", dir, ", the CSM value found was", result.csm,
                       "with a final dir of",
                       result.dir)
 
