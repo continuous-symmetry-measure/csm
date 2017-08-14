@@ -46,8 +46,8 @@ def direction_parser():
 
 def choose_directions(direction_choice, dirs_file, k, molecule, csm_args):
     dirs = []
-    op_type=csm_args['op_type']
-    op_order= csm_args['op_order']
+    op_type = csm_args['op_type']
+    op_order = csm_args['op_order']
     if direction_choice == 'user-input':
         if not os.path.isfile(dirs_file):
             raise ValueError(
@@ -60,12 +60,12 @@ def choose_directions(direction_choice, dirs_file, k, molecule, csm_args):
                 dirs.append(dir)
 
     if direction_choice == 'exact-structure':
-        result=exact_calculation(op_type, op_order, molecule, keep_structure=True, suppress_print=True)
+        result = exact_calculation(op_type, op_order, molecule, keep_structure=True, suppress_print=True)
         print("Running exact calculation with keep-structure yielded CSM", result.csm)
         dirs.append(result.dir)
 
     if direction_choice == 'greedy-first':
-        result=approx_calculation(op_type, op_order, molecule, approx_algorithm='greedy')
+        result = approx_calculation(op_type, op_order, molecule, approx_algorithm='greedy')
         print("Running approx calculation with greedy algorithm yielded CSM", result.csm)
         dirs.append(result.dir)
 
@@ -81,18 +81,36 @@ def choose_directions(direction_choice, dirs_file, k, molecule, csm_args):
             dirs.append(dir)
 
     if direction_choice == 'cube-corners':
-        pass
+        center = molecule.center_of_mass
+        corner = np.add(center, [.5, .5, .5])
+        dirs.append(corner)
+        corner = np.add(center, [.5, .5, -.5])
+        dirs.append(corner)
+        corner = np.add(center, [.5, -.5, .5])
+        dirs.append(corner)
+        corner = np.add(center, [.5, -.5, -.5])
+        dirs.append(corner)
+        corner = np.add(center, [-.5, .5, .5])
+        dirs.append(corner)
+        corner = np.add(center, [-.5, .5, -.5])
+        dirs.append(corner)
+        corner = np.add(center, [-.5, -.5, .5])
+        dirs.append(corner)
+        corner = np.add(center, [-.5, -.5, -.5])
+        dirs.append(corner)
 
-    if direction_choice == 'atom-vectors' or 'atom-vectors-orth':
+
+
+    if direction_choice in['atom-vectors', 'atom-vectors-orth']:
         for atom in molecule.atoms:
             dir = [atom.pos[0] - molecule.center_of_mass[0],
-                  atom.pos[1] - molecule.center_of_mass[1],
-                  atom.pos[2] - molecule.center_of_mass[2]]
+                   atom.pos[1] - molecule.center_of_mass[1],
+                   atom.pos[2] - molecule.center_of_mass[2]]
             dir /= np.linalg.norm(dir)
             dirs.append(dir)
 
     if direction_choice == 'atom-vectors-orth':
-        dirs=dirs_orthogonal(dirs)
+        dirs = dirs_orthogonal(dirs)
 
     return dirs
 
@@ -116,11 +134,11 @@ def run(args=[]):
     csm_args = get_split_arguments(args)
     # csm_args['op_type'], csm_args['op_order'], molecule, dir=dir,
 
-    molecule  = MoleculeFactory.from_file(**csm_args)
+    molecule = MoleculeFactory.from_file(**csm_args)
     dirs = choose_directions(direction_choice, dirs_file, k, molecule, csm_args)
 
-    best_csm=MAXDOUBLE
-    best_dir=None
+    best_csm = MAXDOUBLE
+    best_dir = None
 
     for dir in dirs:
         csm_args['molecule'] = molecule.copy()
@@ -129,13 +147,14 @@ def run(args=[]):
             try:
                 result = approx_calculation(**csm_args)
                 print("For initial direction", dir, ", the CSM value found was", result.csm, "with a final dir of",
-                  result.dir)
-                if result.csm<best_csm:
-                    best_csm=result.csm
-                    best_dir=dir
+                      result.dir)
+                if result.csm < best_csm:
+                    best_csm = result.csm
+                    best_dir = dir
             except CSMValueError as e:
-                result=e.CSMState
-                print("***ERROR*** For initial direction", dir, ", the CSM value found was", result.csm, "with a final dir of",
+                result = e.CSMState
+                print("***ERROR*** For initial direction", dir, ", the CSM value found was", result.csm,
+                      "with a final dir of",
                       result.dir)
 
     print("The best csm:", best_csm, "was found with the initial dir", best_dir)
