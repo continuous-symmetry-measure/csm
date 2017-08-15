@@ -63,12 +63,12 @@ def choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed):
                 dirs.append(dir)
 
     if direction_choice == 'exact-structure':
-        result = exact_calculation(op_type, op_order, molecule, keep_structure=True, suppress_print=True)
+        result = exact_calculation(op_type, op_order, molecule.copy(), keep_structure=True, suppress_print=True)
         print("Running exact calculation with keep-structure yielded CSM", result.csm)
         dirs.append(result.dir)
 
     if direction_choice == 'greedy-first':
-        result = approx_calculation(op_type, op_order, molecule, approx_algorithm='greedy')
+        result = approx_calculation(op_type, op_order, molecule.copy(), approx_algorithm='greedy')
         print("Running approx calculation with greedy algorithm yielded CSM", result.csm)
         dirs.append(result.dir)
 
