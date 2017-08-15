@@ -5,6 +5,7 @@ import numpy as np
 from argparse import RawTextHelpFormatter
 
 from csm.calculations.approx.dirs import dirs_orthogonal
+from csm.calculations.basic_calculations import check_perm_cycles
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import exact_calculation, CSMValueError
 from csm.calculations.approx.main import approx_calculation
@@ -41,10 +42,12 @@ def direction_parser():
     parser.add_argument('--k', type=int, default=10, help='Number of random directions to try for random-k')
     parser.add_argument('--dirs-file', type=str,
                         help='File address of file with list of dirs for use-input')
+    parser.add_argument('--seed', type=str,
+                        help='If you\'d like to reproduce a run of random-k with a given seed')
     return parser
 
 
-def choose_directions(direction_choice, dirs_file, k, molecule, csm_args):
+def choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed):
     dirs = []
     op_type = csm_args['op_type']
     op_order = csm_args['op_order']
@@ -70,7 +73,8 @@ def choose_directions(direction_choice, dirs_file, k, molecule, csm_args):
         dirs.append(result.dir)
 
     if direction_choice == 'random-k':
-        seed = random.randrange(sys.maxsize)
+        if not seed:
+            seed = random.randrange(sys.maxsize)
         rng = random.Random(seed)
         print("Seed was:", seed)
 
@@ -114,6 +118,36 @@ def choose_directions(direction_choice, dirs_file, k, molecule, csm_args):
 
     return dirs
 
+def run_dir(dir, csm_args, molecule, best_csm, best_dir):
+    csm_args['molecule'] = molecule.copy()
+    csm_args['dirs'] = [dir]
+    try:
+            result = approx_calculation(**csm_args)
+            print("For initial direction", dir, ", the CSM value found was", result.csm, "with a final dir of",
+                  result.dir)
+            if result.csm < best_csm:
+                best_csm = result.csm
+                best_dir = dir
+    except CSMValueError as e:
+            result = e.CSMState
+            print("***FAILED TO FIND CSM*** For initial direction", dir, ", the CSM value found was", result.csm,
+                  "with a final dir of",
+                  result.dir)
+
+    falsecount, num_invalid, cycle_counts = check_perm_cycles(result.perm, result.op_order,
+                                                              result.op_type)
+    print("The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
+                falsecount, "cycle" if falsecount == 1 else "cycles",
+                100 * (len(result.molecule) - num_invalid) / len(result.molecule)))
+    for cycle_len in sorted(cycle_counts):
+            valid = cycle_len == 1 or cycle_len == csm_args['op_order'] or (
+            cycle_len == 2 and csm_args['op_type'] == 'SN')
+            count = cycle_counts[cycle_len]
+            print("There %s %d %s %s of length %d" % (
+            "is" if count == 1 else "are", count, "invalid" if not valid else "", "cycle" if count == 1 else "cycles",
+            cycle_len))
+
+    return result, best_csm, best_dir
 
 def run(args=[]):
     if not args:
@@ -129,36 +163,37 @@ def run(args=[]):
     direction_choice = parsed_args.direction_choice
     dirs_file = parsed_args.dirs_file
     k = parsed_args.k
+    seed=parsed_args.seed
+    if seed:
+        seed=int(seed)
 
     del args[0]
     csm_args = get_split_arguments(args)
     # csm_args['op_type'], csm_args['op_order'], molecule, dir=dir,
 
     molecule = MoleculeFactory.from_file(**csm_args)
-    dirs = choose_directions(direction_choice, dirs_file, k, molecule, csm_args)
+    dirs = choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed)
 
     best_csm = MAXDOUBLE
     best_dir = None
+    result_csms=[]
+    result_dirs=[]
 
     for dir in dirs:
-        csm_args['molecule'] = molecule.copy()
-        csm_args['dirs'] = [dir]
-        if True:
-            try:
-                result = approx_calculation(**csm_args)
-                print("For initial direction", dir, ", the CSM value found was", result.csm, "with a final dir of",
-                      result.dir)
-                if result.csm < best_csm:
-                    best_csm = result.csm
-                    best_dir = dir
-            except CSMValueError as e:
-                result = e.CSMState
-                print("***FAILED TO FIND CSM*** For initial direction", dir, ", the CSM value found was", result.csm,
-                      "with a final dir of",
-                      result.dir)
+        result, best_csm, best_dir= run_dir(dir, csm_args, molecule, best_csm, best_dir)
+        result_csms.append(result.csm)
+        result_dirs.append(result.dir)
+
 
     print("The best csm:", best_csm, "was found with the initial dir", best_dir)
+    return result_csms, result_dirs
 
+def run_no_return_dirs(args=[]):
+    run(args)
+
+def test_vector_distances():
+    pass
 
 if __name__ == '__main__':
     run(args=sys.argv[1:])
+    #test_vector_distances()
