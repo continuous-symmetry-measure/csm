@@ -1,12 +1,18 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.16.1
+-------------------------
+* critical bug fix for --exact-structure and --greedy-first
+* added flag --seed
+
 Changes in version 0.16.0
 -------------------------
  Added new script, "test_direction". Can be run from command line with
  'run_direction <direction choice> symmetry in-file out-file additional-args'. 
  The available direction choices are user-input, exact-structure, greedy-first, 
  random-k, cube-corners, atom-vectors, atom-vectors-orth.
+ Additional flags: --dirs-file, --k
  
 
 Changes in version 0.15.5

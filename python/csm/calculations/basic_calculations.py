@@ -36,7 +36,8 @@ def process_results(results):
 
     #save denormalized results
     symmetric_structure = de_normalize_coords(symmetric_structure, results.molecule.norm_factor)
-    results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
+    #saved dmin, save symmetric structure, and make a copy of molecule, because de_normalize changes the molecule itself
+    results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure, molecule=results.molecule.copy())
     results.molecule.de_normalize()
 
     #run and save the formula test
