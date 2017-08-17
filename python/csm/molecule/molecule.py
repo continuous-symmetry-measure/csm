@@ -893,9 +893,9 @@ class MoleculeFactory:
                 pass
 
         print("Breaking molecule into equivalency class groups based on protein sequence")
-        obm = Molecule._obm_from_file(in_file_name, format, babel_bond)
-        mol = Molecule._from_obm(obm, ignore_symm, use_mass)
-        mol = Molecule._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
+        obm = MoleculeFactory._obm_from_file(in_file_name, format, babel_bond)
+        mol = MoleculeFactory._from_obm(obm, ignore_symm, use_mass)
+        mol = MoleculeFactory._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
         likeness_dict = {}
         cur_atom=0
 
