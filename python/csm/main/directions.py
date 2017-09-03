@@ -21,7 +21,7 @@ __author__ = 'Devora Witty'
 accessory program for running different kinds of direction finding algorithms with the CSM approx algorithm
 '''
 
-choice_dict={
+choice_dict = {
     '0': 'user-input',
     '1': 'exact-structure',
     '2': 'greedy-first',
@@ -30,6 +30,7 @@ choice_dict={
     '5': 'atom-vectors',
     '6': 'atom-vector-orth'
 }
+
 
 def direction_parser():
     parser = _create_parser()
@@ -51,13 +52,11 @@ def direction_parser():
                                             '6: atom-vector-orth- like atom-vectors, but also includes orthogonal directions to those chosen \n'
                                        ,
                                        choices=['0', '1', '2', '3', '4', '5', '6'],
-                                       #nargs='+',
+                                       # nargs='+',
                                        metavar="direction_choice"
                                        )
     parser._actions.pop()
     parser._actions.insert(1, dir_argument)
-
-
 
     parser.add_argument('--k', type=int, default=10, help='Number of random directions to try for random-k')
     parser.add_argument('--dirs-file', type=str,
@@ -68,10 +67,12 @@ def direction_parser():
 
 
 class PrintClass:
-    file=""
+    file = ""
+
     @staticmethod
     def set(filename):
-        PrintClass.file=filename
+        PrintClass.file = filename
+
     @staticmethod
     def my_print(*strings, print_flag=False):
         if print_flag:
@@ -81,7 +82,7 @@ class PrintClass:
                 file.write(str(string))
                 file.write(" ")
             file.write("\n")
-    
+
 
 def choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed):
     dirs = []
@@ -158,30 +159,35 @@ def run_dir(dir, csm_args, molecule):
     csm_args['dirs'] = [dir]
     try:
         result = approx_calculation(**csm_args)
-        PrintClass.my_print("\tFor initial direction", dir, " the CSM value found was", result.csm, "with a final dir of",
-              result.dir)
+        PrintClass.my_print("\tFor initial direction", dir, " the CSM value found was", result.csm,
+                            "with a final dir of",
+                            result.dir)
     except CSMValueError as e:
         result = e.CSMState
-        PrintClass.my_print("\t***FAILED TO FIND CSM*** For initial direction", dir, " the CSM value found was", result.csm,
-              "with a final dir of",
-              result.dir)
+        PrintClass.my_print("\t***FAILED TO FIND CSM*** For initial direction", dir, " the CSM value found was",
+                            result.csm,
+                            "with a final dir of",
+                            result.dir)
 
     falsecount, num_invalid, cycle_counts = check_perm_cycles(result.perm, result.op_order,
                                                               result.op_type)
 
     if False:
-        PrintClass.my_print("\tThe permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
-            falsecount, "cycle" if falsecount == 1 else "cycles",
-            100 * (len(result.molecule) - num_invalid) / len(result.molecule)))
+        PrintClass.my_print(
+            "\tThe permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
+                falsecount, "cycle" if falsecount == 1 else "cycles",
+                100 * (len(result.molecule) - num_invalid) / len(result.molecule)))
         for cycle_len in sorted(cycle_counts):
             valid = cycle_len == 1 or cycle_len == csm_args['op_order'] or (
                 cycle_len == 2 and csm_args['op_type'] == 'SN')
             count = cycle_counts[cycle_len]
             PrintClass.my_print("\tThere %s %d %s %s of length %d" % (
-                "is" if count == 1 else "are", count, "invalid" if not valid else "", "cycle" if count == 1 else "cycles",
+                "is" if count == 1 else "are", count, "invalid" if not valid else "",
+                "cycle" if count == 1 else "cycles",
                 cycle_len))
 
     return result
+
 
 def handle_args(args):
     if not args:
@@ -201,7 +207,7 @@ def handle_args(args):
     if seed:
         seed = int(seed)
 
-    dir_output=parsed_args.dir_output
+    dir_output = parsed_args.dir_output
     PrintClass.set(dir_output)
     args.remove(dir_output)
 
@@ -213,7 +219,7 @@ def handle_args(args):
 
 def run(args=[]):
     print("CSM version %s" % __version__)
-    direction_choices, dirs_file, k, seed, csm_args, molecule= handle_args(args)
+    direction_choices, dirs_file, k, seed, csm_args, molecule = handle_args(args)
 
     best_result = CSMState(csm=MAXDOUBLE)
     best_initial_dir = None
@@ -223,7 +229,8 @@ def run(args=[]):
     for choice in direction_choices:
         dirs = choose_directions(choice, molecule, csm_args, dirs_file, k, seed)
 
-        PrintClass.my_print("Using direction choice", choice, "there are", len(dirs), "initial directions", print_flag=True)
+        PrintClass.my_print("Using direction choice", choice, "there are", len(dirs), "initial directions",
+                            print_flag=True)
         for dir in dirs:
             result = run_dir(dir, csm_args, molecule)
             if result.csm < best_result.csm:
@@ -232,7 +239,8 @@ def run(args=[]):
             result_csms.append(result.csm)
             result_dirs.append(result.dir)
 
-    PrintClass.my_print("The best csm:", str(best_result.csm)+", was found using the initial dir", best_initial_dir, print_flag=True)
+    PrintClass.my_print("The best csm:", str(best_result.csm) + ", was found using the initial dir", best_initial_dir,
+                        print_flag=True)
     print_results(best_result, csm_args)
     return result_csms, result_dirs
 
@@ -254,31 +262,42 @@ def test_vector_distances():
         v1_u = unit_vector(v1)
         v2_u = unit_vector(v2)
         return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
     args = [
-        #taken from running xyz tests and choosing those with highest volatility
+        # taken from running xyz tests and choosing those with highest volatility
         {
-            "args": ['c3', 'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t02_CH4\\molecules\\11.xyz', 'nul', '--keep-structure', '--babel-bond'],
-            "dir":[-0.94676,  -0.068738,  0.314515],
+            "args": ['c3',
+                     'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t02_CH4\\molecules\\11.xyz',
+                     'nul', '--keep-structure', '--babel-bond'],
+            "dir": [-0.94676, -0.068738, 0.314515],
             "csm": 3.4391512605256747
         },
         {
-            "args": ['ch', 'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t02_CH4\\molecules\\43.xyz', 'nul', '--keep-structure', '--babel-bond'],
-            "dir":[-0.239296,  0.480698, -0.843603],
-            "csm":0.04835451722270401
+            "args": ['ch',
+                     'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t02_CH4\\molecules\\43.xyz',
+                     'nul', '--keep-structure', '--babel-bond'],
+            "dir": [-0.239296, 0.480698, -0.843603],
+            "csm": 0.04835451722270401
         },
         {
-            "args": ['c4', 'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t03_B6H4\\molecules\\43.xyz', 'nul', '--keep-structure', '--babel-bond'],
-            "dir": [-0.403519,  0.291713, -0.867223],
+            "args": ['c4',
+                     'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t03_B6H4\\molecules\\43.xyz',
+                     'nul', '--keep-structure', '--babel-bond'],
+            "dir": [-0.403519, 0.291713, -0.867223],
             "csm": 0.00023937588615741134
         },
         {
-            "args":  ['c4', 'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t08-cubane\\molecules\\31.xyz', 'nul', '--keep-structure', '--babel-bond'],
-            "dir": [ 0.251258,  0.799556, -0.545509],
-            "csm":0.020382748120417737
+            "args": ['c4',
+                     'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t08-cubane\\molecules\\31.xyz',
+                     'nul', '--keep-structure', '--babel-bond'],
+            "dir": [0.251258, 0.799556, -0.545509],
+            "csm": 0.020382748120417737
         },
         {
-            'args' : ['c3', 'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t08-cubane\\molecules\\31.xyz', 'nul', '--keep-structure', '--babel-bond'],
-            "dir": [-0.641906,  0.672037, -0.369218],
+            'args': ['c3',
+                     'C:\\Users\\devora.CHELEM\\Sources\\csm\\python\\tests\\xyz_tests\\xyz_mols\\t08-cubane\\molecules\\31.xyz',
+                     'nul', '--keep-structure', '--babel-bond'],
+            "dir": [-0.641906, 0.672037, -0.369218],
             "csm": 0.00947757927406423
         }
     ]
@@ -287,33 +306,32 @@ def test_vector_distances():
     theta = radians(degree)  # 17
     parts = int(pi * 2 / theta)
     rot_mat_x = np.array([[1, 0, 0],
-                 [0, cos(theta), -sin(theta)],
-                 [0, sin(theta), cos(theta)]])
+                          [0, cos(theta), -sin(theta)],
+                          [0, sin(theta), cos(theta)]])
     rot_mat_y = np.array([[cos(theta), 0, sin(theta)],
-                 [0, 1, 0],
-                 [-sin(theta), 0, cos(theta)]])
+                          [0, 1, 0],
+                          [-sin(theta), 0, cos(theta)]])
     rot_mat_z = np.array([[cos(theta), -sin(theta), 0],
-                 [sin(theta), cos(theta), 0],
-                 [0, 0, 1]])
+                          [sin(theta), cos(theta), 0],
+                          [0, 0, 1]])
 
     for this_arg in args:
         PrintClass.my_print(this_arg)
         csm_args = get_split_arguments(this_arg["args"])
         molecule = MoleculeFactory.from_file(**csm_args)
-        rotated_dir=this_arg["dir"]
+        rotated_dir = this_arg["dir"]
         for i in range(parts):
             PrintClass.my_print("rotated", i, "degrees")
-            rotated_dir=rot_mat_z.dot(rotated_dir)
-            result=run_dir(rotated_dir, csm_args, molecule)
+            rotated_dir = rot_mat_z.dot(rotated_dir)
+            result = run_dir(rotated_dir, csm_args, molecule)
             if result.csm - this_arg["csm"] > 0.00001:
-                PrintClass.my_print("CSM difference:", result.csm-this_arg["csm"])
-                PrintClass.my_print("**********",i, "**", angle_between(this_arg["dir"], rotated_dir))
+                PrintClass.my_print("CSM difference:", result.csm - this_arg["csm"])
+                PrintClass.my_print("**********", i, "**", angle_between(this_arg["dir"], rotated_dir))
             else:
                 PrintClass.my_print("CSM is same")
         PrintClass.my_print("[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]")
 
 
-
 if __name__ == '__main__':
     run(args=sys.argv[1:])
-    #test_vector_distances()
+    # test_vector_distances()
