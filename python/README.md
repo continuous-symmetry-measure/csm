@@ -1,6 +1,14 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.16.2
+-------------------------
+* fix bug in use-sequence
+* change direction choicesa from names to numbers: `0: user-input, 1: exact-structure, 2: greedy-first, 
+ 3: random-k, 4: cube-corners, 5: atom-vectors, 6: atom-vectors-orth`.
+* added argument for dir_ouput file, which prints run output
+* small changes to the printouts from test_dirs, ie print the best molecule isntead of the last 
+
 Changes in version 0.16.1
 -------------------------
 * critical bug fix for --exact-structure and --greedy-first
@@ -8,11 +16,11 @@ Changes in version 0.16.1
 
 Changes in version 0.16.0
 -------------------------
- Added new script, "test_direction". Can be run from command line with
- 'run_direction <direction choice> symmetry in-file out-file additional-args'. 
- The available direction choices are user-input, exact-structure, greedy-first, 
- random-k, cube-corners, atom-vectors, atom-vectors-orth.
- Additional flags: --dirs-file, --k
+ Added new script, `test_direction`. Can be run from command line with
+ `run_direction <direction choice> symmetry in-file out-file additional-args`. 
+ The available direction choices are `user-input, exact-structure, greedy-first, 
+ random-k, cube-corners, atom-vectors, atom-vectors-orth`.
+ Additional flags: `--dirs-file`,` --k`
  
 
 Changes in version 0.15.5
