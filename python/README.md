@@ -1,5 +1,8 @@
 The Python CSM Package
 ======================
+Changes in version 0.16.3
+-------------------------
+* fixed bug when reading PDBs
 
 Changes in version 0.16.2
 -------------------------
