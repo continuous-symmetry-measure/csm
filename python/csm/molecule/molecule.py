@@ -808,23 +808,22 @@ class MoleculeFactory:
             #chains = Chains()
 
             for line in file:
-                parts = line.split()
-                if not parts:
-                    continue
                 try:
-                    index = int(parts[1])
+                    index = int(line[6:11])
                 except (ValueError, IndexError):
                     index = None
 
-                if parts[0] in ['ATOM','HETATM'] and cur_atom<len(mol):
+                if line[0:6] in ['ATOM  ','HETATM'] and cur_atom<len(mol):
+                    if line[0:6]=='HETATM':
+                        breakpt=1
                     atom_map[index] = cur_atom
 
                     #handle chains
                     #ATOMxxxxxx1xxNxxxLYSxA
                     #HETATMxxxx3xxHxxxHOHxxxxx1
-                    if parts[0]=='ATOM':
+                    if line[0:6]=='ATOM  ':
                         chain_designation=line[21]
-                    if parts[0]=='HETATM':
+                    if line[0:6]=='HETATM':
                         if line[21]!=" ":
                             chain_designation = line[21]
                         else:
@@ -899,10 +898,10 @@ class MoleculeFactory:
         likeness_dict = {}
         cur_atom=0
 
+
         with open(in_file_name, 'r') as file:
             for line in file:
-                parts=line.split()
-                if parts[0] in ['ATOM','HETATM'] and cur_atom<len(mol):
+                if line[0:6] in ['ATOM  ','HETATM'] and cur_atom<len(mol):
                     read_atom(line, likeness_dict, cur_atom)
                     cur_atom+=1
 
