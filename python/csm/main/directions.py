@@ -28,7 +28,7 @@ choice_dict = {
     '3': 'random-k',
     '4': 'cube-corners',
     '5': 'atom-vectors',
-    '6': 'atom-vector-orth'
+    '6': 'atom-vectors-orth'
 }
 
 
