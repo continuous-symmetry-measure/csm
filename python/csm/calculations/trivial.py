@@ -1,7 +1,7 @@
 from csm.fast import CythonPermuter
 from csm.calculations.basic_calculations import CSMState, process_results
 from csm.calculations.constants import MAXDOUBLE
-from csm.calculations.exact_calculations import csm_operation
+from csm.calculations.exact_calculations import exact_calculation
 from csm.molecule.molecule import Molecule, MoleculeFactory
 
 
@@ -21,12 +21,12 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
                 for i in range(len(f_chain)):
                     perm[f_chain[i]]=t_chain[i]
 
-            result = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
+            result = exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=perm)
             if result.csm < best.csm:
                 best = result
 
     else:
         perm = [i for i in range(len(molecule))]
-        best = csm_operation(op_type, op_order, molecule, keep_structure=False, perm=perm)
+        best = exact_calculation(op_type, op_order, molecule, keep_structure=False, perm=perm)
 
     return process_results(best)
