@@ -9,7 +9,7 @@ def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **k
     if molecule.chains and use_chains:
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
         chain_permutations = []
-        dummy = MoleculeFactory.dummy_molecule_from_size(len(molecule._chains), molecule.chain_equivalences)
+        dummy = MoleculeFactory.dummy_molecule_from_size(len(molecule.chains), molecule.chain_equivalences)
         permuter = CythonPermuter(dummy, op_order, op_type, keep_structure=False, precalculate=False)
         for state in permuter.permute():
             chain_permutations.append(list(state.perm))
