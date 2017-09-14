@@ -101,12 +101,12 @@ def choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed):
 
     if direction_choice == 'exact-structure':
         result = exact_calculation(op_type, op_order, molecule.copy(), keep_structure=True, suppress_print=True)
-        PrintClass.my_print("\tRunning exact calculation with keep-structure yielded CSM", result.csm)
+        PrintClass.my_print("\tRunning exact calculation with keep-structure yielded CSM %.6lf" %(result.csm))
         dirs.append(result.dir)
 
     if direction_choice == 'greedy-first':
         result = approx_calculation(op_type, op_order, molecule.copy(), approx_algorithm='greedy')
-        PrintClass.my_print("\tRunning approx calculation with greedy algorithm yielded CSM", result.csm)
+        PrintClass.my_print("\tRunning approx calculation with greedy algorithm yielded CSM %.6lf" %(result.csm))
         dirs.append(result.dir)
 
     if direction_choice == 'random-k':
@@ -159,15 +159,14 @@ def run_dir(dir, csm_args, molecule):
     csm_args['dirs'] = [dir]
     try:
         result = approx_calculation(**csm_args)
-        PrintClass.my_print("\tFor initial direction", dir, " the CSM value found was", result.csm,
-                            "with a final dir of",
-                            result.dir)
+        PrintClass.my_print("\tFor initial direction", dir)
+        PrintClass.my_print("\tthe CSM value found was %.6lf" %(result.csm))
+        PrintClass.my_print("\twith a final dir of", result.dir)
     except CSMValueError as e:
         result = e.CSMState
-        PrintClass.my_print("\t***FAILED TO FIND CSM*** For initial direction", dir, " the CSM value found was",
-                            result.csm,
-                            "with a final dir of",
-                            result.dir)
+        PrintClass.my_print("\t***FAILED TO FIND CSM*** For initial direction", dir)
+        PrintClass.my_print(" the CSM value found was  %.6lf" %(result.csm))
+        PrintClass.my_print("with a final dir of", result.dir)
 
     falsecount, num_invalid, cycle_counts = check_perm_cycles(result.perm, result.op_order,
                                                               result.op_type)
@@ -239,7 +238,8 @@ def run(args=[]):
             result_csms.append(result.csm)
             result_dirs.append(result.dir)
 
-    PrintClass.my_print("The best csm:", str(best_result.csm) + ", was found using the initial dir", best_initial_dir,
+    PrintClass.my_print("The best csm: %.6lf" %(best_result.csm), print_flag=True)
+    PrintClass.my_print("was found using the initial dir", best_initial_dir,
                         print_flag=True)
     print_results(best_result, csm_args)
     return result_csms, result_dirs
