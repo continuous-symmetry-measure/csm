@@ -3,6 +3,7 @@ import json
 import logging
 import sys
 import timeit
+
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations.exact_calculations import exact_calculation, perm_count
 from csm.calculations.approx.main import approx_calculation
@@ -14,7 +15,6 @@ import csm
 
 APPROX_RUN_PER_SEC = 8e4
 sys.setrecursionlimit(10000)
-
 def run(args=[]):
     print("CSM version %s" % csm.__version__)
     if not args:
@@ -41,7 +41,11 @@ def run(args=[]):
         elif dictionary_args['calc_type'] == 'trivial':
             result = trivial_calculation(**dictionary_args)
         else:
-            result = exact_calculation(**dictionary_args)
+            try:
+                result = exact_calculation(**dictionary_args)
+            except TimeoutError:
+                print("Timed out")
+                return
 
 
         print_results(result, dictionary_args)

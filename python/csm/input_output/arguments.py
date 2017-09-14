@@ -58,6 +58,8 @@ def _create_parser():
     parser.add_argument('--read-fragments',  action='store_true', default=False,
                         help='Read fragments from .mol or .pdb file as chains')
 
+    parser.add_argument('--timeout', default=3000, help="Specify a timeout for CSM in seconds. Default is 5 minutes (3000)", type=int)
+
     #calculation arguments that only apply to exact:
     parser.add_argument('--use-perm', type=str,
                         help='EXACT ONLY: Compute exact CSM for a single permutation')
@@ -196,6 +198,7 @@ def _process_arguments(parse_res):
     dictionary_args['out_file_name'] = parse_res.output
 
     #optional arguments:
+    dictionary_args['timeout'] = parse_res.timeout
 
     #types of calculations:
     dictionary_args['calc_type'] = 'exact'

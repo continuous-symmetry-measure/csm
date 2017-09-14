@@ -1,5 +1,8 @@
+import datetime
 import numpy as np
 from csm.fast import PreCalcPIP
+
+from csm.calculations.constants import start_time
 
 __author__ = 'Devora'
 
@@ -297,7 +300,7 @@ class ConstraintPropagator:
 
 
 class ConstraintPermuter:
-    def __init__(self, molecule, op_order, op_type, keep_structure, *args, **kwargs):
+    def __init__(self, molecule, op_order, op_type, keep_structure, timeout=3000, *args, **kwargs):
         self.molecule=molecule
         self.op_order=op_order
         self.op_type=op_type
@@ -306,6 +309,7 @@ class ConstraintPermuter:
         self.truecount=0
         self.falsecount=0
         self.cycle_lengths=[1,op_order]
+        self.timeout=timeout
         if op_type=='SN':
             self.cycle_lengths.append(2)
         self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
@@ -338,6 +342,10 @@ class ConstraintPermuter:
             yield pip.state
 
     def _permute(self, pip, constraints):
+        #step zero: check if time out
+        time_d= datetime.datetime.now()-start_time
+        if time_d.total_seconds()>self.timeout:
+            raise TimeoutError
         # step one: from the available atoms, choose the one with the least available options:
         atom, options = constraints.choose()
 

@@ -1,11 +1,11 @@
-from datetime import datetime
+import datetime
 import itertools
 
 import math
 
 import numpy as np
 from csm.calculations.basic_calculations import compute_local_csm, process_results, CSMState
-from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
+from csm.calculations.constants import MINDOUBLE, MAXDOUBLE, start_time
 from csm.fast import calc_ref_plane
 
 from csm.fast import CythonPermuter, SinglePermPermuter
@@ -159,23 +159,23 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, n
 
 
 
-def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, no_constraint=False, suppress_print=False, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, no_constraint=False, suppress_print=False, timeout=3000, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         #sn_max = op_order
         # First CS
-        best_result = csm_operation('CS', 2, molecule, keep_structure, perm, no_constraint, suppress_print)
+        best_result = csm_operation('CS', 2, molecule, keep_structure, perm, no_constraint, suppress_print, timeout)
         best_result = best_result._replace(op_type='CS') #unclear why this line isn't redundant
         if best_result.csm > MINDOUBLE:
             # Try the SN's
             for op_order in range(2, sn_max + 1, 2):
-                result = csm_operation('SN', op_order, molecule, keep_structure, perm, no_constraint, suppress_print)
+                result = csm_operation('SN', op_order, molecule, keep_structure, perm, no_constraint, suppress_print, timeout)
                 if result.csm < best_result.csm:
                     best_result = result._replace(op_type = 'SN', op_order = op_order)
                 if best_result.csm < MINDOUBLE:
                     break
 
     else:
-        best_result = csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, suppress_print)
+        best_result = csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, suppress_print, timeout)
 
     best_result = process_results(best_result)
     if calc_local:
@@ -186,7 +186,7 @@ def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=Fals
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False, suppress_print=False):
+def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=3000):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
@@ -195,22 +195,21 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, 
     :param args: The CSM arguments
     :return: A dictionary with all the results: csm, dMin, perm and direction
     """
-    start_time=datetime.now()
     best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
     traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
     if perm:
         permuter = SinglePermPermuter(np.array(perm), molecule, op_order, op_type)
     else:
-        permuter = ConstraintPermuter(molecule, op_order, op_type, keep_structure)
+        permuter = ConstraintPermuter(molecule, op_order, op_type, keep_structure, timeout=timeout)
         if no_constraint:
-            permuter = CythonPermuter(molecule, op_order, op_type, keep_structure)
+            permuter = CythonPermuter(molecule, op_order, op_type, keep_structure, timeout=timeout)
 
 
     for calc_state in permuter.permute():
         if permuter.count%1000000==0:
             print("calculated for", int(permuter.count / 1000000), "million permutations thus far...\t Time:",
-                  datetime.now() - start_time)
+                   datetime.datetime.now()-start_time)
         csm, dir = calc_ref_plane(op_order, op_type=='CS', calc_state)
 
         if csm_state_tracer_func:
