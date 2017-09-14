@@ -1,5 +1,17 @@
 The Python CSM Package
 ======================
+Changes in version 0.16.4
+-------------------------
+Added --timeout, receives number of seconds, with default of 5 minutes
+If program runtime exceeds timeout, program exits
+
+Bug fixes:
+* fixed bug in dircsm that caused option 6 to crash
+* fixed bug that caused Trivial calculation to crash
+* fixed bug that caused Trivial to not handle ch correctly
+* fixed formatting for prints in dircsm
+* fixed bug reading remoteness in PDB --use-sequence
+
 Changes in version 0.16.3
 -------------------------
 * fixed bug when reading PDBs
