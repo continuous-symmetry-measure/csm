@@ -97,6 +97,16 @@ class Molecule:
         m._chain_equivalences=self._chain_equivalences
         return m
 
+    def to_json(self):
+        atoms=[]
+        for atom in self.atoms:
+            atoms.append(atom.to_json())
+        return {
+            "atoms":atoms,
+            "norm factor": self.norm_factor,
+            "equivalence classes": self.equivalence_classes,
+                }
+
 
     @property
     def center_of_mass(self):
