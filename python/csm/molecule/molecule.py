@@ -868,7 +868,7 @@ class MoleculeFactory:
                   ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
         def read_atom(line, likeness_dict, cur_atom):
             atom_type = line[12:14]
-            remoteness = line[14]
+            remoteness = line[14:16]
             serial_number = line[22:26]
             key = tuple([atom_type, remoteness, serial_number])
             if key not in likeness_dict:
@@ -888,8 +888,8 @@ class MoleculeFactory:
                     for atom_index in group:
                         for equiv_index in group:
                             mol._atoms[atom_index].add_equivalence(equiv_index)
-            except:  # TODO: comment why this except is here (I don't actually remember)
-                pass
+            except Exception as e:  # TODO: comment why this except is here (I don't actually remember)
+                print(e)
 
         print("Breaking molecule into equivalency class groups based on protein sequence")
         obm = MoleculeFactory._obm_from_file(in_file_name, format, babel_bond)
