@@ -12,6 +12,8 @@ from csm.fast import CythonPermuter, SinglePermPermuter
 from csm.calculations.permuters import ConstraintPermuter
 import logging
 
+from csm.input_output.formatters import format_perm_count
+
 np.set_printoptions(precision=6)
 
 
@@ -223,15 +225,10 @@ def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, 
         best_csm = best_csm._replace(csm=csm, dir=dir, perm=list(calc_state.perm))
         raise CSMValueError("Failed to calculate a csm value for %s %d" % (op_type, op_order), best_csm)
 
-    def format_number(num):
-        if abs(num) < 1000000:
-            return '%d' % num
-        return '%.5g' % num
-
     if not perm and not suppress_print:
-        print("Number of permutations: %s" % format_number(permuter.count))
-        print("Number of branches in permutation tree: %s" % format_number(permuter.truecount))
-        print("Number of dead ends: %s" % format_number(permuter.falsecount))
+        print("Number of permutations: %s" % format_perm_count(permuter.count))
+        print("Number of branches in permutation tree: %s" % format_perm_count(permuter.truecount))
+        print("Number of dead ends: %s" % format_perm_count(permuter.falsecount))
 
 
     best_csm = best_csm._replace(perm_count=permuter.count)

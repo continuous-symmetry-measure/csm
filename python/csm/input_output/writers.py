@@ -1,5 +1,7 @@
 import json
 
+from csm.input_output.formatters import format_CSM
+
 __author__ = 'YAEL'
 
 import openbabel
@@ -152,8 +154,8 @@ def print_output_csm(f, result, calc_args):
     f.write("\n DIRECTIONAL COSINES:\n\n")
     f.write("%lf %lf %lf\n" % (non_negative_zero(result.dir[0]), non_negative_zero(result.dir[1]), non_negative_zero(result.dir[2])))
 
-    print("%s: %.6lf" % (calc_args['op_name'], abs(result.csm)))
-    print("CSM by formula: %.6lf" % (result.formula_csm))
+    print("%s: %s" % (calc_args['op_name'], format_CSM(result.csm)))
+    print("CSM by formula: %s" % format_CSM(result.formula_csm))
 
 
 def print_output_ob(f, result, in_args, calc_args, out_args):
