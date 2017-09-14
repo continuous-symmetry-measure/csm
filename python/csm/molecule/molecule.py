@@ -878,7 +878,7 @@ class MoleculeFactory:
                   ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
         def read_atom(line, likeness_dict, cur_atom):
             atom_type = line[12:14]
-            remoteness = line[14:16]
+            remoteness = line[14]
             serial_number = line[22:26]
             key = tuple([atom_type, remoteness, serial_number])
             if key not in likeness_dict:
