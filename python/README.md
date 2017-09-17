@@ -11,6 +11,7 @@ Bug fixes:
 * fixed bug that caused Trivial to not handle ch correctly
 * fixed formatting for prints in dircsm
 * fixed bug reading remoteness in PDB --use-sequence
+* fixed bug that interpreted --k in dircsm as --keep-structure
 
 Changes in version 0.16.3
 -------------------------

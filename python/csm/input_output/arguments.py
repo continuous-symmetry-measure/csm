@@ -22,7 +22,7 @@ class OurParser(ArgumentParser):
 
 
 def _create_parser():
-    parser = OurParser(usage="\ncsm type input_molecule output_file [additional arguments]")
+    parser = OurParser(usage="\ncsm type input_molecule output_file [additional arguments]", allow_abbrev=False)
 
     parser.add_argument('type',
                         #choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
