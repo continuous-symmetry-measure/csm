@@ -33,7 +33,7 @@ def _create_parser():
     # Optional arguments (their names start with --)
 
     # types of calculations (default is exact):
-    calculation_type = parser.add_argument_group('Calculation Type')
+    calculation_type = parser.add_argument_group('Calculation Type (default is exact)')
     calculation_type.add_argument('--approx', action='store_true', default=False,
                                   help='use the approximate algorithm to estimate the CSM')
     calculation_type.add_argument('--trivial', action='store_true', default=False,
@@ -45,7 +45,7 @@ def _create_parser():
     parser.add_argument('--timeout', default=3000,
                         help="Specify a timeout for CSM in seconds. Default is 5 minutes (3000)", type=int)
     parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
-    
+
     # general input/calculation arguments:
     # parser.add_argument('--ignore-hy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
     input_type = parser.add_argument_group('Input Arguments')
