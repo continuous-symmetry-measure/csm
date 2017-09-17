@@ -300,7 +300,7 @@ class ConstraintPropagator:
 
 
 class ConstraintPermuter:
-    def __init__(self, molecule, op_order, op_type, keep_structure, timeout=3000, *args, **kwargs):
+    def __init__(self, molecule, op_order, op_type, keep_structure, timeout=300, *args, **kwargs):
         self.molecule=molecule
         self.op_order=op_order
         self.op_type=op_type

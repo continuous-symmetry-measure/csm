@@ -255,7 +255,7 @@ cdef class CythonPermuter:
     cdef choose_cycle
     cdef timeout
 
-    def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True, timeout=3000):
+    def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True, timeout=300):
         self.count=0
         self.mol=mol
         self._groups = mol.equivalence_classes

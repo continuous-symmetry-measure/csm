@@ -43,7 +43,7 @@ def _create_parser():
 
 
     parser.add_argument('--timeout', default=3000,
-                        help="Specify a timeout for CSM in seconds. Default is 5 minutes (3000)", type=int)
+                        help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
     parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
 
     # general input/calculation arguments:

@@ -159,7 +159,7 @@ def perm_count(op_type, op_order, molecule, keep_structure, print_perms=False, n
 
 
 
-def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, no_constraint=False, suppress_print=False, timeout=3000, *args, **kwargs):
+def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
     if op_type == 'CH':  # Chirality
         #sn_max = op_order
         # First CS
@@ -186,7 +186,7 @@ def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=Fals
     return best_result
 
 
-def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=3000):
+def csm_operation(op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=300):
     """
     Calculates minimal csm, dMin and directional cosines by applying permutations
     that keep the similar atoms within the group.
