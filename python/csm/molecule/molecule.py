@@ -55,6 +55,15 @@ class Chains(OrderedDict):
             except KeyError:
                 return False
 
+    def to_array(self):
+        zipped_arr=[(key, self.__getitem__(key)) for key in self._indexes_to_strings]
+        return zipped_arr
+
+    def from_array(self, arr_of_tuples):
+        for key, val in arr_of_tuples:
+            self.__setitem__(key, val)
+
+
 
 
 class Molecule:
@@ -98,14 +107,49 @@ class Molecule:
         return m
 
     def to_json(self):
-        atoms=[]
-        for atom in self.atoms:
-            atoms.append(atom.to_json())
         return {
-            "atoms":atoms,
+            #critical to include
+            "atoms":[atom.json() for atom in self.atoms],
+
+            # trivial to include
             "norm factor": self.norm_factor,
-            "equivalence classes": self.equivalence_classes,
+            "center of mass":self.center_of_mass,
+
+            #expensive to recalculate
+            "equivalence classes": self.equivalence_classes, #the most expensive part of loading large molecule
+            "groups_with_internal_chains":self.groups_with_internal_chains,
+            "chains_with_internal_groups":self.chains_with_internal_groups,
+            "chain_equivalences":self.chain_equivalences,
+
+            #unsure whether worth the bother of including
+            "bondset":self.bondset,
+            #"Q":self.Q, #almost definitely not worth the bother
+
+            #problematic to include
+            #"obmol":self.obmol,
+            "chains": self.Chains.to_array(),  # this does not have a serialization yet, I think
                 }
+
+    @staticmethod
+    def from_json(json):
+        atoms=[Atom.from_json(a) for a in json["atoms"]]
+        norm_factor=json["norm factor"]
+        m=Molecule(atoms, norm_factor, to_copy=True)
+
+        c=Chains()
+        c.from_array(json["chains"])
+        m._chains=c
+
+        m._center_of_mass=json["center of mass"]
+        m._equivalence_classes=json["equivalence classes"]
+        m._groups_with_internal_chains=json["groups_with_internal_chains"]
+        m._chains_with_internal_groups=json["chains_with_internal_groups"]
+        m._chain_equivalences=json["chain_equivalences"]
+
+        m._create_bondset()
+        m.create_Q()
+        return m
+
 
 
     @property
