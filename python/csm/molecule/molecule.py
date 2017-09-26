@@ -122,7 +122,7 @@ class Molecule:
     def to_json(self):
         return {
             #critical to include
-            "atoms":[atom.json() for atom in self.atoms],
+            "atoms":[atom.to_json() for atom in self.atoms],
 
             # trivial to include
             "norm factor": self.norm_factor,
@@ -141,7 +141,7 @@ class Molecule:
             "format":self._format,
             "babel_bond": self._babel_bond,
             #chains
-            "chains": self.Chains.to_array(),
+            "chains": self.chains.to_array()
 
             # unsure whether worth the bother of including
             # "bondset":self.bondset,
@@ -152,7 +152,7 @@ class Molecule:
     def from_json(json):
         atoms=[Atom.from_json(a) for a in json["atoms"]]
         norm_factor=json["norm factor"]
-        m=Molecule(atoms, norm_factor, to_copy=True)
+        m=Molecule(atoms, norm_factor)
 
         c=Chains()
         c.from_array(json["chains"])
@@ -165,12 +165,18 @@ class Molecule:
 
         m._center_of_mass=json["center of mass"]
         m._equivalence_classes=json["equivalence classes"]
-        m._groups_with_internal_chains=json["groups_with_internal_chains"]
-        m._chains_with_internal_groups=json["chains_with_internal_groups"]
+        unfixed_groups=json["groups_with_internal_chains"]
+        m._groups_with_internal_chains=[]
+        for group in unfixed_groups:
+            fixed={int(key): value for key, value in group.items()}
+            m._groups_with_internal_chains.append(fixed)
+        unfixed_chains=json["chains_with_internal_groups"]
+        fixed = {int(key): value for key, value in unfixed_chains.items()}
+        m._chains_with_internal_groups=fixed
         m._chain_equivalences=json["chain_equivalences"]
 
-        m._create_bondset()
         m.create_Q()
+        m._create_bondset()
         return m
 
 
