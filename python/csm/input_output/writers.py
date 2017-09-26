@@ -8,6 +8,7 @@ import openbabel
 from openbabel import OBConversion
 import math
 from csm.calculations.basic_calculations import check_perm_structure, check_perm_cycles
+from csm.molecule.molecule import MoleculeFactory
 
 def non_negative_zero(number):
     if math.fabs(number)<0.00001:
@@ -171,27 +172,30 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     if str.lower(in_args['format'])=='pdb':
         f.write("\nMODEL 01")
     f.write("\nINITIAL STRUCTURE COORDINATES\n")
+    
+    obmol=MoleculeFactory._obm_from_file(result.molecule._filename, result.molecule._format, result.molecule._babel_bond)[0]
+    for to_remove in result.molecule._deleted_atom_indices:
+        obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
 
-    num_atoms = result.molecule.obmol.NumAtoms()
+    num_atoms = obmol.NumAtoms()
     # update coordinates
     for i in range(num_atoms):
         try:
-            atom = result.molecule.obmol.GetAtom(i + 1)
+            atom = obmol.GetAtom(i + 1)
             atom.SetVector(non_negative_zero(result.molecule.atoms[i].pos[0]),
                        non_negative_zero(result.molecule.atoms[i].pos[1]),
                        non_negative_zero(result.molecule.atoms[i].pos[2]))
         except Exception as e:
             pass
 
-    write_ob_molecule(result.molecule.obmol, in_args['format'], f)
+    write_ob_molecule(obmol, in_args['format'], f)
 
     # print resulting structure coordinates
 
-    # update coordinates
-    mol = result.molecule.obmol
+    # update output coordinates to match symmetric structure
     for i in range(num_atoms):
         try:
-            a=mol.GetAtom(i+1)
+            a=obmol.GetAtom(i+1)
             a.SetVector(non_negative_zero(result.symmetric_structure[i][0]),
                        non_negative_zero(result.symmetric_structure[i][1]),
                        non_negative_zero(result.symmetric_structure[i][2]))
@@ -201,7 +205,7 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     if str.lower(in_args['format'])=='pdb':
         f.write("\nMODEL 02")
     f.write("\nRESULTING STRUCTURE COORDINATES\n")
-    write_ob_molecule(mol, in_args['format'], f)
+    write_ob_molecule(obmol, in_args['format'], f)
     if str.lower(in_args['format']) == 'pdb':
         f.write("END\n")
 
@@ -217,19 +221,6 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     # else:
     print("%s: %.6lf" % (calc_args['op_name'], abs(result.csm)))
     print("CSM by formula: %.6lf" % (result.formula_csm))
-
-
-
-def update_coordinates(obmol, out_atoms):
-    """
-    Updates the coordinates of the OpenBabel Molecule according to the Molecule data
-    :param obmol: The OpenBable molecule
-    :param outAtoms: The output atoms' coordinates
-    """
-    num_atoms = obmol.NumAtoms()
-    for i in range(num_atoms):
-        atom = obmol.GetAtom(i + 1)
-        atom.SetVector(non_negative_zero(out_atoms[i]['pos'][0]), non_negative_zero(out_atoms[i]['pos'][1]), non_negative_zero(out_atoms[i]['pos'][2]))
 
 
 def write_ob_molecule(mol, format, f):

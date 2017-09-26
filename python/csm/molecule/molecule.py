@@ -67,11 +67,11 @@ class Chains(OrderedDict):
 
 
 class Molecule:
-    def __init__(self, atoms={}, norm_factor=1.0, obmol=None, to_copy=False):
+    def __init__(self, atoms={}, norm_factor=1.0, to_copy=False):
         if not to_copy:
             self._atoms = atoms
             self._norm_factor = norm_factor
-            self._obmol = obmol
+
 
             self._calculate_center_of_mass()
             self._create_bondset()
@@ -85,6 +85,14 @@ class Molecule:
             self._chains_with_internal_groups={}
             self._chain_equivalences=[]
 
+        #getting rid of obmol:
+            #self._obmol = obmol
+            self._filename=None
+            self._deleted_atom_indices=[]
+            self._format=None
+            self._babel_bond=False
+
+
     def copy(self):
         #deepcopy is used only for atoms,
         # because atoms are the only property changed between runs of Directions that necessitated copying
@@ -93,7 +101,12 @@ class Molecule:
         m=Molecule(to_copy=True)
         m._atoms=copy.deepcopy(self.atoms)
         m._norm_factor=self.norm_factor
-        m._obmol=self.obmol
+
+        #m._obmol=self.obmol
+        m._filename=self._filename
+        m._deleted_atom_indices=self._deleted_atom_indices
+        m._format= self._format
+        m._babel_bond = self._babel_bond
 
         m._bondset=self.bondset
         m._Q=self.Q
@@ -121,13 +134,18 @@ class Molecule:
             "chains_with_internal_groups":self.chains_with_internal_groups,
             "chain_equivalences":self.chain_equivalences,
 
-            #unsure whether worth the bother of including
-            "bondset":self.bondset,
-            #"Q":self.Q, #almost definitely not worth the bother
+            #Classes:
+            #obmol: needed for printing:
+            "deleted indices":self._deleted_atom_indices,
+            "filename":self._filename,
+            "format":self._format,
+            "babel_bond": self._babel_bond,
+            #chains
+            "chains": self.Chains.to_array(),
 
-            #problematic to include
-            #"obmol":self.obmol,
-            "chains": self.Chains.to_array(),  # this does not have a serialization yet, I think
+            # unsure whether worth the bother of including
+            # "bondset":self.bondset,
+            # "Q":self.Q, #almost definitely not worth the bother
                 }
 
     @staticmethod
@@ -139,6 +157,11 @@ class Molecule:
         c=Chains()
         c.from_array(json["chains"])
         m._chains=c
+
+        m._filename=json["filename"]
+        m._deleted_atom_indices = json["deleted indices"]
+        m._format=json["format"]
+        m._babel_bond=json["babel_bond"]
 
         m._center_of_mass=json["center of mass"]
         m._equivalence_classes=json["equivalence classes"]
@@ -205,9 +228,9 @@ class Molecule:
     def size(self):
         return len(self._atoms)
 
-    @property
-    def obmol(self):
-        return self._obmol
+    #@property
+    #def obmol(self):
+    #    return self._obmol
 
     @property
     def groups_with_internal_chains(self):
@@ -454,8 +477,9 @@ class Molecule:
 
         for to_remove in reversed(removed_atoms): #reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
-            if remove_hy: #this is meant to affect print at end
-                self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
+            self._deleted_atom_indices.append(to_remove)
+            #if remove_hy: #this is meant to affect print at end
+                #self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
 
         logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
 
@@ -666,6 +690,11 @@ class MoleculeFactory:
                     raise ValueError("Error discovering format from filename " + in_file_name)
             return form
 
+        def set_obmol_field(mol):
+            mol._filename=in_file_name
+            mol._babel_bond=babel_bond
+            mol._format=format
+
         format = get_format(format)
 
         if use_sequence:
@@ -675,6 +704,7 @@ class MoleculeFactory:
             mol = MoleculeFactory.create_pdb_with_sequence(in_file_name, format, use_chains=use_chains, babel_bond=babel_bond,
                             read_fragments=read_fragments, remove_hy=remove_hy, ignore_symm=ignore_symm, use_mass=use_mass)
             #we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
+            set_obmol_field(mol)
             return mol
 
         if format == "csm":
@@ -703,7 +733,7 @@ class MoleculeFactory:
                 mol.display_info(use_chains)
             except Exception as e:
                 print(e)
-
+        set_obmol_field(mol)
         return mol
 
 
@@ -776,7 +806,7 @@ class MoleculeFactory:
                 atom.adjacent =  remove_multi_bonds(adjacent)
                 atoms.append(atom)
 
-        mol = Molecule(atoms=atoms, obmol=obmol)
+        mol = Molecule(atoms=atoms)#, obmol=obmol)
         return mol
 
     @staticmethod
