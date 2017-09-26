@@ -20,7 +20,7 @@ def non_negative_zero(number):
 def json_results(result, dictionary_args):
     json_dict={"Result":
         {
-        #"molecule": result.molecule,
+        "molecule": result.molecule.to_json(),
         "op_order": result.op_order,
         "op_type": result.op_type,
         "csm": result.csm,
@@ -172,7 +172,7 @@ def print_output_ob(f, result, in_args, calc_args, out_args):
     if str.lower(in_args['format'])=='pdb':
         f.write("\nMODEL 01")
     f.write("\nINITIAL STRUCTURE COORDINATES\n")
-    
+
     obmol=MoleculeFactory._obm_from_file(result.molecule._filename, result.molecule._format, result.molecule._babel_bond)[0]
     for to_remove in result.molecule._deleted_atom_indices:
         obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
