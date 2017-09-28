@@ -985,6 +985,8 @@ class MoleculeFactory:
         obm = MoleculeFactory._obm_from_file(in_file_name, format, babel_bond)
         mol = MoleculeFactory._from_obm(obm, ignore_symm, use_mass)
         mol = MoleculeFactory._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
+        if remove_hy or ignore_hy:
+            mol.strip_atoms(remove_hy, ignore_hy)
         likeness_dict = {}
         cur_atom=0
 
@@ -992,6 +994,9 @@ class MoleculeFactory:
         with open(in_file_name, 'r') as file:
             for line in file:
                 if line[0:6] in ['ATOM  ','HETATM'] and cur_atom<len(mol):
+                    if remove_hy or ignore_hy:
+                        if line[12:14] in ['H', ' H', 'H ']:
+                            continue
                     read_atom(line, likeness_dict, cur_atom)
                     cur_atom+=1
 
