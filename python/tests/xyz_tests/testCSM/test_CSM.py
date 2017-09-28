@@ -17,7 +17,7 @@ class TestClass:
             self.__class__.result=result
         return self.__class__.result
 
-class xTestCSM(TestClass):
+class TestCSM(TestClass):
     def test_csm(self, args, molecule, expected, equiv):
         print("CSM")
         result = self.run_test(args, molecule)
