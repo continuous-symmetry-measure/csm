@@ -142,6 +142,15 @@ def compute_local_csm(molecule, perm, dir, op_type, op_order):
 
 
 def check_perm_cycles(perm, op_order, op_type):
+    '''
+    This function checks the cycles in a given permutation according to the provided operation order and type.
+    It counts the legal and illegal cycles in the permutation
+    :param perm:
+    :param op_order: 
+    :param op_type: 
+    :return: the number of illegal cycles, the number of molecules in illegal cycles, and a dictionary of cycle lengths, 
+    with key =length cycle, val= mnumber of cycles of that length
+    '''
     checked=[False]*len(perm)
     num_invalid=0
     truecount=0

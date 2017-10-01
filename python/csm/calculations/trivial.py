@@ -5,6 +5,10 @@ from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.permuters import ConstraintPermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 
+'''
+contains the trivial calculation (identity perm on a chain permutation)
+and the perm count
+'''
 
 def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **kwargs):
     if molecule.chains and use_chains:

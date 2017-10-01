@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from csm.calculations.approx.approximators import HungarianApproximator, OldApproximator, NewChainsApproximator
+from csm.calculations.approx.approximators import HungarianApproximator, OldApproximator, ManyChainsApproximator
 from csm.calculations.basic_calculations import process_results, CSMState
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 
@@ -16,7 +16,7 @@ def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian'
     if approx_algorithm== 'greedy':
         approximator_cls = OldApproximator
     if approx_algorithm== 'many-chains':
-        approximator_cls=NewChainsApproximator
+        approximator_cls=ManyChainsApproximator
 
     #step two: run the appropriate approximator
     if op_type == 'CH':  # Chirality

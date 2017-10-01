@@ -5,6 +5,9 @@ from csm.fast import PreCalcPIP
 from csm.calculations.constants import start_time
 
 __author__ = 'Devora'
+'''
+All the other oermuters are implemented in Cython, this currently hold the constraints permuter and related code only
+'''
 
 ITYPE=np.int
 DTYPE=np.float64

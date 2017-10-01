@@ -12,6 +12,12 @@ from csm.fast import CythonPermuter
 
 
 class Approximator:
+    '''
+    This is the base class all approximators inherit from.
+    It implements an algorithm whereby initial directions are chosen (via _choose_initial_direction)
+    And then iterated through in 'approximate' with the function '_approximate_from_initial_direction'
+    All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
+    '''
     def __init__(self, op_type, op_order, molecule, use_best_dir=False, get_orthogonal=True, detect_outliers=False,use_chains=False, print_approx=False, dirs=None):
         self._op_type = op_type
         self._op_order = op_order
@@ -67,6 +73,10 @@ class Approximator:
 
 
 class OldApproximator(Approximator):
+    '''
+    This uses the Cython implementation of the classic (greedy) approximate algorithm.
+    It is not optimized for molecules with many chain permutations.
+    '''
     def _calc_chain_permutations(self):
         chain_permutations = []
         dummy = MoleculeFactory.dummy_molecule_from_size(len(self._molecule.chains), self._molecule.chain_equivalences)
@@ -160,6 +170,10 @@ class OldApproximator(Approximator):
 
 
 class HungarianApproximator(OldApproximator):
+    '''
+    This uses the Hungarian (munkres) algorithm for optimization of cost matrix.
+         It is not optimized for molecules with many chain permutations.
+    '''
     def _approximate(self, dir, chainperm):
         return self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
@@ -335,7 +349,12 @@ class HungarianApproximator(OldApproximator):
         return perm
 
 
-class NewChainsApproximator(Approximator):
+class ManyChainsApproximator(Approximator):
+    '''
+    This approximator uses the Hungarian (munkwres) algorithm to choose the optimal permutation of chains, rather than
+    iterating through all possible chain permutations. It is hence more efficient for molecules with many possible chain 
+    permutations
+    '''
     def _approximate_from_initial_dir(self, dir):
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
         old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
