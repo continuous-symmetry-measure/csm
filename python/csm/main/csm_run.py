@@ -38,6 +38,8 @@ def run(args=[]):
             result = approx_calculation(**dictionary_args)
         elif dictionary_args['calc_type'] == 'just_perms':
             result = perm_count(**dictionary_args)
+            print("NUMBER OF PERMUTATIONS: %5.4g" % result)
+            return result
         elif dictionary_args['calc_type'] == 'trivial':
             result = trivial_calculation(**dictionary_args)
         else:
@@ -46,7 +48,6 @@ def run(args=[]):
             except TimeoutError:
                 print("Timed out")
                 return
-
 
         print_results(result, dictionary_args)
         return result

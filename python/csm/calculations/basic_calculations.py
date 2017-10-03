@@ -33,11 +33,6 @@ class Result:
         if calc_local:
             self.local_csm = self.compute_local_csm(self.molecule, self.perm, self.dir, self.op_type,
                                           self.op_order)
-        #self.d_min=state.d_min
-        #self.symmetric_structure=state.symmetric_structure
-        #self.formula_csm=state.formula_csm
-        #self.normalized_molecule_coords=state.normalized_molecule_coords
-        #self.normalized_symmetric_structure=state.normalized_symmetric_structure
         self.process_results()
 
 
