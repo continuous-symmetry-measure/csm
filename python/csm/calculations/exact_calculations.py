@@ -4,7 +4,7 @@ import itertools
 import math
 
 import numpy as np
-from csm.calculations.basic_calculations import compute_local_csm, process_results, CSMState
+from csm.calculations.basic_calculations import process_results, CSMState
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE, start_time
 from csm.fast import calc_ref_plane
 
@@ -50,12 +50,7 @@ def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=Fals
     else:
         best_result = csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, suppress_print, timeout)
 
-    best_result = process_results(best_result)
-    if calc_local:
-        local_csm = compute_local_csm(molecule, best_result.perm, best_result.dir, best_result.op_type,
-                                      best_result.op_order)
-        best_result = best_result._replace(local_csm=local_csm)
-
+    best_result = process_results(best_result, calc_local)
     return best_result
 
 
