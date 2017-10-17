@@ -210,7 +210,6 @@ class ResultWriter:
         f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(self.result.d_min))
 
 
-
     def print_mol(self, f):
         if self.dictionary_args['format'].lower() == "csm":
             molwriter = CSMMolWriter()

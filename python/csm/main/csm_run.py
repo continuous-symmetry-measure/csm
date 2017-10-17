@@ -7,7 +7,7 @@ import timeit
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.approx.main import approx_calculation
-from csm.calculations.trivial import trivial_calculation, perm_count
+from csm.calculations.trivial import trivial_calculation #perm_count
 from csm.calculations import exact_calculations
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results
