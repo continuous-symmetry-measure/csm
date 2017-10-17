@@ -7,16 +7,43 @@ import timeit
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.approx.main import approx_calculation
-from csm.calculations.trivial import trivial_calculation #perm_count
+from csm.calculations.trivial import trivial_calculation
 from csm.calculations import exact_calculations
 from csm.input_output.readers import read_inputs
-from csm.input_output.writers import print_results
-import csm
+from csm.input_output.writers import print_results, FileWriter
+from csm import __version__
+from csm.molecule.molecule import MoleculeReader
 
-APPROX_RUN_PER_SEC = 8e4
 sys.setrecursionlimit(10000)
+
+
+def run2(args=[]):
+    #step one: parse args
+    dictionary_args = get_split_arguments(args)
+    #step two: read molecule from file
+    mol=MoleculeReader.from_file(**dictionary_args)
+    dictionary_args['molecule']=mol
+    #step three: print molecule printouts
+    #step four: create a callback function for the calculation
+    #step five: call the calculation
+    if dictionary_args['calc_type'] == 'approx':
+        result = approx_calculation(**dictionary_args)
+    elif dictionary_args['calc_type'] == 'trivial':
+        result = trivial_calculation(**dictionary_args)
+    else:
+        try:
+            result = exact_calculation(**dictionary_args)
+        except TimeoutError:
+            print("Timed out")
+            return
+    #step six: print the results
+    r=FileWriter(result, **dictionary_args)
+    r.write()
+    return result
+
+
 def run(args=[]):
-    print("CSM version %s" % csm.__version__)
+    print("CSM version %s" % __version__)
     if not args:
         args = sys.argv[1:]
     csv_file = None
@@ -36,10 +63,6 @@ def run(args=[]):
         # run actual calculation
         if dictionary_args['calc_type'] == 'approx':
             result = approx_calculation(**dictionary_args)
-        elif dictionary_args['calc_type'] == 'just_perms':
-            result = perm_count(**dictionary_args)
-            print("NUMBER OF PERMUTATIONS: %5.4g" % result)
-            return result
         elif dictionary_args['calc_type'] == 'trivial':
             result = trivial_calculation(**dictionary_args)
         else:

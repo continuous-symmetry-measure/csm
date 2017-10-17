@@ -1,4 +1,4 @@
-from csm.molecule.molecule import Molecule, MoleculeFactory
+from csm.molecule.molecule import Molecule, MoleculeFactory, MoleculeReader
 from csm.calculations.basic_calculations import check_perm_structure, check_perm_equivalence, check_perm_cycles
 import logging
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     Returns:
         (molecule, perm, dir) - perm and dir may be None
     """
-    molecule = MoleculeFactory.from_file(**kwargs)
+    molecule = MoleculeReader.from_file(**kwargs)
     if perm_file_name:
         perm = read_perm_file(perm_file_name)
         if len(perm) != len(molecule):

@@ -664,14 +664,15 @@ class MoleculeFactory:
         mol.normalize()
         return mol
 
+class MoleculeReader:
     @staticmethod
     def from_string(string, format, initialize=True,
                     use_chains=False, babel_bond=False,
                     remove_hy=False, ignore_symm=False, use_mass=False):
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
         # step one: get the molecule object
-        obm = MoleculeFactory._obm_from_string(string, format, babel_bond)
-        mol = MoleculeFactory._from_obm(obm, ignore_symm, use_mass)
+        obm = MoleculeReader._obm_from_string(string, format, babel_bond)
+        mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass)
 
 
         if initialize:
@@ -707,20 +708,20 @@ class MoleculeFactory:
             if format.lower() != 'pdb':
                 raise ValueError("--use-sequence only works with PDB files")
 
-            mol = MoleculeFactory.create_pdb_with_sequence(in_file_name, format, use_chains=use_chains, babel_bond=babel_bond,
+            mol = MoleculeReader._create_pdb_with_sequence(in_file_name, format, use_chains=use_chains, babel_bond=babel_bond,
                             read_fragments=read_fragments, remove_hy=remove_hy, ignore_symm=ignore_symm, use_mass=use_mass)
             #we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             set_obmol_field(mol)
             return mol
 
         if format == "csm":
-                mol = MoleculeFactory._read_csm_file(in_file_name, ignore_symm, use_mass)
+                mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
 
         else:
-                obm = MoleculeFactory._obm_from_file(in_file_name, format, babel_bond)
-                mol = MoleculeFactory._from_obm(obm, ignore_symm, use_mass, read_fragments)
+                obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
+                mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass, read_fragments)
                 if format=="pdb":
-                    mol=MoleculeFactory._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
+                    mol=MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
                 if not mol.bondset:
                     if keep_structure:
                         raise ValueError("User input --keep-structure but input molecule has no bonds. Did you forget --babel-bond?")
@@ -953,9 +954,9 @@ class MoleculeFactory:
 
 
     @staticmethod
-    def create_pdb_with_sequence(in_file_name, format="pdb", initialize=True,
-                  use_chains=False, babel_bond=False, read_fragments=False,
-                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
+    def _create_pdb_with_sequence(in_file_name, format="pdb", initialize=True,
+                                  use_chains=False, babel_bond=False, read_fragments=False,
+                                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
         def read_atom(line, likeness_dict, cur_atom):
             atom_type = line[12:14]
             remoteness = line[14]
@@ -982,9 +983,9 @@ class MoleculeFactory:
                 print(e)
 
         print("Breaking molecule into equivalency class groups based on protein sequence")
-        obm = MoleculeFactory._obm_from_file(in_file_name, format, babel_bond)
-        mol = MoleculeFactory._from_obm(obm, ignore_symm, use_mass)
-        mol = MoleculeFactory._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
+        obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
+        mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass)
+        mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
         if remove_hy or ignore_hy:
             mol.strip_atoms(remove_hy, ignore_hy)
         likeness_dict = {}
