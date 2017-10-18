@@ -1,0 +1,7 @@
+from csm.calculations.approx.main import approx_calculation
+from csm.calculations.exact_calculations import exact_calculation
+from csm.calculations.trivial_calculations import trivial_calculation
+
+approx=approx_calculation
+exact=exact_calculation
+trivial=trivial_calculation
