@@ -5,9 +5,12 @@ import sys
 import timeit
 
 from csm.input_output.arguments import get_split_arguments
-from csm.calculations.exact_calculations import exact_calculation
-from csm.calculations.approx.main import approx_calculation
-from csm.calculations.trivial import trivial_calculation
+#from csm.calculations.exact_calculations import exact_calculation
+#from csm.calculations.approx.main import approx_calculation
+#from csm.calculations.trivial import trivial_calculation
+from csm.calculations import trivial as trivial_calculation
+from csm.calculations import approx as approx_calculation
+from csm.calculations import exact as exact_calculation
 from csm.calculations import exact_calculations
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results, FileWriter
@@ -17,15 +20,17 @@ from csm.molecule.molecule import MoleculeReader
 sys.setrecursionlimit(10000)
 
 
-def run2(args=[]):
-    #step one: parse args
+def run(args=[]):
+    #parse args
     dictionary_args = get_split_arguments(args)
-    #step two: read molecule from file
+    #read molecule from file
+    print("**reading molecule**")
     mol=MoleculeReader.from_file(**dictionary_args)
+    mol.print_equivalence_class_summary(dictionary_args['use_chains'])
     dictionary_args['molecule']=mol
-    #step three: print molecule printouts
-    #step four: create a callback function for the calculation
-    #step five: call the calculation
+    #create a callback function for the calculation
+    #call the calculation
+    print("**running calculation**")
     if dictionary_args['calc_type'] == 'approx':
         result = approx_calculation(**dictionary_args)
     elif dictionary_args['calc_type'] == 'trivial':
@@ -36,13 +41,13 @@ def run2(args=[]):
         except TimeoutError:
             print("Timed out")
             return
-    #step six: print the results
+    #print the results
     r=FileWriter(result, **dictionary_args)
     r.write()
     return result
 
 
-def run(args=[]):
+def run2(args=[]):
     print("CSM version %s" % __version__)
     if not args:
         args = sys.argv[1:]

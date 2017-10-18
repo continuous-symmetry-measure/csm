@@ -18,7 +18,24 @@ CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 class Result:
     """
-    This class takes care of the final processing of the results, ie denormalization, calculating symmetric structure, etc
+    Holds the results of a CSM calculation. 
+    When initialized, it handles some final processing of the result like denormalization and calculating local CSM.
+    It is not intended to be initialized by an external user, but by the calculation.
+    Properties:
+    molecule: the original Molecule on which the calculation was called (denormalized)
+    op_order: the order of the symmetry operation the calculation used
+    op_type: the type of symmetry option (cs, cn, sn, ci, ch)
+    csm: The final result CSM value
+    perm: The final permutation that gave the result CSM value (a list of ints)
+    dir: The final axis of symmetry
+    perm_count: The number of permutations of the molecule
+    local_csm: 
+    d_min:
+    symmetric_structure: the most symmetric structure when molecule permuted
+    normalized_symmetric_structure: the normalized symmetric structure
+    normalized_molecule_coords: the normalized molecule coordinates
+    formula_csm: a recalculation of the symmetry value using a formula to measure symmetry. Should be close to identical
+                    to algorithm result
     """
     def __init__(self, state, calc_local=False):
         self.__CSMState=state
@@ -33,10 +50,10 @@ class Result:
         if calc_local:
             self.local_csm = self.compute_local_csm(self.molecule, self.perm, self.dir, self.op_type,
                                           self.op_order)
-        self.process_results()
+        self._process_results()
 
 
-    def process_results(self):
+    def _process_results(self):
         self.d_min = 1.0 - (self.csm / 100 * self.op_order / (self.op_order - 1))  # this is the scaling factor
 
 
@@ -50,9 +67,9 @@ class Result:
         self.molecule.de_normalize()
 
         # run and save the formula test
-        self.formula_csm = self.formula_test()
+        self.formula_csm = self._formula_test()
 
-    def formula_test(self):
+    def _formula_test(self):
         Q=self.molecule.Q
         # step one: get average of all atoms
         init_avg = np.mean(Q, axis=0)

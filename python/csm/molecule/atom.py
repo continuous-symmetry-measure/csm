@@ -31,6 +31,13 @@ class Atom:
     """ A single atom, alogn with its position and neighbors
     """
     def __init__(self, symbol, pos, index, useMass=False, chain='Simulated Chain'):
+        """
+        :param symbol: atomic symbol (ie 'C', 'H', 'N')
+        :param pos: position coordinates as a list of floats [1.0, 0.0, 0.0]
+        :param index: integer index in molecule list of atoms
+        :param useMass: boolean, when True atomic mass is used, when False mass=1.0
+        :param chain: string, name of the chain the atom belongs to
+        """
         self.index=index
         self._symbol = symbol
         self.adjacent = []

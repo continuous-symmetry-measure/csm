@@ -86,7 +86,7 @@ def dirs_without_outliers(dirs, positions, op_type, use_best_dir):
         U = get_U(group_avg_point, linestart, test_dir_end, linemag)
         intersection = get_intersect(linestart, test_dir_end, U)
         return magnitude(group_avg_point, intersection)
-    print("======================detecting outliers============================")
+    #print("======================detecting outliers============================")
     more_dirs = []
     for dir in dirs:
         # 1.Find the distance of each point from the line/plane
