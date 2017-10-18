@@ -565,10 +565,7 @@ class Molecule:
         """
         Finish creating the molecule after reading the raw data
         """
-
-        print("Breaking molecule into equivalence class groups")
         self._calculate_equivalency(remove_hy, ignore_hy)
-        #print("Broken into " + str(len(self._equivalence_classes)) + " groups")
         self._initialize_chains(use_chains)
         self.normalize()
 
@@ -736,10 +733,6 @@ class MoleculeReader:
                             "Fragments are marked by $$$ in mol files or by model/endmdl in pdb files")
                 elif use_chains:
                     logger.warn("You specified --use-chains but molecule only has one chain")
-            try:
-                mol.display_info(use_chains)
-            except Exception as e:
-                print(e)
         set_obmol_field(mol)
         return mol
 
@@ -982,7 +975,6 @@ class MoleculeReader:
             except Exception as e:  # TODO: comment why this except is here (I don't actually remember)
                 print(e)
 
-        print("Breaking molecule into equivalency class groups based on protein sequence")
         obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
         mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass)
         mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
@@ -1006,10 +998,8 @@ class MoleculeReader:
 
         #we have our own equivalence class function and hence cannot call the main initialization
         set_equivalence_classes(mol, likeness_dict)
-        print(len(likeness_dict), "equivalence groups")
 
         mol._initialize_chains(use_chains)
-        mol.display_info(use_chains)
         mol.normalize()
 
         return mol
