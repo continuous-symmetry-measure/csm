@@ -151,14 +151,22 @@ class OBMolWriter:
 
 # resultwriters
 class ResultWriter:
-    def __init__(self, result, out_file_name, op_name, format, print_local=False, json_output=False, *args, **kwargs):
+    """
+    A class for writing results. It can write molecules to various openbabel and CSM formats, 
+    can write headers, local csm, permutation, etc. Most functions prefixed write_ expect a filestream. 
+    The two print functions may be changed in the future but for now print to the screen
+    Inheriting classes are recommended to inherit a write() function that can be called from main()
+    """
+    def __init__(self, result, op_name, format, print_local=False, json_output=False, *args, **kwargs):
         self.result = result
         self.op_name = op_name
         self.format = str.lower(format)
         self.print_local = print_local
-        self.out_file_name = out_file_name
         self.json_output = json_output
         self.result_string = self.get_result_string()
+
+    def write(self):
+        raise NotImplemented
 
     def get_result_string(self):
         result_io = io.StringIO()
@@ -264,6 +272,12 @@ class ResultWriter:
         print("CSM by formula: %.6lf" % (self.result.formula_csm))
 
 class FileWriter(ResultWriter):
+    """
+    A ResultWriter class that writes to a file 
+    """
+    def __init__(self, result, out_file_name, op_name, format, print_local=False, json_output=False, *args, **kwargs):
+        self.out_file_name=out_file_name
+        super().__init__(result, op_name, format(), print_local, json_output)
     def write(self):
         self.print_structure()
         self.print_result()

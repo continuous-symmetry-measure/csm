@@ -12,7 +12,6 @@ All the other oermuters are implemented in Cython, this currently hold the const
 ITYPE=np.int
 DTYPE=np.float64
 
-print_branches = False
 
 class ConstraintsBase:
     '''
@@ -302,6 +301,7 @@ class ConstraintPropagator:
         #2.
 
 
+print_branches = False
 class ConstraintPermuter:
     def __init__(self, molecule, op_order, op_type, keep_structure, timeout=300, *args, **kwargs):
         self.molecule=molecule

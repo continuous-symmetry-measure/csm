@@ -9,12 +9,6 @@ import numpy as np
 logger = logging.getLogger("csm")
 
 
-def remove_multi_bonds(bonds):
-    l= list(set(bonds))
-    l.sort()
-    return l
-
-
 
 class Chains(OrderedDict):
     '''
@@ -63,15 +57,18 @@ class Chains(OrderedDict):
         for key, val in arr_of_tuples:
             self.__setitem__(key, val)
 
-
-
-
 class Molecule:
-    def __init__(self, atoms={}, norm_factor=1.0, to_copy=False):
+    """
+    represents a molecule for CSM calculation
+    """
+    def __init__(self, atoms=[], to_copy=False):
+        """  
+        :param atoms: a list of Atoms, default empty
+        :param to_copy: boolean, default False, when True none of the molecules fields will be filled
+        """
         if not to_copy:
             self._atoms = atoms
-            self._norm_factor = norm_factor
-
+            self._norm_factor = 1.0 #is recalculated by molecule._complete_initialization
 
             self._calculate_center_of_mass()
             self._create_bondset()
@@ -151,8 +148,9 @@ class Molecule:
     @staticmethod
     def from_json(json):
         atoms=[Atom.from_json(a) for a in json["atoms"]]
-        norm_factor=json["norm factor"]
-        m=Molecule(atoms, norm_factor)
+        m=Molecule(atoms)
+
+        m.norm_factor=json["norm factor"]
 
         c=Chains()
         c.from_array(json["chains"])
@@ -533,8 +531,7 @@ class Molecule:
     def create_Q(self):
         self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
 
-
-    def display_info(self, display_chains):
+    def print_equivalence_class_summary(self, display_chains):
         """
         Displays information about equivalence classes and chains
         """
@@ -569,40 +566,6 @@ class Molecule:
         self._initialize_chains(use_chains)
         self.normalize()
 
-
-    def print_debug(self):
-        '''
-        matches same function in C++, used for comparing printouts
-        '''
-        #print("Equivalent Groups:")
-        #for item in self.equivalence_classes:
-        #    print(item)
-
-        print("========DEBUG INFORMATION========")
-
-        #print("molecule:")
-        #print("size=", self.size)
-        #for atom in self.atoms:
-        #    print(atom.symbol, atom.pos)
-
-        print("\nconnectivity:")
-        for i in range(self.size):
-            mystr = str(i+1)
-            for adj in self.atoms[i].adjacent:
-                mystr+=" "
-                mystr+=str(adj+1)
-            mystr+="\t\tTotal="
-            mystr+=str(len(self.atoms[i].adjacent))
-            print(mystr)
-
-        #print("\nComplete Equivalent Groups for each atom:")
-        #for i in range(self.size):
-        #    mystr = str(i+1)
-        #    for adj in self.atoms[i].equivalency:
-        #        mystr+=" "
-        #        mystr+=str(adj+1)
-        #    print(mystr)
-
     @staticmethod
     def xyz_string(atoms, positions=None, header=""):
         '''
@@ -622,8 +585,6 @@ class Molecule:
                     coords+=str(coor)
             coords+="\n"
         return coords
-
-
 
 class MoleculeFactory:
     @staticmethod
@@ -662,10 +623,37 @@ class MoleculeFactory:
         return mol
 
 class MoleculeReader:
+    """
+    A static class that creates instances of Molecule from files or strings
+    """
+    @staticmethod
+    def _remove_multi_bonds(bonds):
+        """
+        receives a list, returns a sorted list with no duplicates
+        :param bonds: a list
+        :return: a sorted list with no duplicates
+        """
+        l = list(set(bonds))
+        l.sort()
+        return l
+
     @staticmethod
     def from_string(string, format, initialize=True,
                     use_chains=False, babel_bond=False,
                     remove_hy=False, ignore_symm=False, use_mass=False):
+        """
+        create a Molecule from a string
+        :param string: 
+        :param format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
+        :param initialize: boolean, default True, when True equivalence classes and chains are calculated for the molecule
+        :param use_chains: boolean, default False, when True chains are read from the string 
+        :param babel_bond: boolean, default False, when True OpenBabel will attempt to guess connectivity information
+        :param remove_hy: boolean, default False, when True hydrogen atoms will be removed
+        :param ignore_symm: boolean, default False, when True all atom symbols will be "X" instead of elements 
+                            (this affects equivalence class calculation)
+        :param use_mass: boolean, default False, when True atomic mass will be used, when False all atoms have a mass of 1
+        :return: an instance of class Molecule
+        """
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
         # step one: get the molecule object
         obm = MoleculeReader._obm_from_string(string, format, babel_bond)
@@ -684,6 +672,24 @@ class MoleculeReader:
                   read_fragments=False, use_sequence=False,
                   keep_structure=False,
                   *args, **kwargs):
+        """
+        :param in_file_name: 
+        :param format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
+        :param initialize: boolean, default True, when True equivalence classes and chains are calculated for the molecule
+        :param use_chains: boolean, default False, when True chains are read from the string 
+        :param babel_bond: boolean, default False, when True OpenBabel will attempt to guess connectivity information
+        :param remove_hy: boolean, default False, when True hydrogen atoms will be removed
+        :param ignore_symm: boolean, default False, when True all atom symbols will be "X" instead of elements 
+                            (this affects equivalence class calculation)
+        :param use_mass: boolean, default False, when True atomic mass will be used, when False all atoms have a mass of 1
+        :param read_fragments: boolean, default False, when True, multiple molecules in one file will be treated 
+                                as "chains" of one composite molecule
+        :param use_sequence: boolean, default False, for pdb files only-- uses pdb sequence information to establish 
+                                equivalence (overwrites default equivalence)
+        :param keep_structure: boolean, default False. If keep-structure is specified and molecule has no bond information, 
+                                the peogram will raise an error and exit
+        :return: an instance of class Molecule 
+        """
         def get_format(form):
             if format.lower()=="csm":
                 return "csm"
@@ -803,10 +809,10 @@ class MoleculeReader:
                 adjacent = []
                 for neighbour_atom in OBAtomAtomIter(obatom):
                     adjacent.append(neighbour_atom.GetIdx() - 1)
-                atom.adjacent =  remove_multi_bonds(adjacent)
+                atom.adjacent =  MoleculeReader._remove_multi_bonds(adjacent)
                 atoms.append(atom)
 
-        mol = Molecule(atoms=atoms)#, obmol=obmol)
+        mol = Molecule(atoms)
         return mol
 
     @staticmethod
@@ -861,7 +867,7 @@ class MoleculeReader:
                         raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
                     neighbours.append(neighbour)
 
-                atoms[i].adjacent =  remove_multi_bonds(neighbours)
+                atoms[i].adjacent =  MoleculeReader._remove_multi_bonds(neighbours)
 
             #chains = Chains() #used to get chain indices???
             try:
@@ -877,7 +883,7 @@ class MoleculeReader:
 
             except:
                 pass #assume there are no chains
-        return Molecule(atoms=atoms)
+        return Molecule(atoms)
 
 
     @staticmethod
@@ -939,7 +945,7 @@ class MoleculeReader:
                             for i in range(11, len(line), 5):
                                 adjacent_atom_index = int(line[i:i + 5])
                                 adjacent.append(atom_map[adjacent_atom_index])
-                            atom.adjacent = remove_multi_bonds(adjacent)
+                            atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                         except Exception as e:
                             raise ValueError("There was a problem reading connectivity from the pdb file." + str(e))
                     mol._create_bondset() #refresh the bondset
