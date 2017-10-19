@@ -46,7 +46,7 @@ class Calculation:
 
 
 class ExactCalculation(Calculation):
-    def __init__(self, operation, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, timeout=300, callback_func=None):
+    def __init__(self, operation, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, timeout=300, callback_func=None, *args, **kwargs):
         super().__init__(operation, molecule)
         self.sn_max=sn_max
         self.keep_structure=keep_structure

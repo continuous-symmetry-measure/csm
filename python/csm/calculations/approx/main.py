@@ -10,7 +10,7 @@ from csm.calculations.exact_calculations import Calculation, PlaceHolderOperatio
 
 
 class ApproxCalculation(Calculation):
-    def __init__(self, operation, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None):
+    def __init__(self, operation, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None, *args, **kwargs):
         super().__init__(operation, molecule)
         if approx_algorithm == 'hungarian':
             self.approximator_cls = HungarianApproximator

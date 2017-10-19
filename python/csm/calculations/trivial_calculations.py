@@ -11,7 +11,7 @@ and the perm count
 '''
 
 class TrivialCalculation(Calculation):
-    def __init__(self, operation, molecule, use_chains=True):
+    def __init__(self, operation, molecule, use_chains=True, *args, **kwargs):
         super().__init__(operation, molecule)
         self.use_chains=use_chains
         self.calc()
