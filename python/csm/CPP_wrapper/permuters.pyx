@@ -256,6 +256,14 @@ cdef class CythonPermuter:
     cdef timeout
 
     def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True, timeout=300):
+        """
+        :param mol:
+        :param op_order:
+        :param op_type:
+        :param keep_structure:
+        :param precalculate: false when we want perms WITHOUT csm (eg chainperm)
+        :param timeout:
+        """
         self.count=0
         self.mol=mol
         self._groups = mol.equivalence_classes

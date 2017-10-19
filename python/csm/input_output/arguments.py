@@ -116,60 +116,67 @@ def _create_parser():
     return parser
 
 
-OperationCode = namedtuple('OperationCode', ('type', 'order', 'name'))
-_opcode_data = {
-    "cs": ('CS', 2, "MIRROR SYMMETRY"),
-    "ci": ('CI', 2, "INVERSION (S2)"),
-    "ch": ('CH', 2, "CHIRALITY"),
-    "c2": ('CN', 2, "C2 SYMMETRY"),
-    'c3': ('CN', 3, "C3 SYMMETRY"),
-    'c4': ('CN', 4, "C4 SYMMETRY"),
-    'c5': ('CN', 5, "C5 SYMMETRY"),
-    'c6': ('CN', 6, "C6 SYMMETRY"),
-    'c7': ('CN', 7, "C7 SYMMETRY"),
-    'c8': ('CN', 8, "C8 SYMMETRY"),
-    'c10': ('CN', 10, "C10 SYMMETRY"),
-    's1': ('CS', 2, "MIRROR SYMMETRY (S1)"),
-    's2': ('SN', 2, "S2 SYMMETRY"),
-    's4': ('SN', 4, "S4 SYMMETRY"),
-    's6': ('SN', 6, "S6 SYMMETRY"),
-    's8': ('SN', 8, "S8 SYMMETRY"),
-    's10': ('SN', 8, "S10 SYMMETRY")
-}
 
 
-def get_operation_data(opcode):
-    """
-    Returns data about an operation based on the opcode
-    Args:
-        opcode: c2, s4, etc...
+class Operation:
+    def __init__(self, op):
+        op=self._get_operation_data(op)
+        self.type= op.type
+        self.order = op.order
+        self.name = op.name
 
-    Returns:
-        And OperationCode object, with type, order and name
-    """
+    def _get_operation_data(self, opcode):
+        """
+        Returns data about an operation based on the opcode
+        Args:
+            opcode: c2, s4, etc...
 
-    def isint(s):
+        Returns:
+            And OperationCode object, with type, order and name
+        """
+        OperationCode = namedtuple('OperationCode', ('type', 'order', 'name'))
+        _opcode_data = {
+            "cs": ('CS', 2, "MIRROR SYMMETRY"),
+            "ci": ('CI', 2, "INVERSION (S2)"),
+            "ch": ('CH', 2, "CHIRALITY"),
+            "c2": ('CN', 2, "C2 SYMMETRY"),
+            'c3': ('CN', 3, "C3 SYMMETRY"),
+            'c4': ('CN', 4, "C4 SYMMETRY"),
+            'c5': ('CN', 5, "C5 SYMMETRY"),
+            'c6': ('CN', 6, "C6 SYMMETRY"),
+            'c7': ('CN', 7, "C7 SYMMETRY"),
+            'c8': ('CN', 8, "C8 SYMMETRY"),
+            'c10': ('CN', 10, "C10 SYMMETRY"),
+            's1': ('CS', 2, "MIRROR SYMMETRY (S1)"),
+            's2': ('SN', 2, "S2 SYMMETRY"),
+            's4': ('SN', 4, "S4 SYMMETRY"),
+            's6': ('SN', 6, "S6 SYMMETRY"),
+            's8': ('SN', 8, "S8 SYMMETRY"),
+            's10': ('SN', 8, "S10 SYMMETRY")
+        }
+
+        def isint(s):
+            try:
+                int(s)
+                return True
+            except ValueError:
+                return False
+
+        opcode = opcode.lower()
+        if opcode[0] == 'c' and isint(opcode[1:]):
+            return OperationCode(type='CN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
+        if opcode[0] == 's' and isint(opcode[1:]):
+            if opcode[1:] == '1':
+                data = _opcode_data[opcode.lower()]
+                return OperationCode(type=data[0], order=data[1], name=data[2])
+            if int(opcode[1:]) % 2 != 0:
+                raise ValueError("SN values must be even")
+            return OperationCode(type='SN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
         try:
-            int(s)
-            return True
-        except ValueError:
-            return False
-
-    opcode = opcode.lower()
-    if opcode[0] == 'c' and isint(opcode[1:]):
-        return OperationCode(type='CN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
-    if opcode[0] == 's' and isint(opcode[1:]):
-        if opcode[1:] == '1':
             data = _opcode_data[opcode.lower()]
-            return OperationCode(type=data[0], order=data[1], name=data[2])
-        if int(opcode[1:]) % 2 != 0:
-            raise ValueError("SN values must be even")
-        return OperationCode(type='SN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
-    try:
-        data = _opcode_data[opcode.lower()]
-    except KeyError:
-        raise
-    return OperationCode(type=data[0], order=data[1], name=data[2])
+        except KeyError:
+            raise
+        return OperationCode(type=data[0], order=data[1], name=data[2])
 
 
 def _process_arguments(parse_res):
@@ -187,8 +194,9 @@ def _process_arguments(parse_res):
 
     # the first three positional arguments
 
-    op = get_operation_data(parse_res.type)
+    op = Operation(parse_res.type)
 
+    dictionary_args['operation'] = op
     dictionary_args['op_type'] = op.type
     dictionary_args['op_order'] = op.order
     dictionary_args['op_name'] = op.name

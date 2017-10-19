@@ -5,10 +5,9 @@ import sys
 import timeit
 
 from csm.input_output.arguments import get_split_arguments
-from csm.calculations.exact_calculations import exact_calculation
-from csm.calculations.approx.main import approx_calculation
-from csm.calculations.trivial import trivial_calculation
-from csm.calculations import exact_calculations
+from csm.calculations import approx as approx_calculation
+from csm.calculations import trivial as trivial_calculation
+from csm.calculations import exact as exact_calculation
 from csm.input_output.readers import read_inputs
 from csm.input_output.writers import print_results, FileWriter
 from csm import __version__
@@ -37,6 +36,8 @@ def run2(args=[]):
             print("Timed out")
             return
     #step six: print the results
+    if dictionary_args['calc_local']:
+        result.compute_local_csm()
     r=FileWriter(result, **dictionary_args)
     r.write()
     return result
