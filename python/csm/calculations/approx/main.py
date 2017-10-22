@@ -8,7 +8,22 @@ from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 
 
 
-def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, use_chains=False, print_approx=False, dirs=None, *args, **kwargs):
+def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None, *args, **kwargs):
+    """
+    Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
+    
+    :param op_type: type of symmetry (CS, CN, CH, CI, SN)
+    :param op_order: order of symmetry (2, 3, 4...)
+    :param molecule: instance of Molecule class whose symmetry is being measured
+    :param approx_algorithm: string, 'hungarian', 'greedy', or 'many-chains'. many chains is hungarian optimized for many chains.
+    :param sn_max: for chirality, the maximum SN symmetry to measure
+    :param use_best_dir: use only the best direction 
+    :param get_orthogonal: get orthogonal direction vectors from the main directions
+    :param detect_outliers: detect outliers and use the imrpoved direction vectors
+    :param print_approx: 
+    :param dirs: a list of directions to use as initial dire
+    :return: CSMResult of approximate calculation
+    """
 
     #step one: choose and create the appropriate Approximator
     if approx_algorithm== 'hungarian':
@@ -22,11 +37,11 @@ def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian'
     if op_type == 'CH':  # Chirality
         # sn_max = op_order
         # First CS
-        approximator = approximator_cls('CS', 2, molecule, use_best_dir, get_orthogonal, detect_outliers,use_chains, print_approx, dirs)
+        approximator = approximator_cls('CS', 2, molecule, use_best_dir, get_orthogonal, detect_outliers, print_approx, dirs)
         best_result = approximator.approximate()
         if best_result.csm > MINDOUBLE:
             # Try the SN's
-            approximator = approximator_cls('SN', 2, molecule, use_best_dir, get_orthogonal, detect_outliers,use_chains, print_approx, dirs)
+            approximator = approximator_cls('SN', 2, molecule, use_best_dir, get_orthogonal, detect_outliers,print_approx, dirs)
             for op_order in range(2, sn_max + 1, 2):
                 approximator._op_order = op_order
                 result = approximator.approximate()
@@ -35,7 +50,7 @@ def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian'
                 if best_result.csm < MINDOUBLE:
                     break
     else:
-        approximator = approximator_cls(op_type, op_order, molecule, use_best_dir, get_orthogonal, detect_outliers,use_chains, print_approx, dirs)
+        approximator = approximator_cls(op_type, op_order, molecule, use_best_dir, get_orthogonal, detect_outliers, print_approx, dirs)
         best_result=approximator.approximate()
     #step three: process and return results
     return process_results(best_result)

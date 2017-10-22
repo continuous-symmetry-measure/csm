@@ -16,7 +16,7 @@ class CSMState(namedtuple('CSMState', ['molecule',
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 
-class Result:
+class CSMResult:
     """
     Holds the results of a CSM calculation. 
     When initialized, it handles some final processing of the result like denormalization and calculating local CSM.
@@ -146,7 +146,7 @@ def process_results(results, calc_local=False):
     """
     retained for legacy purposes
     """
-    r=Result(results, calc_local)
+    r=CSMResult(results, calc_local)
     return r
 
 

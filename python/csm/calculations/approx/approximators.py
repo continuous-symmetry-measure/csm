@@ -18,7 +18,7 @@ class Approximator:
     And then iterated through in 'approximate' with the function '_approximate_from_initial_direction'
     All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
     '''
-    def __init__(self, op_type, op_order, molecule, use_best_dir=False, get_orthogonal=True, detect_outliers=False,use_chains=False, print_approx=False, dirs=None):
+    def __init__(self, op_type, op_order, molecule, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None):
         self._op_type = op_type
         self._op_order = op_order
         self._molecule = molecule

@@ -11,6 +11,15 @@ and the perm count
 '''
 
 def trivial_calculation(op_type, op_order, molecule, use_chains=True, *args, **kwargs):
+    """
+    Calculates the CSM of the identity permutation of a molecule. 
+    If use-chains is specified, calculates the identity permutation of every possible chain permutation, returns best
+    :param op_type: type of symmetry (CS, CN, CH, CI, SN)
+    :param op_order: order of symmetry (2, 3, 4...)
+    :param molecule: instance of Molecule class whose symmetry is being measured
+    :param use_chains: 
+    :return: 
+    """
     if molecule.chains and use_chains:
         best = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
         chain_permutations = []

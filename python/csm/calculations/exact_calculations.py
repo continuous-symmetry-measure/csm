@@ -33,6 +33,20 @@ class CSMValueError(ValueError):
 
 
 def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, calc_local=False, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
+    """
+    Calculates the exact CSM of a molecule by measure the symmetry of every possible permutation of its atoms and choosing the best
+    :param op_type: type of symmetry (CS, CN, CH, CI, SN)
+    :param op_order: order of symmetry (2, 3, 4...)
+    :param molecule: instance of Molecule class whose symmetry is being measured
+    :param sn_max: for chirality, the maximum SN symmetry to measure
+    :param keep_structure: when True, only permutations that do not break the bond structure of the molecule are measured
+    :param perm: default None. If a perm (list of indices) is provided, returns the exact symmetry measure of only that permutation
+    :param calc_local: 
+    :param no_constraint: when True, the old Cython 
+    :param suppress_print: 
+    :param timeout: 
+    :return: 
+    """
     if op_type == 'CH':  # Chirality
         #sn_max = op_order
         # First CS
