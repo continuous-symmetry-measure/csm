@@ -16,17 +16,13 @@ class Approximator:
     And then iterated through in 'approximate' with the function '_approximate_from_initial_direction'
     All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
     '''
-    def __init__(self, op_type, op_order, molecule, dir_chooser, print_approx=False):
+    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None):
         self._op_type = op_type
         self._op_order = op_order
         self._molecule = molecule
-        self._print_approx = print_approx
         self._initial_directions=dir_chooser.dirs
-        self._print("There are", len(self._initial_directions), "initial directions to search for the best permutation")
-
-    def _print(self, *strings):
-        if self._print_approx:
-            print(*strings)
+        self._log=log_func
+        self._log("There are", len(self._initial_directions), "initial directions to search for the best permutation")
 
     def approximate(self):
         # the basic steps of direction-based approximation are as follows:
@@ -79,10 +75,10 @@ class OldApproximator(Approximator):
                 op_msg = 'S2'
             else:
                 op_msg = 'CI'
-            self._print("Operation %s - using just one direction: %s" % (op_msg, dir))
+            self._log("Operation %s - using just one direction: %s" % (op_msg, dir))
 
         for chainperm in self._chain_permutations:
-            self._print("Calculating for chain permutation ", chainperm)
+            self._log("Calculating for chain permutation ", chainperm)
             perm = self._approximate(dir, chainperm)
             best_for_chain_perm = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                 perm=perm)
@@ -97,9 +93,9 @@ class OldApproximator(Approximator):
         if self._op_type == 'CI' or (self._op_type == 'SN' and self._op_order == 2):
             return self._for_inversion(best)
 
-        self._print("Calculating for initial direction: ", dir)
+        self._log("Calculating for initial direction: ", dir)
         for chainperm in self._chain_permutations:
-                self._print("\tCalculating for chain permutation ", chainperm)
+                self._log("\tCalculating for chain permutation ", chainperm)
                 # find permutation for this direction of the symmetry axis
                 perm = self._approximate(dir, chainperm)
                 # solve using this perm until it converges:
@@ -107,8 +103,8 @@ class OldApproximator(Approximator):
                                        csm=MAXDOUBLE)
                 best_for_chain_perm = interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                                                                       keep_structure=False, perm=perm)
-                self._print("\t\tfound initial permutation")
-                self._print("\t\tfirst pass yielded dir", interim_results.dir,
+                self._log("\t\tfound initial permutation")
+                self._log("\t\tfirst pass yielded dir", interim_results.dir,
                             "and CSM " + str(round(interim_results.csm, 5)))
                 # print(perm)
 
@@ -128,15 +124,15 @@ class OldApproximator(Approximator):
                     interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                     perm=perm)
 
-                    self._print("\t\titeration", i, ":")
-                    self._print("\t\t\tfound a permutation using dir", old_results.dir, "...")
-                    self._print("\t\t\tthere are",
-                                len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
+                    self._log("\t\titeration", i, ":")
+                    self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
+                    self._log("\t\t\tthere are",
+                              len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
                                 "differences between new permutation and previous permutation")
-                    self._print("\t\t\tusing new permutation, found new direction", interim_results.dir)
-                    self._print("\t\t\tthe distance between the new direction and the previous direction is:",
-                                str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
-                    self._print("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
+                    self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
+                    self._log("\t\t\tthe distance between the new direction and the previous direction is:",
+                              str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
+                    self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
                     # print(perm)
 
                     if interim_results.csm < best_for_chain_perm.csm:
@@ -360,15 +356,15 @@ class ManyChainsApproximator(Approximator):
             interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                             perm=perm)
 
-            self._print("\t\titeration", i, ":")
-            self._print("\t\t\tfound a permutation using dir", old_results.dir, "...")
-            self._print("\t\t\tthere are",
-                        len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
+            self._log("\t\titeration", i, ":")
+            self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
+            self._log("\t\t\tthere are",
+                      len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
                         "differences between new permutation and previous permutation")
-            self._print("\t\t\tusing new permutation, found new direction", interim_results.dir)
-            self._print("\t\t\tthe distance between the new direction and the previous direction is:",
-                        str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
-            self._print("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
+            self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
+            self._log("\t\t\tthe distance between the new direction and the previous direction is:",
+                      str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
+            self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
 
             if interim_results.csm < best.csm:
                 best =interim_results

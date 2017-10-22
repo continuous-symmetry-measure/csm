@@ -28,7 +28,7 @@ cdef class PermChecker:
         pass
 
     cpdef bool is_legal(self, pip, origin, destination):
-        raise NotImplemented
+        raise NotImplementedError
 
 cdef class TruePermChecker(PermChecker):
     """

@@ -166,7 +166,7 @@ class ResultWriter:
         self.result_string = self.get_result_string()
 
     def write(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def get_result_string(self):
         result_io = io.StringIO()

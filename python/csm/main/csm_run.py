@@ -29,7 +29,13 @@ def run(args=[]):
         mol.print_equivalence_class_summary(dictionary_args['use_chains'])
         #step five: call the calculation
         if dictionary_args['calc_type'] == 'approx':
-            calc = Approx(**dictionary_args)
+            if dictionary_args['print_approx']:
+                class PrintApprox(Approx):
+                    def log(self, *args, **kwargs):
+                        print(*args)
+                calc=PrintApprox(**dictionary_args)
+            else:
+                calc = Approx(**dictionary_args)
         elif dictionary_args['calc_type'] == 'trivial':
             calc = Trivial(**dictionary_args)
         else:
