@@ -118,9 +118,10 @@ class OldApproximator(Approximator):
                 # iterations:
                 i = 0
                 max_iterations = 50
-                while (i < max_iterations and
-                           (math.fabs(old_results.csm - interim_results.csm) / math.fabs(
-                               old_results.csm) > 0.01 and interim_results.csm < old_results.csm) and interim_results.csm > 0.0001):
+                while (i < max_iterations
+                       and math.fabs(old_results.csm - interim_results.csm) > 0.0001
+                       and interim_results.csm < old_results.csm
+                       and interim_results.csm > 0.0001):
                     old_results = interim_results
                     i += 1
                     perm = self._approximate(interim_results.dir, chainperm)
