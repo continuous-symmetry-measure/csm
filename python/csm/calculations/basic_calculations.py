@@ -47,9 +47,6 @@ class CSMResult:
         self.dir=state.dir
         self.perm_count=state.perm_count
         self.local_csm=""
-        if calc_local:
-            self.local_csm = self.compute_local_csm(self.molecule, self.perm, self.dir, self.op_type,
-                                          self.op_order)
         self._process_results()
 
 
@@ -138,6 +135,7 @@ class CSMResult:
             square = np.square(difference)
             sum = np.sum(square)
             local_csm[i] = sum * (100.0 / (2 * op_order))
+        self.local_csm=local_csm
         return local_csm
 
 

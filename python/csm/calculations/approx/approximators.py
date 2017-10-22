@@ -2,9 +2,7 @@ import numpy as np
 import math
 from csm.fast import approximate_perm_classic,  munkres_wrapper
 from csm.fast import approximate_perm_hungarian as cython_hungarian
-
-from csm.calculations.approx.dirs import find_symmetry_directions
-from csm.calculations.exact_calculations import csm_operation
+from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
 from csm.calculations.constants import MAXDOUBLE
 from csm.molecule.molecule import Molecule, MoleculeFactory
@@ -18,16 +16,13 @@ class Approximator:
     And then iterated through in 'approximate' with the function '_approximate_from_initial_direction'
     All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
     '''
-    def __init__(self, op_type, op_order, molecule, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None):
+    def __init__(self, op_type, op_order, molecule, dir_chooser, print_approx=False):
         self._op_type = op_type
         self._op_order = op_order
         self._molecule = molecule
         self._print_approx = print_approx
-        if dirs:
-            self._initial_directions=dirs
-        else:
-            self._initial_directions=self._choose_initial_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
-                                                            op_type)
+        self._initial_directions=dir_chooser.dirs
+        self._print("There are", len(self._initial_directions), "initial directions to search for the best permutation")
 
     def _print(self, *strings):
         if self._print_approx:
@@ -50,20 +45,6 @@ class Approximator:
 
     def _precalculate(self):
         pass
-
-    def _choose_initial_directions(self, molecule, use_best_dir, get_orthogonal, detect_outliers,
-                                                            op_type):
-        # if inversion:
-        # not necessary to calculate dir, use geometrical center of structure
-        if self._op_type == 'CI' or (self._op_type == 'SN' and self._op_order == 2):
-            initial_directions= [[1.0, 0.0, 0.0]]
-
-        else:
-            initial_directions = find_symmetry_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
-                                                            op_type)
-
-        self._print("There are", len(initial_directions), "initial directions to search for the best permutation")
-        return initial_directions
 
     def _approximate_from_initial_dir(self, dir):
         # 2. using the direction, create a permutation
@@ -98,12 +79,12 @@ class OldApproximator(Approximator):
                 op_msg = 'S2'
             else:
                 op_msg = 'CI'
-            print("Operation %s - using just one direction: %s" % (op_msg, dir))
+            self._print("Operation %s - using just one direction: %s" % (op_msg, dir))
 
         for chainperm in self._chain_permutations:
             self._print("Calculating for chain permutation ", chainperm)
             perm = self._approximate(dir, chainperm)
-            best_for_chain_perm = csm_operation(self._op_type, self._op_order, self._molecule, keep_structure=False,
+            best_for_chain_perm = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                 perm=perm)
             if best_for_chain_perm.csm < best.csm:
                 best = best_for_chain_perm
@@ -124,7 +105,7 @@ class OldApproximator(Approximator):
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
                                        csm=MAXDOUBLE)
-                best_for_chain_perm = interim_results = csm_operation(self._op_type, self._op_order, self._molecule,
+                best_for_chain_perm = interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                                                                       keep_structure=False, perm=perm)
                 self._print("\t\tfound initial permutation")
                 self._print("\t\tfirst pass yielded dir", interim_results.dir,
@@ -143,7 +124,7 @@ class OldApproximator(Approximator):
                     old_results = interim_results
                     i += 1
                     perm = self._approximate(interim_results.dir, chainperm)
-                    interim_results = csm_operation(self._op_type, self._op_order, self._molecule, keep_structure=False,
+                    interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                     perm=perm)
 
                     self._print("\t\titeration", i, ":")
@@ -361,7 +342,7 @@ class ManyChainsApproximator(Approximator):
                                csm=MAXDOUBLE)
 
         perm = self._approximate(dir)
-        interim_results = csm_operation(self._op_type, self._op_order, self._molecule,
+        interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                       keep_structure=False, perm=perm)
 
         # iterations:
@@ -375,7 +356,7 @@ class ManyChainsApproximator(Approximator):
             old_results = interim_results
             i += 1
             perm = self._approximate(interim_results.dir)
-            interim_results = csm_operation(self._op_type, self._op_order, self._molecule, keep_structure=False,
+            interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                             perm=perm)
 
             self._print("\t\titeration", i, ":")
