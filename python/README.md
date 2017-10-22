@@ -1,5 +1,27 @@
 The Python CSM Package
 ======================
+
+Changes in version 0.17.0
+-------------------------
+Creation of Code API: 
+1. Read a molecule with class MoleculeReader.
+Some information about the molecule's equivalence classes can be printed
+via the function print_equivalence_class_summary()
+2. Pass molecule and other arguments to 
+calculations.Exact, calculations.Approx, or calculations.Trivial
+3. Statistics from the calculation's run can be accessed, eg Exact.dead_ends
+4. A CSMResult is returned. Further analysis like local_csm can be done on the results
+5. The CSMResult and relevant arguments can be passed to a ResultWriter class, eg FileWriter
+
+Added ability to save molecule to and load molecule from json, and json for results.
+
+Removed the option to count perms
+
+Added --remove-hy capabilities to --use-sequence
+
+Stopping condition in approximate calculation has changed from 
+proportional comparison of results to absolute comparison of difference
+
 Changes in version 0.16.4
 -------------------------
 Added --timeout, receives number of seconds, with default of 5 minutes

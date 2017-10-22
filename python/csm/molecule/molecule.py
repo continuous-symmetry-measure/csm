@@ -1,3 +1,7 @@
+"""
+@author: Devora Witty
+"""
+
 from collections import OrderedDict
 import copy
 from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter
@@ -59,7 +63,7 @@ class Chains(OrderedDict):
 
 class Molecule:
     """
-    represents a molecule for CSM calculation
+    Represents a molecule for CSM calculation.
     """
     def __init__(self, atoms=[], to_copy=False):
         """  
@@ -227,14 +231,6 @@ class Molecule:
         :return: a dictionary of the molecule's chains, with keys being the name of the chains
         '''
         return self._chains
-
-    @property
-    def size(self):
-        return len(self._atoms)
-
-    #@property
-    #def obmol(self):
-    #    return self._obmol
 
     @property
     def groups_with_internal_chains(self):
@@ -624,12 +620,12 @@ class MoleculeFactory:
 
 class MoleculeReader:
     """
-    A static class that creates instances of Molecule from files or strings
+    A static class that creates instances of Molecule from files or strings.
     """
     @staticmethod
     def _remove_multi_bonds(bonds):
         """
-        receives a list, returns a sorted list with no duplicates
+        Receives a list, returns a sorted list with no duplicates.
         :param bonds: a list
         :return: a sorted list with no duplicates
         """
@@ -643,7 +639,7 @@ class MoleculeReader:
                     remove_hy=False, ignore_symm=False, use_mass=False):
         """
         create a Molecule from a string
-        :param string: 
+        :param string: the string to create the molecule from
         :param format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
         :param initialize: boolean, default True, when True equivalence classes and chains are calculated for the molecule
         :param use_chains: boolean, default False, when True chains are read from the string 
@@ -673,7 +669,7 @@ class MoleculeReader:
                   keep_structure=False,
                   *args, **kwargs):
         """
-        :param in_file_name: 
+        :param in_file_name: the name of the file to read the molecule from
         :param format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
         :param initialize: boolean, default True, when True equivalence classes and chains are calculated for the molecule
         :param use_chains: boolean, default False, when True chains are read from the string 

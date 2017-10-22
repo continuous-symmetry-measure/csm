@@ -6,8 +6,8 @@ import timeit
 
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations import Approx, Trivial, Exact
-from csm.input_output.readers import read_inputs
-from csm.input_output.writers import print_results, FileWriter
+from csm.input_output.readers import read_perm
+from csm.input_output.writers import FileWriter
 from csm import __version__
 from csm.molecule.molecule import MoleculeReader
 
@@ -25,6 +25,7 @@ def run(args=[]):
         #step two: read molecule from file
         mol=MoleculeReader.from_file(**dictionary_args)
         dictionary_args['molecule']=mol
+        dictionary_args['perm']=read_perm(**dictionary_args)
         #step three: print molecule printouts
         mol.print_equivalence_class_summary(dictionary_args['use_chains'])
         #step five: call the calculation
@@ -59,8 +60,7 @@ def run(args=[]):
         #step six: print the results
         if dictionary_args['calc_local']:
             result.compute_local_csm()
-        r=FileWriter(result, **dictionary_args)
-        r.write()
+        FileWriter(result, **dictionary_args)
         return result
     except Exception as e:
         if dictionary_args['json_output']:

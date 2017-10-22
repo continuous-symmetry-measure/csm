@@ -278,6 +278,7 @@ class FileWriter(ResultWriter):
     def __init__(self, result, out_file_name, op_name, format, print_local=False, json_output=False, *args, **kwargs):
         self.out_file_name=out_file_name
         super().__init__(result, op_name, format, print_local, json_output)
+        self.write()
     def write(self):
         self.print_structure()
         self.print_result()

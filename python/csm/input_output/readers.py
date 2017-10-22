@@ -50,6 +50,18 @@ def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     return molecule, perm
 
 
+def read_perm(molecule, perm_file_name=None, **kwargs):
+    if perm_file_name:
+        perm = read_perm_file(perm_file_name)
+        if len(perm) != len(molecule):
+            raise ValueError("Invalid permutation - permutation is of size %d but molecule has %d atoms" %
+                             (len(perm), len(molecule)))
+        check_perm_validity(molecule, perm, **kwargs)
+    else:
+        perm = None
+    return perm
+
+
 def read_dir_file(filename):
     """
     Reads a symmetry direction file

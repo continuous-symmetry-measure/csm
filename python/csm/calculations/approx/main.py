@@ -1,3 +1,7 @@
+"""
+This is where the outside wrapper for the approximate calculation is located and called from
+"""
+
 import math
 
 import numpy as np
@@ -5,13 +9,13 @@ import sys
 
 from csm.calculations.approx.approximators import HungarianApproximator, OldApproximator, ManyChainsApproximator
 from csm.calculations.approx.dirs import DirectionChooser
-from csm.calculations.basic_calculations import process_results, CSMState
+from csm.calculations.basic_calculations import process_results, Operation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-from csm.calculations.exact_calculations import Calculation, PlaceHolderOperation
+from csm.calculations.exact_calculations import Calculation
 
 
 class ApproxCalculation(Calculation):
-    def __init__(self, operation, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, *args, **kwargs):
+    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, *args, **kwargs):
         super().__init__(operation, molecule)
         if approx_algorithm == 'hungarian':
             self.approximator_cls = HungarianApproximator
@@ -20,7 +24,6 @@ class ApproxCalculation(Calculation):
         if approx_algorithm == 'many-chains':
             self.approximator_cls = ManyChainsApproximator
         self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs)
-        self.sn_max=sn_max
         self.calc()
 
     def calc(self):
@@ -30,14 +33,13 @@ class ApproxCalculation(Calculation):
 
         # step two: run the appropriate approximator
         if op_type == 'CH':  # Chirality
-            # sn_max = op_order
             # First CS
             approximator = self.approximator_cls('CS', 2, molecule, self.direction_chooser, self.log)
             best_result = approximator.approximate()
             if best_result.csm > MINDOUBLE:
                 # Try the SN's
                 approximator = self.approximator_cls('SN', 2, molecule, self.direction_chooser, self.log)
-                for op_order in range(2, self.sn_max + 1, 2):
+                for op_order in range(2, self.operation.order + 1, 2):
                     approximator._op_order = op_order
                     result = approximator.approximate()
                     if result.csm < best_result.csm:
@@ -76,9 +78,9 @@ def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian'
     :return: CSMResult of approximate calculation
     """
     if print_approx:
-        ac=PrintApprox(PlaceHolderOperation(op_type, op_order), molecule, approx_algorithm, sn_max, use_best_dir, get_orthogonal, detect_outliers, dirs)
+        ac=PrintApprox(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs)
     else:
-        ac=ApproxCalculation(PlaceHolderOperation(op_type, op_order), molecule, approx_algorithm, sn_max, use_best_dir, get_orthogonal, detect_outliers, dirs)
+        ac=ApproxCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs)
     return ac.result
 
 
