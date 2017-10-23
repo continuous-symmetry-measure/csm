@@ -58,8 +58,8 @@ def _create_parser():
     # parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
     input_type.add_argument('--use-sequence', action='store_true', default=False,
                             help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
-    input_type.add_argument('--use-chains', action='store_true', default=False,
-                            help='Use chains from molecule when it is possible to do so (affects trivial, approx)')
+    input_type.add_argument('--ignore-chains', action='store_true', default=False,
+                            help='When a molecule has chains, ignore them (affects trivial, approx)')
     input_type.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
 
@@ -175,7 +175,7 @@ def _process_arguments(parse_res):
 
 
     # use chains and fragments
-    dictionary_args['use_chains'] = parse_res.use_chains
+    dictionary_args['use_chains'] = not parse_res.ignore_chains
     dictionary_args['read_fragments'] = parse_res.read_fragments
 
     if not dictionary_args['use_chains'] and parse_res.read_fragments:
