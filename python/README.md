@@ -3,7 +3,7 @@ The Python CSM Package
 
 Changes in version 0.17.0
 -------------------------
-Creation of Code API: 
+Creation of Code API:   
 1. Read a molecule with class MoleculeReader.
 Some information about the molecule's equivalence classes can be printed
 via the function print_equivalence_class_summary()
