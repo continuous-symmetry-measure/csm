@@ -15,7 +15,20 @@ from csm.calculations.exact_calculations import Calculation
 
 
 class ApproxCalculation(Calculation):
+    """
+    Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
+    """
     def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, *args, **kwargs):
+        """
+        Initializes the ApproxCalculation
+        :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry
+        :param molecule: instance of Molecule class on which the described symmetry calculation will be performed
+        :param approx_algorithm: a string, can be 'hungarian', 'greedy', or 'many-chains'. Chooses the approximator alogrithm to use
+        :param use_best_dir: use only the best direction 
+        :param get_orthogonal: get orthogonal direction vectors from the main directions
+        :param detect_outliers: detect outliers and use the imrpoved direction vectors
+        :param dirs: a list of directions to use as initial dire (will override all other dir-choice options)
+        """
         super().__init__(operation, molecule)
         if approx_algorithm == 'hungarian':
             self.approximator_cls = HungarianApproximator
@@ -24,7 +37,6 @@ class ApproxCalculation(Calculation):
         if approx_algorithm == 'many-chains':
             self.approximator_cls = ManyChainsApproximator
         self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs)
-        self.calc()
 
     def calc(self):
         op_type=self.operation.type
@@ -81,6 +93,7 @@ def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian'
         ac=PrintApprox(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs)
     else:
         ac=ApproxCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs)
+    ac.calc()
     return ac.result
 
 

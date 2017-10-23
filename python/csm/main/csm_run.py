@@ -40,27 +40,29 @@ def run(args=[]):
         elif dictionary_args['calc_type'] == 'trivial':
             calc = Trivial(**dictionary_args)
         else:
-            try:
-                # step four: create a callback function for the calculation
-                # Outputing permutations
-                csm_state_tracer_func= None
-                if dictionary_args['perms_csv_name']:
-                    csv_file = open(dictionary_args['perms_csv_name'], 'w')
-                    perm_writer = csv.writer(csv_file, lineterminator='\n')
-                    perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-                    csm_state_tracer_func = lambda state: perm_writer.writerow(
-                        [[p + 1 for p in state.perm],
-                         state.dir,
-                         state.csm, ])
-                calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
-            except TimeoutError:
-                print("Timed out")
-                return
+            # step four: create a callback function for the calculation
+            # Outputing permutations
+            csm_state_tracer_func= None
+            if dictionary_args['perms_csv_name']:
+                csv_file = open(dictionary_args['perms_csv_name'], 'w')
+                perm_writer = csv.writer(csv_file, lineterminator='\n')
+                perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
+                csm_state_tracer_func = lambda state: perm_writer.writerow(
+                    [[p + 1 for p in state.perm],
+                     state.dir,
+                     state.csm, ])
+            calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
+        try:
+            calc.calc()
+        except TimeoutError:
+            print("Timed out")
+            return
         result=calc.result
         #step six: print the results
         if dictionary_args['calc_local']:
             result.compute_local_csm()
-        FileWriter(result, **dictionary_args)
+        fw=FileWriter(result, **dictionary_args)
+        fw.write()
         return result
     except Exception as e:
         if dictionary_args['json_output']:

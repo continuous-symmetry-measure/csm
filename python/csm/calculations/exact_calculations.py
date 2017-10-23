@@ -49,15 +49,16 @@ class ExactCalculation(Calculation):
     def __init__(self, operation, molecule, keep_structure=False, perm=None, no_constraint=False, timeout=300, callback_func=None, *args, **kwargs):
         """
         A class for running the exact CSM Algorithm
-        :param operation: 
-        :param molecule: 
-        :param keep_structure: 
-        :param perm: 
-        :param no_constraint: 
-        :param timeout: 
-        :param callback_func: 
-        :param args: 
-        :param kwargs: 
+        :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry
+        :param molecule: instance of Molecule class on which the described symmetry calculation will be performed
+        :param keep_structure: boolean, when True only permutations that maintain bond integrity will be measured 
+        :param perm: a list of atom indiced describing one permutation of the molecule. Default None- When provided,
+         only the provided permutation is measured
+        :param no_constraint: boolean, default False, when False the constraints algorithm is used for the permuter, 
+        when True the old permuter is used
+        :param timeout: default 300, the number of seconds the function will run before timing out
+        :param callback_func: default None, this function is called for every single permutation calculated with an argument of a single 
+        CSMState, can be used for printing in-progress reports, outputting to an excel, etc.
         """
         super().__init__(operation, molecule)
         self.keep_structure=keep_structure
@@ -65,7 +66,6 @@ class ExactCalculation(Calculation):
         self.no_constraint=no_constraint
         self.timeout=timeout
         self.callback_func=callback_func
-        self.calc()
 
     def calc(self):
         op_type=self.operation.type
@@ -157,6 +157,7 @@ class ExactCalculation(Calculation):
 
 def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
     ec= ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm, no_constraint, timeout)
+    ec.calc()
     if not perm and not suppress_print:
         print("Number of permutations: %s" % format_perm_count(ec.perm_count))
         print("Number of branches in permutation tree: %s" % format_perm_count(ec.num_branches))

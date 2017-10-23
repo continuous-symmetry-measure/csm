@@ -11,10 +11,19 @@ and the perm count
 '''
 
 class TrivialCalculation(Calculation):
+    """
+    Calculates the CSM of the identity permutation of a molecule. 
+    If use-chains is specified, calculates the identity permutation of every possible chain permutation, returns best.
+    """
     def __init__(self, operation, molecule, use_chains=True, *args, **kwargs):
+        """
+        :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry.
+        :param molecule: instance of Molecule class on which the described symmetry calculation will be performed.
+        :param use_chains: default True. When True, all possible chain permutations with an identity perm on their components are measured.
+                When false, only the pure identity perm is measured.
+        """
         super().__init__(operation, molecule)
         self.use_chains=use_chains
-        self.calc()
 
     def calc(self):
         molecule=self.molecule
@@ -49,5 +58,6 @@ class TrivialCalculation(Calculation):
 
 def trivial_calculation(op_type, op_order, molecule, sn_max=8, use_chains=True, *args, **kwargs):
     tc=TrivialCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, use_chains)
+    tc.calc()
     return tc.result
 

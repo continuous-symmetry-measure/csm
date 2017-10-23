@@ -157,12 +157,11 @@ class ResultWriter:
     The two print functions may be changed in the future but for now print to the screen
     Inheriting classes are recommended to inherit a write() function that can be called from main()
     """
-    def __init__(self, result, op_name, format, print_local=False, json_output=False, *args, **kwargs):
+    def __init__(self, result, op_name, format, print_local=False, *args, **kwargs):
         self.result = result
         self.op_name = op_name
         self.format = str.lower(format)
         self.print_local = print_local
-        self.json_output = json_output
         self.result_string = self.get_result_string()
 
     def write(self):
@@ -278,7 +277,7 @@ class FileWriter(ResultWriter):
     def __init__(self, result, out_file_name, op_name, format, print_local=False, json_output=False, *args, **kwargs):
         self.out_file_name=out_file_name
         super().__init__(result, op_name, format, print_local, json_output)
-        self.write()
+
     def write(self):
         self.print_structure()
         self.print_result()
