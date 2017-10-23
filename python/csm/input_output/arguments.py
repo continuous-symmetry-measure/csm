@@ -39,8 +39,6 @@ def _create_parser():
                                   help='use the approximate algorithm to estimate the CSM')
     calculation_type.add_argument('--trivial', action='store_true', default=False,
                                   help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
-    calculation_type.add_argument('--just-perms', action='store_true', default=False,
-                                  help='no calculation of CSM. without --output-perms, only counts the permutations ')
 
 
     parser.add_argument('--timeout', default=300,
@@ -155,10 +153,6 @@ def _process_arguments(parse_res):
     dictionary_args['calc_type'] = 'exact'
     if parse_res.approx:
         dictionary_args['calc_type'] = 'approx'
-    if parse_res.just_perms:
-        if parse_res.approx:
-            raise ValueError("--approx and --just-perms are mutually exclusive")
-        dictionary_args['calc_type'] = 'just_perms'
     if parse_res.trivial:
         if parse_res.approx:
             raise ValueError("--approx and --trivial are mutually exclusive")
@@ -173,7 +167,6 @@ def _process_arguments(parse_res):
     dictionary_args['sn_max'] = parse_res.sn_max
     dictionary_args['use_mass'] = parse_res.use_mass
     dictionary_args['babel_bond'] = parse_res.babel_bond
-    # dictionary_args['no_babel'] = parse_res.no_babel
     dictionary_args['use_sequence'] = parse_res.use_sequence
 
     # if parse_res.use_sequence and parse_res.keep_structure:
