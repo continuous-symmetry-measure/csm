@@ -58,8 +58,8 @@ def _create_parser():
     # parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
     input_type.add_argument('--use-sequence', action='store_true', default=False,
                             help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
-    input_type.add_argument('--ignore-chains', action='store_true', default=False,
-                            help='When a molecule has chains, ignore them (affects trivial, approx)')
+    input_type.add_argument('--use-chains', action='store_true', default=False,
+                            help='When a molecule has chains, use them (affects trivial, approx)')
     input_type.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
 
@@ -114,12 +114,6 @@ def _create_parser():
 
     return parser
 
-
-
-
-
-
-
 def _process_arguments(parse_res):
     """
     Divides the parsed arguments (from argparse) into three dictionaries
@@ -156,8 +150,6 @@ def _process_arguments(parse_res):
     if parse_res.trivial:
         if parse_res.approx:
             raise ValueError("--approx and --trivial are mutually exclusive")
-        if parse_res.just_perms:
-            raise ValueError("--just-perms and --trivial are mutually exclusive")
         dictionary_args['calc_type'] = 'trivial'
 
     # general input/calculation arguments:
@@ -175,7 +167,7 @@ def _process_arguments(parse_res):
 
 
     # use chains and fragments
-    dictionary_args['use_chains'] = not parse_res.ignore_chains
+    dictionary_args['use_chains'] = parse_res.use_chains
     dictionary_args['read_fragments'] = parse_res.read_fragments
 
     if not dictionary_args['use_chains'] and parse_res.read_fragments:
@@ -264,3 +256,87 @@ def get_split_arguments(args):
     parsed_args, leftovers = parser.parse_known_args(args)
     dictionary_args = _process_arguments(parsed_args)
     return dictionary_args
+
+
+
+def _create_parser_2():
+    parser = OurParser(allow_abbrev=False)
+
+    commands=parser.add_subparsers(title="Available commands")
+
+    input_type_=commands.add_parser('read', help="Read a molecule file into a json in CSM format")
+    input_type= input_type_.add_argument_group("Input args", description="Input a molecule")
+    input_type.add_argument('--remove-hy', action='store_true', default=False,
+                            help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
+    input_type.add_argument('--ignore-sym', action='store_true', default=False,
+                            help='Ignore all atomic symbols, performing a purely geometric operation')
+    input_type.add_argument('--use-mass', action='store_true', default=False,
+                            help='Use the atomic masses to define center of mass')
+    input_type.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
+    input_type.add_argument('--use-sequence', action='store_true', default=False,
+                            help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
+    input_type.add_argument('--ignore-chains', action='store_true', default=False,
+                            help='When a molecule has chains, ignore them (affects trivial, approx)')
+    input_type.add_argument('--read-fragments', action='store_true', default=False,
+                            help='Read fragments from .mol or .pdb file as chains')
+
+    # output formatting and printing options
+    out_args_ =commands.add_parser('write', help="Output the results of the calculation to a file")
+    out_args=out_args_.add_argument_group("Output args")
+    out_args.add_argument('--format', help='Use a specific input/output format')
+    out_args.add_argument('--json-output', action='store_true', default=False,
+                          help='Print output in json format to a file')
+    out_args.add_argument('--print-local', action='store_true', default=False,
+                          help='Print the local CSM (csm for each atom) in the output file')
+    out_args.add_argument('--output-perms', action='store', default=None,
+                          help='Writes all enumerated permutations to file')
+    out_args.add_argument('--output-branches', action='store_true', default=False,
+                          help='Writes all backtracking branches to the console')
+    out_args.add_argument('--print-approx', action='store_true', default=False,
+                          help='add some printouts to approx')
+
+
+    exact_args_=commands.add_parser('exact', help="Perform an exact CSM calculation", parents=[input_type, out_args], conflict_handler='resolve')
+    exact_args=exact_args_.add_argument_group("group 1")
+    exact_args.add_argument('--use-perm', type=str,
+                            help='EXACT ONLY: Compute exact CSM for a single permutation')
+    exact_args.add_argument('--keep-structure', action='store_true', default=False,
+                            help='EXACT ONLY: Maintain molecule structure from being distorted in the exact calculation')
+    exact_args.add_argument('--no-constraint', action='store_true', default=False,
+                            help='EXACT ONLY: Do not use the constraints algorithm to traverse the permutation tree')
+    exact_argss=exact_args_.add_argument_group("group 2")
+    exact_argss.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
+    exact_argss.add_argument('--timeout', default=300,
+                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
+
+
+    # calculation arguments that only apply to exact:
+    approx_args=commands.add_parser('approx', help="Approximate the CSM value")
+    approx_args.add_argument('--detect-outliers', action='store_true', default=False,
+                             help="APPROX ONLY:Use outlier detection to improve guesses for initial directions in approx algorithm")
+    approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
+                             help="APPROX ONLY:Don't add orthogonal directions to calculated directions")
+    approx_args.add_argument('--use-best-dir', action='store_true', default=False,
+                             help='APPROX ONLY:Only use the best direction')
+    approx_args.add_argument('--many-chains', action='store_true', default=False,
+                             help='APPROX ONLY: Use the new chains algorithm for many chains. Will automatically apply use-chains')
+    approx_args.add_argument('--greedy', action='store_true', default=False,
+                             help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
+    approx_args.add_argument('--dir', nargs=3, type=float,
+                             help='run approximate algorithm using a specific starting direction')
+    approx_args.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
+    approx_args.add_argument('--timeout', default=300,
+                        help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
+
+    trivial_args=commands.add_parser('trivial', help="Calculate trivial (identity) CSM")
+    trivial_args.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
+    trivial_args.add_argument('--permute-chains', action='store_true', default=False)
+
+
+
+
+    return parser
+
+if __name__ == '__main__':
+    parser=_create_parser_2()
+    parser.parse_args(['exact', '-h'])

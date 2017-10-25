@@ -1,7 +1,7 @@
 from csm.fast import CythonPermuter
-from csm.calculations.basic_calculations import CSMState, process_results, Operation
+from csm.calculations.basic_calculations import CSMState, process_results, Operation, Calculation
 from csm.calculations.constants import MAXDOUBLE
-from csm.calculations.exact_calculations import ExactCalculation, Calculation
+from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.permuters import ConstraintPermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 
@@ -43,6 +43,7 @@ class TrivialCalculation(Calculation):
                         perm[f_chain[i]] = t_chain[i]
 
                 ec = ExactCalculation(self.operation, molecule, keep_structure=False, perm=perm)
+                ec.calculate()
                 result=ec.result
                 if result.csm < best.csm:
                     best = result
@@ -50,6 +51,7 @@ class TrivialCalculation(Calculation):
         else:
             perm = [i for i in range(len(molecule))]
             ec= ExactCalculation(self.operation, molecule, keep_structure=False, perm=perm)
+            ec.calculate()
             best= ec.result
 
         self._csm_result = process_results(best)
@@ -58,6 +60,6 @@ class TrivialCalculation(Calculation):
 
 def trivial_calculation(op_type, op_order, molecule, sn_max=8, use_chains=True, *args, **kwargs):
     tc=TrivialCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, use_chains)
-    tc.calc()
+    tc.calculate()
     return tc.result
 

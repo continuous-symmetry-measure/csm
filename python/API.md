@@ -7,7 +7,7 @@ A basic run of CSM would be as follows:
 `Molecule`
 2. There are three calculation classes: 
 `csm.calculations.Exact`, `csm.calculations.Trivial`, and `csm.calculations.Approx`.
-Each has its own relevant arguments. All of them have the function calc(). 
+Each has its own relevant arguments. All of them have the function calculate(). 
 The result can be accessed via the property `result`.
 In addition, certain statistics about the calculation will be available. Right now
 the properties `dead_ends`, `perm_count`, and `num_branches` are available from Exact.
@@ -149,9 +149,9 @@ ExactCalculation, ApproxCalculation, and TrivialCalculation all inherit from the
 
 All calculations expect to receive an operation and a molecule (and optionally additional arguments) when initializing. 
 
-All calculations have a function `calc()` which performs the operation (most call it from their __init__ func)
+All calculations have a function `calculate()` which performs the operation (most call it from their __init__ func)
 
-All calculations have a property `result` which gives the CSMResult from the calc() function 
+All calculations have a property `result` which gives the CSMResult from the calculate() function 
 (is also generally returned directly by calls to that function )
 
 ##The ExactCalculation Class

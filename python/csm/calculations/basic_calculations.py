@@ -88,6 +88,17 @@ class Operation:
             o.order=sn_max
         return o
 
+class Calculation:
+    def __init__(self, operation, molecule):
+        self.operation=operation
+        self.molecule=molecule
+
+    def calculate(self):
+        pass
+
+    @property
+    def result(self):
+        return self._csm_result
 
 class CSMResult:
     """

@@ -4,7 +4,7 @@ import itertools
 import math
 
 import numpy as np
-from csm.calculations.basic_calculations import process_results, CSMState, Operation
+from csm.calculations.basic_calculations import process_results, CSMState, Operation, Calculation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE, start_time
 from csm.fast import calc_ref_plane
 
@@ -31,20 +31,6 @@ class CSMValueError(ValueError):
         self.CSMState = CSMState
         super().__init__(arg1)
 
-
-class Calculation:
-    def __init__(self, operation, molecule):
-        self.operation=operation
-        self.molecule=molecule
-
-    def calc(self):
-        pass
-
-    @property
-    def result(self):
-        return self._csm_result
-
-
 class ExactCalculation(Calculation):
     def __init__(self, operation, molecule, keep_structure=False, perm=None, no_constraint=False, timeout=300, callback_func=None, *args, **kwargs):
         """
@@ -67,7 +53,7 @@ class ExactCalculation(Calculation):
         self.timeout=timeout
         self.callback_func=callback_func
 
-    def calc(self):
+    def calculate(self):
         op_type=self.operation.type
         op_order=self.operation.order
         molecule=self.molecule
@@ -157,7 +143,7 @@ class ExactCalculation(Calculation):
 
 def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
     ec= ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm, no_constraint, timeout)
-    ec.calc()
+    ec.calculate()
     if not perm and not suppress_print:
         print("Number of permutations: %s" % format_perm_count(ec.perm_count))
         print("Number of branches in permutation tree: %s" % format_perm_count(ec.num_branches))

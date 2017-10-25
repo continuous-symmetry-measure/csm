@@ -9,9 +9,8 @@ import sys
 
 from csm.calculations.approx.approximators import HungarianApproximator, OldApproximator, ManyChainsApproximator
 from csm.calculations.approx.dirs import DirectionChooser
-from csm.calculations.basic_calculations import process_results, Operation
+from csm.calculations.basic_calculations import process_results, Operation, Calculation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-from csm.calculations.exact_calculations import Calculation
 
 
 class ApproxCalculation(Calculation):
@@ -38,7 +37,7 @@ class ApproxCalculation(Calculation):
             self.approximator_cls = ManyChainsApproximator
         self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs)
 
-    def calc(self):
+    def calculate(self):
         op_type=self.operation.type
         op_order=self.operation.order
         molecule=self.molecule
@@ -93,7 +92,7 @@ def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian'
         ac=PrintApprox(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs)
     else:
         ac=ApproxCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs)
-    ac.calc()
+    ac.calculate()
     return ac.result
 
 
