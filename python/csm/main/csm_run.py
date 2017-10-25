@@ -53,7 +53,7 @@ def run(args=[]):
                      state.csm, ])
             calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
         try:
-            calc.calc()
+            calc.calculate()
         except TimeoutError:
             print("Timed out")
             return

@@ -70,12 +70,11 @@ class OldApproximator(Approximator):
         # if inversion:
         # not necessary to calculate dir, use geometrical center of structure
         dir = [1.0, 0.0, 0.0]
-        if self._print_approx:
-            if self._op_type == 'SN':
-                op_msg = 'S2'
-            else:
-                op_msg = 'CI'
-            self._log("Operation %s - using just one direction: %s" % (op_msg, dir))
+        if self._op_type == 'SN':
+            op_msg = 'S2'
+        else:
+            op_msg = 'CI'
+        self._log("Operation %s - using just one direction: %s" % (op_msg, dir))
 
         for chainperm in self._chain_permutations:
             self._log("Calculating for chain permutation ", chainperm)

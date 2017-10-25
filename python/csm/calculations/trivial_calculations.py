@@ -25,7 +25,7 @@ class TrivialCalculation(Calculation):
         super().__init__(operation, molecule)
         self.use_chains=use_chains
 
-    def calc(self):
+    def calculate(self):
         molecule=self.molecule
         if molecule.chains and self.use_chains:
             best = CSMState(molecule=molecule, op_type=self.operation.type, op_order=self.operation.order, csm=MAXDOUBLE)
