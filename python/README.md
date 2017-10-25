@@ -1,6 +1,10 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.17.1
+-------------------------
+Bug fixes
+
 Changes in version 0.17.0
 -------------------------
 Creation of Code API:   
