@@ -161,7 +161,7 @@ def run_dir(dir, csm_args, molecule):
     try:
         result = approx_calculation(**csm_args)
         PrintClass.my_print("\tFor initial direction", dir,
-                            " the CSM value found was %.6lf", format_CSM(result.csm),
+                            " the CSM value found was %s", format_CSM(result.csm),
                             " with a final dir of", result.dir)
     except CSMValueError as e:
         result = e.CSMState

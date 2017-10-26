@@ -53,13 +53,6 @@ class CSMMolWriter:
                 f.write("%d " % (j + 1))
             f.write("\n")
 
-        # print dir
-
-        f.write("\n DIRECTIONAL COSINES:\n\n")
-        f.write("%lf %lf %lf\n" % (
-            non_negative_zero(result.dir[0]), non_negative_zero(result.dir[1]), non_negative_zero(result.dir[2])))
-
-
 
 class OBMolWriter:
     def write(self, f, result, op_name, format):
@@ -79,9 +72,9 @@ class OBMolWriter:
             f.write("\nMODEL 01")
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
 
-        obmol = \
-        MoleculeReader._obm_from_file(result.molecule._filename, result.molecule._format, result.molecule._babel_bond)[
-            0]
+        obmol = MoleculeReader._obm_from_file(result.molecule._filename,
+                                              result.molecule._format,
+                                              result.molecule._babel_bond)[0]
         for to_remove in result.molecule._deleted_atom_indices:
             obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
 
@@ -117,15 +110,6 @@ class OBMolWriter:
         if format == 'pdb':
             f.write("END\n")
 
-        # print dir
-
-        f.write("\n DIRECTIONAL COSINES:\n\n")
-        f.write("%lf %lf %lf\n" % (non_negative_zero(result.dir[0]),
-                                   non_negative_zero(result.dir[1]),
-                                   non_negative_zero(result.dir[2])))
-
-
-
     def write_ob_molecule(self, mol, format, f):
         """
         Write an Open Babel molecule to file
@@ -157,6 +141,7 @@ class ResultWriter:
     The two print functions may be changed in the future but for now print to the screen
     Inheriting classes are recommended to inherit a write() function that can be called from main()
     """
+
     def __init__(self, result, op_name, format, print_local=False, *args, **kwargs):
         self.result = result
         self.op_name = op_name
@@ -198,6 +183,7 @@ class ResultWriter:
     def _write_results(self, f):
         self.write_header(f)
         self.write_mol(f)
+        self.write_dir(f)
 
         if self.print_local:
             self.write_local_csm(f)
@@ -208,7 +194,7 @@ class ResultWriter:
         self.write_permutation(f)
 
     def write_header(self, f):
-        f.write("%s: %.4lf\n" % (self.op_name, abs(self.result.csm)))
+        f.write("%s: %s\n" % (self.op_name, format_CSM(self.result.csm)))
         f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(self.result.d_min))
 
     def write_mol(self, f):
@@ -218,6 +204,12 @@ class ResultWriter:
             molwriter = OBMolWriter()
 
         molwriter.write(f, self.result, self.op_name, self.format)
+
+    def write_dir(self, f):
+        f.write("\n DIRECTIONAL COSINES:\n\n")
+        f.write("%lf %lf %lf\n" % (
+            non_negative_zero(self.result.dir[0]), non_negative_zero(self.result.dir[1]),
+            non_negative_zero(self.result.dir[2])))
 
     def write_local_csm(self, f):
         sum = 0
@@ -251,7 +243,8 @@ class ResultWriter:
             print(
                 "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
-        falsecount, num_invalid, cycle_counts = check_perm_cycles(self.result.perm, self.result.op_order, self.result.op_type)
+        falsecount, num_invalid, cycle_counts = check_perm_cycles(self.result.perm, self.result.op_order,
+                                                                  self.result.op_type)
         if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
             print(
                 "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
@@ -267,16 +260,18 @@ class ResultWriter:
                     cycle_len))
 
     def print_result(self):
-        print("%s: %.6lf" % (self.op_name, abs(self.result.csm)))
-        print("CSM by formula: %.6lf" % (self.result.formula_csm))
+        print("%s: %s" % (self.op_name, format_CSM(self.result.csm)))
+        print("CSM by formula: %s" % (format_CSM(self.result.formula_csm)))
+
 
 class FileWriter(ResultWriter):
     """
     A ResultWriter class that writes to a file 
     """
+
     def __init__(self, result, out_file_name, op_name, format, print_local=False, json_output=False, *args, **kwargs):
-        self.out_file_name=out_file_name
-        self.json_output=json_output
+        self.out_file_name = out_file_name
+        self.json_output = json_output
         super().__init__(result, op_name, format, print_local)
 
     def write(self):
@@ -290,13 +285,8 @@ class FileWriter(ResultWriter):
                 self._write_results(f)
 
 
-
 class FolderWriter(ResultWriter):
     pass
-
-
-
-
 
 
 def print_results(result, dictionary_args):
