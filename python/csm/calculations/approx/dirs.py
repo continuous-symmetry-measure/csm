@@ -168,5 +168,10 @@ class DirectionChooser:
 
 
 def dirs_orthogonal(dirs):
+    """
+    this function is called by dircsm, and until that gets killed and moved to here, it stays
+    :param dirs: 
+    :return: 
+    """
     dc = DirectionChooser(None, None, None, dirs=[1, 1, 1])
     return dc.dirs_orthogonal(dirs)

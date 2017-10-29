@@ -54,7 +54,7 @@ class TrivialCalculation(Calculation):
             ec.calculate()
             best= ec.result
 
-        self._csm_result = process_results(best)
+        self._csm_result = best
         return self.result
 
 
