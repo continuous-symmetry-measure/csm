@@ -14,7 +14,7 @@ from csm.calculations.approx.main import approx_calculation
 from csm.input_output.arguments import _create_parser, get_split_arguments
 from csm.input_output.formatters import format_CSM
 from csm.input_output.writers import print_results
-from csm.molecule.molecule import Molecule, MoleculeFactory
+from csm.molecule.molecule import Molecule, MoleculeFactory, MoleculeReader
 
 __author__ = 'Devora Witty'
 
@@ -150,6 +150,7 @@ def choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed):
             dirs.append(dir)
 
     if direction_choice == 'atom-vectors-orth':
+
         dirs = dirs_orthogonal(dirs)
 
     return dirs
@@ -213,7 +214,7 @@ def handle_args(args):
 
     args = [x for x in args if x not in parsed_args.direction_choice]
     csm_args = get_split_arguments(args)
-    molecule = MoleculeFactory.from_file(**csm_args)
+    molecule = MoleculeReader.from_file(**csm_args)
     return direction_choices, dirs_file, k, seed, csm_args, molecule
 
 
@@ -318,7 +319,7 @@ def test_vector_distances():
     for this_arg in args:
         PrintClass.my_print(this_arg)
         csm_args = get_split_arguments(this_arg["args"])
-        molecule = MoleculeFactory.from_file(**csm_args)
+        molecule = MoleculeReader.from_file(**csm_args)
         rotated_dir = this_arg["dir"]
         for i in range(parts):
             PrintClass.my_print("rotated", i, "degrees")

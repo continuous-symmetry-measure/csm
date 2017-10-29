@@ -165,3 +165,8 @@ class DirectionChooser:
             added_dirs.append(dir2)
 
         return np.array(added_dirs)
+
+
+def dirs_orthogonal(dirs):
+    dc = DirectionChooser(None, None, None, dirs=[1, 1, 1])
+    return dc.dirs_orthogonal(dirs)
