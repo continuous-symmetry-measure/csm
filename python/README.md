@@ -1,6 +1,13 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.17.2
+-------------------------
+* Added fibonacci sphere to dircsm
+* removed argument --k from dircsm. instead there is --num-dirs, which can be used for either random-k or fibonacci-sphere
+* added printout of chain permutation
+
+
 Changes in version 0.17.1
 -------------------------
 Bug fixes
