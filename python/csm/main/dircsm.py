@@ -4,7 +4,8 @@ import random
 import numpy as np
 from math import radians, cos, sin, pi
 from argparse import RawTextHelpFormatter
-
+import math
+import random
 from csm import __version__
 from csm.calculations.approx.dirs import dirs_orthogonal
 from csm.calculations.basic_calculations import check_perm_cycles, CSMState
@@ -29,7 +30,8 @@ choice_dict = {
     '3': 'random-k',
     '4': 'cube-corners',
     '5': 'atom-vectors',
-    '6': 'atom-vectors-orth'
+    '6': 'atom-vectors-orth',
+    '7': 'fibonacci-sphere'
 }
 
 
@@ -44,22 +46,24 @@ def direction_parser():
 
     dir_argument = parser.add_argument('direction_choice',
                                        help='Types of direction choice available:\n'
-                                            '0: user-input- user inputs the dirs to be chosen with "--dirs-file" \n'
-                                            '1: exact-structure- program runs exact with keep structure and uses that direction for approx\n'
-                                            '2: greedy-first- program runs standard greedy approx and uses final result direction for hungarian\n'
-                                            '3: random-k- K directions are chosen randomly. Default is 10, user can specify --k K.\n'
-                                            '4: cube-corners- directions to corners of cube whose center is mass center\n'
-                                            '5: atom-vectors- directions are vectors from center to each atom\n'
-                                            '6: atom-vector-orth- like atom-vectors, but also includes orthogonal directions to those chosen \n'
+                                            '0: user-input; user inputs the dirs to be chosen with "--dirs-file" \n'
+                                            '1: exact-structure; program runs exact with keep structure and uses that direction for approx\n'
+                                            '2: greedy-first; program runs standard greedy approx and uses final result direction for hungarian\n'
+                                            '3: random-k; K directions are chosen randomly. Default is 10, user can specify --k K.\n'
+                                            '4: cube-corners; directions to corners of cube whose center is mass center\n'
+                                            '5: atom-vectors; directions are vectors from center to each atom\n'
+                                            '6: atom-vector-orth; like atom-vectors, but also includes orthogonal directions to those chosen \n'
+                                            '7: fibonacci-sphere; create points evenly on sphere and use those as directions'
                                        ,
-                                       choices=['0', '1', '2', '3', '4', '5', '6'],
+                                       choices=['0', '1', '2', '3', '4', '5', '6', '7'],
                                        # nargs='+',
                                        metavar="direction_choice"
                                        )
     parser._actions.pop()
     parser._actions.insert(1, dir_argument)
 
-    parser.add_argument('--num-rand', type=int, default=10, help='Number of random directions to try for random-k')
+    parser.add_argument('--num-dirs', type=int, default=20, help='Number of random directions to try for random-k, '
+                                                                 'or number of points on sphere for fibonacci sphere')
     parser.add_argument('--dirs-file', type=str,
                         help='File address of file with list of dirs for use-input')
     parser.add_argument('--seed', type=str,
@@ -85,7 +89,30 @@ class PrintClass:
             file.write("\n")
 
 
-def choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed):
+def fibonacci_sphere(samples, randomize=True):
+    #https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere/26127012#26127012
+    rnd = 1.
+    if randomize:
+        rnd = random.random() * samples
+
+    points = []
+    offset = 2./samples
+    increment = math.pi * (3. - math.sqrt(5.));
+
+    for i in range(samples):
+        y = ((i * offset) - 1) + (offset / 2);
+        r = math.sqrt(1 - pow(y,2))
+
+        phi = ((i + rnd) % samples) * increment
+
+        x = math.cos(phi) * r
+        z = math.sin(phi) * r
+
+        points.append([x,y,z])
+
+    return points
+
+def choose_directions(direction_choice, molecule, csm_args, dirs_file, num_dirs, seed):
     dirs = []
     op_type = csm_args['op_type']
     op_order = csm_args['op_order']
@@ -116,7 +143,7 @@ def choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed):
         rng = random.Random(seed)
         PrintClass.my_print("\tSeed was:", seed)
 
-        for i in range(k):
+        for i in range(num_dirs):
             dir = []
             for j in range(3):
                 dir.append(rng.uniform(-1, 1))
@@ -152,6 +179,10 @@ def choose_directions(direction_choice, molecule, csm_args, dirs_file, k, seed):
     if direction_choice == 'atom-vectors-orth':
 
         dirs = dirs_orthogonal(dirs)
+
+    if direction_choice == 'fibonacci-sphere':
+        dirs = fibonacci_sphere(num_dirs)
+
 
     return dirs
 
@@ -203,7 +234,7 @@ def handle_args(args):
 
     direction_choices = [choice_dict[x] for x in parsed_args.direction_choice]
     dirs_file = parsed_args.dirs_file
-    k = parsed_args.num_rand
+    num_dirs = parsed_args.num_dirs
     seed = parsed_args.seed
     if seed:
         seed = int(seed)
@@ -215,12 +246,12 @@ def handle_args(args):
     args = [x for x in args if x not in parsed_args.direction_choice]
     csm_args = get_split_arguments(args)
     molecule = MoleculeReader.from_file(**csm_args)
-    return direction_choices, dirs_file, k, seed, csm_args, molecule
+    return direction_choices, dirs_file, num_dirs, seed, csm_args, molecule
 
 
 def run(args=[]):
     print("CSM version %s" % __version__)
-    direction_choices, dirs_file, k, seed, csm_args, molecule = handle_args(args)
+    direction_choices, dirs_file, num_dirs, seed, csm_args, molecule = handle_args(args)
 
     best_result = CSMState(csm=MAXDOUBLE)
     best_initial_dir = None
@@ -228,7 +259,7 @@ def run(args=[]):
     result_dirs = []
 
     for choice in direction_choices:
-        dirs = choose_directions(choice, molecule, csm_args, dirs_file, k, seed)
+        dirs = choose_directions(choice, molecule, csm_args, dirs_file, num_dirs, seed)
 
         PrintClass.my_print("Using direction choice", choice, "there are", len(dirs), "initial directions",
                             print_flag=True)
