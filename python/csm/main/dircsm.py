@@ -59,7 +59,7 @@ def direction_parser():
     parser._actions.pop()
     parser._actions.insert(1, dir_argument)
 
-    parser.add_argument('--k', type=int, default=10, help='Number of random directions to try for random-k')
+    parser.add_argument('--num-rand', type=int, default=10, help='Number of random directions to try for random-k')
     parser.add_argument('--dirs-file', type=str,
                         help='File address of file with list of dirs for use-input')
     parser.add_argument('--seed', type=str,
@@ -203,7 +203,7 @@ def handle_args(args):
 
     direction_choices = [choice_dict[x] for x in parsed_args.direction_choice]
     dirs_file = parsed_args.dirs_file
-    k = parsed_args.k
+    k = parsed_args.num_rand
     seed = parsed_args.seed
     if seed:
         seed = int(seed)
