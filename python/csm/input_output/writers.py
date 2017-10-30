@@ -263,6 +263,9 @@ class ResultWriter:
         print("%s: %s" % (self.op_name, format_CSM(self.result.csm)))
         print("CSM by formula: %s" % (format_CSM(self.result.formula_csm)))
 
+    def print_chain_perm(self):
+        if len(self.result.molecule.chains)>1:
+            print("Chain perm: ", self.result.chain_perm_string())
 
 class FileWriter(ResultWriter):
     """
@@ -277,6 +280,7 @@ class FileWriter(ResultWriter):
     def write(self):
         self.print_structure()
         self.print_result()
+        self.print_chain_perm()
         if self.json_output:
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
                 json.dump(self.to_json(), f)

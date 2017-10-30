@@ -94,26 +94,6 @@ def get_norm_by_distance_from_centers(coords, fragments, centers):
 
 
 
-def get_chain_perm(molecule, perm):
-    '''
-    finds the existing permutation between chains, in the result
-    :return:
-    '''
-    chain_perm_dict={}
-    for chain in molecule.chains:
-        index= molecule.chains[chain][0]
-        permuted_index= perm[index]
-        for chain2 in molecule.chains:
-            if permuted_index in molecule.chains[chain2]:
-                chain_perm_dict[chain]=chain2
-                break
-    chain_perm=[]
-    for chain in molecule.chains:
-        permuted_index= chain_perm_dict[chain]
-        chain_perm.append(permuted_index)
-
-    return chain_perm
-
 def write_new_molecule(file, result):
     if file:
         file.write("\n")
@@ -169,7 +149,7 @@ def normalize_csm(norm_type, result, file):
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
         dummy = MoleculeFactory.dummy_molecule_from_coords(coordinates_array, molecule.chain_equivalences)
         #get chain permutation
-        perm=get_chain_perm(molecule, result.perm)
+        perm=result.chain_perm
         #run CSM using the perm
         new_result=exact_calculation(result.op_type, result.op_order, dummy, perm=perm)
         write_new_molecule(file, new_result)

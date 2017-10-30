@@ -120,6 +120,7 @@ class CSMResult:
     normalized_molecule_coords: the normalized molecule coordinates
     formula_csm: a recalculation of the symmetry value using a formula to measure symmetry. Should be close to identical
                     to algorithm result
+    chain_perm: the chain permutation (by index-- names can be accessed with chain_perm_string)
     """
     def __init__(self, state, calc_local=False):
         self.__CSMState=state
@@ -149,6 +150,9 @@ class CSMResult:
 
         # run and save the formula test
         self.formula_csm = self._formula_test()
+
+        #get the chain perm
+        self.get_chain_perm()
 
     def _formula_test(self):
         Q=self.molecule.Q
@@ -221,6 +225,37 @@ class CSMResult:
             local_csm[i] = sum * (100.0 / (2 * op_order))
         self.local_csm=local_csm
         return local_csm
+
+    def get_chain_perm(self):
+        '''
+        finds the existing permutation between chains, in the result
+        :return:
+        '''
+        molecule=self.molecule
+        perm=self.perm
+        chain_perm_dict = {}
+        for chain in molecule.chains:
+            index = molecule.chains[chain][0]
+            permuted_index = perm[index]
+            for chain2 in molecule.chains:
+                if permuted_index in molecule.chains[chain2]:
+                    chain_perm_dict[chain] = chain2
+                    break
+        chain_perm = []
+        for chain in molecule.chains:
+            permuted_index = chain_perm_dict[chain]
+            chain_perm.append(permuted_index)
+        self.chain_perm=chain_perm
+
+    def chain_perm_string(self):
+        chain_str=""
+        for from_index, to_index in enumerate(self.chain_perm):
+            from_chain=self.molecule.chains.index_to_string(from_index)
+            to_chain=self.molecule.chains.index_to_string(to_index)
+            chain_str+=from_chain + "->" + to_chain + ", "
+        chain_str=chain_str[:-2] #remove final comma and space
+        return chain_str
+
 
 
 #TODO: replace all calls to this class with creation of Result class

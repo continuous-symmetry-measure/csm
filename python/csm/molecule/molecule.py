@@ -61,6 +61,9 @@ class Chains(OrderedDict):
         for key, val in arr_of_tuples:
             self.__setitem__(key, val)
 
+    def index_to_string(self, index):
+        return self._indexes_to_strings[index]
+
 class Molecule:
     """
     Represents a molecule for CSM calculation.
