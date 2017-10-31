@@ -1,3 +1,5 @@
+import operator
+
 import numpy as np
 import math
 from csm.fast import approximate_perm_classic,  munkres_wrapper
@@ -439,3 +441,21 @@ class ManyChainsApproximator(Approximator):
         # B: We run the hungarian algorithm on matrix B,
         indexes = munkres_wrapper(group_distance_matrix)
         return indexes, group_distance_matrix
+
+
+class StructuredApproximator(Approximator):
+    def _approximate_from_initial_dir(self, dir):
+        return self.approximate_perm(self._op_type, self._op_order, self._molecule, dir)
+
+    def approximate_perm(self, op_type, op_order, molecule, dir):
+        rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
+        rotated = (rotation_mat @ molecule.Q.T).T
+        distances=[]
+        for index_a, a in enumerate(molecule.Q):
+            for index_b, b in enumerate(rotated):
+                distance = array_distance(a, b)
+                distances.append((distance, index_a, index_b))
+        distances.sort(key=operator.itemgetter(0))
+
+        print("hi")
+
