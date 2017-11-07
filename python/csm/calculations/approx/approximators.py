@@ -7,6 +7,7 @@ from csm.fast import approximate_perm_hungarian as cython_hungarian
 from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
 from csm.calculations.constants import MAXDOUBLE
+from csm.calculations.permuters import ApproxConstraintPermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
 
@@ -80,7 +81,7 @@ class OldApproximator(Approximator):
 
         for chainperm in self._chain_permutations:
             self._log("Calculating for chain permutation ", chainperm)
-            perm = self._approximate(dir, chainperm)
+            perm = self._build_perm(dir, chainperm)
             best_for_chain_perm = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                 perm=perm)
             if best_for_chain_perm.csm < best.csm:
@@ -98,7 +99,7 @@ class OldApproximator(Approximator):
         for chainperm in self._chain_permutations:
                 self._log("\tCalculating for chain permutation ", chainperm)
                 # find permutation for this direction of the symmetry axis
-                perm = self._approximate(dir, chainperm)
+                perm = self._build_perm(dir, chainperm)
                 # solve using this perm until it converges:
                 old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
                                        csm=MAXDOUBLE)
@@ -121,7 +122,7 @@ class OldApproximator(Approximator):
                        and interim_results.csm > 0.0001):
                     old_results = interim_results
                     i += 1
-                    perm = self._approximate(interim_results.dir, chainperm)
+                    perm = self._build_perm(interim_results.dir, chainperm)
                     interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                     perm=perm)
 
@@ -144,7 +145,7 @@ class OldApproximator(Approximator):
 
         return best
 
-    def _approximate(self, dir, chainperm):
+    def _build_perm(self, dir, chainperm):
         return approximate_perm_classic(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
 
@@ -153,7 +154,7 @@ class HungarianApproximator(OldApproximator):
     This uses the Hungarian (munkres) algorithm for optimization of cost matrix.
          It is not optimized for molecules with many chain permutations.
     '''
-    def _approximate(self, dir, chainperm):
+    def _build_perm(self, dir, chainperm):
         return self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
     class DistanceMatrix:
@@ -339,7 +340,7 @@ class ManyChainsApproximator(Approximator):
         old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
                                csm=MAXDOUBLE)
 
-        perm = self._approximate(dir)
+        perm = self._build_perm(dir)
         interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                       keep_structure=False, perm=perm)
 
@@ -353,7 +354,7 @@ class ManyChainsApproximator(Approximator):
                     and interim_results.csm > 0.0001):
             old_results = interim_results
             i += 1
-            perm = self._approximate(interim_results.dir)
+            perm = self._build_perm(interim_results.dir)
             interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                             perm=perm)
 
@@ -372,7 +373,7 @@ class ManyChainsApproximator(Approximator):
 
         return best
 
-    def _approximate(self, dir):
+    def _build_perm(self, dir):
         rotation_mat = create_rotation_matrix(1, self._op_type, self._op_order, dir)
         perm = [-1] * len(self._molecule)
         # improved use chains algorithm:
@@ -443,19 +444,60 @@ class ManyChainsApproximator(Approximator):
         return indexes, group_distance_matrix
 
 
-class StructuredApproximator(Approximator):
+class StructuredApproximator(OldApproximator):
     def _approximate_from_initial_dir(self, dir):
-        return self.approximate_perm(self._op_type, self._op_order, self._molecule, dir)
+        best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
+        old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
+                               csm=MAXDOUBLE)
 
-    def approximate_perm(self, op_type, op_order, molecule, dir):
+        perm = self._build_perm(dir)
+        interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
+                      keep_structure=False, perm=perm)
+
+        # iterations:
+        i = 0
+        max_iterations = 50
+        while (i < max_iterations and
+                   (math.fabs(old_results.csm - interim_results.csm) / math.fabs(
+                       old_results.csm) > 0.01
+                    and interim_results.csm < old_results.csm)
+                    and interim_results.csm > 0.0001):
+            old_results = interim_results
+            i += 1
+            perm = self._build_perm(interim_results.dir)
+            interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
+                                            perm=perm)
+
+            self._log("\t\titeration", i, ":")
+            self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
+            self._log("\t\t\tthere are",
+                      len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
+                        "differences between new permutation and previous permutation")
+            self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
+            self._log("\t\t\tthe distance between the new direction and the previous direction is:",
+                      str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
+            self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
+
+            if interim_results.csm < best.csm:
+                best =interim_results
+
+        return best
+
+    def _build_perm(self, dir):
+        return self.build_perm_and_state(self._op_type, self._op_order, self._molecule, dir)
+
+    def build_perm_and_state(self, op_type, op_order, molecule, dir):
+        print("########trying with a new dir##############")
         rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
         rotated = (rotation_mat @ molecule.Q.T).T
-        distances=[]
+        distances={}
         for index_a, a in enumerate(molecule.Q):
+            distances[index_a]={}
             for index_b, b in enumerate(rotated):
                 distance = array_distance(a, b)
-                distances.append((distance, index_a, index_b))
-        distances.sort(key=operator.itemgetter(0))
-
-        print("hi")
+                distances[index_a][index_b]=distance
+        #distances.sort(key=operator.itemgetter(0))
+        permuter=ApproxConstraintPermuter(self._molecule, self._op_order, self._op_type, True, distances)
+        for state in permuter.permute():
+            return state.perm
 
