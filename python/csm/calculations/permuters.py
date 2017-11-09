@@ -1,12 +1,14 @@
 import datetime
+import operator
+
 import numpy as np
 from csm.fast import PreCalcPIP
 
-from csm.calculations.constants import start_time
-
+from csm.calculations.constants import start_time, MAXDOUBLE
+from bisect import insort
 __author__ = 'Devora'
 '''
-All the other oermuters are implemented in Cython, this currently hold the constraints permuter and related code only
+All the other permuters are implemented in Cython, this currently hold the constraints permuter and related code only
 '''
 
 ITYPE=np.int
@@ -178,7 +180,6 @@ class DictionaryConstraints(ConstraintsBase):
             key_length = len(self.constraints[key])
             if key_length < min_length:
                 min_key, min_length = key, key_length
-
         if min_key is not None:
             return min_key, list(self.constraints[min_key])
         return None, None
@@ -231,6 +232,8 @@ class DictionaryConstraints(ConstraintsBase):
                 raise ValueError("Unexpected instruction %s in undo stack", instruction)
 
             instruction, params = self.pop_undo()
+
+
 
 
 class ConstraintPropagator:
@@ -301,7 +304,6 @@ class ConstraintPropagator:
         #2.
 
 
-print_branches = False
 class ConstraintPermuter:
     def __init__(self, molecule, op_order, op_type, keep_structure, timeout=300, *args, **kwargs):
         self.molecule=molecule
@@ -316,6 +318,7 @@ class ConstraintPermuter:
         if op_type=='SN':
             self.cycle_lengths.append(2)
         self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
+        self.constraints = DictionaryConstraints(self.molecule)
 
     def create_cycle(self, atom, pip):
         group=[]
@@ -335,12 +338,8 @@ class ConstraintPermuter:
             print("Molecule size exceeds recommended size for using caching. (Perhaps you meant to use --approx?)")
             use_cache=False
         pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
-        #pip = PythonPIP(self.molecule, self.op_order, self.op_type)
-        #step 2: create initial set of constraints
-        constraints = DictionaryConstraints(self.molecule)
-        #constraints=IndexConstraints(self.molecule)
         #step 3: call recursive permute
-        for pip in self._permute(pip, constraints):
+        for pip in self._permute(pip, self.constraints):
             self.count+=1
             yield pip.state
 
@@ -421,6 +420,86 @@ class ConstraintPermuter:
         return cycle_head, cycle_tail, cycle_length, cycle
 
 
+
+
+class ApproxDictionaryConstraints(DictionaryConstraints):
+        def __init__(self, molecule, distances):
+            super().__init__(molecule)
+            self.distances=distances
+
+        def choose(self):
+            constraints_with_len_one=[]
+            sorted=[]
+            for atom_key in self.constraints:
+                key_length = len(self.constraints[atom_key])
+                if False: #key_length == 1:
+                    constraints_with_len_one.append((atom_key, list(self.constraints[atom_key])[0]))
+                else:
+                    for destination in self.constraints[atom_key]:
+                        insort(sorted, (self.distances[atom_key][destination], (atom_key, destination)))
+
+            list_of_placements=constraints_with_len_one+[part[1] for part in sorted]
+            return list_of_placements
+
+
+
+class ApproxConstraintPermuter(ConstraintPermuter):
+    def __init__(self,  molecule, op_order, op_type, distances_dict, distances_list, timeout=300, *args, **kwargs):
+        super().__init__(molecule, op_order, op_type, True, timeout)
+        self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
+        self.constraints = ApproxDictionaryConstraints(self.molecule, distances_dict)
+        self.distances=distances_list
+
+    def permute(self):
+        for pip in super().permute():
+            yield pip
+
+
+    def _permute(self, pip, constraints):
+        #print_branches=True
+        time_d= datetime.datetime.now()-start_time
+        if time_d.total_seconds()>self.timeout:
+            raise TimeoutError
+
+        available_placements= constraints.choose()
+
+        if not available_placements:
+            yield pip
+
+        for atom, destination in available_placements:
+            #print_branches=True
+            constraints.mark_checkpoint()
+            # propagate changes in constraints
+            cycle_head, cycle_tail, cycle_length, cycle=self.calculate_cycle(pip, atom, destination)
+            self.constraints_prop.propagate(constraints, pip, atom, destination, cycle_length, cycle_head, cycle_tail, self.keep_structure)
+            if constraints.check():
+                self.truecount+=1
+                # make the change to pip
+                if print_branches:
+                    print("%d ==> %d" % (atom, destination))
+
+                pip.switch(atom, destination)
+                #if completed cycle, close in pip, and save old state
+                if cycle_head==cycle_tail:
+                    cycle=self.create_cycle(atom, pip)
+                    old_state=pip.close_cycle(cycle)
+
+                #yield from recursive create on the new pip and new constraints
+                yield from self._permute(pip, constraints)
+
+                #if completed cycle, restore old pip state
+                if cycle_head==cycle_tail:
+                    pip.unclose_cycle(old_state)
+
+                #undo the change to
+                pip.unswitch(atom, destination)
+                if print_branches:
+                    print("Undo %d ==> %d" % (atom, destination))
+            else:
+                if print_branches:
+                    print(".", end="")
+                self.falsecount += 1
+            constraints.backtrack_checkpoint()
 
 
 
