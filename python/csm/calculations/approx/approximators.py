@@ -19,13 +19,14 @@ class Approximator:
     And then iterated through in 'approximate' with the function '_approximate_from_initial_direction'
     All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
     '''
-    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None):
+    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None, timeout=300):
         self._op_type = op_type
         self._op_order = op_order
         self._molecule = molecule
         self._initial_directions=dir_chooser.dirs
         self._log=log_func
         self._log("There are", len(self._initial_directions), "initial directions to search for the best permutation")
+        self._timeout = timeout
 
     def approximate(self):
         # the basic steps of direction-based approximation are as follows:
@@ -509,7 +510,8 @@ class StructuredApproximator(OldApproximator):
                 distances_dict[index_a][index_b]=distance
                 distances_list.append(((index_a, index_b), distance))
         distances_list.sort(key=operator.itemgetter(1))
-        permuter=ApproxConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_dict, distances_list)
+        permuter=ApproxConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_dict, distances_list,
+                                          timeout=self._timeout)
 
         state=permuter.permute().__next__()
         perm=state.perm

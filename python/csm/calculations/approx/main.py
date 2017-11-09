@@ -17,7 +17,8 @@ class ApproxCalculation(Calculation):
     """
     Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
     """
-    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, keep_structure=False, *args, **kwargs):
+    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True,
+                 detect_outliers=False, dirs=None, keep_structure=False, *args, **kwargs):
         """
         Initializes the ApproxCalculation
         :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry
@@ -28,7 +29,7 @@ class ApproxCalculation(Calculation):
         :param detect_outliers: detect outliers and use the imrpoved direction vectors
         :param dirs: a list of directions to use as initial dire (will override all other dir-choice options)
         """
-        super().__init__(operation, molecule)
+        super().__init__(operation, molecule, *args, **kwargs)
         if approx_algorithm == 'hungarian':
             self.approximator_cls = HungarianApproximator
         if approx_algorithm == 'greedy':
@@ -60,7 +61,12 @@ class ApproxCalculation(Calculation):
                     if best_result.csm < MINDOUBLE:
                         break
         else:
-            approximator = self.approximator_cls(op_type, op_order, molecule, self.direction_chooser, self.log)
+            approximator = self.approximator_cls(op_type,
+                                                 op_order,
+                                                 molecule,
+                                                 self.direction_chooser,
+                                                 self.log,
+                                                 timeout=self._timeout)
             best_result = approximator.approximate()
         if best_result.csm==MAXDOUBLE:
             raise ValueError("Failed to find a CSM")

@@ -89,9 +89,10 @@ class Operation:
         return o
 
 class Calculation:
-    def __init__(self, operation, molecule):
+    def __init__(self, operation, molecule, timeout=300, *args, **kwargs):
         self.operation=operation
         self.molecule=molecule
+        self._timeout = timeout
 
     def calculate(self):
         pass
