@@ -480,17 +480,22 @@ class StructuredApproximator(OldApproximator):
 
             # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
             if i >= max_iterations:
+                self._log("\t\tStopping after %d iterations" % i)
                 # Enough iterations
                 break
-            if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
+            #if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
+            #    self._log("\t\tStopping due to CSM ratio")
                 # CSM has improved enough (except in first iteration)
-                break
+            #    break
             if interim_results.csm > old_results.csm: # We found a worse CSM
+                self._log("\t\tStopping because we found a worse CSM")
                 break
             if best.csm < 0.0001:
+                self._log("\t\tStopping because the best CSM is good enough")
                 # Best result is good enough
                 break
             if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
+                self._log("\t\tStopping because the direction has not changed")
                 # Direction has not changed
                 break
 
