@@ -463,9 +463,10 @@ class StructuredApproximator(OldApproximator):
 
                 self._log("\t\titeration", i, ":")
                 self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
-                self._log("\t\t\tthere are",
-                          len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
-                            "differences between new permutation and previous permutation")
+                if i > 1:
+                    self._log("\t\t\tthere are",
+                              len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
+                                "differences between new permutation and previous permutation")
                 self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
                 self._log("\t\t\tthe distance between the new direction and the previous direction is:",
                           str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
