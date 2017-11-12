@@ -426,7 +426,7 @@ class ApproxDictionaryConstraints(DictionaryConstraints):
         def __init__(self, molecule):
             super().__init__(molecule)
 
-        def choose(self, distances):
+        def choose(self, distances, avoided):
             if not self.constraints:  # Signify that we're done
                 return None
 
@@ -434,18 +434,21 @@ class ApproxDictionaryConstraints(DictionaryConstraints):
                 key_length = len(self.constraints[atom_key])
                 if key_length == 1:
                     placement = (atom_key, list(self.constraints[atom_key])[0])
-                    new_distance=distances[:]
-                    try:
-                        new_distance.remove(placement)
-                        return placement, new_distance
-                    except ValueError: #this placement has already been tried and removed from distances earlier in the tree
-                        pass
+                    if (placement) not in avoided:
+                        return placement, distances
+                    #new_distance=distances[:]
+                    #try:
+                    #    new_distance.remove(placement)
+                    #    return placement, new_distance
+                    #except ValueError: #this placement has already been tried and removed from distances earlier in the tree
+                    #    pass
 
             #skip any illegal placements in distances
             idx = 0
             for (from_atom, to_atom) in distances:
                 if from_atom in self.constraints and to_atom in self.constraints[from_atom]:
-                    return (from_atom, to_atom), distances[idx+1:]
+                    if (from_atom, to_atom) not in avoided:
+                        return (from_atom, to_atom), distances[idx+1:]
                 idx += 1
 
             return -1
@@ -453,7 +456,7 @@ class ApproxDictionaryConstraints(DictionaryConstraints):
 
 
 class ApproxConstraintPermuter(ConstraintPermuter):
-    def __init__(self,  molecule, op_order, op_type, distances_dict, distances_list, timeout=300, *args, **kwargs):
+    def __init__(self,  molecule, op_order, op_type, distances_list, timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, True, timeout)
         self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
         self.constraints = ApproxDictionaryConstraints(self.molecule)
@@ -468,12 +471,12 @@ class ApproxConstraintPermuter(ConstraintPermuter):
             use_cache=False
         pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
         #step 3: call recursive permute
-        for pip in self._permute(pip, self.constraints, self.sorted_placements):
+        for pip in self._permute(pip, self.constraints, self.sorted_placements, set()):
             self.count+=1
             yield pip.state
 
 
-    def _permute(self, pip, constraints, distances):
+    def _permute(self, pip, constraints, distances, avoided):
         #step zero: check if time out
         time_d= datetime.datetime.now()-start_time
         if time_d.total_seconds()>self.timeout:
@@ -483,7 +486,7 @@ class ApproxConstraintPermuter(ConstraintPermuter):
         if len(distances) == 0:
             yield pip
 
-        choice = constraints.choose(distances)
+        choice = constraints.choose(distances, avoided)
         if choice is None:
             yield pip
 
@@ -510,7 +513,7 @@ class ApproxConstraintPermuter(ConstraintPermuter):
                 old_state=pip.close_cycle(cycle)
 
             #yield from recursive create on the new pip and new constraints
-            yield from self._permute(pip, constraints, new_distances)
+            yield from self._permute(pip, constraints, new_distances, avoided)
 
             #if completed cycle, restore old pip state
             if cycle_head==cycle_tail:
@@ -527,7 +530,9 @@ class ApproxConstraintPermuter(ConstraintPermuter):
             self.falsecount += 1
         constraints.backtrack_checkpoint()
         # Continue checking without the chosen distance - do this whether we succeed or fail
-        yield from self._permute(pip, constraints, new_distances)
+        new_avoided = set(avoided)
+        new_avoided.add((atom, destination))
+        yield from self._permute(pip, constraints, new_distances, new_avoided)
 
 
 if __name__=="__main__":

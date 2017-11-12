@@ -509,19 +509,17 @@ class StructuredApproximator(OldApproximator):
         print("dir is:", dir)
         rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
         rotated = (rotation_mat @ molecule.Q.T).T
-        distances_dict={}
+
         distances_list=[]
         for index_a, a in enumerate(molecule.Q):
-            distances_dict[index_a]={}
             for index_b, b in enumerate(rotated):
                 if index_b in molecule.atoms[index_a].equivalency:
                     distance = array_distance(a, b)
                 else:
                     distance=MAXDOUBLE
-                distances_dict[index_a][index_b]=distance
                 distances_list.append(((index_a, index_b), distance))
         distances_list.sort(key=operator.itemgetter(1))
-        permuter=ApproxConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_dict, distances_list,
+        permuter=ApproxConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list,
                                           timeout=self._timeout)
 
         state=permuter.permute().__next__()
