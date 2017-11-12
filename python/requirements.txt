@@ -1,11 +1,11 @@
 apipkg==1.4
 colorama==0.3.7
-Cython==0.25.2
+Cython==0.27.3
 execnet==1.4.1
 munkres==1.0.8
 numpy==1.11.0
 openbabel==1.8.4
 py==1.4.32
 pytest==3.0.5
-pytest-xdist==1.15.0
 pytest-capturelog==0.7
+pytest-xdist==1.15.0
