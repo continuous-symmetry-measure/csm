@@ -452,53 +452,51 @@ class StructuredApproximator(OldApproximator):
         old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
                                csm=MAXDOUBLE, dir=dir)
 
-        try:
-            i = 0
-            max_iterations = 50
-            while True:
-                i += 1
+        i = 0
+        max_iterations = 50
+        while True:
+            i += 1
+            try:
                 perm = self._build_perm(old_results.dir)
                 interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                 perm=perm)
+            except TimeoutError:
+                self._log("\t\titeration ", i, " TIMEOUT!")
+                break
 
-                self._log("\t\titeration", i, ":")
-                self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
-                if i > 1:
-                    self._log("\t\t\tthere are",
-                              len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
-                                "differences between new permutation and previous permutation")
-                self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
-                self._log("\t\t\tthe distance between the new direction and the previous direction is:",
-                          str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
-                self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
+            self._log("\t\titeration", i, " :")
+            self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
+            if i > 1:
+                self._log("\t\t\tthere are",
+                          len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
+                            "differences between new permutation and previous permutation")
+            self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
+            self._log("\t\t\tthe distance between the new direction and the previous direction is:",
+                      str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
+            self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
 
-                if interim_results.csm < best.csm:
-                    best = interim_results
+            if interim_results.csm < best.csm:
+                best = interim_results
 
-                # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
-                if i >= max_iterations:
-                    # Enough iterations
-                    break
-                if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
-                    # CSM has improved enough (except in first iteration)
-                    break
-                if interim_results.csm > old_results.csm: # We found a worse CSM
-                    break
-                if best.csm < 0.0001:
-                    # Best result is good enough
-                    break
-                if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
-                    # Direction has not changed
-                    break
+            # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
+            if i >= max_iterations:
+                # Enough iterations
+                break
+            if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
+                # CSM has improved enough (except in first iteration)
+                break
+            if interim_results.csm > old_results.csm: # We found a worse CSM
+                break
+            if best.csm < 0.0001:
+                # Best result is good enough
+                break
+            if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
+                # Direction has not changed
+                break
 
-                old_results = interim_results
+            old_results = interim_results
 
-            return best
-
-        except TimeoutError:
-            if interim_results.csm<best.csm:
-                return interim_results
-            return best
+        return best
 
 
 

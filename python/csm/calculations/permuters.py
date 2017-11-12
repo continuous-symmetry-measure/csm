@@ -471,6 +471,9 @@ class ApproxConstraintPermuter(ConstraintPermuter):
             use_cache=False
         pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
         #step 3: call recursive permute
+        self._permute_start = datetime.datetime.now()
+        self._permute_timeout = 10
+
         for pip in self._permute(pip, self.constraints, self.sorted_placements, set()):
             self.count+=1
             yield pip.state
@@ -478,8 +481,12 @@ class ApproxConstraintPermuter(ConstraintPermuter):
 
     def _permute(self, pip, constraints, distances, avoided):
         #step zero: check if time out
-        time_d= datetime.datetime.now()-start_time
+        now = datetime.datetime.now()
+        time_d = now - start_time
         if time_d.total_seconds()>self.timeout:
+            raise TimeoutError
+        time_d = now - self._permute_start
+        if time_d.total_seconds() > self._permute_timeout:
             raise TimeoutError
 
         print_branches = False
