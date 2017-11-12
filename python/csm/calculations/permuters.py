@@ -426,16 +426,19 @@ class ApproxDictionaryConstraints(DictionaryConstraints):
             super().__init__(molecule)
 
         def choose(self, distances):
+            if not self.constraints:  # Signify that we're done
+                return None
+
             for atom_key in self.constraints:
                 key_length = len(self.constraints[atom_key])
                 if key_length == 1:
-                    placement= (atom_key, list(self.constraints[atom_key])[0])
+                    placement = (atom_key, list(self.constraints[atom_key])[0])
                     new_distance=distances[:]
                     try:
                         new_distance.remove(placement)
                         return placement, new_distance
                     except ValueError: #this placement has already been tried and removed from distances earlier in the tree
-                        continue
+                        pass
 
             #skip any illegal placements in distances
             try:
@@ -470,7 +473,7 @@ class ApproxConstraintPermuter(ConstraintPermuter):
 
 
     def _permute(self, pip, constraints, distances):
-        print_branches=True
+        print_branches=False
         if len(distances) == 0:
             yield pip
         for index in range(len(distances)):
@@ -514,7 +517,7 @@ class ApproxConstraintPermuter(ConstraintPermuter):
             else:
                 if print_branches:
                     print("DEAD END: %d => %d" %(atom, destination))
-                    distances.remove((atom, destination))
+                    # distances.remove((atom, destination))
                 self.falsecount += 1
             constraints.backtrack_checkpoint()
 

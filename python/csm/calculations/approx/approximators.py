@@ -453,21 +453,11 @@ class StructuredApproximator(OldApproximator):
                                csm=MAXDOUBLE, dir=dir)
 
         try:
-            perm = self._build_perm(dir)
-            interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
-                          keep_structure=False, perm=perm)
-            # iterations:
             i = 0
             max_iterations = 50
-            while (i < max_iterations and
-                       (math.fabs(old_results.csm - interim_results.csm) / math.fabs(
-                           old_results.csm) > 0.01
-                        and interim_results.csm < old_results.csm)
-                        and interim_results.csm > 0.0001
-                   and abs(np.linalg.norm(interim_results.dir - old_results.dir))>0):
-                old_results = interim_results
+            while True:
                 i += 1
-                perm = self._build_perm(interim_results.dir)
+                perm = self._build_perm(old_results.dir)
                 interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                 perm=perm)
 
@@ -482,9 +472,27 @@ class StructuredApproximator(OldApproximator):
                 self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
 
                 if interim_results.csm < best.csm:
-                    best =interim_results
+                    best = interim_results
 
-                return best
+                # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
+                if i >= max_iterations:
+                    # Enough iterations
+                    break
+                if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
+                    # CSM has improved enough (except in first iteration)
+                    break
+                if interim_results.csm > old_results.csm: # We found a worse CSM
+                    break
+                if best.csm < 0.0001:
+                    # Best result is good enough
+                    break
+                if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
+                    # Direction has not changed
+                    break
+
+                old_results = interim_results
+
+            return best
 
         except TimeoutError:
             if interim_results.csm<best.csm:
