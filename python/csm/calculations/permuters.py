@@ -159,10 +159,9 @@ class DictionaryConstraints(ConstraintsBase):
             pass
 
     def remove_index(self, index):
-        old_value = self.constraints.pop(index)
-        if old_value is not None:
-            self.push_undo('remove_index', (index, old_value))
-
+            old_value = self.constraints.pop(index)
+            if old_value is not None:
+                self.push_undo('remove_index', (index, old_value))
     def check(self):
         for key in self.constraints:
             if not self.constraints[key]:
@@ -199,12 +198,12 @@ class DictionaryConstraints(ConstraintsBase):
     # A checkpoint is marked with a special 'mark' instruction (None argument)
 
     def push_undo(self, instruction, params):
-        # print("push %s, %s" % (instruction, params))
+        #print("push %s, %s" % (instruction, params))
         self.undo.append((instruction, params))
 
     def pop_undo(self):
         instruction, params = self.undo.pop()
-        # print ("pop %s, %s" % (instruction, params))
+        #print ("pop %s, %s" % (instruction, params))
         return instruction, params
 
     def mark_checkpoint(self):
@@ -423,23 +422,29 @@ class ConstraintPermuter:
 
 
 class ApproxDictionaryConstraints(DictionaryConstraints):
-        def __init__(self, molecule, distances):
+        def __init__(self, molecule):
             super().__init__(molecule)
-            self.distances=distances
 
-        def choose(self):
-            constraints_with_len_one=[]
-            sorted=[]
+        def choose(self, distances):
             for atom_key in self.constraints:
                 key_length = len(self.constraints[atom_key])
-                if False: #key_length == 1:
-                    constraints_with_len_one.append((atom_key, list(self.constraints[atom_key])[0]))
-                else:
-                    for destination in self.constraints[atom_key]:
-                        insort(sorted, (self.distances[atom_key][destination], (atom_key, destination)))
+                if key_length == 1:
+                    placement= (atom_key, list(self.constraints[atom_key])[0])
+                    new_distance=distances[:]
+                    try:
+                        new_distance.remove(placement)
+                        return placement, new_distance
+                    except ValueError: #this placement has already been tried and removed from distances earlier in the tree
+                        continue
 
-            list_of_placements=constraints_with_len_one+[part[1] for part in sorted]
-            return list_of_placements
+            #skip any illegal placements in distances
+            try:
+                while distances[0][0] not in self.constraints or distances[0][1] not in self.constraints[distances[0][0]]:
+                    distances=distances[1:]
+                placement=distances[0]
+                return placement, distances[1:]
+            except IndexError: #no legal options left in distances
+                return -1
 
 
 
@@ -447,27 +452,38 @@ class ApproxConstraintPermuter(ConstraintPermuter):
     def __init__(self,  molecule, op_order, op_type, distances_dict, distances_list, timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, True, timeout)
         self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
-        self.constraints = ApproxDictionaryConstraints(self.molecule, distances_dict)
+        self.constraints = ApproxDictionaryConstraints(self.molecule)
         self.distances=distances_list
+        self.sorted_placements=[distance[0] for distance in distances_list]
 
     def permute(self):
-        for pip in super().permute():
+        #step 1: create initial empty pip and qip
+        use_cache=True
+        if len(self.molecule)>1000:
+            print("Molecule size exceeds recommended size for using caching. (Perhaps you meant to use --approx?)")
+            use_cache=False
+        pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
+        #step 3: call recursive permute
+        for pip in self._permute(pip, self.constraints, self.sorted_placements):
+            self.count+=1
+            yield pip.state
+
+
+    def _permute(self, pip, constraints, distances):
+        print_branches=True
+        if len(distances) == 0:
             yield pip
+        for index in range(len(distances)):
+            choice = constraints.choose(distances[index:])
+            if choice is None:
+                yield pip
+            if choice==-1:
+                continue
+            placement, new_distances = choice
+            atom, destination=placement
+            # Try atom->destination
 
-
-    def _permute(self, pip, constraints):
-        #print_branches=True
-        time_d= datetime.datetime.now()-start_time
-        if time_d.total_seconds()>self.timeout:
-            raise TimeoutError
-
-        available_placements= constraints.choose()
-
-        if not available_placements:
-            yield pip
-
-        for atom, destination in available_placements:
-            #print_branches=True
+            # save current constraints
             constraints.mark_checkpoint()
             # propagate changes in constraints
             cycle_head, cycle_tail, cycle_length, cycle=self.calculate_cycle(pip, atom, destination)
@@ -485,7 +501,7 @@ class ApproxConstraintPermuter(ConstraintPermuter):
                     old_state=pip.close_cycle(cycle)
 
                 #yield from recursive create on the new pip and new constraints
-                yield from self._permute(pip, constraints)
+                yield from self._permute(pip, constraints, new_distances)
 
                 #if completed cycle, restore old pip state
                 if cycle_head==cycle_tail:
@@ -497,10 +513,10 @@ class ApproxConstraintPermuter(ConstraintPermuter):
                     print("Undo %d ==> %d" % (atom, destination))
             else:
                 if print_branches:
-                    print(".", end="")
+                    print("DEAD END: %d => %d" %(atom, destination))
+                    distances.remove((atom, destination))
                 self.falsecount += 1
             constraints.backtrack_checkpoint()
-
 
 
 if __name__=="__main__":

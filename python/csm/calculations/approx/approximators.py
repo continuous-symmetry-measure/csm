@@ -453,7 +453,7 @@ class StructuredApproximator(OldApproximator):
 
         try:
             perm = self._build_perm(dir)
-            best = interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
+            interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                           keep_structure=False, perm=perm)
             # iterations:
             i = 0
@@ -486,6 +486,8 @@ class StructuredApproximator(OldApproximator):
                 return best
 
         except TimeoutError:
+            if interim_results.csm<best.csm:
+                return interim_results
             return best
 
 
