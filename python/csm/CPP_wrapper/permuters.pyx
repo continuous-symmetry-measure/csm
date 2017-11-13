@@ -134,7 +134,7 @@ cdef class PermInProgress:
     cdef int truecount
     cdef int falsecount
 
-    def __init__(self, mol, op_order, op_type, permchecker):
+    def __init__(self, mol, op_order, op_type, permchecker=TruePermChecker):
         self.permchecker = permchecker(mol)
         self.molecule_size =len(mol.atoms)
         self.state = CalcState(len(mol.atoms), op_order, True)

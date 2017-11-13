@@ -3,7 +3,7 @@ import operator
 
 import numpy as np
 from copy import deepcopy
-from csm.fast import PreCalcPIP
+from csm.fast import PreCalcPIP, PermInProgress
 
 from csm.calculations.constants import start_time, MAXDOUBLE
 from bisect import insort
@@ -458,34 +458,18 @@ class ConstraintPermuter:
 
 
 class ApproxDictionaryConstraints(DictionaryConstraints):
-        def __init__(self, molecule):
+        def __init__(self, molecule, distances):
             super().__init__(molecule)
+            self.distances=distances
 
-        def choose(self, distances, avoided):
+        def choose(self, start_index):
             if not self.constraints:  # Signify that we're done
                 return None
-
-            for atom_key in self.constraints:
-                key_length = len(self.constraints[atom_key])
-                if key_length == 1:
-                    placement = (atom_key, list(self.constraints[atom_key])[0])
-                    if (placement) not in avoided:
-                        return placement, distances
-                    #new_distance=distances[:]
-                    #try:
-                    #    new_distance.remove(placement)
-                    #    return placement, new_distance
-                    #except ValueError: #this placement has already been tried and removed from distances earlier in the tree
-                    #    pass
-
             #skip any illegal placements in distances
-            idx = 0
-            for (from_atom, to_atom) in distances:
+            for idx in range(start_index, len(self.distances)):
+                (from_atom, to_atom)=self.distances[idx]
                 if from_atom in self.constraints and to_atom in self.constraints[from_atom]:
-                    if (from_atom, to_atom) not in avoided:
-                        return (from_atom, to_atom), distances[idx+1:]
-                idx += 1
-
+                        return idx
             return -1
 
 
@@ -494,27 +478,24 @@ class ApproxConstraintPermuter(ConstraintPermuter):
     def __init__(self,  molecule, op_order, op_type, distances_list, timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, True, timeout)
         self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
-        self.constraints = ApproxDictionaryConstraints(self.molecule)
         self.distances=distances_list
         self.sorted_placements=[distance[0] for distance in distances_list]
+        self.constraints = ApproxDictionaryConstraints(self.molecule, self.sorted_placements)
 
     def permute(self):
         #step 1: create initial empty pip and qip
-        use_cache=True
-        if len(self.molecule)>1000:
-            print("Molecule size exceeds recommended size for using caching. (Perhaps you meant to use --approx?)")
-            use_cache=False
-        pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
+        pip=PermInProgress(self.molecule, self.op_order, self.op_type)
         #step 3: call recursive permute
         self._permute_start = datetime.datetime.now()
         self._permute_timeout = 10
 
-        for pip in self._permute(pip, self.constraints, self.sorted_placements, set()):
+        for pip in self._permute(pip, self.constraints, 0):
             self.count+=1
+            pip.close_cycle([i for i in range(len(self.molecule))])
             yield pip.state
 
 
-    def _permute(self, pip, constraints, distances, avoided):
+    def _permute(self, pip, constraints, start_index):
         #step zero: check if time out
         now = datetime.datetime.now()
         time_d = now - start_time
@@ -524,38 +505,37 @@ class ApproxConstraintPermuter(ConstraintPermuter):
         if time_d.total_seconds() > self._permute_timeout:
             raise TimeoutError
 
-        print_branches = False
-        if len(distances) == 0:
+        #print_branches = True
+
+        choice_index = constraints.choose(start_index)
+        if choice_index is None:
             yield pip
 
-        choice = constraints.choose(distances, avoided)
-        if choice is None:
-            yield pip
-
-        if choice == -1:
+        if choice_index == -1:
             return
 
-        (atom, destination), new_distances = choice
+
+        (atom, destination) = self.sorted_placements[choice_index]
 
         # save current constraints
         constraints.mark_checkpoint()
         # propagate changes in constraints
-        cycle_head, cycle_tail, cycle_length, cycle=self.calculate_cycle(pip, atom, destination)
-        self.constraints_prop.propagate(constraints, pip, atom, destination, cycle_length, cycle_head, cycle_tail, self.keep_structure)
+        cycle, cycle_head, cycle_tail, len_one_old_state = self.constraints_prop.propagate(constraints, pip, atom,
+                                                                                           destination,
+                                                                                           self.keep_structure)
         if constraints.check():
-            self.truecount+=1
+            self.truecount += 1
             # make the change to pip
             if print_branches:
-                print("%d ==> %d (%d)" % (atom, destination, len(distances)))
+                print("%d ==> %d" % (atom, destination))
 
             pip.switch(atom, destination)
-            #if completed cycle, close in pip, and save old state
-            if cycle_head==cycle_tail:
-                cycle=self.create_cycle(atom, pip)
-                old_state=pip.close_cycle(cycle)
+            # if completed cycle, close in pip, and save old state
+            if cycle_head == cycle_tail:
+                old_state = pip.close_cycle(cycle)
 
             #yield from recursive create on the new pip and new constraints
-            yield from self._permute(pip, constraints, new_distances, avoided)
+            yield from self._permute(pip, constraints, choice_index+1)
 
             #if completed cycle, restore old pip state
             if cycle_head==cycle_tail:
@@ -564,17 +544,18 @@ class ApproxConstraintPermuter(ConstraintPermuter):
             #undo the change to
             pip.unswitch(atom, destination)
             if print_branches:
-                print("Undo %d ==> %d (%d)" % (atom, destination, len(distances)))
+                print("Undo %d ==> %d (%d)" % (atom, destination, choice_index))
         else:
-            #if print_branches:
-                #print("DEAD END: %d => %d" %(atom, destination))
+            if print_branches:
+                print("DEAD END: %d => %d" %(atom, destination))
                 # distances.remove((atom, destination))
             self.falsecount += 1
+        pip.unclose_cycle(len_one_old_state)
         constraints.backtrack_checkpoint()
         # Continue checking without the chosen distance - do this whether we succeed or fail
-        new_avoided = set(avoided)
-        new_avoided.add((atom, destination))
-        yield from self._permute(pip, constraints, new_distances, new_avoided)
+        #new_avoided = set(avoided)
+        #new_avoided.add((atom, destination))
+        yield from self._permute(pip, constraints, choice_index+1)
 
 
 if __name__=="__main__":
