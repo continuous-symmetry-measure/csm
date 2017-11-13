@@ -53,8 +53,10 @@ class Approximator:
         # 4. repeat 2-3 until an endpoint
         raise NotImplementedError
 
+    def _converge_from_perm(self):
+        pass
 
-class OldApproximator(Approximator):
+class ClassicGreedyApproximator(Approximator):
     '''
     This uses the Cython implementation of the classic (greedy) approximate algorithm.
     It is not optimized for molecules with many chain permutations.
@@ -151,7 +153,7 @@ class OldApproximator(Approximator):
         return approximate_perm_classic(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
 
-class HungarianApproximator(OldApproximator):
+class HungarianApproximator(ClassicGreedyApproximator):
     '''
     This uses the Hungarian (munkres) algorithm for optimization of cost matrix.
          It is not optimized for molecules with many chain permutations.
@@ -446,7 +448,7 @@ class ManyChainsApproximator(Approximator):
         return indexes, group_distance_matrix
 
 
-class StructuredApproximator(OldApproximator):
+class StructuredApproximator(ClassicGreedyApproximator):
     def _approximate_from_initial_dir(self, dir):
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
         old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,

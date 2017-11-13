@@ -342,7 +342,7 @@ class ConstraintPropagator:
         cycle=[origin]
         cycle_length = 1
         index = origin
-        while pip.q[index] not in [-1, origin]:
+        while pip.q[index] not in [-1, origin] and pip.q[index] not in cycle:
             cycle.append(pip.q[index])
             cycle_length += 1
             index = pip.q[index]
@@ -354,7 +354,7 @@ class ConstraintPropagator:
 
         # b: if destination has its own destination* (A->B ->X)
         index = destination
-        while pip.p[index] not in [-1, destination, origin]:
+        while pip.p[index] not in [-1, destination, origin]  and pip.p[index] not in cycle:
             cycle.append(pip.p[index])
             cycle_length += 1
             index = pip.p[index]
@@ -500,12 +500,12 @@ class ApproxConstraintPermuter(ConstraintPermuter):
         now = datetime.datetime.now()
         time_d = now - start_time
         if time_d.total_seconds()>self.timeout:
-            raise TimeoutError
+            pass#raise TimeoutError
         time_d = now - self._permute_start
         if time_d.total_seconds() > self._permute_timeout:
-            raise TimeoutError
+            pass#raise TimeoutError
 
-        #print_branches = True
+        print_branches = True
 
         choice_index = constraints.choose(start_index)
         if choice_index is None:
@@ -546,6 +546,8 @@ class ApproxConstraintPermuter(ConstraintPermuter):
             if print_branches:
                 print("Undo %d ==> %d (%d)" % (atom, destination, choice_index))
         else:
+            if atom==1 and destination==5:
+                hi=1
             if print_branches:
                 print("DEAD END: %d => %d" %(atom, destination))
                 # distances.remove((atom, destination))

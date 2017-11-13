@@ -7,7 +7,7 @@ import math
 import numpy as np
 import sys
 
-from csm.calculations.approx.approximators import HungarianApproximator, OldApproximator, ManyChainsApproximator, StructuredApproximator
+from csm.calculations.approx.approximators import HungarianApproximator, ClassicGreedyApproximator, ManyChainsApproximator, StructuredApproximator
 from csm.calculations.approx.dirs import DirectionChooser
 from csm.calculations.basic_calculations import process_results, Operation, Calculation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
@@ -33,7 +33,7 @@ class ApproxCalculation(Calculation):
         if approx_algorithm == 'hungarian':
             self.approximator_cls = HungarianApproximator
         if approx_algorithm == 'greedy':
-            self.approximator_cls = OldApproximator
+            self.approximator_cls = ClassicGreedyApproximator
         if approx_algorithm == 'many-chains':
             self.approximator_cls = ManyChainsApproximator
         if keep_structure:
