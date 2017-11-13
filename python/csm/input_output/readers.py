@@ -1,4 +1,4 @@
-from csm.molecule.molecule import Molecule
+from csm.molecule.molecule import Molecule, MoleculeFactory, MoleculeReader
 from csm.calculations.basic_calculations import check_perm_structure, check_perm_equivalence, check_perm_cycles
 import logging
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     Returns:
         (molecule, perm, dir) - perm and dir may be None
     """
-    molecule = Molecule.from_file(**kwargs)
+    molecule = MoleculeReader.from_file(**kwargs)
     if perm_file_name:
         perm = read_perm_file(perm_file_name)
         if len(perm) != len(molecule):
@@ -40,13 +40,26 @@ def read_inputs(perm_file_name=None, dir_file_name=None,  **kwargs):
     else:
         perm = None
 
-    if dir_file_name:
-        dirs = read_dir_file(dir_file_name)
-        if not dirs:
-            raise ValueError("provided dir file is empty")
+    #RETIRED: we no longer allow dir files, instead a single dir can be specified
+    #if dir_file_name:
+    #    dirs = read_dir_file(dir_file_name)
+    #    if not dirs:
+    #        raise ValueError("provided dir file is empty")
+    #else:
+    #    dirs = None
+    return molecule, perm
+
+
+def read_perm(molecule, perm_file_name=None, **kwargs):
+    if perm_file_name:
+        perm = read_perm_file(perm_file_name)
+        if len(perm) != len(molecule):
+            raise ValueError("Invalid permutation - permutation is of size %d but molecule has %d atoms" %
+                             (len(perm), len(molecule)))
+        check_perm_validity(molecule, perm, **kwargs)
     else:
-        dirs = None
-    return molecule, perm, dirs
+        perm = None
+    return perm
 
 
 def read_dir_file(filename):

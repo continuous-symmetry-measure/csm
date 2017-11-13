@@ -6,31 +6,16 @@ import math
 import logging
 logger = logging.getLogger("csm")
 
-def normalize_coords(coords, masses):
+
+def calculate_norm_factor(coords, center_of_mass):
     """
-    Normalize coordinates
-    :param coords: atom coordinates
-    :param masses: Atomic masses
-    :return: (List of normalized coordinates, normalization factor)
+    :param coords: list of atom coordinates
+    :param center_of_mass: center of mass of molecule
     """
-
-    x_avg = y_avg = z_avg = 0.0
-
-    size = len(masses)
-
-    mass_sum = 0
-    for i in range(size):
-        x_avg += coords[i][0] * masses[i]
-        y_avg += coords[i][1] * masses[i]
-        z_avg += coords[i][2] * masses[i]
-        mass_sum += masses[i]
-    x_avg /= mass_sum
-    y_avg /= mass_sum
-    z_avg /= mass_sum
-
+    size=len(coords)
     norm = 0.0
     for i in range(size):
-        tmp = (coords[i][0] - x_avg) ** 2 + (coords[i][1] - y_avg) ** 2 + (coords[i][2] - z_avg) ** 2
+        tmp = (coords[i][0] - center_of_mass[0]) ** 2 + (coords[i][1] - center_of_mass[1]) ** 2 + (coords[i][2] - center_of_mass[2]) ** 2
         norm += tmp
         logger.debug("Norm: %lf i: %lf temp %lf" % (norm, i, tmp))
 
@@ -38,18 +23,29 @@ def normalize_coords(coords, masses):
     # norm = sqrt(norm / (double)m->size());
 
     norm = math.sqrt(norm)
-    logger.debug("Second normalization factor is %lf and average is (%lf, %lf, %lf)" % (norm, x_avg, y_avg, z_avg))
+    logger.debug("Second normalization factor is %lf and average is (%lf, %lf, %lf)" % (norm, center_of_mass[0], center_of_mass[1], center_of_mass[2]))
 
     if norm<=MINDOUBLE: #in the original code, this check was against MINDOUBLE.
         raise(ValueError("Normalization factor equals zero"))
         #norm=default_value
 
+    return norm
 
-    for i in range(size):
-        coords[i] = ((coords[i][0] - x_avg) / norm, (coords[i][1] - y_avg) / norm, (coords[i][2] - z_avg) / norm)
+def normalize_coords(coords, center_of_mass, norm_factor):
+    """
+    :param coords: list of atom coordinates
+    :param center_of_mass: center of mass of molecule
+    :param norm_factor: nromalization factor (can be calculated with calculate_norm_factor)
+    :return: list of atom coordinates, normalized and moved to origin
+    """
+
+    for i in range(len(coords)):
+        coords[i] = ((coords[i][0] - center_of_mass[0]) / norm_factor,
+                     (coords[i][1] - center_of_mass[1]) / norm_factor,
+                     (coords[i][2] - center_of_mass[2]) / norm_factor)
 
 
-    return coords, norm
+    return coords
 
 
 def de_normalize_coords(coords, norm_factor):

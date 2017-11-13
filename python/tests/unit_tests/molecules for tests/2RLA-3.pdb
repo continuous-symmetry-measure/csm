@@ -1,0 +1,12 @@
+REMARK  99                                                                      
+REMARK  99 MOE v2016.08 (Chemical Computing Group Inc.) Wed Jun  7 15:39:42 2017
+ATOM      1  N   SER A  16       4.294  41.741 -13.994  1.00  0.00           N1+
+ATOM      2  CA  SER A  16       4.657  43.137 -14.200  1.00  0.00           C  
+TER       3      SER A  16 
+ATOM      4  N   SER B  16      36.189  81.034  -7.400  1.00  0.00           N1+
+ATOM      5  CA  SER B  16      37.258  80.080  -7.659  1.00  0.00           C  
+TER       6      SER B  16 
+ATOM      7  N   SER C  16      54.858  32.880  -7.028  1.00  0.00           N1+
+ATOM      8  CA  SER C  16      53.577  32.473  -7.585  1.00  0.00           C  
+TER       9      SER C  16 
+END

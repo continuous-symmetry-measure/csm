@@ -2,7 +2,9 @@
 import ctypes
 import random
 
+import datetime
 import numpy as np
+from csm.calculations.constants import start_time
 cimport numpy as np
 cimport cython
 import math
@@ -26,7 +28,7 @@ cdef class PermChecker:
         pass
 
     cpdef bool is_legal(self, pip, origin, destination):
-        raise NotImplemented
+        raise NotImplementedError
 
 cdef class TruePermChecker(PermChecker):
     """
@@ -251,12 +253,22 @@ cdef class CythonPermuter:
     cdef next_cycle
     cdef mol
     cdef choose_cycle
+    cdef timeout
 
-    def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True):
+    def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True, timeout=300):
+        """
+        :param mol:
+        :param op_order:
+        :param op_type:
+        :param keep_structure:
+        :param precalculate: false when we want perms WITHOUT csm (eg chainperm)
+        :param timeout:
+        """
         self.count=0
         self.mol=mol
         self._groups = mol.equivalence_classes
         self.choose_cycle=keep_structure
+        self.timeout=timeout
         if keep_structure:
             perm_checker=StructurePermChecker
         else:
@@ -295,10 +307,13 @@ cdef class CythonPermuter:
             :param cycle_length: Length of cycle
             :param remainder: The free atoms in the group
             :return: Yields permutations (PermInProgresses)
-
             To start the recursion, current_atom and cycle_head are the same, meaning we have a cycle of length 1
             curr_atom<---curr_atom
             """
+            #check if we've timed out:
+            time_d= datetime.datetime.now()-start_time
+            if time_d.total_seconds()>self.timeout:
+                raise TimeoutError
             # Check if this can be a complete cycle
             if cycle_length in self._cycle_lengths:
                 # Yes it can, attempt to close it

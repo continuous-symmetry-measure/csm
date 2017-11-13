@@ -1,12 +1,11 @@
-import os
+from os import path
 import pytest
 from csm.main.normcsm import normrun
 from tests.utils.run_test import close_enough
+from conftest import test_folder, output_file, my_tolerance
 
-output_file=r'C:\Users\devora.CHELEM\Sources\temp\csm_tests_output.txt'
-testdir=r'C:\Users\devora.CHELEM\Sources\csm\test_cases\yaffa\normalization-factors-14.6.2017'
-mytolerance=.005
-#os.chdir(testdir)
+
+#os.chdir(test_folder)
 
 @pytest.mark.parametrize("normalization, expected_csm, expected_norm",
                          [
@@ -20,11 +19,11 @@ mytolerance=.005
                          ])
 def test_1iieg3(normalization, expected_csm, expected_norm):
     normalization=str(normalization)
-    args=[normalization, 'c3', r'C:\Users\devora.CHELEM\Sources\csm\test_cases\yaffa\normalization-factors-14.6.2017\1iie-g3.pdb', output_file, '--approx', '--use-chains']
+    args=[normalization, 'c3', path.join(test_folder, '1iie-g3.pdb'), output_file, '--approx', '--use-chains']
     result=normrun(args)
     result_norm, result_csm =  result[normalization]
-    assert close_enough(result_norm, expected_norm, tolerance=mytolerance)
-    assert close_enough(result_csm, expected_csm, tolerance=mytolerance)
+    assert close_enough(result_norm, expected_norm, tolerance=my_tolerance)
+    assert close_enough(result_csm, expected_csm, tolerance=my_tolerance)
 
 @pytest.mark.parametrize("normalization, expected_csm, expected_norm",
                          [
@@ -38,11 +37,11 @@ def test_1iieg3(normalization, expected_csm, expected_norm):
                          ])
 def test_2rlas3(normalization, expected_csm, expected_norm):
     normalization=str(normalization)
-    args=[normalization, 'c3', r'C:\Users\devora.CHELEM\Sources\csm\test_cases\yaffa\normalization-factors-14.6.2017\2rla-s3.pdb', output_file, '--approx', '--use-chains']
+    args=[normalization, 'c3', path.join(test_folder, '2rla-s3.pdb'), output_file, '--approx', '--use-chains']
     result=normrun(args)
     result_norm, result_csm =  result[normalization]
-    assert close_enough(result_norm, expected_norm, tolerance=mytolerance)
-    assert close_enough(result_csm, expected_csm, tolerance=mytolerance)
+    assert close_enough(result_norm, expected_norm, tolerance=my_tolerance)
+    assert close_enough(result_csm, expected_csm, tolerance=my_tolerance)
 
 @pytest.mark.parametrize("normalization, expected_csm, expected_norm",
                          [
@@ -56,8 +55,8 @@ def test_2rlas3(normalization, expected_csm, expected_norm):
                          ])
 def test_2m7wq3(normalization, expected_csm, expected_norm):
     normalization=str(normalization)
-    args=[normalization, 'c3', r'C:\Users\devora.CHELEM\Sources\csm\test_cases\yaffa\normalization-factors-14.6.2017\2m7w-q3.pdb', output_file, '--approx', '--use-chains']
+    args=[normalization, 'c3', path.join(test_folder, '2m7w-q3.pdb'), output_file, '--approx', '--use-chains']
     result=normrun(args)
     result_norm, result_csm =  result[normalization]
-    assert close_enough(result_norm, expected_norm, tolerance=mytolerance)
-    assert close_enough(result_csm, expected_csm, tolerance=mytolerance)
+    assert close_enough(result_norm, expected_norm, tolerance=my_tolerance)
+    assert close_enough(result_csm, expected_csm, tolerance=my_tolerance)

@@ -1,0 +1,39 @@
+REMARK  99                                                                      
+REMARK  99 MOE v2016.08 (Chemical Computing Group Inc.) Mon Jun 19 12:30:55 2017
+HETATM    1  O   HOH     1      -1.873   0.592  -5.907  1.00  0.00           O  
+HETATM    2  H   HOH     1      -1.211   1.019  -6.451  1.00  0.00           H  
+HETATM    3  H   HOH     1      -1.853   1.075  -5.081  1.00  0.00           H  
+HETATM    4  O   HOH     2       1.105  -1.645   1.321  1.00  0.00           O  
+HETATM    5  H   HOH     2       1.365  -2.027   0.483  1.00  0.00           H  
+HETATM    6  H   HOH     2       0.898  -0.734   1.115  1.00  0.00           H  
+HETATM    7  O   HOH     3      -1.508   2.536  -4.146  1.00  0.00           O  
+HETATM    8  H   HOH     3      -1.528   2.686  -3.201  1.00  0.00           H  
+HETATM    9  H   HOH     3      -1.464   3.412  -4.528  1.00  0.00           H  
+HETATM   10  O   HOH     4      -2.699   0.884   2.643  1.00  0.00           O  
+HETATM   11  H   HOH     4      -1.948   0.624   3.178  1.00  0.00           H  
+HETATM   12  H   HOH     4      -2.999   1.704   3.034  1.00  0.00           H  
+HETATM   13  O   HOH     5       2.334  -0.471  -1.730  1.00  0.00           O  
+HETATM   14  H   HOH     5       2.787  -0.238  -2.540  1.00  0.00           H  
+HETATM   15  H   HOH     5       1.792  -1.224  -1.967  1.00  0.00           H  
+HETATM   16  O   HOH     6      -0.769  -0.525  -1.868  1.00  0.00           O  
+HETATM   17  H   HOH     6      -1.346  -0.756  -1.140  1.00  0.00           H  
+HETATM   18  H   HOH     6      -0.179   0.136  -1.506  1.00  0.00           H  
+CONECT    1    2    3
+CONECT    2    1
+CONECT    3    1
+CONECT    4    5    6
+CONECT    5    4
+CONECT    6    4
+CONECT    7    8    9
+CONECT    8    7
+CONECT    9    7
+CONECT   10   11   12
+CONECT   11   10
+CONECT   12   10
+CONECT   13   14   15
+CONECT   14   13
+CONECT   15   13
+CONECT   16   17   18
+CONECT   17   16
+CONECT   18   16
+END

@@ -3,66 +3,233 @@ from csm.calculations.constants import MINDOUBLE
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
 from collections import namedtuple
 
-CSMState = namedtuple('CSMState', ('molecule',
+
+class CSMState(namedtuple('CSMState', ['molecule',
                                    'op_order',
                                    'op_type',
                                    'csm',
                                    'perm',
                                    'dir',
-                                   'd_min',
-                                   'symmetric_structure',
-                                   'local_csm',
-                                   'perm_count',
-                                   'formula_csm',
-                                   'normalized_molecule_coords',
-                                   'normalized_symmetric_structure',))
+                                   'perm_count'])):
+    pass
+
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
+class Operation:
+    def __init__(self, op, sn_max=8):
+        op=self._get_operation_data(op)
+        self.type= op.type
+        self.order = op.order
+        if op.type=="CH":
+            self.order=sn_max
+        self.name = op.name
 
-def process_results(results):
+    def _get_operation_data(self, opcode):
+        """
+        Returns data about an operation based on the opcode
+        Args:
+            opcode: c2, s4, etc...
+
+        Returns:
+            And OperationCode object, with type, order and name
+        """
+        OperationCode = namedtuple('OperationCode', ('type', 'order', 'name'))
+        _opcode_data = {
+            "cs": ('CS', 2, "MIRROR SYMMETRY"),
+            "ci": ('CI', 2, "INVERSION (S2)"),
+            "ch": ('CH', 2, "CHIRALITY"),
+            "c2": ('CN', 2, "C2 SYMMETRY"),
+            'c3': ('CN', 3, "C3 SYMMETRY"),
+            'c4': ('CN', 4, "C4 SYMMETRY"),
+            'c5': ('CN', 5, "C5 SYMMETRY"),
+            'c6': ('CN', 6, "C6 SYMMETRY"),
+            'c7': ('CN', 7, "C7 SYMMETRY"),
+            'c8': ('CN', 8, "C8 SYMMETRY"),
+            'c10': ('CN', 10, "C10 SYMMETRY"),
+            's1': ('CS', 2, "MIRROR SYMMETRY (S1)"),
+            's2': ('SN', 2, "S2 SYMMETRY"),
+            's4': ('SN', 4, "S4 SYMMETRY"),
+            's6': ('SN', 6, "S6 SYMMETRY"),
+            's8': ('SN', 8, "S8 SYMMETRY"),
+            's10': ('SN', 8, "S10 SYMMETRY")
+        }
+
+        def isint(s):
+            try:
+                int(s)
+                return True
+            except ValueError:
+                return False
+
+        opcode = opcode.lower()
+        if opcode[0] == 'c' and isint(opcode[1:]):
+            return OperationCode(type='CN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
+        if opcode[0] == 's' and isint(opcode[1:]):
+            if opcode[1:] == '1':
+                data = _opcode_data[opcode.lower()]
+                return OperationCode(type=data[0], order=data[1], name=data[2])
+            if int(opcode[1:]) % 2 != 0:
+                raise ValueError("SN values must be even")
+            return OperationCode(type='SN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
+        try:
+            data = _opcode_data[opcode.lower()]
+        except KeyError:
+            raise
+        return OperationCode(type=data[0], order=data[1], name=data[2])
+
+    @staticmethod
+    def placeholder(op_type, op_order, sn_max=8):
+        #make an arbitrary operation
+        o=Operation("C2")
+        #overwrite values to match input
+        o.type=op_type
+        o.order=op_order
+        if op_type=="CH":
+            o.order=sn_max
+        return o
+
+class Calculation:
+    def __init__(self, operation, molecule):
+        self.operation=operation
+        self.molecule=molecule
+
+    def calculate(self):
+        pass
+
+    @property
+    def result(self):
+        return self._csm_result
+
+class CSMResult:
     """
-    Final normalizations and de-normalizations
-    :param results: CSM old_calculations results
+    Holds the results of a CSM calculation. 
+    When initialized, it handles some final processing of the result like denormalization and calculating local CSM.
+    It is not intended to be initialized by an external user, but by the calculation.
+    Properties:
+    molecule: the original Molecule on which the calculation was called (denormalized)
+    op_order: the order of the symmetry operation the calculation used
+    op_type: the type of symmetry option (cs, cn, sn, ci, ch)
+    csm: The final result CSM value
+    perm: The final permutation that gave the result CSM value (a list of ints)
+    dir: The final axis of symmetry
+    perm_count: The number of permutations of the molecule
+    local_csm: 
+    d_min:
+    symmetric_structure: the most symmetric structure when molecule permuted
+    normalized_symmetric_structure: the normalized symmetric structure
+    normalized_molecule_coords: the normalized molecule coordinates
+    formula_csm: a recalculation of the symmetry value using a formula to measure symmetry. Should be close to identical
+                    to algorithm result
     """
-    #    calculate symmetric structure
-    d_min = 1.0 - (results.csm / 100 * results.op_order / (results.op_order - 1)) #this is the scaling factor
-    symmetric_structure = create_symmetric_structure(results.molecule, results.perm, results.dir, results.op_type,
-                                                     results.op_order)
-
-    #save the normalized coords before we denormalize
-    results = results._replace(normalized_molecule_coords=np.array(results.molecule.Q), normalized_symmetric_structure=symmetric_structure)
-
-    #save denormalized results
-    symmetric_structure = de_normalize_coords(symmetric_structure, results.molecule.norm_factor)
-    results = results._replace(d_min=d_min, symmetric_structure=symmetric_structure)
-    results.molecule.de_normalize()
-
-    #run and save the formula test
-    formula_csm=formula_test(results)
-    results= results._replace(formula_csm=formula_csm)
+    def __init__(self, state, calc_local=False):
+        self.__CSMState=state
+        self.molecule=state.molecule.copy()
+        self.op_order=state.op_order
+        self.op_type=state.op_type
+        self.csm=state.csm
+        self.perm=state.perm
+        self.dir=state.dir
+        self.perm_count=state.perm_count
+        self.local_csm=""
+        self._process_results()
 
 
-    return results
+    def _process_results(self):
+        self.d_min = 1.0 - (self.csm / 100 * self.op_order / (self.op_order - 1))  # this is the scaling factor
 
 
-def formula_test(result):
-    #step one: get average of all atoms
-    init_avg = np.mean(result.molecule.Q, axis=0)
-    #step two: distance between intial and actual: initial - actual, squared
-    #step three: normal: distance between initial and initial average, (x-x0)^2 + (y-y0)^2 + (z-z0)^2
-    #step four: sum of distances between initial and actual, and then sum of x-y-z
-    #step five: sum of normal
-    distance=np.array([0.0, 0.0, 0.0])
-    normal=0.0
-    for i in range(len(result.molecule.Q)):
-        distance+=(np.square(result.molecule.Q[i]- result.symmetric_structure[i])) #square of difference
-        normal+=(np.sum(np.square(result.molecule.Q[i]-init_avg )))
-    distance=np.sum(distance)
-    #print("yaffa normal =", normal)
-    #step six: 100 * step four / step five
-    result= 100* distance /normal
-    return result
+        # save the normalized coords before we denormalize
+        self.normalized_symmetric_structure = self.create_symmetric_structure(self.molecule, self.perm, self.dir, self.op_type,
+                                                         self.op_order)
+        self.normalized_molecule_coords=np.array(self.molecule.Q)
 
+        #denormalize
+        self.symmetric_structure = de_normalize_coords(self.normalized_symmetric_structure, self.molecule.norm_factor)
+        self.molecule.de_normalize()
+
+        # run and save the formula test
+        self.formula_csm = self._formula_test()
+
+    def _formula_test(self):
+        Q=self.molecule.Q
+        # step one: get average of all atoms
+        init_avg = np.mean(Q, axis=0)
+        # step two: distance between intial and actual: initial - actual, squared
+        # step three: normal: distance between initial and initial average, (x-x0)^2 + (y-y0)^2 + (z-z0)^2
+        # step four: sum of distances between initial and actual, and then sum of x-y-z
+        # step five: sum of normal
+        distance = np.array([0.0, 0.0, 0.0])
+        normal = 0.0
+        for i in range(len(Q)):
+            distance += (np.square(Q[i] - self.symmetric_structure[i]))  # square of difference
+            normal += (np.sum(np.square(Q[i] - init_avg)))
+        distance = np.sum(distance)
+        # print("yaffa normal =", normal)
+        # step six: 100 * step four / step five
+        result = 100 * distance / normal
+        return result
+
+    def create_symmetric_structure(self, molecule, perm, dir, op_type, op_order):
+        # print('create_symmetric_structure called')
+
+        cur_perm = np.arange(len(perm))  # array of ints...
+        size = len(perm)
+        m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
+        symmetric = np.copy(m_pos)
+
+        normalization = 1 / op_order
+
+        ########calculate and apply transform matrix#########
+        ###for i<OpOrder
+        for i in range(1, op_order):
+            # get rotation
+            rotation_matrix = create_rotation_matrix(i, op_type, op_order, dir)
+            # print("Rotation matrix:\n")
+            # print(rotation_matrix)
+            # rotated_positions = m_pos @ rotation_matrix
+
+            # set permutation
+            cur_perm = [perm[cur_perm[j]] for j in range(size)]
+
+            # add correct permuted rotation to atom in outAtoms
+            for j in range(len(symmetric)):
+                symmetric[j] += rotation_matrix @ m_pos[cur_perm[j]]
+                # print("Symmetric: ", symmetric)
+
+        # apply normalization:
+        symmetric *= normalization
+
+        return symmetric
+
+    def compute_local_csm(self, molecule, perm, dir, op_type, op_order):
+        size = len(molecule)
+        cur_perm = [i for i in range(size)]
+        local_csm = np.zeros(size)
+        m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
+
+        for i in range(op_order):
+            rot = create_rotation_matrix(i, op_type, op_order, dir)
+
+            # set permutation
+            cur_perm = [perm[cur_perm[j]] for j in range(size)]
+
+            # apply rotation to each atoms
+            rotated = rot @ m_pos[cur_perm[i]]
+            difference = rotated - m_pos[i]
+            square = np.square(difference)
+            sum = np.sum(square)
+            local_csm[i] = sum * (100.0 / (2 * op_order))
+        self.local_csm=local_csm
+        return local_csm
+
+
+#TODO: replace all calls to this class with creation of Result class
+def process_results(results, calc_local=False):
+    """
+    retained for legacy purposes
+    """
+    r=CSMResult(results, calc_local)
+    return r
 
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
@@ -85,60 +252,20 @@ def create_rotation_matrix(iOp, op_type, op_order, dir):
     return rot
 
 
-def create_symmetric_structure(molecule, perm, dir, op_type, op_order):
-    # print('create_symmetric_structure called')
 
-    cur_perm = np.arange(len(perm))  # array of ints...
-    size = len(perm)
-    m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
-    symmetric = np.copy(m_pos)
 
-    normalization = 1/ op_order
-
-    ########calculate and apply transform matrix#########
-    ###for i<OpOrder
-    for i in range(1, op_order):
-        # get rotation
-        rotation_matrix = create_rotation_matrix(i, op_type, op_order, dir)
-        # print("Rotation matrix:\n")
-        # print(rotation_matrix)
-        # rotated_positions = m_pos @ rotation_matrix
-
-        # set permutation
-        cur_perm = [perm[cur_perm[j]] for j in range(size)]
-
-        # add correct permuted rotation to atom in outAtoms
-        for j in range(len(symmetric)):
-            symmetric[j] += rotation_matrix @ m_pos[cur_perm[j]]
-        # print("Symmetric: ", symmetric)
-
-    # apply normalization:
-    symmetric *= normalization
-
-    return symmetric
-
-def compute_local_csm(molecule, perm, dir, op_type, op_order):
-    size = len(molecule)
-    cur_perm = [i for i in range(size)]
-    local_csm = np.zeros(size)
-    m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
-
-    for i in range(op_order):
-        rot = create_rotation_matrix(i, op_type, op_order, dir)
-
-        # set permutation
-        cur_perm = [perm[cur_perm[j]] for j in range(size)]
-
-        # apply rotation to each atoms
-        rotated = rot @ m_pos[cur_perm[i]]
-        difference = rotated - m_pos[i]
-        square = np.square(difference)
-        sum = np.sum(square)
-        local_csm[i] = sum * (100.0 / (2 * op_order))
-    return local_csm
 
 
 def check_perm_cycles(perm, op_order, op_type):
+    '''
+    This function checks the cycles in a given permutation according to the provided operation order and type.
+    It counts the legal and illegal cycles in the permutation
+    :param perm:
+    :param op_order: 
+    :param op_type: 
+    :return: the number of illegal cycles, the number of molecules in illegal cycles, and a dictionary of cycle lengths, 
+    with key =length cycle, val= mnumber of cycles of that length
+    '''
     checked=[False]*len(perm)
     num_invalid=0
     truecount=0

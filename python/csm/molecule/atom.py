@@ -31,6 +31,13 @@ class Atom:
     """ A single atom, alogn with its position and neighbors
     """
     def __init__(self, symbol, pos, index, useMass=False, chain='Simulated Chain'):
+        """
+        :param symbol: atomic symbol (ie 'C', 'H', 'N')
+        :param pos: position coordinates as a list of floats [1.0, 0.0, 0.0]
+        :param index: integer index in molecule list of atoms
+        :param useMass: boolean, when True atomic mass is used, when False mass=1.0
+        :param chain: string, name of the chain the atom belongs to
+        """
         self.index=index
         self._symbol = symbol
         self.adjacent = []
@@ -67,4 +74,24 @@ class Atom:
 
     def __str__(self):
         return "Symbol: %s\tPos: %s\tChain: %s\tAdjacent: %s" % (self.symbol, self.pos, self.chain, self.adjacent)
+
+    def to_json(self):
+        return {
+        "index": self.index,
+        "symbol": self._symbol,
+        "adjacent": self.adjacent,
+        "pos": self.pos,
+        "mass": self._mass,
+        "chain": self._chain,
+        "equivalency": self._equivalency
+        }
+
+    @staticmethod
+    def from_json(in_json):
+        a=Atom(in_json["symbol"], in_json["pos"], in_json["index"], chain=in_json["chain"])
+        a._mass=in_json["mass"]
+        a._adjacent=in_json["adjacent"]
+        a._equivalency=in_json["equivalency"]
+        return a
+
 

@@ -1,6 +1,82 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.17.1
+-------------------------
+Bug fixes
+
+Changes in version 0.17.0
+-------------------------
+Creation of Code API:   
+1. Read a molecule with class MoleculeReader.
+Some information about the molecule's equivalence classes can be printed
+via the function print_equivalence_class_summary()
+2. Pass molecule and other arguments to 
+calculations.Exact, calculations.Approx, or calculations.Trivial
+3. Statistics from the calculation's run can be accessed, eg Exact.dead_ends
+4. A CSMResult is returned. Further analysis like local_csm can be done on the results
+5. The CSMResult and relevant arguments can be passed to a ResultWriter class, eg FileWriter
+
+Added ability to save molecule to and load molecule from json, and json for results.
+
+Removed the option to count perms
+
+Added --remove-hy capabilities to --use-sequence
+
+Stopping condition in approximate calculation has changed from 
+proportional comparison of results to absolute comparison of difference
+
+Changes in version 0.16.4
+-------------------------
+Added --timeout, receives number of seconds, with default of 5 minutes
+If program runtime exceeds timeout, program exits
+
+Bug fixes:
+* fixed bug in dircsm that caused option 6 to crash
+* fixed bug that caused Trivial calculation to crash
+* fixed bug that caused Trivial to not handle ch correctly
+* fixed formatting for prints in dircsm
+* fixed bug that interpreted --k in dircsm as --keep-structure
+
+Changes in version 0.16.3
+-------------------------
+* fixed bug when reading PDBs
+
+Changes in version 0.16.2
+-------------------------
+* fix bug in use-sequence
+* change direction choicesa from names to numbers: `0: user-input, 1: exact-structure, 2: greedy-first, 
+ 3: random-k, 4: cube-corners, 5: atom-vectors, 6: atom-vectors-orth`.
+* added argument for dir_ouput file, which prints run output
+* small changes to the printouts from test_dirs, ie print the best molecule isntead of the last 
+
+Changes in version 0.16.1
+-------------------------
+* critical bug fix for --exact-structure and --greedy-first
+* added flag --seed
+
+Changes in version 0.16.0
+-------------------------
+ Added new script, `test_direction`. Can be run from command line with
+ `run_direction <direction choice> symmetry in-file out-file additional-args`. 
+ The available direction choices are `user-input, exact-structure, greedy-first, 
+ random-k, cube-corners, atom-vectors, atom-vectors-orth`.
+ Additional flags: `--dirs-file`,` --k`
+ 
+
+Changes in version 0.15.5
+-------------------------
+* fixed bug that caused bondset not to be created/updated for pdbs
+* fixed critical bug causing norm_csm to crash
+* added priority for chain identification-- first alphabetic at 22, then numeric at 26, 
+then fragment number if relevant
+* fixed bug in remove-hy
+
+
+Changes in version 0.15.4
+-------------------------
+* bug fixes to reading molecules
+
 
 Changes in version 0.15.3
 -------------------------
