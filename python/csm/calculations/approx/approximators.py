@@ -70,53 +70,64 @@ class Approximator:
     def _approximate_from_initial_dir(self, dir):
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
         self._log("Calculating for initial direction: ", dir)
+
         for chainperm in self._chain_permutations:
-                self._log("\tCalculating for chain permutation ", chainperm)
-                # find permutation for this direction of the symmetry axis
-                perm = self._create_perm_from_dir(dir, chainperm)
-                # solve using this perm until it converges:
-                old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
-                                       csm=MAXDOUBLE)
-                best_for_chain_perm = interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
-                                                                      keep_structure=False, perm=perm)
-                self._log("\t\tfound initial permutation")
-                self._log("\t\tfirst pass yielded dir", interim_results.dir,
-                            "and CSM " + str(round(interim_results.csm, 5)))
-                # print(perm)
+            self._log("\tCalculating for chain permutation ", chainperm)
+            best_for_chain_perm = old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
+                                   csm=MAXDOUBLE, dir=dir)
 
-                if best_for_chain_perm.csm < best.csm:
-                    best = best_for_chain_perm
-
-                # iterations:
-                i = 0
-                max_iterations = 50
-                while (i < max_iterations
-                       and math.fabs(old_results.csm - interim_results.csm) > 0.0001
-                       and interim_results.csm < old_results.csm
-                       and interim_results.csm > 0.0001):
-                    old_results = interim_results
-                    i += 1
-                    perm = self._create_perm_from_dir(interim_results.dir, chainperm)
+            i = 0
+            max_iterations = 50
+            while True:
+                i += 1
+                try:
+                    perm = self._create_perm_from_dir(old_results.dir, chainperm)
                     interim_results = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
                                                     perm=perm)
+                except TimeoutError:
+                    self._log("\t\titeration ", i, " TIMEOUT!")
+                    break
 
-                    self._log("\t\titeration", i, ":")
-                    self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
+                self._log("\t\titeration", i, ":")
+                self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
+                if i > 1:
                     self._log("\t\t\tthere are",
-                              len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
-                                "differences between new permutation and previous permutation")
-                    self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
-                    self._log("\t\t\tthe distance between the new direction and the previous direction is:",
-                              str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
-                    self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
-                    # print(perm)
+                          len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
+                            "differences between new permutation and previous permutation")
+                self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
+                self._log("\t\t\tthe distance between the new direction and the previous direction is:",
+                          str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
+                self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
+                # print(perm)
 
-                    if interim_results.csm < best_for_chain_perm.csm:
-                        diff = best_for_chain_perm.csm - interim_results.csm
-                        best_for_chain_perm = interim_results
-                        if best_for_chain_perm.csm < best.csm:
-                            best = best_for_chain_perm
+                if interim_results.csm < best_for_chain_perm.csm:
+                    best_for_chain_perm = interim_results
 
+                old_results = interim_results
+
+                # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
+                if i >= max_iterations:
+                    self._log("\t\tStopping after %d iterations" % i)
+                    # Enough iterations
+                    break
+                    # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
+                    #    self._log("\t\tStopping due to CSM ratio")
+                    # CSM has improved enough (except in first iteration)
+                #    break
+                if interim_results.csm > old_results.csm:  # We found a worse CSM
+                    self._log("\t\tStopping because we found a worse CSM")
+                    break
+                if best.csm < 0.0001:
+                    self._log("\t\tStopping because the best CSM is good enough")
+                    # Best result is good enough
+                    break
+                if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
+                    self._log("\t\tStopping because the direction has not changed")
+                    # Direction has not changed
+                    break
+
+            if best_for_chain_perm.csm < best.csm:
+                best = best_for_chain_perm
         return best
 
 
