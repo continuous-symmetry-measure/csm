@@ -182,8 +182,8 @@ def _process_arguments(parse_res):
         dictionary_args['perm_file_name'] = parse_res.use_perm
 
     dictionary_args['keep_structure'] = parse_res.keep_structure
-    if dictionary_args['calc_type'] in ['approx', 'trivial'] and parse_res.keep_structure:
-        logger.warning("--keep-structure has no effect on approximate or trivial algorithms.")
+    #if dictionary_args['calc_type'] in ['approx', 'trivial'] and parse_res.keep_structure:
+    #    logger.warning("--keep-structure has no effect on approximate or trivial algorithms.")
 
     dictionary_args['no_constraint'] = parse_res.no_constraint
     if dictionary_args['calc_type'] in ['approx', 'trivial'] and parse_res.no_constraint:

@@ -148,8 +148,6 @@ class GreedyApproximator(ChainPermsApproximator):
     This uses the Cython implementation of the classic (greedy) approximate algorithm.
     It is not optimized for molecules with many chain permutations.
     '''
-
-
     def _create_perm_from_dir(self, dir, chainperm):
         return approximate_perm_classic(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
@@ -410,3 +408,28 @@ class ManyChainsApproximator(Approximator):
         indexes = munkres_wrapper(group_distance_matrix)
         return indexes, group_distance_matrix
 
+class StructuredApproximator(Approximator):
+    def _create_perm_from_dir(self, dir, chainperm="dontcare"):
+        return self.build_perm_and_state(self._op_type, self._op_order, self._molecule, dir)
+
+    def build_perm_and_state(self, op_type, op_order, molecule, dir):
+        raise NotImplementedError
+        print("dir is:", dir)
+        rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
+        rotated = (rotation_mat @ molecule.Q.T).T
+
+        distances_list=[]
+        for index_a, a in enumerate(molecule.Q):
+            for index_b, b in enumerate(rotated):
+                if index_b in molecule.atoms[index_a].equivalency:
+                    distance = array_distance(a, b)
+                else:
+                    distance=MAXDOUBLE
+                distances_list.append(((index_a, index_b), distance))
+        distances_list.sort(key=operator.itemgetter(1))
+#        permuter=ApproxConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list,
+ #                                         timeout=self._timeout)
+
+        #state=permuter.permute().__next__()
+        #perm=state.perm
+        #return perm

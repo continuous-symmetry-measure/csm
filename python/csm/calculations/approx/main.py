@@ -7,7 +7,8 @@ import math
 import numpy as np
 import sys
 
-from csm.calculations.approx.approximators import HungarianApproximator, GreedyApproximator, ManyChainsApproximator
+from csm.calculations.approx.approximators import HungarianApproximator, GreedyApproximator, ManyChainsApproximator, \
+    StructuredApproximator
 from csm.calculations.approx.dirs import DirectionChooser
 from csm.calculations.basic_calculations import process_results, Operation, Calculation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
@@ -17,7 +18,7 @@ class ApproxCalculation(Calculation):
     """
     Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
     """
-    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, *args, **kwargs):
+    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, keep_structure=False, *args, **kwargs):
         """
         Initializes the ApproxCalculation
         :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry
@@ -35,6 +36,9 @@ class ApproxCalculation(Calculation):
             self.approximator_cls = GreedyApproximator
         if approx_algorithm == 'many-chains':
             self.approximator_cls = ManyChainsApproximator
+        if keep_structure:
+            self.approximator_cls = StructuredApproximator
+
         self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs)
 
     def calculate(self):
@@ -72,7 +76,7 @@ class PrintApprox(ApproxCalculation):
     def log(self, *args, **kwargs):
         print(*args)
 
-def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None, *args, **kwargs):
+def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None, keep_structure=False, *args, **kwargs):
     """
     Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
 
@@ -89,9 +93,9 @@ def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian'
     :return: CSMResult of approximate calculation
     """
     if print_approx:
-        ac=PrintApprox(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs)
+        ac=PrintApprox(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs, keep_structure)
     else:
-        ac=ApproxCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs)
+        ac=ApproxCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs, keep_structure)
     ac.calculate()
     return ac.result
 
