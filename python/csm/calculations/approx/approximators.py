@@ -1,3 +1,5 @@
+import operator
+
 import numpy as np
 import math
 from csm.fast import approximate_perm_classic,  munkres_wrapper
@@ -130,12 +132,7 @@ class Approximator:
                 best = best_for_chain_perm
         return best
 
-
-class OldApproximator(Approximator):
-    '''
-    This uses the Cython implementation of the classic (greedy) approximate algorithm.
-    It is not optimized for molecules with many chain permutations.
-    '''
+class ChainPermsApproximator(Approximator):
     def _calc_chain_permutations(self):
         chain_permutations = []
         dummy = MoleculeFactory.dummy_molecule_from_size(len(self._molecule.chains), self._molecule.chain_equivalences)
@@ -143,15 +140,21 @@ class OldApproximator(Approximator):
         for state in permuter.permute():
             chain_permutations.append([i for i in state.perm])
         return chain_permutations
-
     def _precalculate(self):
         self._chain_permutations = self._calc_chain_permutations()
+
+class GreedyApproximator(ChainPermsApproximator):
+    '''
+    This uses the Cython implementation of the classic (greedy) approximate algorithm.
+    It is not optimized for molecules with many chain permutations.
+    '''
+
 
     def _create_perm_from_dir(self, dir, chainperm):
         return approximate_perm_classic(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
 
-class HungarianApproximator(OldApproximator):
+class HungarianApproximator(ChainPermsApproximator):
     '''
     This uses the Hungarian (munkres) algorithm for optimization of cost matrix.
          It is not optimized for molecules with many chain permutations.
@@ -406,3 +409,4 @@ class ManyChainsApproximator(Approximator):
         # B: We run the hungarian algorithm on matrix B,
         indexes = munkres_wrapper(group_distance_matrix)
         return indexes, group_distance_matrix
+
