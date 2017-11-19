@@ -11,7 +11,7 @@ from csm.calculations.permuters import DistanceConstraintPermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
 
-
+ 
 class Approximator:
     '''
     This is the base class all approximators inherit from.
