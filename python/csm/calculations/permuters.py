@@ -1,7 +1,6 @@
 import datetime
 import numpy as np
 from csm.fast import PreCalcPIP
-
 from csm.calculations.constants import start_time
 
 __author__ = 'Devora'
@@ -329,8 +328,6 @@ class ConstraintPropagator:
         return cycle_head, cycle_tail, cycle_length, cycle
 
 
-
-print_branches = False
 class ConstraintPermuter:
     def __init__(self, molecule, op_order, op_type, keep_structure, timeout=300, *args, **kwargs):
         self.molecule=molecule
@@ -374,9 +371,11 @@ class ConstraintPermuter:
             yield pip.state
 
     def _check_timeout(self):
-        time_d= datetime.datetime.now()-start_time
+        now=datetime.datetime.now()
+        time_d= now-start_time
         if time_d.total_seconds()>self.timeout:
             raise TimeoutError
+        return now
 
     def _choose_placement(self, constraints):
         # step one: from the available atoms, choose the one with the least available options:
@@ -395,7 +394,7 @@ class ConstraintPermuter:
     def _do_switch(self, pip, atom, destination, completed_cycle):
         self.truecount += 1
         # make the change to pip
-        if print_branches:
+        if self.print_branches:
             print("%d ==> %d" % (atom, destination))
 
         pip.switch(atom, destination)
@@ -413,7 +412,7 @@ class ConstraintPermuter:
 
         # undo the change to
         pip.unswitch(atom, destination)
-        if print_branches:
+        if self.print_branches:
             print("Undo %d ==> %d" % (atom, destination))
 
     def _permute(self, pip, constraints):
@@ -434,10 +433,126 @@ class ConstraintPermuter:
                     yield from self._permute(pip, constraints)
                     self._undo_switch(pip, atom, destination, completed_cycle, old_state)
                 else:
-                    if print_branches:
+                    if self.print_branches:
                         print("DEAD END")
                     self.falsecount += 1
                 constraints.backtrack_checkpoint()
+
+
+
+class DistanceConstraints(DictionaryConstraints):
+    def __init__(self, molecule, distances):
+        super().__init__(molecule)
+        self.distances=distances
+
+    def choose(self, distance_index):
+        if not self.constraints: #signifies that we're done
+            return None
+        for idx in range(distance_index, len(self.distances)):
+            from_atom, to_atom= self.distances[idx][0]
+            if from_atom in self.constraints and to_atom in self.constraints[from_atom]:
+                return (from_atom, to_atom), idx + 1
+        return -1 #no legal placement, we've reached a deadend
+
+
+class PermInProgress:
+    def __init__(self, mol):
+        self.p= [-1] * len(mol)
+        self.q = [-1] * len(mol)
+
+    def switch(self, origin, destination):
+        self.p[origin]=destination
+        self.q[destination]=origin
+
+    def unswitch(self, origin, destination):
+        self.p[origin]=-1
+        self.q[destination]=-1
+
+    def close_cycle(self, cycle):
+        pass
+    def unclose_cycle(self, old_state):
+        pass
+
+    @property
+    def state(self):
+        return self
+
+    @property
+    def perm(self):
+        return self.p
+
+
+
+class DistanceConstraintPermuter(ConstraintPermuter):
+    def __init__(self, molecule, op_order, op_type, distances_list, timeout):
+        super().__init__(molecule, op_order, op_type, keep_structure=True, timeout=timeout)
+        self.distances=distances_list
+
+    def _check_timeout(self):
+        now=super()._check_timeout()
+        time_d = now - self._permute_start
+        if time_d.total_seconds() > self._permute_timeout:
+            raise TimeoutError
+
+    def permute(self):
+        #step 1: create initial empty pip and qip
+        use_cache=True
+        if len(self.molecule)>1000:
+            print("Molecule size exceeds recommended size for using caching. (Perhaps you meant to use --approx?)")
+            use_cache=False
+        pip=PermInProgress(self.molecule)
+        #pip = PythonPIP(self.molecule, self.op_order, self.op_type)
+        #step 2: create initial set of constraints
+        constraints = DistanceConstraints(self.molecule, self.distances)
+        #constraints=IndexConstraints(self.molecule)
+        #step 3: call recursive permute
+        self._permute_start = datetime.datetime.now()
+        self._permute_timeout = 10
+        self.print_branches=True
+        for pip in self._permute(pip, constraints, 0):
+            self.count+=1
+            yield pip.state
+
+    def _choose_placement(self, constraints, distance_index):
+        choice = constraints.choose(distance_index)
+
+        if choice is None:
+            yield True, None, None, None
+
+        if choice == -1:
+            yield False, None, None, None
+
+        (atom, destination), new_distance_index = choice
+
+        yield False, atom, destination, new_distance_index
+
+
+
+    def _permute(self, pip, constraints, index):
+        self._check_timeout()
+        for yield_pip, atom, destination, new_distance_index in self._choose_placement(constraints, index):
+            if yield_pip:
+                yield pip
+            if atom is None:
+                return
+            else:
+                # Try atom->destination
+
+                # save current constraints
+                constraints.mark_checkpoint()
+                # propagate changes in constraints
+                completed_cycle= self.constraints_prop.propagate(constraints, pip, atom, destination, self.keep_structure)
+                if constraints.check():
+                    old_state= self._do_switch(pip, atom, destination, completed_cycle)
+                    #yield from recursive create on the new pip and new constraints
+                    yield from self._permute(pip, constraints, new_distance_index)
+                    self._undo_switch(pip, atom, destination, completed_cycle, old_state)
+                else:
+                    if self.print_branches:
+                        print("DEAD END")
+                    self.falsecount += 1
+                constraints.backtrack_checkpoint()
+                yield from self._permute(pip, constraints, new_distance_index)
 
 
 

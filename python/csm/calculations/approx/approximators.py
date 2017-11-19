@@ -7,6 +7,7 @@ from csm.fast import approximate_perm_hungarian as cython_hungarian
 from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
 from csm.calculations.constants import MAXDOUBLE
+from csm.calculations.permuters import DistanceConstraintPermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
 
@@ -413,7 +414,6 @@ class StructuredApproximator(Approximator):
         return self.build_perm_and_state(self._op_type, self._op_order, self._molecule, dir)
 
     def build_perm_and_state(self, op_type, op_order, molecule, dir):
-        raise NotImplementedError
         print("dir is:", dir)
         rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
         rotated = (rotation_mat @ molecule.Q.T).T
@@ -427,9 +427,9 @@ class StructuredApproximator(Approximator):
                     distance=MAXDOUBLE
                 distances_list.append(((index_a, index_b), distance))
         distances_list.sort(key=operator.itemgetter(1))
-#        permuter=ApproxConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list,
- #                                         timeout=self._timeout)
+        permuter=DistanceConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list,
+                                          timeout=30000)
 
-        #state=permuter.permute().__next__()
-        #perm=state.perm
-        #return perm
+        state=permuter.permute().__next__()
+        perm=state.perm
+        return perm
