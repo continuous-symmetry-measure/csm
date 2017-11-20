@@ -6,10 +6,11 @@ from csm.fast import approximate_perm_classic,  munkres_wrapper
 from csm.fast import approximate_perm_hungarian as cython_hungarian
 from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
-from csm.calculations.constants import MAXDOUBLE
+from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD
 from csm.calculations.permuters import DistanceConstraintPermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
+
 
 
 class Approximator:
@@ -64,6 +65,8 @@ class Approximator:
             # 5. repeat from 1, using a different starting direction (assuming more than one)
             if result.csm<best.csm:
                 best=result
+                if best.csm<CSM_THRESHOLD:
+                    break
         # 6. return the best result
         return best
 
@@ -75,7 +78,8 @@ class Approximator:
         self._log("Calculating for initial direction: ", dir)
 
         for chainperm in self._chain_permutations:
-            self._log("\tCalculating for chain permutation ", chainperm)
+            if len(self._chain_permutations)>1:
+                self._log("\tCalculating for chain permutation ", chainperm)
             best_for_chain_perm = old_results = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
                                    csm=MAXDOUBLE, dir=dir)
 
@@ -97,11 +101,10 @@ class Approximator:
                     self._log("\t\t\tthere are",
                           len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
                             "differences between new permutation and previous permutation")
-                self._log("\t\t\tusing new permutation, found new direction", interim_results.dir)
+                self._log("\t\t\tthe csm for this permutation is:", str(round(interim_results.csm, 8)))
+                self._log("\t\t\tusing the permutation, found new direction", interim_results.dir)
                 self._log("\t\t\tthe distance between the new direction and the previous direction is:",
                           str(round(np.linalg.norm(interim_results.dir - old_results.dir), 8)))
-                self._log("\t\t\tthe csm found is:", str(round(interim_results.csm, 8)))
-                # print(perm)
 
                 if interim_results.csm < best_for_chain_perm.csm:
                     best_for_chain_perm = interim_results
@@ -109,15 +112,11 @@ class Approximator:
                 # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
                 if i >= max_iterations:
                     self._log("\t\tStopping after %d iterations" % i)
-                    # Enough iterations
                     break
                 # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
                 #    self._log("\t\tStopping due to CSM ratio")
-                    # CSM has improved enough (except in first iteration)
-                    #    break
-                if best_for_chain_perm.csm < 0.0001:
+                if best_for_chain_perm.csm < CSM_THRESHOLD:
                     self._log("\t\tStopping because the best CSM is good enough")
-                    # Best result is good enough
                     break
                 if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
                     self._log("\t\tStopping because the direction has not changed")
@@ -128,9 +127,10 @@ class Approximator:
 
                 old_results = interim_results
 
-
             if best_for_chain_perm.csm < best.csm:
                 best = best_for_chain_perm
+                if best_for_chain_perm.csm < CSM_THRESHOLD:
+                    break
         return best
 
 class ChainPermsApproximator(Approximator):
