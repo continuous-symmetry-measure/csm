@@ -7,7 +7,8 @@ import math
 import numpy as np
 import sys
 
-from csm.calculations.approx.approximators import HungarianApproximator, ClassicGreedyApproximator, ManyChainsApproximator, StructuredApproximator
+from csm.calculations.approx.approximators import HungarianApproximator, GreedyApproximator, ManyChainsApproximator, \
+    StructuredApproximator
 from csm.calculations.approx.dirs import DirectionChooser
 from csm.calculations.basic_calculations import process_results, Operation, Calculation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
@@ -17,8 +18,7 @@ class ApproxCalculation(Calculation):
     """
     Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
     """
-    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True,
-                 detect_outliers=False, dirs=None, keep_structure=False, *args, **kwargs):
+    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, keep_structure=False, *args, **kwargs):
         """
         Initializes the ApproxCalculation
         :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry
@@ -29,15 +29,16 @@ class ApproxCalculation(Calculation):
         :param detect_outliers: detect outliers and use the imrpoved direction vectors
         :param dirs: a list of directions to use as initial dire (will override all other dir-choice options)
         """
-        super().__init__(operation, molecule, *args, **kwargs)
+        super().__init__(operation, molecule)
         if approx_algorithm == 'hungarian':
             self.approximator_cls = HungarianApproximator
         if approx_algorithm == 'greedy':
-            self.approximator_cls = ClassicGreedyApproximator
+            self.approximator_cls = GreedyApproximator
         if approx_algorithm == 'many-chains':
             self.approximator_cls = ManyChainsApproximator
         if keep_structure:
             self.approximator_cls = StructuredApproximator
+
         self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs)
 
     def calculate(self):
@@ -61,15 +62,8 @@ class ApproxCalculation(Calculation):
                     if best_result.csm < MINDOUBLE:
                         break
         else:
-            approximator = self.approximator_cls(op_type,
-                                                 op_order,
-                                                 molecule,
-                                                 self.direction_chooser,
-                                                 self.log,
-                                                 timeout=self._timeout)
+            approximator = self.approximator_cls(op_type, op_order, molecule, self.direction_chooser, self.log)
             best_result = approximator.approximate()
-        if best_result.csm==MAXDOUBLE:
-            raise ValueError("Failed to find a CSM")
         # step three: process and return results
         self._csm_result= best_result
         return self.result

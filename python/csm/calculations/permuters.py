@@ -1,19 +1,16 @@
 import datetime
-import operator
-
 import numpy as np
-from copy import deepcopy
 from csm.fast import PreCalcPIP, PermInProgress
 
-from csm.calculations.constants import start_time, MAXDOUBLE
-from bisect import insort
+from csm.calculations.constants import start_time
+
 __author__ = 'Devora'
 '''
-All the other permuters are implemented in Cython, this currently hold the constraints permuter and related code only
+All the other oermuters are implemented in Cython, this currently hold the constraints permuter and related code only
 '''
 
-ITYPE=np.int
-DTYPE=np.float64
+ITYPE = np.int
+DTYPE = np.float64
 
 
 class ConstraintsBase:
@@ -24,6 +21,7 @@ class ConstraintsBase:
 
     Comments explaining each function are also located here, rather than recopying them in each implementation
     '''
+
     def __init__(self, molecule, for_copy=False):
         raise NotImplementedError
 
@@ -85,7 +83,6 @@ class ConstraintsBase:
         :return: False if constraints have reached a dead end, True otherwise
         '''
         raise NotImplementedError
-
 
     def __getitem__(self, item):
         '''
@@ -149,7 +146,7 @@ class DictionaryConstraints(ConstraintsBase):
                 removed_indices.add(index)
             except KeyError:
                 pass
-        #if removed_indices:
+        # if removed_indices:
         self.push_undo('remove_constraint_from_all', (removed_indices, constraint))
 
     def remove_constraint_from_index(self, index, constraint):
@@ -160,9 +157,10 @@ class DictionaryConstraints(ConstraintsBase):
             pass
 
     def remove_index(self, index):
-            old_value = self.constraints.pop(index)
-            if old_value is not None:
-                self.push_undo('remove_index', (index, old_value))
+        old_value = self.constraints.pop(index)
+        if old_value is not None:
+            self.push_undo('remove_index', (index, old_value))
+
     def check(self):
         for key in self.constraints:
             if not self.constraints[key]:
@@ -180,6 +178,7 @@ class DictionaryConstraints(ConstraintsBase):
             key_length = len(self.constraints[key])
             if key_length < min_length:
                 min_key, min_length = key, key_length
+
         if min_key is not None:
             return min_key, list(self.constraints[min_key])
         return None, None
@@ -199,17 +198,16 @@ class DictionaryConstraints(ConstraintsBase):
     # A checkpoint is marked with a special 'mark' instruction (None argument)
 
     def push_undo(self, instruction, params):
-        #print("push %s, %s" % (instruction, params))
+        # print("push %s, %s" % (instruction, params))
         self.undo.append((instruction, params))
 
     def pop_undo(self):
         instruction, params = self.undo.pop()
-        #print ("pop %s, %s" % (instruction, params))
+        # print ("pop %s, %s" % (instruction, params))
         return instruction, params
 
     def mark_checkpoint(self):
         self.push_undo('mark', None)
-
 
     def backtrack_checkpoint(self):
         instruction, params = self.pop_undo()
@@ -228,72 +226,39 @@ class DictionaryConstraints(ConstraintsBase):
                 # self.constraints[params[0]].add(params[1])
             elif instruction == 'remove_index':
                 self.constraints[params[0]] = params[1]
-            elif instruction == 'remove_ones':
-                self.constraints=params
             else:
                 raise ValueError("Unexpected instruction %s in undo stack", instruction)
 
             instruction, params = self.pop_undo()
 
 
-
-
 class ConstraintPropagator:
-    def __init__(self, molecule, op_order, op_type):
+    def __init__(self, molecule, op_order, op_type, keep_structure):
         self.molecule = molecule
         self.op_order = op_order
         self.op_type = op_type
+        self.keep_structure_flag = keep_structure
 
-    def propagate(self, constraints, pip, origin, destination, keep_structure):
-        cycle_head, cycle_tail, cycle_length, cycle = self.calculate_cycle(pip, origin, destination)
-        len_one_old_state=pip.state.copy()
-        constraints.push_undo('remove_ones', deepcopy(constraints.constraints))
-        self._propagate(constraints, pip, origin, destination, keep_structure, cycle_head, cycle_tail, cycle_length)
-        # origin is removed entirely from the constraints dictionary-- it has been placed, and has nothing left
-        # this is the only time and only way it is legal for an atom to have no options.
-        constraints.remove_index(origin)
-        # finally: progressively get rid of all len one constraints
-        self._len_one_constraints(pip, constraints, keep_structure)
-        return cycle, cycle_head, cycle_tail, len_one_old_state
-
-
-    def _propagate(self, constraints, pip, origin, destination, keep_structure, cycle_head, cycle_tail, cycle_length):
+    def propagate(self, constraints, pip, origin, destination):
         # This is the function which handles the logic of which additional constraints get added after a placement
         # the logic of constraints after a placement:
 
         # 1: handle cycles
+        cycle_head, cycle_tail, cycle_length, cycle = self.calculate_cycle(pip, origin, destination)
         self.handle_cycles(constraints, pip, cycle_length, cycle_head, cycle_tail)
 
         # 2: any index which had destination as an option, destination is removed as an option
         constraints.remove_constraint_from_all(destination)
 
         # (4: keep_structure)
-        if keep_structure:
+        if self.keep_structure_flag:
             self.keep_structure(constraints, origin, destination)
 
+        # finally: origin is removed entirely from the constraints dictionary-- it has been placed, and has nothing left
+        # this is the only time and only way it is legal for an atom to have no options.
+        constraints.remove_index(origin)
 
-
-    def _len_one_constraints(self, pip, constraints, keep_structure):
-        indexes_to_remove=[]
-        was_changed=True
-        while was_changed:
-            was_changed=False
-            for atom in constraints.constraints:
-                if len(constraints[atom])==1:
-                    was_changed=True
-                    indexes_to_remove.append(atom)
-                    destination=constraints[atom][0]
-                    cycle_head, cycle_tail, cycle_length, cycle = self.calculate_cycle(pip, atom, destination)
-                    pip.switch(atom, destination)
-                    # if completed cycle, close in pip
-                    if cycle_head==cycle_tail:
-                        pip.close_cycle(cycle)
-                    self._propagate(constraints, pip, atom, destination, keep_structure, cycle_head, cycle_tail, cycle_length)
-
-        for atom in indexes_to_remove:
-            constraints.remove_index(atom)
-
-
+        return cycle_head == cycle_tail
 
     def handle_cycles(self, constraints, pip, cycle_length, cycle_head, cycle_tail):
         # This has been moved to its own function because it wasa growing long and confusing
@@ -307,39 +272,40 @@ class ConstraintPropagator:
         # at this point, there are three options:
 
         # if cycle_length is op_order-1, it MUST attach to cycle_head:
-        if cycle_length==self.op_order-1:
+        if cycle_length == self.op_order - 1:
             constraints.remove_constraint_from_all(cycle_head)
             constraints.set_constraint(cycle_tail, [cycle_head])
 
         else:
             # otherwise, either cycle length is NOT op_order AND not SN:
             # in which case, it is forbidden for cycle_tail to attach to cycle head:
-            if cycle_length>1:#ie 2-1
+            if cycle_length > 1:  # ie 2-1
                 constraints.remove_constraint_from_index(cycle_tail, cycle_head)
                 if self.op_type == 'SN':
-                    second_index=pip.p[cycle_head]
-                    constraints.remove_constraint_from_index(second_index, cycle_head) #because it was SN, this was left unhandled while
+                    second_index = pip.p[cycle_head]
+                    constraints.remove_constraint_from_index(second_index,
+                                                             cycle_head)  # because it was SN, this was left unhandled while
                     # possibility of len2 cycle remained
-            else: #it is length two, and is not SN, remove as normal
+            else:  # it is length two, and is not SN, remove as normal
                 if self.op_type != 'SN':
                     constraints.remove_constraint_from_index(cycle_tail, cycle_head)
 
     def keep_structure(self, constraints, origin, destination):
-        #1. atoms in A's bondset, can only go to constraints of theirs, that are in B's bondset
+        # 1. atoms in A's bondset, can only go to constraints of theirs, that are in B's bondset
         for atom_in_A_bondset in self.molecule.atoms[origin].adjacent:
             try:
-                new_constraints=[]
+                new_constraints = []
                 for constraint in constraints[atom_in_A_bondset]:
                     if (destination, constraint) in self.molecule.bondset:
                         new_constraints.append(constraint)
-                        #self._remove(atom_in_A_bondset, constraint)
+                        # self._remove(atom_in_A_bondset, constraint)
                 constraints.set_constraint(atom_in_A_bondset, new_constraints)
             except KeyError:
                 pass
-        #2.
+                # 2.
 
     def calculate_cycle(self, pip, origin, destination):
-        cycle=[origin]
+        cycle = [origin]
         cycle_length = 1
         index = origin
         while pip.q[index] not in [-1, origin]:
@@ -349,7 +315,7 @@ class ConstraintPropagator:
 
         cycle_head = index
 
-        if cycle_head==destination:
+        if cycle_head == destination:
             return cycle_head, destination, cycle_length, cycle
 
         # b: if destination has its own destination* (A->B ->X)
@@ -361,230 +327,234 @@ class ConstraintPropagator:
         cycle_tail = index
         return cycle_head, cycle_tail, cycle_length, cycle
 
+
+print_branches = False
+
+
 class ConstraintPermuter:
     def __init__(self, molecule, op_order, op_type, keep_structure, timeout=300, *args, **kwargs):
-        self.molecule=molecule
-        self.op_order=op_order
-        self.op_type=op_type
-        self.keep_structure=keep_structure
-        self.count=0
-        self.truecount=0
-        self.falsecount=0
-        self.cycle_lengths=[1,op_order]
-        self.timeout=timeout
-        if op_type=='SN':
+        self.molecule = molecule
+        self.op_order = op_order
+        self.op_type = op_type
+        self.keep_structure = keep_structure
+        self.count = 0
+        self.truecount = 0
+        self.falsecount = 0
+        self.cycle_lengths = [1, op_order]
+        self.timeout = timeout
+        if op_type == 'SN':
             self.cycle_lengths.append(2)
-        self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
+        self.constraints_prop = ConstraintPropagator(self.molecule, self.op_order, self.op_type, keep_structure)
         self.constraints = DictionaryConstraints(self.molecule)
+        self.print_branches = False
 
-    def create_cycle(self, atom, pip):
-        group=[]
-        index=atom
-        while True:
-            group.append(index)
-            index=pip.p[index]
-            #stop condition: reached end of cycle
-            if index==atom:
-                break
-        return group
-
-    def permute(self):
-        #step 1: create initial empty pip and qip
-        use_cache=True
-        if len(self.molecule)>1000:
-            print("Molecule size exceeds recommended size for using caching. (Perhaps you meant to use --approx?)")
-            use_cache=False
-        pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
-        #step 3: call recursive permute
-        for pip in self._permute(pip, self.constraints):
-            self.count+=1
-            yield pip.state
-
-    def _check_timeout(self):
+    def check_timeout(self):
+        # step zero: check if time out
         now = datetime.datetime.now()
-        time_d = now - start_time
-        if time_d.total_seconds()>self.timeout:
+        time_d = datetime.datetime.now() - start_time
+        if time_d.total_seconds() > self.timeout:
             raise TimeoutError
         return now
 
-    def _chose_placement(self, constraints):
-        # step one: from the available atoms, choose the one with the least available options:
-        atom, options = constraints.choose()
+    def create_cycle(self, atom, pip):
+        group = []
+        index = atom
+        while True:
+            group.append(index)
+            index = pip.p[index]
+            # stop condition: reached end of cycle
+            if index == atom:
+                break
+        return group
 
-        # STOP CONDITION: if there are no atoms left, the permutation has been completed. yield permutation
-        # (what if permutation is illegal?)
-        if atom is None:
-            yield True, None, None
-        # step two:
-        # for each option (opt)
-        else:
-            for destination in options:
-                yield False, atom, destination
-
-    def do_switch(self, atom, destination, pip, cycle, close_cycle):
-        self.truecount += 1
-        # make the change to pip
-        if print_branches:
-            print("%d ==> %d" % (atom, destination))
-
-        pip.switch(atom, destination)
-        # if completed cycle, close in pip, and save old state
-        if close_cycle:
-            old_state = pip.close_cycle(cycle)
-        return old_state
-
-    def undo_switch(self, atom, destination, pip, close_cycle, old_state):
-        # if completed cycle, restore old pip state
-        if close_cycle:
-            pip.unclose_cycle(old_state)
-
-        # undo the change to
-        pip.unswitch(atom, destination)
-        if print_branches:
-            print("Undo %d ==> %d" % (atom, destination))
-
-    def _permute(self, pip, constraints):
-        print_branches = False
-        #step zero: check if time out
-        self._check_timeout()
-        #step one: choose placement
-        for yield_pip, atom, destination in self._chose_placement(constraints):
-            if yield_pip:
-                yield pip
-            else:
-                # Try atom->destination
-                # save current constraints
-                constraints.mark_checkpoint()
-                # propagate changes in constraints
-                cycle, cycle_head, cycle_tail, len_one_old_state =self.constraints_prop.propagate(constraints, pip, atom, destination, self.keep_structure)
-                if constraints.check():
-                    close_cycle=cycle_head == cycle_tail
-                    old_state=self.do_switch(atom, destination, pip, cycle, close_cycle)
-                    #yield from recursive create on the new pip and new constraints
-                    yield from self._permute(pip, constraints)
-                    self.undo_switch(atom, destination, pip, close_cycle, old_state)
-                else:
-                    if print_branches:
-                        print("DEAD END")
-                    self.falsecount += 1
-                pip.unclose_cycle(len_one_old_state)
-                constraints.backtrack_checkpoint()
-
-
-
-
-
-
-
-class ApproxDictionaryConstraints(DictionaryConstraints):
-        def __init__(self, molecule, distances):
-            super().__init__(molecule)
-            self.distances=distances
-
-        def choose(self, start_index):
-            if not self.constraints:  # Signify that we're done
-                return None
-            #skip any illegal placements in distances
-            for idx in range(start_index, len(self.distances)):
-                (from_atom, to_atom)=self.distances[idx]
-                if from_atom in self.constraints and to_atom in self.constraints[from_atom]:
-                        return idx
-            return -1
-
-
-
-class ApproxConstraintPermuter(ConstraintPermuter):
-    def __init__(self,  molecule, op_order, op_type, distances_list, timeout=30000, *args, **kwargs):
-        super().__init__(molecule, op_order, op_type, True, timeout)
-        self.constraints_prop=ConstraintPropagator(self.molecule, self.op_order, self.op_type)
-        self.distances=distances_list
-        self.sorted_placements=[distance[0] for distance in distances_list]
-        self.constraints = ApproxDictionaryConstraints(self.molecule, self.sorted_placements)
-
-    def permute(self):
-        #step 1: create initial empty pip and qip
-        pip=PermInProgress(self.molecule, self.op_order, self.op_type)
-        #step 3: call recursive permute
-        self._permute_start = datetime.datetime.now()
-        self._permute_timeout = 10
-
-        for pip in self._permute(pip, self.constraints, 0):
-            self.count+=1
-            pip.close_cycle([i for i in range(len(self.molecule))])
-            yield pip.state
-
-    def _check_timeout(self):
-        now= super()._check_timeout()
-        #check that this particular permutation isn't taking too long
-        time_d = now - self._permute_start
-        if time_d.total_seconds() > self._permute_timeout:
-            pass#raise TimeoutError
-
-    def _permute(self, pip, constraints, start_index):
-        #step zero: check if time out
-        self._check_timeout()
-
-        print_branches = True
-
-        choice_index = constraints.choose(start_index)
-        if choice_index is None:
-            yield pip
-
-        if choice_index == -1:
-            return
-
-
-        (atom, destination) = self.sorted_placements[choice_index]
-
-        # save current constraints
-        constraints.mark_checkpoint()
-        # propagate changes in constraints
-        cycle, cycle_head, cycle_tail, len_one_old_state = self.constraints_prop.propagate(constraints, pip, atom,
-                                                                                           destination,
-                                                                                           self.keep_structure)
-        if constraints.check():
+    def attempt_placement(self, pip, atom, destination):
+        is_completed_cycle = self.constraints_prop.propagate(self.constraints, pip, atom, destination)
+        if self.constraints.check():
             self.truecount += 1
             # make the change to pip
-            if print_branches:
+            if self.print_branches:
                 print("%d ==> %d" % (atom, destination))
 
             pip.switch(atom, destination)
             # if completed cycle, close in pip, and save old state
-            if cycle_head == cycle_tail:
+            if is_completed_cycle:
+                cycle = self.create_cycle(atom, pip)
                 old_state = pip.close_cycle(cycle)
+                return True, old_state
+            return True, None
+        return False, None
 
-            #yield from recursive create on the new pip and new constraints
-            yield from self._permute(pip, constraints, choice_index+1)
+    def handle_len_ones(self, pip):
+        # step one: from the available atoms, choose the one with the least available options:
+        atom, options = self.constraints.choose()
 
-            #if completed cycle, restore old pip state
-            if cycle_head==cycle_tail:
-                pip.unclose_cycle(old_state)
+        passed_check_with_len_one = True
+        self.constraints.mark_checkpoint()
+        len_one_placements = []
+        len_one_old_states = []
+        while options is not None and len(options) == 1:
+            destination = options[0]
+            # Try atom->destination
+            # propagate changes in constraints
 
-            #undo the change to
+            passed_check_with_len_one, old_state = self.attempt_placement(pip, atom, destination)
+            if passed_check_with_len_one:
+                len_one_placements.append((atom, destination))
+                if old_state is not None:
+                    len_one_old_states.append(old_state)
+            else:
+                break
+            atom, options = self.constraints.choose()
+
+        return passed_check_with_len_one, len_one_placements, len_one_old_states, atom, options
+
+    def unhandle_len_ones(self, pip, len_one_placements, len_one_old_states):
+        # reverting the changes made by len one
+        if len(len_one_old_states) > 0:
+            pip.unclose_cycle(len_one_old_states[0])
+        for atom, destination in len_one_placements:
             pip.unswitch(atom, destination)
-            if print_branches:
-                print("Undo %d ==> %d (%d)" % (atom, destination, choice_index))
+        self.constraints.backtrack_checkpoint()
+
+    def undo_placement(self, pip, atom, destination, old_state):
+        # if completed cycle, restore old pip state
+        if old_state:
+            pip.unclose_cycle(old_state)
+
+        # undo the change to
+        pip.unswitch(atom, destination)
+        if self.print_branches:
+            print("Undo %d ==> %d" % (atom, destination))
+
+    def dead_end(self):
+        if self.print_branches:
+            print("DEAD END")
+        self.falsecount += 1
+
+    def placement_generator(self, atom, options):
+        for option in options:
+            yield atom, option
+
+    def permute(self):
+        # step 1: create initial empty pip and qip
+        use_cache = True
+        if len(self.molecule) > 1000:
+            print("Molecule size exceeds recommended size for using caching. (Perhaps you meant to use --approx?)")
+            use_cache = False
+        pip = PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
+        # pip = PythonPIP(self.molecule, self.op_order, self.op_type)
+        # step 2: create initial set of constraints
+        # constraints=IndexConstraints(self.molecule)
+        # step 3: call recursive permute
+        for pip in self._permute(pip):
+            self.count += 1
+            yield pip.state
+
+    def _permute(self, pip):
+        self.check_timeout()
+
+        # handle len ones
+        passed_check_with_len_one, len_one_placements, len_one_old_states, atom, options = self.handle_len_ones(pip)
+
+        if passed_check_with_len_one:  # the len one placements didn't lead to a dead end
+            # STOP CONDITION: if there are no atoms left, the permutation has been completed. yield permutation
+            # (what if permutation is illegal?)
+            if atom is None:
+                yield pip
+            # step two:
+            # for each option (opt)
+            else:
+                for atom, destination in self.placement_generator(atom, options):
+                    # Try atom->destination
+
+                    # save current constraints
+                    self.constraints.mark_checkpoint()
+                    # propagate changes in constraints
+                    passed_check, old_state = self.attempt_placement(pip, atom, destination)
+                    if passed_check:
+                        # yield from recursive create on the new pip and new constraints
+                        yield from self._permute(pip)
+                        self.undo_placement(pip, atom, destination, old_state)
+                    else:
+                        self.dead_end()
+                    self.constraints.backtrack_checkpoint()
+
+        # undo the handling of len ones
+        self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
+
+
+class DistanceConstraintPermuter(ConstraintPermuter):
+    def __init__(self, molecule, op_order, op_type, distances_list, timeout=300, *args, **kwargs):
+        super().__init__(molecule, op_order, op_type, True, timeout)
+        self.distances = distances_list
+        # self.print_branches=True
+        self._permute_start = datetime.datetime.now()
+        self._permute_timeout = 100
+
+    def check_timeout(self):
+        # step zero: check if time out
+        now = super().check_timeout()
+        time_d = now - self._permute_start
+        if time_d.total_seconds() > self._permute_timeout:
+            raise TimeoutError
+
+    def placement_generator(self, start_index):
+        for distance_index in range(start_index, len(self.distances)):
+            (atom, destination), distance = self.distances[distance_index]
+            if atom in self.constraints.constraints:
+                if destination in self.constraints[atom]:
+                    yield atom, destination, distance_index
+        return -1, -1, -1  # bad perm
+
+    def permute(self):
+        pip = PermInProgress(self.molecule, self.op_order, self.op_type)
+        for pip in self._permute(pip, 0):
+            self.count += 1
+            yield pip.state
+
+    def _permute(self, pip, start_index):
+        # step zero: check if time out
+        self.check_timeout()
+
+        # handle len ones
+        passed_check_with_len_one, len_one_placements, len_one_old_states, atom, options = self.handle_len_ones(pip)
+
+        if passed_check_with_len_one:  # the len one placements didn't lead to a dead end
+            # STOP CONDITION: if there are no atoms left, the permutation has been completed. yield permutation
+            # (what if permutation is illegal?)
+            if atom is None:
+                yield pip
+            # step two:
+            # for each option (opt)
+            else:
+                for atom, destination, distance_index in self.placement_generator(start_index):
+                    if atom != -1:
+                        # save current constraints
+                        self.constraints.mark_checkpoint()
+                        # propagate changes in constraints
+                        passed_check, old_state = self.attempt_placement(pip, atom, destination)
+                        if passed_check:
+                            # yield from recursive create on the new pip and new constraints
+                            yield from self._permute(pip, distance_index + 1)
+                            self.undo_placement(pip, atom, destination, old_state)
+                        else:
+                            self.dead_end()
+                        self.constraints.backtrack_checkpoint()
+                    else:
+                        self.dead_end()
         else:
-            if atom==1 and destination==5:
-                hi=1
-            if print_branches:
-                print("DEAD END: %d => %d" %(atom, destination))
-                # distances.remove((atom, destination))
-            self.falsecount += 1
-        pip.unclose_cycle(len_one_old_state)
-        constraints.backtrack_checkpoint()
-        # Continue checking without the chosen distance - do this whether we succeed or fail
-        #new_avoided = set(avoided)
-        #new_avoided.add((atom, destination))
-        yield from self._permute(pip, constraints, choice_index+1)
+            self.dead_end()
+
+        # undo the handling of len ones
+        self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     import sys
     from csm.input_output.arguments import get_split_arguments
     from csm.input_output.readers import read_inputs
-    args= sys.argv[1:]
+
+    args = sys.argv[1:]
     in_args, calc_args, out_args = get_split_arguments(args)
     calc_args['molecule'], calc_args['perm'], calc_args['dirs'] = read_inputs(**in_args)
-    c=ConstraintPermuter(**calc_args)
-
+    c = ConstraintPermuter(**calc_args)

@@ -175,3 +175,75 @@ def dirs_orthogonal(dirs):
     """
     dc = DirectionChooser(None, None, None, dirs=[1, 1, 1])
     return dc.dirs_orthogonal(dirs)
+
+
+
+class DirectionChooserNew:
+    def __init__(self, molecule, chooser_type, orthogonal, num_dirs, dirs=None):
+        dirs=[]
+        if orthogonal:
+            dirs = dirs_orthogonal(dirs)
+        #remove doubles (can be introduced by orth)
+        dirs=list(set(dirs))
+        pass
+
+    def classic(self):
+        pass
+
+    def atom_vectors(self):
+        molecule=self.molecule
+        dirs=[]
+        for atom in molecule.atoms:
+            dir = [atom.pos[0] - molecule.center_of_mass[0],
+                   atom.pos[1] - molecule.center_of_mass[1],
+                   atom.pos[2] - molecule.center_of_mass[2]]
+            dir /= np.linalg.norm(dir)
+            dirs.append(dir)
+        return dirs
+
+    def cube_corners(self):
+        molecule=self.molecule
+        dirs=[]
+        center = molecule.center_of_mass
+        corner = np.add(center, [.5, .5, .5])
+        dirs.append(corner)
+        corner = np.add(center, [.5, .5, -.5])
+        dirs.append(corner)
+        corner = np.add(center, [.5, -.5, .5])
+        dirs.append(corner)
+        corner = np.add(center, [.5, -.5, -.5])
+        dirs.append(corner)
+        corner = np.add(center, [-.5, .5, .5])
+        dirs.append(corner)
+        corner = np.add(center, [-.5, .5, -.5])
+        dirs.append(corner)
+        corner = np.add(center, [-.5, -.5, .5])
+        dirs.append(corner)
+        corner = np.add(center, [-.5, -.5, -.5])
+        dirs.append(corner)
+        return dirs
+
+    def fibonacci_sphere(self, num_dirs, randomize=False):
+        # https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere/26127012#26127012
+        rnd = 1.
+        #if randomize:
+        #    rnd = random.random() * samples
+
+        dirs = []
+        offset = 2. / num_dirs
+        increment = math.pi * (3. - math.sqrt(5.));
+
+        for i in range(num_dirs):
+            y = ((i * offset) - 1) + (offset / 2);
+            r = math.sqrt(1 - pow(y, 2))
+
+            phi = ((i + rnd) % num_dirs) * increment
+
+            x = math.cos(phi) * r
+            z = math.sin(phi) * r
+
+            dirs.append([x, y, z])
+
+        return dirs
+
+

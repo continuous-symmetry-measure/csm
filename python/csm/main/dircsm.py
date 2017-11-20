@@ -89,7 +89,7 @@ class PrintClass:
             file.write("\n")
 
 
-def fibonacci_sphere(samples, randomize=True):
+def fibonacci_sphere(samples, randomize=False):
     #https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere/26127012#26127012
     rnd = 1.
     if randomize:
