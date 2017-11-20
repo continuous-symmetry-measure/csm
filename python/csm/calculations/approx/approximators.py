@@ -115,7 +115,7 @@ class Approximator:
                 #    self._log("\t\tStopping due to CSM ratio")
                     # CSM has improved enough (except in first iteration)
                     #    break
-                if best.csm < 0.0001:
+                if best_for_chain_perm.csm < 0.0001:
                     self._log("\t\tStopping because the best CSM is good enough")
                     # Best result is good enough
                     break
@@ -125,9 +125,8 @@ class Approximator:
                 if interim_results.csm >= old_results.csm:  # We found a worse CSM
                     self._log("\t\tStopping because CSM did not improve (worse or equal)")
                     break
-                    
-                old_results = interim_results
 
+                old_results = interim_results
 
 
             if best_for_chain_perm.csm < best.csm:
