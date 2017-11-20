@@ -1,6 +1,6 @@
 import datetime
 import numpy as np
-from csm.fast import PreCalcPIP
+from csm.fast import PreCalcPIP, PermInProgress
 
 from csm.calculations.constants import start_time
 
@@ -346,6 +346,14 @@ class ConstraintPermuter:
         self.constraints = DictionaryConstraints(self.molecule)
         self.print_branches=False
 
+    def check_timeout(self):
+        #step zero: check if time out
+        now= datetime.datetime.now()
+        time_d= datetime.datetime.now()-start_time
+        if time_d.total_seconds()>self.timeout:
+            raise TimeoutError
+        return now
+
     def create_cycle(self, atom, pip):
         group=[]
         index=atom
@@ -416,6 +424,11 @@ class ConstraintPermuter:
         if self.print_branches:
             print("Undo %d ==> %d" % (atom, destination))
 
+    def dead_end(self):
+        if self.print_branches:
+            print("DEAD END")
+        self.falsecount += 1
+
     def placement_generator(self, atom, options):
         for option in options:
             yield atom, option
@@ -436,10 +449,7 @@ class ConstraintPermuter:
             yield pip.state
 
     def _permute(self, pip):
-        #step zero: check if time out
-        time_d= datetime.datetime.now()-start_time
-        if time_d.total_seconds()>self.timeout:
-            raise TimeoutError
+        self.check_timeout()
 
         #handle len ones
         passed_check_with_len_one, len_one_placements, len_one_old_states, atom, options = self.handle_len_ones(pip)
@@ -464,9 +474,7 @@ class ConstraintPermuter:
                         yield from self._permute(pip)
                         self.undo_placement(pip, atom, destination, old_state)
                     else:
-                        if self.print_branches:
-                            print("DEAD END")
-                        self.falsecount += 1
+                        self.dead_end()
                     self.constraints.backtrack_checkpoint()
 
         #undo the handling of len ones
@@ -477,38 +485,35 @@ class DistanceConstraintPermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_list, timeout=300, *args, **kwargs):
         super().__init__( molecule, op_order, op_type, True, timeout)
         self.distances=distances_list
-        self.print_branches=True
+        #self.print_branches=True
+        self._permute_start = datetime.datetime.now()
+        self._permute_timeout = 100
 
-    def placement_generator(self, distance_index):
-        distance_index=self.distance_indexes[-1]
-        while distance_index<len(self.distances)-1:
-            distance_index+=1
+    def check_timeout(self):
+        #step zero: check if time out
+        now=super().check_timeout()
+        time_d = now - self._permute_start
+        if time_d.total_seconds() > self._permute_timeout:
+            raise TimeoutError
+
+
+    def placement_generator(self, start_index):
+        for distance_index in range(start_index,len(self.distances)):
             (atom, destination), distance= self.distances[distance_index]
-            if destination in self.constraints[atom]:
-                self.distance_indexes.append(distance_index)
-                return atom, destination
-        return -1, -1 #bad perm
+            if atom in self.constraints.constraints:
+                if destination in self.constraints[atom]:
+                    yield atom, destination, distance_index
+        return -1, -1, -1 #bad perm
 
     def permute(self):
-        #step 1: create initial empty pip and qip
-        use_cache=True
-        if len(self.molecule)>1000:
-            print("Molecule size exceeds recommended size for using caching. (Perhaps you meant to use --approx?)")
-            use_cache=False
-        pip=PreCalcPIP(self.molecule, self.op_order, self.op_type, use_cache=use_cache)
-        #pip = PythonPIP(self.molecule, self.op_order, self.op_type)
-        #step 2: create initial set of constraints
-        #constraints=IndexConstraints(self.molecule)
-        #step 3: call recursive permute
+        pip=PermInProgress(self.molecule, self.op_order, self.op_type)
         for pip in self._permute(pip, 0):
             self.count+=1
             yield pip.state
 
-    def _permute(self, pip, distance_index):
+    def _permute(self, pip, start_index):
         #step zero: check if time out
-        time_d= datetime.datetime.now()-start_time
-        if time_d.total_seconds()>self.timeout:
-            raise TimeoutError
+        self.check_timeout()
 
         #handle len ones
         passed_check_with_len_one, len_one_placements, len_one_old_states, atom, options = self.handle_len_ones(pip)
@@ -521,22 +526,24 @@ class DistanceConstraintPermuter(ConstraintPermuter):
             # step two:
             # for each option (opt)
             else:
-                for atom, destination in self.placement_generator(atom, options):
-                    # Try atom->destination
+                for atom, destination, distance_index in self.placement_generator(start_index):
+                    if atom != -1:
+                        # Try atom->destination
 
-                    # save current constraints
-                    self.constraints.mark_checkpoint()
-                    # propagate changes in constraints
-                    passed_check, old_state = self.attempt_placement(pip, atom, destination)
-                    if passed_check:
-                    #yield from recursive create on the new pip and new constraints
-                        yield from self._permute(pip)
-                        self.undo_placement(pip, atom, destination, old_state)
+                        # save current constraints
+                        self.constraints.mark_checkpoint()
+                        # propagate changes in constraints
+                        passed_check, old_state = self.attempt_placement(pip, atom, destination)
+                        if passed_check:
+                        #yield from recursive create on the new pip and new constraints
+                            yield from self._permute(pip, distance_index+1)
+                            self.undo_placement(pip, atom, destination, old_state)
+                        else:
+                            self.dead_end()
+                        self.constraints.backtrack_checkpoint()
                     else:
-                        if self.print_branches:
-                            print("DEAD END")
-                        self.falsecount += 1
-                    self.constraints.backtrack_checkpoint()
+                        self.dead_end()
+
 
         #undo the handling of len ones
         self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
