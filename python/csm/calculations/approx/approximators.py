@@ -28,6 +28,7 @@ class Approximator:
         self._log = log_func
         self._log("There are", len(self._initial_directions), "initial directions to search for the best permutation")
         self._chain_permutations = [[0]]  # this is overwritten by precalculate when chains are used
+        self.max_iterations=30
 
     def _for_inversion(self, best):
         # if inversion:
@@ -86,7 +87,6 @@ class Approximator:
                                                          csm=MAXDOUBLE, dir=dir)
 
             i = 0
-            max_iterations = 30
             while True:
                 i += 1
                 try:
@@ -113,7 +113,7 @@ class Approximator:
                     best_for_chain_perm = interim_results
 
                 # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
-                if i >= max_iterations:
+                if i >= self.max_iterations:
                     self._log("\t\tStopping after %d iterations" % i)
                     break
                 # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
