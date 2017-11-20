@@ -106,28 +106,29 @@ class Approximator:
                 if interim_results.csm < best_for_chain_perm.csm:
                     best_for_chain_perm = interim_results
 
-                old_results = interim_results
-
                 # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
                 if i >= max_iterations:
                     self._log("\t\tStopping after %d iterations" % i)
                     # Enough iterations
                     break
-                    # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
-                    #    self._log("\t\tStopping due to CSM ratio")
+                # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
+                #    self._log("\t\tStopping due to CSM ratio")
                     # CSM has improved enough (except in first iteration)
-                #    break
-                if interim_results.csm > old_results.csm:  # We found a worse CSM
-                    self._log("\t\tStopping because we found a worse CSM")
-                    break
+                    #    break
                 if best.csm < 0.0001:
                     self._log("\t\tStopping because the best CSM is good enough")
                     # Best result is good enough
                     break
                 if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
                     self._log("\t\tStopping because the direction has not changed")
-                    # Direction has not changed
                     break
+                if interim_results.csm >= old_results.csm:  # We found a worse CSM
+                    self._log("\t\tStopping because CSM did not improve (worse or equal)")
+                    break
+                    
+                old_results = interim_results
+
+
 
             if best_for_chain_perm.csm < best.csm:
                 best = best_for_chain_perm
@@ -414,7 +415,6 @@ class StructuredApproximator(Approximator):
         return self.build_perm_and_state(self._op_type, self._op_order, self._molecule, dir)
 
     def build_perm_and_state(self, op_type, op_order, molecule, dir):
-        print("dir is:", dir)
         rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
         rotated = (rotation_mat @ molecule.Q.T).T
 
@@ -430,7 +430,10 @@ class StructuredApproximator(Approximator):
         permuter=DistanceConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list,
                                           timeout=30000)
 
-        for state in permuter.permute():
-            print(state.perm)
+
+        state=permuter.permute().__next__()
+        #for state in permuter.permute():
+        #    print(state.perm)
 
         perm=state.perm
+        return perm
