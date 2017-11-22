@@ -1,3 +1,4 @@
+import sys
 import datetime
 import numpy as np
 from csm.fast import PreCalcPIP, PermInProgress
@@ -486,10 +487,13 @@ class ConstraintPermuter:
 class DistanceConstraintPermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_list, timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, True, timeout)
+        if len(molecule)>10000:
+            raise ValueError("Please don't use keep structure on molecules this big yet")
+        sys.setrecursionlimit(len(molecule))
         self.distances = distances_list
-        # self.print_branches=True
+        #self.print_branches=True
         self._permute_start = datetime.datetime.now()
-        self._permute_timeout = 100
+        self._permute_timeout = 10
 
     def check_timeout(self):
         # step zero: check if time out
