@@ -7,7 +7,7 @@ from csm.fast import approximate_perm_hungarian as cython_hungarian
 from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD
-from csm.calculations.permuters import DistanceConstraintPermuter
+from csm.calculations.permuters import DistanceConstraintPermuter, TestDistancePermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
 
@@ -121,11 +121,11 @@ class Approximator:
                 if best_for_chain_perm.csm < CSM_THRESHOLD:
                     self._log("\t\tStopping because the best CSM is good enough")
                     break
-                if interim_results.csm >= old_results.csm:  # We found a worse CSM
-                    self._log("\t\tStopping because CSM did not improve (worse or equal)")
-                    break
                 if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
                     self._log("\t\tStopping because the direction has not changed")
+                    break
+                if interim_results.csm >= old_results.csm:  # We found a worse CSM
+                    self._log("\t\tStopping because CSM did not improve (worse or equal)")
                     break
 
 
@@ -421,9 +421,9 @@ class ManyChainsApproximator(Approximator):
 
 class StructuredApproximator(Approximator):
     def _create_perm_from_dir(self, dir, chainperm="dontcare"):
-        return self.build_perm_and_state(self._op_type, self._op_order, self._molecule, dir)
+        return self.build_perm_and_state_version_list(self._op_type, self._op_order, self._molecule, dir)
 
-    def build_perm_and_state(self, op_type, op_order, molecule, dir):
+    def build_perm_and_state_version_list(self, op_type, op_order, molecule, dir):
         rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
         rotated = (rotation_mat @ molecule.Q.T).T
 
@@ -435,9 +435,29 @@ class StructuredApproximator(Approximator):
                 else:
                     distance = MAXDOUBLE
                 distances_list.append(((index_a, index_b), distance))
+
         distances_list.sort(key=operator.itemgetter(1))
-        permuter = DistanceConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list,
-                                              timeout=30000)
+        permuter = DistanceConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list, timeout=30000)
+
+        state = permuter.permute().__next__()
+        perm = state.perm
+        return perm
+
+    def build_perm_and_state_version_dict(self, op_type, op_order, molecule, dir):
+        rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
+        rotated = (rotation_mat @ molecule.Q.T).T
+
+        distances_dict={}
+        for index_a, a in enumerate(molecule.Q):
+            distances_dict[index_a]={}
+            for index_b, b in enumerate(rotated):
+                if index_b in molecule.atoms[index_a].equivalency:
+                    distance = array_distance(a, b)
+                else:
+                    distance = MAXDOUBLE
+                distances_dict[index_a][index_b]=distance
+
+        permuter = TestDistancePermuter(self._molecule, self._op_order, self._op_type, distances_dict, timeout=30000)
 
         state = permuter.permute().__next__()
         perm = state.perm

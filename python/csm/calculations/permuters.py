@@ -1,3 +1,4 @@
+import operator
 import sys
 import datetime
 import numpy as np
@@ -179,6 +180,8 @@ class DictionaryConstraints(ConstraintsBase):
             key_length = len(self.constraints[key])
             if key_length < min_length:
                 min_key, min_length = key, key_length
+                if key_length == 1: #can't get shorter than 1, no point searching further
+                    break
 
         if min_key is not None:
             return min_key, list(self.constraints[min_key])
@@ -231,6 +234,91 @@ class DictionaryConstraints(ConstraintsBase):
                 raise ValueError("Unexpected instruction %s in undo stack", instruction)
 
             instruction, params = self.pop_undo()
+
+
+class DistanceConstraints(DictionaryConstraints):
+    def __init__(self, molecule, distances_dict):
+        self.distances_dict = distances_dict
+        self.constraints = self._create_constraints(molecule)
+        self.undo = []
+
+    def _create_constraints(self, molecule):
+        constraints = {}
+        for index, atom in enumerate(molecule.atoms):
+            def dict_lookup(ind):
+                return self.distances_dict[index][ind]
+            constraints[index] = sorted(atom.equivalency, key=dict_lookup)
+        return constraints
+
+    def set_constraint(self, index, constraints):
+        self.push_undo('set_constraint', (index, self.constraints[index]))
+        self.constraints[index] = constraints
+
+    def remove_constraint_from_all(self, constraint):
+        removed_indices = []
+        for index in self.constraints:
+            try:
+                self.constraints[index].remove(constraint)
+                removed_indices.append(index)
+            except ValueError:
+                pass
+        # if removed_indices:
+        self.push_undo('remove_constraint_from_all', (removed_indices, constraint))
+
+    def backtrack_checkpoint(self):
+        instruction, params = self.pop_undo()
+        while instruction != 'mark':
+            if instruction == 'set_constraint':
+                self.constraints[params[0]] = params[1]
+            elif instruction == 'remove_constraint_from_all':
+                constraint = params[1]
+                for index in params[0]:
+                    def dict_lookup(ind):
+                        return self.distances_dict[index][ind]
+                    self.constraints[index].add(constraint)
+                    self.constraints[index].sort(constraint, key=dict_lookup)
+            elif instruction == 'remove_constraint_from_index':
+                if params[0] not in self.constraints:
+                    raise ValueError("Can't find %d in constraints!" % params[0])
+                index=params[0]
+                constraint = self.constraints[index]
+                constraint.add(params[1])
+                def dict_lookup(ind):
+                    return self.distances_dict[index][ind]
+                self.constraints[index].sort(constraint, key=dict_lookup)
+                # self.constraints[params[0]].add(params[1])
+            elif instruction == 'remove_index':
+                self.constraints[params[0]] = params[1]
+            else:
+                raise ValueError("Unexpected instruction %s in undo stack", instruction)
+
+            instruction, params = self.pop_undo()
+
+    def choose(self):
+        min_length = 1e40
+        min_key = None
+
+        min_dist=1e40
+        min_dist_key=None
+
+        for key in self.constraints:
+            dist=self.constraints[key][0]
+            if dist<min_dist:
+                min_dist_key, min_dist= key, dist
+
+            key_length = len(self.constraints[key])
+            if key_length < min_length:
+                min_key, min_length = key, key_length
+                if key_length == 1:
+                    break
+
+        if min_key is not None:
+            if key_length==1:
+                return min_key, list(self.constraints[min_key])
+            else:
+                return min_dist_key, list(self.constraints[min_dist_key])
+        return None, None
+
 
 
 class ConstraintPropagator:
@@ -483,6 +571,36 @@ class ConstraintPermuter:
         # undo the handling of len ones
         self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
 
+class TestDistancePermuter(ConstraintPermuter):
+    def __init__(self, molecule, op_order, op_type, distances_dict, timeout=300, *args, **kwargs):
+        super().__init__(molecule, op_order, op_type, keep_structure=True)
+        if len(molecule)>10000:
+            raise ValueError("Please don't use keep structure on molecules this big yet")
+        sys.setrecursionlimit(len(molecule))
+        self.constraints=DistanceConstraints(molecule, distances_dict)
+        #self.print_branches = True
+        self._permute_start = datetime.datetime.now()
+        self._permute_timeout = 1000
+
+    def check_timeout(self):
+        # step zero: check if time out
+        now = super().check_timeout()
+        time_d = now - self._permute_start
+        if time_d.total_seconds() > self._permute_timeout:
+            raise TimeoutError
+
+    def permute(self):
+        # step 1: create initial empty pip and qip
+        pip = PermInProgress(self.molecule, self.op_order, self.op_type)
+        # pip = PythonPIP(self.molecule, self.op_order, self.op_type)
+        # step 2: create initial set of constraints
+        # constraints=IndexConstraints(self.molecule)
+        # step 3: call recursive permute
+        for pip in self._permute(pip):
+            self.count += 1
+            yield pip.state
+
+
 
 class DistanceConstraintPermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_list, timeout=300, *args, **kwargs):
@@ -493,7 +611,7 @@ class DistanceConstraintPermuter(ConstraintPermuter):
         self.distances = distances_list
         #self.print_branches=True
         self._permute_start = datetime.datetime.now()
-        self._permute_timeout = 10
+        self._permute_timeout = 1000
 
     def check_timeout(self):
         # step zero: check if time out
