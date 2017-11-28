@@ -1,6 +1,13 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.17.3
+-------------------------
+1. Removed random factor from fibonacci sphere
+2. Added support for --keep-structure with --approx using the new permuter, DistanceConstraintPermuter. 
+This Permuter sorts all the equivalence class placements by distance when rotated, and chooses constraints based on lowest distance
+
+
 Changes in version 0.17.2
 -------------------------
 * Added fibonacci sphere to dircsm
