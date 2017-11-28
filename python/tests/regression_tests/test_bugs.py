@@ -1,13 +1,13 @@
 import pytest
 from os import path
-from csm.molecule.molecule import Molecule, MoleculeFactory
+from csm.molecule.molecule import Molecule, MoleculeReader
 from csm.input_output.arguments import get_split_arguments
 from csm.main.csm_run import run as csmrun
 from conftest import test_folder
 
 def xtest_pdb_with_chains_hetatm_and_nonequal_equivalence_classes():
     file=r'D:\UserData\devora\Sources\csm\test_cases\old_test_cases\inbal\proteins\2xql.pdb'
-    m=MoleculeFactory.from_file(file, format='pdb', use_chains=True)
+    m=MoleculeReader.from_file(file, format='pdb', use_chains=True)
 
 
     args= "--approx --use-chains --remove-hy --many-chains"
@@ -27,11 +27,11 @@ def xtest_use_sequence_shouldnt_auto_use_babel():
     path1=path.join(test_folder, '2hyn-noh001.pdb')
     path2=path.join(test_folder, '2hyn-noh050.pdb')
     args=get_split_arguments('c5', path1, "out.txt", "--approx", "--use-sequence")
-    m = MoleculeFactory.from_file(**args)
+    m = MoleculeReader.from_file(**args)
 
 
 def test_index_error_with_pdb_use_sequence():
     #previously was getting an index error on molecule creation
     mol_file=path.join(test_folder, "model-endmdl-withids.pdb")
     args = get_split_arguments('c5', mol_file, "out.txt", "--approx", "--use-sequence")
-    m = MoleculeFactory.from_file(**args)
+    m = MoleculeReader.from_file(**args)
