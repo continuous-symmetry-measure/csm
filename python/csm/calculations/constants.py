@@ -9,3 +9,8 @@ CSM_THRESHOLD=0.0001
 global start_time
 
 start_time= datetime.datetime.now()
+
+class CalculationTimeoutError(TimeoutError):
+    def __init__(self, timeout_delta, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.timeout_delta=timeout_delta

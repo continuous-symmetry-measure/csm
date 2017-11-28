@@ -4,7 +4,7 @@ import datetime
 import numpy as np
 from csm.fast import PreCalcPIP, PermInProgress
 
-from csm.calculations.constants import start_time
+from csm.calculations.constants import start_time, CalculationTimeoutError
 
 __author__ = 'Devora'
 '''
@@ -442,7 +442,7 @@ class ConstraintPermuter:
         now = datetime.datetime.now()
         time_d = datetime.datetime.now() - start_time
         if time_d.total_seconds() > self.timeout:
-            raise TimeoutError
+            raise CalculationTimeoutError(time_d.total_seconds())
         return now
 
     def create_cycle(self, atom, pip):
@@ -571,6 +571,8 @@ class ConstraintPermuter:
         # undo the handling of len ones
         self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
 
+
+
 class TestDistancePermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_dict, timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, keep_structure=True)
@@ -580,14 +582,19 @@ class TestDistancePermuter(ConstraintPermuter):
         self.constraints=DistanceConstraints(molecule, distances_dict)
         #self.print_branches = True
         self._permute_start = datetime.datetime.now()
-        self._permute_timeout = 1000
+        self._permute_timeout = 100
+        #print("start time", start_time)
+
+    @property
+    def run_time(self):
+        now = datetime.datetime.now()
+        time_d = now - self._permute_start
+        return time_d.total_seconds()
 
     def check_timeout(self):
         # step zero: check if time out
-        now = super().check_timeout()
-        time_d = now - self._permute_start
-        if time_d.total_seconds() > self._permute_timeout:
-            raise TimeoutError
+        if self.run_time > self._permute_timeout:
+            raise CalculationTimeoutError(self.run_time)
 
     def permute(self):
         # step 1: create initial empty pip and qip
@@ -611,14 +618,21 @@ class DistanceConstraintPermuter(ConstraintPermuter):
         self.distances = distances_list
         #self.print_branches=True
         self._permute_start = datetime.datetime.now()
-        self._permute_timeout = 1000
+        self._permute_timeout = 100
+
+    @property
+    def run_time(self):
+        now = datetime.datetime.now()
+        time_d = now - self._permute_start
+        return time_d.total_seconds()
 
     def check_timeout(self):
         # step zero: check if time out
-        now = super().check_timeout()
+        #now = super().check_timeout()
+        now = datetime.datetime.now()
         time_d = now - self._permute_start
         if time_d.total_seconds() > self._permute_timeout:
-            raise TimeoutError
+            raise CalculationTimeoutError(time_d.total_seconds())
 
     def placement_generator(self, start_index):
         for distance_index in range(start_index, len(self.distances)):

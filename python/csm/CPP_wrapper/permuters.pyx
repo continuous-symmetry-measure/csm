@@ -4,7 +4,7 @@ import random
 
 import datetime
 import numpy as np
-from csm.calculations.constants import start_time
+from csm.calculations.constants import start_time, CalculationTimeoutError
 cimport numpy as np
 cimport cython
 import math
@@ -313,7 +313,7 @@ cdef class CythonPermuter:
             #check if we've timed out:
             time_d= datetime.datetime.now()-start_time
             if time_d.total_seconds()>self.timeout:
-                raise TimeoutError
+                raise CalculationTimeoutError(time_d.total_seconds())
             # Check if this can be a complete cycle
             if cycle_length in self._cycle_lengths:
                 # Yes it can, attempt to close it

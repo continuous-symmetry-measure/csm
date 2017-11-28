@@ -6,7 +6,7 @@ from csm.fast import approximate_perm_classic, munkres_wrapper
 from csm.fast import approximate_perm_hungarian as cython_hungarian
 from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
-from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD
+from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError
 from csm.calculations.permuters import DistanceConstraintPermuter, TestDistancePermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
@@ -20,7 +20,7 @@ class Approximator:
     All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
     '''
 
-    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None):
+    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None, timeout=100):
         self._op_type = op_type
         self._op_order = op_order
         self._molecule = molecule
@@ -29,6 +29,7 @@ class Approximator:
         self._log("There are", len(self._initial_directions), "initial directions to search for the best permutation")
         self._chain_permutations = [[0]]  # this is overwritten by precalculate when chains are used
         self.max_iterations=30
+        self.timeout=timeout
 
     def _for_inversion(self, best):
         # if inversion:
@@ -89,17 +90,18 @@ class Approximator:
             i = 0
             while True:
                 i += 1
+                self._log("\t\titeration", i, ":")
                 try:
                     perm = self._create_perm_from_dir(old_results.dir, chainperm)
                     interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                                                         keep_structure=False,
                                                         perm=perm)
-                except TimeoutError:
-                    self._log("\t\titeration ", i, " TIMEOUT!")
+                except CalculationTimeoutError as e:
+                    self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
                     break
 
-                self._log("\t\titeration", i, ":")
-                self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
+
+                #self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
                 if i > 1:
                     self._log("\t\t\tthere are",
                               len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
@@ -421,7 +423,7 @@ class ManyChainsApproximator(Approximator):
 
 class StructuredApproximator(Approximator):
     def _create_perm_from_dir(self, dir, chainperm="dontcare"):
-        return self.build_perm_and_state_version_list(self._op_type, self._op_order, self._molecule, dir)
+        return self.build_perm_and_state_version_dict(self._op_type, self._op_order, self._molecule, dir)
 
     def build_perm_and_state_version_list(self, op_type, op_order, molecule, dir):
         rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
@@ -438,8 +440,8 @@ class StructuredApproximator(Approximator):
 
         distances_list.sort(key=operator.itemgetter(1))
         permuter = DistanceConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list, timeout=30000)
-
         state = permuter.permute().__next__()
+        self._log("\t\t\t Permutation took ", permuter.run_time, "seconds to find")
         perm = state.perm
         return perm
 
@@ -458,7 +460,7 @@ class StructuredApproximator(Approximator):
                 distances_dict[index_a][index_b]=distance
 
         permuter = TestDistancePermuter(self._molecule, self._op_order, self._op_type, distances_dict, timeout=30000)
-
         state = permuter.permute().__next__()
+        self._log("\t\t\tit took ", permuter.run_time, "seconds to find the permutation")
         perm = state.perm
         return perm

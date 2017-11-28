@@ -4,6 +4,7 @@ import logging
 import sys
 import timeit
 
+from csm.calculations.constants import CalculationTimeoutError
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations import Approx, Trivial, Exact
 from csm.input_output.readers import read_perm
@@ -54,7 +55,7 @@ def run(args=[]):
             calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
         try:
             calc.calculate()
-        except TimeoutError:
+        except CalculationTimeoutError as e:
             print("Timed out")
             return
         result=calc.result
