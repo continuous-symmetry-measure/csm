@@ -26,7 +26,8 @@ class Approximator:
         self._molecule = molecule
         self._initial_directions = dir_chooser.dirs
         self._log = log_func
-        self._log("There are", len(self._initial_directions), "initial directions to search for the best permutation")
+        if len(self._initial_directions) >1:
+            self._log("There are", len(self._initial_directions), "initial directions to search for the best permutation")
         self._chain_permutations = [[0]]  # this is overwritten by precalculate when chains are used
         self.max_iterations=30
         self.timeout=timeout
