@@ -155,7 +155,7 @@ class DictionaryConstraints(ConstraintsBase):
         try:
             self.constraints[index].remove(constraint)
             self.push_undo('remove_constraint_from_index', (index, constraint))
-        except KeyError:
+        except ValueError:
             pass
 
     def remove_index(self, index):
@@ -275,17 +275,17 @@ class DistanceConstraints(DictionaryConstraints):
                 for index in params[0]:
                     def dict_lookup(ind):
                         return self.distances_dict[index][ind]
-                    self.constraints[index].add(constraint)
-                    self.constraints[index].sort(constraint, key=dict_lookup)
+                    self.constraints[index].append(constraint)
+                    self.constraints[index].sort(key=dict_lookup)
             elif instruction == 'remove_constraint_from_index':
                 if params[0] not in self.constraints:
                     raise ValueError("Can't find %d in constraints!" % params[0])
                 index=params[0]
                 constraint = self.constraints[index]
-                constraint.add(params[1])
+                constraint.append(params[1])
                 def dict_lookup(ind):
                     return self.distances_dict[index][ind]
-                self.constraints[index].sort(constraint, key=dict_lookup)
+                self.constraints[index].sort(key=dict_lookup)
                 # self.constraints[params[0]].add(params[1])
             elif instruction == 'remove_index':
                 self.constraints[params[0]] = params[1]
@@ -578,9 +578,10 @@ class TestDistancePermuter(ConstraintPermuter):
         super().__init__(molecule, op_order, op_type, keep_structure=True)
         if len(molecule)>10000:
             raise ValueError("Please don't use keep structure on molecules this big yet")
-        sys.setrecursionlimit(len(molecule))
+        if len(molecule)>100:
+            sys.setrecursionlimit(len(molecule))
         self.constraints=DistanceConstraints(molecule, distances_dict)
-        #self.print_branches = True
+        self.print_branches = True
         self._permute_start = datetime.datetime.now()
         self._permute_timeout = 100
         #print("start time", start_time)
