@@ -435,9 +435,7 @@ class StructuredApproximator(Approximator):
             for index_b, b in enumerate(rotated):
                 if index_b in molecule.atoms[index_a].equivalency:
                     distance = array_distance(a, b)
-                else:
-                    distance = MAXDOUBLE
-                distances_list.append(((index_a, index_b), distance))
+                    distances_list.append(((index_a, index_b), distance))
 
         distances_list.sort(key=operator.itemgetter(1))
         permuter = DistanceConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list, timeout=30000)
@@ -456,9 +454,7 @@ class StructuredApproximator(Approximator):
             for index_b, b in enumerate(rotated):
                 if index_b in molecule.atoms[index_a].equivalency:
                     distance = array_distance(a, b)
-                else:
-                    distance = MAXDOUBLE
-                distances_dict[index_a][index_b]=distance
+                    distances_dict[index_a][index_b]=distance
 
         permuter = TestDistancePermuter(self._molecule, self._op_order, self._op_type, distances_dict, timeout=30000)
         state = permuter.permute().__next__()

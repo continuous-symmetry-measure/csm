@@ -155,7 +155,7 @@ class DictionaryConstraints(ConstraintsBase):
         try:
             self.constraints[index].remove(constraint)
             self.push_undo('remove_constraint_from_index', (index, constraint))
-        except ValueError:
+        except (ValueError, KeyError):
             pass
 
     def remove_index(self, index):
@@ -166,6 +166,7 @@ class DictionaryConstraints(ConstraintsBase):
     def check(self):
         for key in self.constraints:
             if not self.constraints[key]:
+                #print("no constraints for", key)
                 return False
         return True
 
@@ -302,7 +303,8 @@ class DistanceConstraints(DictionaryConstraints):
         min_dist_key=None
 
         for key in self.constraints:
-            dist=self.constraints[key][0]
+            second_key=self.constraints[key][0]
+            dist=self.distances_dict[key][second_key]
             if dist<min_dist:
                 min_dist_key, min_dist= key, dist
 
@@ -615,9 +617,10 @@ class DistanceConstraintPermuter(ConstraintPermuter):
         super().__init__(molecule, op_order, op_type, True, timeout)
         if len(molecule)>10000:
             raise ValueError("Please don't use keep structure on molecules this big yet")
-        sys.setrecursionlimit(len(molecule))
+        if len(molecule)>100:
+            sys.setrecursionlimit(len(molecule))
         self.distances = distances_list
-        #self.print_branches=True
+        self.print_branches=True
         self._permute_start = datetime.datetime.now()
         self._permute_timeout = 100
 
@@ -640,6 +643,8 @@ class DistanceConstraintPermuter(ConstraintPermuter):
             (atom, destination), distance = self.distances[distance_index]
             if atom in self.constraints.constraints:
                 if destination in self.constraints[atom]:
+                    if self.print_branches:
+                        print("selected", atom, destination)
                     yield atom, destination, distance_index
         return -1, -1, -1  # bad perm
 
