@@ -146,7 +146,7 @@ class CSMResult:
         self.normalized_molecule_coords=np.array(self.molecule.Q)
 
         #denormalize
-        self.symmetric_structure = de_normalize_coords(self.normalized_symmetric_structure, self.molecule.norm_factor)
+        self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure), self.molecule.norm_factor)
         self.molecule.de_normalize()
 
         # run and save the formula test
