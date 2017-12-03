@@ -81,6 +81,8 @@ def _create_parser():
                              help="APPROX ONLY:Use outlier detection to improve guesses for initial directions in approx algorithm")
     approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
                              help="APPROX ONLY:Don't add orthogonal directions to calculated directions")
+    approx_args.add_argument('--fibonacci', action='store_true', default=False,
+                             help="APPROX ONLY: Use fibonacci sphere to generate 50 starting directions")
     approx_args.add_argument('--use-best-dir', action='store_true', default=False,
                              help='APPROX ONLY:Only use the best direction')
     approx_args.add_argument('--many-chains', action='store_true', default=False,
@@ -103,6 +105,8 @@ def _create_parser():
                         help='Writes all backtracking branches to the console')
     out_args.add_argument('--print-approx', action='store_true', default=False,
                         help='add some printouts to approx')
+    out_args.add_argument('--print-denorm', action='store_true', default=False,
+                        help='when printing the original molecule, print the denormalized coordinates')
 
     # defunct: no longer applied in code
     # parser.add_argument('--no-limit', action='store_true', default=False, help='Allows running program while ignoring computational complexity')
@@ -215,6 +219,8 @@ def _process_arguments(parse_res):
     if dictionary_args['calc_type'] != 'approx' and parse_res.use_best_dir:
         logger.warning("--use-best-dir applies only to approx calculation. --use-best-dir will be ignored")
 
+    dictionary_args["fibonacci"] = parse_res.fibonacci
+
     dir = parse_res.dir
     if dir:
         dictionary_args['dirs'] = [dir]
@@ -231,6 +237,7 @@ def _process_arguments(parse_res):
     dictionary_args['print_approx'] = parse_res.print_approx
     dictionary_args['print_perms'] = parse_res.output_perms
     dictionary_args['print_branches'] = parse_res.output_branches
+    dictionary_args['print_denorm'] = parse_res.print_denorm
     dictionary_args['format'] = parse_res.format
     dictionary_args['useformat'] = dictionary_args['format'] is not None
     if not dictionary_args['format']:
@@ -322,6 +329,8 @@ def _create_parser_2():
                              help='APPROX ONLY: Use the new chains algorithm for many chains. Will automatically apply use-chains')
     approx_args.add_argument('--greedy', action='store_true', default=False,
                              help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
+    approx_args.add_argument('--fibonacci', action='store_true', default=False,
+                             help='APPROX ONLY: use a fibonacci sphere to generate 50 starting directions')
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
     approx_args.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')

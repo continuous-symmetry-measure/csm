@@ -7,7 +7,8 @@ from csm.fast import approximate_perm_hungarian as cython_hungarian
 from csm.calculations.exact_calculations import exact_calculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError
-from csm.calculations.permuters import DistanceConstraintPermuter, TestDistancePermuter
+from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
+    ConstraintsSelectedByDistancePermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
 
@@ -438,7 +439,7 @@ class StructuredApproximator(Approximator):
                     distances_list.append(((index_a, index_b), distance))
 
         distances_list.sort(key=operator.itemgetter(1))
-        permuter = DistanceConstraintPermuter(self._molecule, self._op_order, self._op_type, distances_list, timeout=30000)
+        permuter = ContraintsSelectedFromDistanceListPermuter(self._molecule, self._op_order, self._op_type, distances_list, timeout=30000)
         state = permuter.permute().__next__()
         self._log("\t\t\t Permutation took ", permuter.run_time, "seconds to find")
         perm = state.perm
@@ -456,7 +457,8 @@ class StructuredApproximator(Approximator):
                     distance = array_distance(a, b)
                     distances_dict[index_a][index_b]=distance
 
-        permuter = TestDistancePermuter(self._molecule, self._op_order, self._op_type, distances_dict, timeout=30000)
+        permuter_class=ConstraintsOrderedByDistancePermuter #ConstraintsSelectedByDistancePermuter
+        permuter = permuter_class(self._molecule, self._op_order, self._op_type, distances_dict, perm_timeout=30000)
         state = permuter.permute().__next__()
         self._log("\t\t\tit took ", permuter.run_time, "seconds to find the permutation")
         perm = state.perm

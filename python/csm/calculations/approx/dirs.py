@@ -10,9 +10,11 @@ from csm.calculations.constants import MINDOUBLE
 MIN_GROUPS_FOR_OUTLIERS = 10
 
 class DirectionChooser:
-    def __init__(self, molecule, op_type, op_order, use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None):
+    def __init__(self, molecule, op_type, op_order, use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, fibonacci=False):
         if dirs:
             self._dirs = dirs
+        elif fibonacci:
+            self._dirs=self.fibonacci_sphere(50)
         else:
             self._op_type=op_type
             self._op_order=op_order
@@ -30,6 +32,29 @@ class DirectionChooser:
             initial_directions = self.find_symmetry_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
                                                           op_type)
         return initial_directions
+
+    def fibonacci_sphere(self, num_dirs, randomize=False):
+        # https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere/26127012#26127012
+        rnd = 1.
+        # if randomize:
+        #    rnd = random.random() * samples
+
+        dirs = []
+        offset = 2. / num_dirs
+        increment = math.pi * (3. - math.sqrt(5.));
+
+        for i in range(num_dirs):
+            y = ((i * offset) - 1) + (offset / 2);
+            r = math.sqrt(1 - pow(y, 2))
+
+            phi = ((i + rnd) % num_dirs) * increment
+
+            x = math.cos(phi) * r
+            z = math.sin(phi) * r
+
+            dirs.append([x, y, z])
+
+        return dirs
 
     @property
     def dirs(self):

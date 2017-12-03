@@ -19,7 +19,7 @@ class ApproxCalculation(Calculation):
     """
     Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
     """
-    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, keep_structure=False, timeout=100, *args, **kwargs):
+    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, keep_structure=False, timeout=100, fibonacci=False, *args, **kwargs):
         """
         Initializes the ApproxCalculation
         :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry
@@ -41,7 +41,7 @@ class ApproxCalculation(Calculation):
             self.approximator_cls = StructuredApproximator
 
         self.timeout=timeout
-        self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs)
+        self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs, fibonacci)
 
     def calculate(self):
         op_type=self.operation.type

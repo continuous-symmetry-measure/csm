@@ -236,7 +236,6 @@ class DictionaryConstraints(ConstraintsBase):
 
             instruction, params = self.pop_undo()
 
-
 class DistanceConstraints(DictionaryConstraints):
     def __init__(self, molecule, distances_dict):
         self.distances_dict = distances_dict
@@ -295,6 +294,7 @@ class DistanceConstraints(DictionaryConstraints):
 
             instruction, params = self.pop_undo()
 
+class DistanceConstraintsWithSelection(DistanceConstraints):
     def choose(self):
         min_length = 1e40
         min_key = None
@@ -320,7 +320,6 @@ class DistanceConstraints(DictionaryConstraints):
             else:
                 return min_dist_key, list(self.constraints[min_dist_key])
         return None, None
-
 
 
 class ConstraintPropagator:
@@ -418,8 +417,6 @@ class ConstraintPropagator:
         cycle_tail = index
         return cycle_head, cycle_tail, cycle_length, cycle
 
-
-print_branches = False
 
 
 class ConstraintPermuter:
@@ -575,17 +572,17 @@ class ConstraintPermuter:
 
 
 
-class TestDistancePermuter(ConstraintPermuter):
-    def __init__(self, molecule, op_order, op_type, distances_dict, timeout=300, *args, **kwargs):
+class ConstraintsOrderedByDistancePermuter(ConstraintPermuter):
+    def __init__(self, molecule, op_order, op_type, distances_dict, perm_timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, keep_structure=True)
         if len(molecule)>10000:
             raise ValueError("Please don't use keep structure on molecules this big yet")
         if len(molecule)>100:
             sys.setrecursionlimit(len(molecule))
         self.constraints=DistanceConstraints(molecule, distances_dict)
-        self.print_branches = True
+        #self.print_branches = True
         self._permute_start = datetime.datetime.now()
-        self._permute_timeout = 100
+        self._permute_timeout = perm_timeout
         #print("start time", start_time)
 
     @property
@@ -610,19 +607,24 @@ class TestDistancePermuter(ConstraintPermuter):
             self.count += 1
             yield pip.state
 
+class ConstraintsSelectedByDistancePermuter(ConstraintsOrderedByDistancePermuter):
+    def __init__(self, molecule, op_order, op_type, distances_dict, timeout=300, *args, **kwargs):
+        super().__init__(molecule, op_order, op_type, distances_dict, keep_structure=True)
+        self.constraints=DistanceConstraintsWithSelection(molecule, distances_dict)
+        #self.print_branches = True
 
 
-class DistanceConstraintPermuter(ConstraintPermuter):
-    def __init__(self, molecule, op_order, op_type, distances_list, timeout=300, *args, **kwargs):
-        super().__init__(molecule, op_order, op_type, True, timeout)
+class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
+    def __init__(self, molecule, op_order, op_type, distances_list, perm_timeout=300, *args, **kwargs):
+        super().__init__(molecule, op_order, op_type, keep_structure=True)
         if len(molecule)>10000:
-            raise ValueError("Please don't use keep structure on molecules this big yet")
+            raise ValueError("Please don't use approx keep structure on molecules this big yet")
         if len(molecule)>100:
             sys.setrecursionlimit(len(molecule))
         self.distances = distances_list
-        self.print_branches=True
+        #self.print_branches=True
         self._permute_start = datetime.datetime.now()
-        self._permute_timeout = 100
+        self._permute_timeout = perm_timeout
 
     @property
     def run_time(self):
