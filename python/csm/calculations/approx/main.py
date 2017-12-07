@@ -60,7 +60,9 @@ class ApproxCalculation(Calculation):
                     approximator._op_order = op_order
                     result = approximator.approximate()
                     if result.csm < best_result.csm:
-                        best_result = result._replace(op_type='SN', op_order=op_order)
+                        best_result = result
+                        best_result.op_type='SN'
+                        best_result.op_order=op_order
                     if best_result.csm < MINDOUBLE:
                         break
         else:
