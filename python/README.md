@@ -9,6 +9,7 @@ This Permuter sorts all the equivalence class placements by distance when rotate
 3. Added printouts explaining why we stopped iterating in --approx
 4. Some speed improvements to permuter
 5. internal code cleanup including bug fixes and fixes to outdated tests, upgrade to cython, etc
+6. Can print statistics about each direction in dircsm using flag --statistics
 
 Changes in version 0.17.2
 -------------------------
