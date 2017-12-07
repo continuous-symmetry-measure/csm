@@ -67,6 +67,7 @@ class ApproxCalculation(Calculation):
             approximator = self.approximator_cls(op_type, op_order, molecule, self.direction_chooser, self.log, self.timeout)
             best_result = approximator.approximate()
         # step three: process and return results
+        self.approximator=approximator
         self._csm_result= best_result
         return self.result
 

@@ -10,11 +10,11 @@ from csm.calculations.constants import MINDOUBLE
 MIN_GROUPS_FOR_OUTLIERS = 10
 
 class DirectionChooser:
-    def __init__(self, molecule, op_type, op_order, use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, fibonacci=False):
+    def __init__(self, molecule, op_type, op_order, use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, fibonacci=False, num_dirs=50):
         if dirs:
             self._dirs = dirs
         elif fibonacci:
-            self._dirs=self.fibonacci_sphere(50)
+            self._dirs=self.fibonacci_sphere(num_dirs)
         else:
             self._op_type=op_type
             self._op_order=op_order

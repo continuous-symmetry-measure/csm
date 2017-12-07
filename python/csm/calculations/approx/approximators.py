@@ -32,6 +32,8 @@ class Approximator:
         self._chain_permutations = [[0]]  # this is overwritten by precalculate when chains are used
         self.max_iterations=30
         self.timeout=timeout
+        self._direction_cache=[]
+        self._csm_cache=[]
 
     def _for_inversion(self, best):
         # if inversion:
@@ -67,6 +69,7 @@ class Approximator:
         for dir in self._initial_directions:
             # calculate on the basis of that permutation as detailed in the function
             result = self._approximate_from_initial_dir(dir)
+            self._csm_cache.append(result.csm)
             # 5. repeat from 1, using a different starting direction (assuming more than one)
             if result.csm < best.csm:
                 best = result
@@ -81,6 +84,7 @@ class Approximator:
     def _approximate_from_initial_dir(self, dir):
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
         self._log("Calculating for initial direction: ", dir)
+        self._direction_cache.append([dir])
 
         for chainperm in self._chain_permutations:
             if len(self._chain_permutations) > 1:
@@ -93,6 +97,7 @@ class Approximator:
             while True:
                 i += 1
                 self._log("\t\titeration", i, ":")
+
                 try:
                     perm = self._create_perm_from_dir(old_results.dir, chainperm)
                     interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
@@ -132,7 +137,7 @@ class Approximator:
                     self._log("\t\tStopping because CSM did not improve (worse or equal)")
                     break
 
-
+                self._direction_cache[-1].append(interim_results.dir)
                 old_results = interim_results
 
             if best_for_chain_perm.csm < best.csm:

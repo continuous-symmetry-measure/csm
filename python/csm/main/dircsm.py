@@ -1,12 +1,15 @@
 import sys
 import os
 import random
+
+import datetime
 import numpy as np
 from math import radians, cos, sin, pi
 from argparse import RawTextHelpFormatter
 import math
 import random
 from csm import __version__
+from csm.calculations import Approx
 from csm.calculations.approx.dirs import dirs_orthogonal
 from csm.calculations.basic_calculations import check_perm_cycles, CSMState
 from csm.calculations.constants import MAXDOUBLE
@@ -68,6 +71,8 @@ def direction_parser():
                         help='File address of file with list of dirs for use-input')
     parser.add_argument('--seed', type=str,
                         help='If you\'d like to reproduce a run of random-k with a given seed')
+    parser.add_argument('--statistics', type=str,
+                        help='Print initial direction, final direction, number of iterations, and CSM to file')
     return parser
 
 
@@ -191,10 +196,23 @@ def run_dir(dir, csm_args, molecule):
     csm_args['molecule'] = molecule.copy()
     csm_args['dirs'] = [dir]
     try:
-        result = approx_calculation(**csm_args)
-        PrintClass.my_print("\tFor initial direction", dir,
-                            " the CSM value found was %s", format_CSM(result.csm),
-                            " with a final dir of", result.dir)
+        if csm_args['print_approx']:
+            class PrintApprox(Approx):
+                def log(self, *args, **kwargs):
+                    print(*args)
+
+            calc = PrintApprox(**csm_args)
+        else:
+            calc = Approx(**csm_args)
+        try:
+            result=calc.calculate()
+
+            PrintClass.my_print("\tFor initial direction", dir,
+                                " the CSM value found was %s", format_CSM(result.csm),
+                                " with a final dir of", result.dir)
+        except Exception as e:
+            print(e)
+
     except CSMValueError as e:
         result = e.CSMState
         PrintClass.my_print("\t***FAILED TO FIND CSM*** For initial direction", dir,
@@ -218,7 +236,7 @@ def run_dir(dir, csm_args, molecule):
                 "cycle" if count == 1 else "cycles",
                 cycle_len))
 
-    return result
+    return result, calc.approximator._initial_directions, calc.approximator._csm_cache, calc.approximator._direction_cache
 
 
 def handle_args(args):
@@ -238,6 +256,7 @@ def handle_args(args):
     seed = parsed_args.seed
     if seed:
         seed = int(seed)
+    stat_file=parsed_args.statistics
 
     dir_output = parsed_args.dir_output
     PrintClass.set(dir_output)
@@ -246,35 +265,72 @@ def handle_args(args):
     args = [x for x in args if x not in parsed_args.direction_choice]
     csm_args = get_split_arguments(args)
     molecule = MoleculeReader.from_file(**csm_args)
-    return direction_choices, dirs_file, num_dirs, seed, csm_args, molecule
+    return (direction_choices, dirs_file, num_dirs, seed, stat_file), csm_args, molecule
+
+
+def stat_file_writer(stat_file, dir, csm, dir_arrays, runtime):
+    middle_dirs=dir_arrays[0]
+    len_iterations=len(middle_dirs)
+    final_dir=middle_dirs[-1]
+    stat_file.write(str(dir)+
+                    "\t" + str(final_dir)
+                    +"\t" + str(runtime)
+                    +"\t" + str(len_iterations)
+                    +"\t" + str(csm)
+                    +"\n")
+
+
+relevant_arguments=["--remove-hy", "--ignore-sym", "--use-mass", "--babel-bond",
+                    "--use-sequence", "--use-chains", "--read-fragments",
+                    "--sn-max", "--keep-structure", "--greedy"]
 
 
 def run(args=[]):
     print("CSM version %s" % __version__)
-    direction_choices, dirs_file, num_dirs, seed, csm_args, molecule = handle_args(args)
+    dir_args, csm_args, molecule = handle_args(args)
+    direction_choices, dirs_file, num_dirs, seed, stat_file_name = dir_args
 
-    best_result = CSMState(csm=MAXDOUBLE)
-    best_initial_dir = None
-    result_csms = []
-    result_dirs = []
+    if stat_file_name:
+        stat_file=open(stat_file_name, 'w')
 
-    for choice in direction_choices:
-        dirs = choose_directions(choice, molecule, csm_args, dirs_file, num_dirs, seed)
+    try:
+        best_result = CSMState(csm=MAXDOUBLE)
+        best_initial_dir = None
+        result_csms = []
+        result_dirs = []
 
-        PrintClass.my_print("Using direction choice", choice, "there are", len(dirs), "initial directions",
+        for choice in direction_choices:
+            stat_file.write("#Method description: " + choice + "("+str(num_dirs)+") " + str([arg for arg in args if arg in relevant_arguments]))
+            stat_file.write("\n#Initial dir"
+                            "\tFinal dir"
+                            "\tRuntime"
+                            "\t No Iterations"
+                            "\t CSM"
+                            "\n")
+
+            dirs = choose_directions(choice, molecule, csm_args, dirs_file, num_dirs, seed)
+
+            PrintClass.my_print("Using direction choice", choice, "there are", len(dirs), "initial directions",
+                                print_flag=True)
+            for dir in dirs:
+                start_time=datetime.datetime.now()
+                result, dirs, csms, dir_arrays = run_dir(dir, csm_args, molecule)
+                fin_time = datetime.datetime.now()
+                time_d= fin_time - start_time
+                if stat_file:
+                    stat_file_writer(stat_file, dir, result.csm, dir_arrays, time_d.total_seconds())
+                if result.csm < best_result.csm:
+                    best_result = result
+                    best_initial_dir = dir
+                result_csms.append(result.csm)
+                result_dirs.append(result.dir)
+
+        PrintClass.my_print("The best csm:", format_CSM(best_result.csm), "\nwas found using the initial dir", best_initial_dir,
                             print_flag=True)
-        for dir in dirs:
-            result = run_dir(dir, csm_args, molecule)
-            if result.csm < best_result.csm:
-                best_result = result
-                best_initial_dir = dir
-            result_csms.append(result.csm)
-            result_dirs.append(result.dir)
-
-    PrintClass.my_print("The best csm:", format_CSM(best_result.csm), "\nwas found using the initial dir", best_initial_dir,
-                        print_flag=True)
-    print_results(best_result, csm_args)
-    return result_csms, result_dirs
+        print_results(best_result, csm_args)
+        return result_csms, result_dirs
+    finally:
+        stat_file.close()
 
 
 def run_no_return_dirs(args=[]):
