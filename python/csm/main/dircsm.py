@@ -268,11 +268,12 @@ def handle_args(args):
     return (direction_choices, dirs_file, num_dirs, seed, stat_file), csm_args, molecule
 
 
-def stat_file_writer(stat_file, dir, csm, dir_arrays, runtime):
+def stat_file_writer(stat_file, index, dir, csm, dir_arrays, runtime):
     middle_dirs=dir_arrays[0]
     len_iterations=len(middle_dirs)
     final_dir=middle_dirs[-1]
-    stat_file.write(str(dir)+
+    stat_file.write(str(index)+
+                    "\t" + str(dir)+
                     "\t" + str(final_dir)
                     +"\t" + str(runtime)
                     +"\t" + str(len_iterations)
@@ -301,7 +302,8 @@ def run(args=[]):
 
         for choice in direction_choices:
             stat_file.write("#Method description: " + choice + "("+str(num_dirs)+") " + str([arg for arg in args if arg in relevant_arguments]))
-            stat_file.write("\n#Initial dir"
+            stat_file.write("\nIndex"
+                            "\n#Initial dir"
                             "\tFinal dir"
                             "\tRuntime"
                             "\t No Iterations"
@@ -312,13 +314,13 @@ def run(args=[]):
 
             PrintClass.my_print("Using direction choice", choice, "there are", len(dirs), "initial directions",
                                 print_flag=True)
-            for dir in dirs:
+            for index, dir in enumerate(dirs):
                 start_time=datetime.datetime.now()
                 result, dirs, csms, dir_arrays = run_dir(dir, csm_args, molecule)
                 fin_time = datetime.datetime.now()
                 time_d= fin_time - start_time
                 if stat_file:
-                    stat_file_writer(stat_file, dir, result.csm, dir_arrays, time_d.total_seconds())
+                    stat_file_writer(stat_file, index, dir, result.csm, dir_arrays, time_d.total_seconds())
                 if result.csm < best_result.csm:
                     best_result = result
                     best_initial_dir = dir
