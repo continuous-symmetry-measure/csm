@@ -1,5 +1,8 @@
 The Python CSM Package
 ======================
+Changes in version 0.17.4
+-------------------------
+Bug fixes
 
 Changes in version 0.17.3
 -------------------------
