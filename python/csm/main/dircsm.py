@@ -41,7 +41,7 @@ choice_dict = {
 def direction_parser():
     parser = _create_parser()
     parser.formatter_class = RawTextHelpFormatter
-    parser.usage = "\ndirection_test direction_choice dir_output type input_molecule output_file [additional arguments]"
+    parser.usage = "\ntest_direction direction_choice dir_output type input_molecule output_file [additional arguments]"
 
     dir_argument = parser.add_argument('dir_output', default='dir-output.txt', help='Output file for directions')
     parser._actions.pop()
