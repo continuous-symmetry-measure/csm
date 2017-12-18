@@ -240,6 +240,15 @@ def run_dir(dir, csm_args, molecule):
 
 
 def handle_args(args):
+    def clean_args(args):
+        args = [x for x in args if x not in parsed_args.direction_choice]
+        for arg_with_params in ['--seed', '--dirs-file', '--num-dirs', "--statistics"]:
+            index= args.index(arg_with_params)
+            if index>-1:
+                args.pop(index)
+                args.pop(index)
+        return args
+
     if not args:
         args = sys.argv[1:]
     if '--approx' not in args:
@@ -257,13 +266,14 @@ def handle_args(args):
     if seed:
         seed = int(seed)
     stat_file=parsed_args.statistics
+    args=clean_args(args)
 
     dir_output = parsed_args.dir_output
     PrintClass.set(dir_output)
     args.remove(dir_output)
 
-    args = [x for x in args if x not in parsed_args.direction_choice]
     csm_args = get_split_arguments(args)
+
     molecule = MoleculeReader.from_file(**csm_args)
     return (direction_choices, dirs_file, num_dirs, seed, stat_file), csm_args, molecule
 

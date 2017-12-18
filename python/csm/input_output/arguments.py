@@ -260,7 +260,8 @@ def get_split_arguments(args):
     :return:
     """
     parser = _create_parser()
-    parsed_args, leftovers = parser.parse_known_args(args)
+    parsed_args=parser.parse_args(args)
+    #parsed_args, leftovers = parser.parse_known_args(args)
     dictionary_args = _process_arguments(parsed_args)
     return dictionary_args
 
