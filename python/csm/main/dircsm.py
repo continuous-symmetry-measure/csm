@@ -243,10 +243,12 @@ def handle_args(args):
     def clean_args(args):
         args = [x for x in args if x not in parsed_args.direction_choice]
         for arg_with_params in ['--seed', '--dirs-file', '--num-dirs', "--statistics"]:
-            index= args.index(arg_with_params)
-            if index>-1:
+            try:
+                index= args.index(arg_with_params)
                 args.pop(index)
                 args.pop(index)
+            except ValueError:
+                pass
         return args
 
     if not args:
@@ -301,6 +303,7 @@ def run(args=[]):
     dir_args, csm_args, molecule = handle_args(args)
     direction_choices, dirs_file, num_dirs, seed, stat_file_name = dir_args
 
+    stat_file=None
     if stat_file_name:
         stat_file=open(stat_file_name, 'w')
 
@@ -311,8 +314,9 @@ def run(args=[]):
         result_dirs = []
 
         for choice in direction_choices:
-            stat_file.write("#Method description: " + choice + "("+str(num_dirs)+") " + str([arg for arg in args if arg in relevant_arguments]))
-            stat_file.write("\nIndex"
+            if stat_file:
+                stat_file.write("#Method description: " + choice + "("+str(num_dirs)+") " + str([arg for arg in args if arg in relevant_arguments]))
+                stat_file.write("\nIndex"
                             "\n#Initial dir"
                             "\tFinal dir"
                             "\tRuntime"
@@ -342,7 +346,8 @@ def run(args=[]):
         print_results(best_result, csm_args)
         return result_csms, result_dirs
     finally:
-        stat_file.close()
+        if stat_file:
+            stat_file.close()
 
 
 def run_no_return_dirs(args=[]):
