@@ -99,7 +99,7 @@ class ExactCalculation(Calculation):
         traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
         if perm:
-            permuter = SinglePermPermuter(np.array(perm), molecule, op_order, op_type)
+            permuter = SinglePermPermuter(np.array(perm, dtype="long"), molecule, op_order, op_type)
         else:
             permuter = ConstraintPermuter(molecule, op_order, op_type, keep_structure, timeout=timeout)
             if no_constraint:
