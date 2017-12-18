@@ -359,6 +359,13 @@ class ManyChainsApproximator(Approximator):
     '''
 
     def _create_perm_from_dir(self, dir, chainperm="dont care"):
+
+        chain_len=len(self._molecule.chains[0])
+        for chain in self._molecule.chains:
+            test_len=len(self._molecule.chains[chain])
+            if test_len!=chain_len:
+                raise ValueError("--many-chains currently expects all chains to be of same length")
+
         rotation_mat = create_rotation_matrix(1, self._op_type, self._op_order, dir)
         perm = [-1] * len(self._molecule)
         # improved use chains algorithm:
