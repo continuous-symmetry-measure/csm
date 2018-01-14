@@ -5,7 +5,7 @@ import random
 import datetime
 import numpy as np
 from math import radians, cos, sin, pi
-from argparse import RawTextHelpFormatter
+from argparse import RawTextHelpFormatter, ArgumentParser
 import math
 import random
 from csm import __version__
@@ -15,10 +15,11 @@ from csm.calculations.basic_calculations import check_perm_cycles, CSMState
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import exact_calculation, CSMValueError
 from csm.calculations.approx.main import approx_calculation
-from csm.input_output.arguments import _create_parser, get_split_arguments
+from csm.input_output.arguments import get_split_arguments
 from csm.input_output.formatters import format_CSM
 from csm.input_output.writers import print_results
 from csm.molecule.molecule import Molecule, MoleculeFactory, MoleculeReader
+import math as m
 
 __author__ = 'Devora Witty'
 
@@ -39,13 +40,10 @@ choice_dict = {
 
 
 def direction_parser():
-    parser = _create_parser()
+    parser = ArgumentParser()
     parser.formatter_class = RawTextHelpFormatter
     parser.usage = "\ntest_direction direction_choice dir_output type input_molecule output_file [additional arguments]"
 
-    dir_argument = parser.add_argument('dir_output', default='dir-output.txt', help='Output file for directions')
-    parser._actions.pop()
-    parser._actions.insert(1, dir_argument)
 
     dir_argument = parser.add_argument('direction_choice',
                                        help='Types of direction choice available:\n'
@@ -62,8 +60,7 @@ def direction_parser():
                                        # nargs='+',
                                        metavar="direction_choice"
                                        )
-    parser._actions.pop()
-    parser._actions.insert(1, dir_argument)
+    dir_argument = parser.add_argument('dir_output', default='dir-output.txt', help='Output file for directions')
 
     parser.add_argument('--num-dirs', type=int, default=20, help='Number of random directions to try for random-k, '
                                                                  'or number of points on sphere for fibonacci sphere')
@@ -73,8 +70,17 @@ def direction_parser():
                         help='If you\'d like to reproduce a run of random-k with a given seed')
     parser.add_argument('--statistics', type=str,
                         help='Print initial direction, final direction, number of iterations, and CSM to file')
+    parser.add_argument('--polar', action='store_true', default=False,
+                        help="Print polar coordinates instead of cartesian coordinates")
     return parser
 
+def cart2sph(x,y,z):
+    #https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
+    XsqPlusYsq = x**2 + y**2
+    r = m.sqrt(XsqPlusYsq + z**2)               # r
+    elev = m.atan2(z,m.sqrt(XsqPlusYsq))     # theta
+    az = m.atan2(y,x)                           # phi
+    return r, elev, az
 
 class PrintClass:
     file = ""
@@ -84,13 +90,13 @@ class PrintClass:
         PrintClass.file = filename
 
     @staticmethod
-    def my_print(*strings, print_flag=False):
+    def my_print(*strings, print_flag=False, sep=' '):
         if print_flag:
-            print(*strings)
+            print(*strings, sep=sep)
         with open(PrintClass.file, 'a') as file:
             for string in strings:
                 file.write(str(string))
-                file.write(" ")
+                file.write(sep)
             file.write("\n")
 
 
@@ -192,7 +198,7 @@ def choose_directions(direction_choice, molecule, csm_args, dirs_file, num_dirs,
     return dirs
 
 
-def run_dir(dir, csm_args, molecule):
+def run_dir(index, dir, csm_args, molecule):
     csm_args['molecule'] = molecule.copy()
     csm_args['dirs'] = [dir]
     try:
@@ -206,10 +212,8 @@ def run_dir(dir, csm_args, molecule):
             calc = Approx(**csm_args)
         try:
             result=calc.calculate()
-
-            PrintClass.my_print("\tFor initial direction", dir,
-                                " the CSM value found was %s", format_CSM(result.csm),
-                                " with a final dir of", result.dir)
+            "index\tCSM_f\tX_i\tY_i\tZ_i\tX_f\tY_f\tZ_f\n"
+            PrintClass.my_print(index, format_CSM(result.csm), *list(dir), *result.dir, sep="\t")
         except Exception as e:
             print(e)
 
@@ -259,7 +263,7 @@ def handle_args(args):
         raise ValueError("The argument --dir cannot be used in conjunction with test_directions")
 
     parser = direction_parser()
-    parsed_args = parser.parse_args(args)
+    parsed_args, args = parser.parse_known_args(args)
 
     direction_choices = [choice_dict[x] for x in parsed_args.direction_choice]
     dirs_file = parsed_args.dirs_file
@@ -268,22 +272,25 @@ def handle_args(args):
     if seed:
         seed = int(seed)
     stat_file=parsed_args.statistics
+    polar=parsed_args.polar
     args=clean_args(args)
 
     dir_output = parsed_args.dir_output
     PrintClass.set(dir_output)
-    args.remove(dir_output)
 
     csm_args = get_split_arguments(args)
 
     molecule = MoleculeReader.from_file(**csm_args)
-    return (direction_choices, dirs_file, num_dirs, seed, stat_file), csm_args, molecule
+    return (direction_choices, dirs_file, num_dirs, seed, stat_file, polar), csm_args, molecule
 
 
-def stat_file_writer(stat_file, index, dir, csm, dir_arrays, runtime):
+def stat_file_writer(stat_file, index, dir, csm, dir_arrays, runtime, polar):
     middle_dirs=dir_arrays[0]
     len_iterations=len(middle_dirs)
     final_dir=middle_dirs[-1]
+    if polar:
+        dir=cart2sph(*dir)
+        final_dir=cart2sph(*final_dir)
     stat_file.write(str(index)+
                     "\t" + str(dir)+
                     "\t" + str(final_dir)
@@ -301,7 +308,7 @@ relevant_arguments=["--remove-hy", "--ignore-sym", "--use-mass", "--babel-bond",
 def run(args=[]):
     print("CSM version %s" % __version__)
     dir_args, csm_args, molecule = handle_args(args)
-    direction_choices, dirs_file, num_dirs, seed, stat_file_name = dir_args
+    direction_choices, dirs_file, num_dirs, seed, stat_file_name, polar = dir_args
 
     stat_file=None
     if stat_file_name:
@@ -328,13 +335,14 @@ def run(args=[]):
 
             PrintClass.my_print("Using direction choice", choice, "there are", len(dirs), "initial directions",
                                 print_flag=True)
+            PrintClass.my_print("index\tCSM_f\tX_i\tY_i\tZ_i\tX_f\tY_f\tZ_f\n")
             for index, dir in enumerate(dirs):
                 start_time=datetime.datetime.now()
-                result, dirs, csms, dir_arrays = run_dir(dir, csm_args, molecule)
+                result, dirs, csms, dir_arrays = run_dir(index, dir, csm_args, molecule)
                 fin_time = datetime.datetime.now()
                 time_d= fin_time - start_time
                 if stat_file:
-                    stat_file_writer(stat_file, index, dir, result.csm, dir_arrays, time_d.total_seconds())
+                    stat_file_writer(stat_file, index, dir, result.csm, dir_arrays, time_d.total_seconds(), polar)
                 if result.csm < best_result.csm:
                     best_result = result
                     best_initial_dir = dir
