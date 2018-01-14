@@ -2,7 +2,6 @@ from csm.main.csm_run import run as csmrun
 import sys
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords
 from argparse import ArgumentParser
-from csm.input_output.arguments import _create_parser
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.calculations.exact_calculations import exact_calculation
 import numpy as np
@@ -11,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def get_normalization_type(args):
-    parser = _create_parser()
+    parser = ArgumentParser()
     parser.formatter_class=RawTextHelpFormatter
     parser.usage = "\nnorm_csm normalization type input_molecule output_file [additional arguments]"
     norm_argument= parser.add_argument('normalization', default='0',
@@ -28,20 +27,15 @@ def get_normalization_type(args):
                         choices=['0', '1', '2', '3', '4', '5', '6'],
                         nargs='+', metavar="normalization"
                         )
-    parser._actions.pop()
-    parser._actions.insert(1, norm_argument)
     parser.add_argument('--output-norm', action='store', default=None,
                         help='Write debug information from normalization factors to a file')
-    parsed_args = parser.parse_args(args)
+    parsed_args, args = parser.parse_known_args(args)
     normalizations = parsed_args.normalization
     norm_file=parsed_args.output_norm
-    if norm_file: #remove the norm file arguments
-        args.remove('--output-norm')
-        args.remove(norm_file)
 
     #TODO: add check that by perm is only if keep-structure or use-chains is applied
     if not set(normalizations).isdisjoint(('1', '2', '3', '4')):
-        if not parsed_args.use_chains:
+        if "--use-chains" not in args:
             raise ValueError("You selected a normalization type (1,2,3, or 4) that expects fragments, but did not select --use-chains")
     #TODO: add check that anything using fragments is either a pdb with chains, or includes a fragment file
     return normalizations, norm_file
