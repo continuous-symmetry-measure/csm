@@ -10,7 +10,8 @@ class CSMState(namedtuple('CSMState', ['molecule',
                                    'csm',
                                    'perm',
                                    'dir',
-                                   'perm_count'])):
+                                   'perm_count',
+                                    'num_invalid'])):
     pass
 
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)

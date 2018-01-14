@@ -5,7 +5,7 @@ import math
 from csm.fast import approximate_perm_classic, munkres_wrapper
 from csm.fast import approximate_perm_hungarian as cython_hungarian
 from csm.calculations.exact_calculations import exact_calculation
-from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState
+from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, CSMState, check_perm_cycles
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
     ConstraintsSelectedByDistancePermuter
@@ -59,8 +59,9 @@ class Approximator:
         # the basic steps of direction-based approximation are as follows:
         # 0. precalculation of any variables that only need to be calculated once
         self._precalculate()
-        best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
-
+        best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
+        self.best_num_invalid = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
+                                    csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
         # inversion is direction independent
         if self._op_type == 'CI' or (self._op_type == 'SN' and self._op_order == 2):
             return self._for_inversion(best)
@@ -75,6 +76,13 @@ class Approximator:
                 best = result
                 if best.csm < CSM_THRESHOLD:
                     break
+        falsecount, num_invalid, cycle_counts = check_perm_cycles(best.perm, self._op_order, self._op_type)
+        if self.best_num_invalid.num_invalid< num_invalid:
+            falsecount, num_invalid, cycle_counts = check_perm_cycles(self.best_num_invalid.perm, self._op_order, self._op_type)
+            print("(A result with better preservation of integrity of cycle lengths was found")
+            print("Direction: ", self.best_num_invalid.dir, " yields a CSM of", self.best_num_invalid.csm, "\nIt has",
+                  falsecount, "invalid cycles.", (1 - (self.best_num_invalid.num_invalid/len(self._molecule)))*100, "% of the molecule's atoms are in legal cycles)")
+            print("--------")
         # 6. return the best result
         return best
 
@@ -103,10 +111,15 @@ class Approximator:
                     interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                                                         keep_structure=False,
                                                         perm=perm)
+                    falsecount, num_invalid, cycle_counts=check_perm_cycles(perm, self._op_order, self._op_type)
                 except CalculationTimeoutError as e:
                     self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
                     break
 
+                if num_invalid < self.best_num_invalid.num_invalid or\
+                        (num_invalid==self.best_num_invalid.num_invalid and interim_results.csm < self.best_num_invalid.csm):
+                    self.best_num_invalid=interim_results
+                    self.best_num_invalid.num_invalid=num_invalid
 
                 #self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
                 if i > 1:
