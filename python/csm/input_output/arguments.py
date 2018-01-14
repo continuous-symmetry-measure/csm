@@ -81,7 +81,7 @@ def _create_parser():
                              help="APPROX ONLY:Use outlier detection to improve guesses for initial directions in approx algorithm")
     approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
                              help="APPROX ONLY:Don't add orthogonal directions to calculated directions")
-    approx_args.add_argument('--fibonacci', action='store_true', default=False,
+    approx_args.add_argument('--fibonacci', type=int,
                              help="APPROX ONLY: Use fibonacci sphere to generate 50 starting directions")
     approx_args.add_argument('--use-best-dir', action='store_true', default=False,
                              help='APPROX ONLY:Only use the best direction')
@@ -219,7 +219,9 @@ def _process_arguments(parse_res):
     if dictionary_args['calc_type'] != 'approx' and parse_res.use_best_dir:
         logger.warning("--use-best-dir applies only to approx calculation. --use-best-dir will be ignored")
 
-    dictionary_args["fibonacci"] = parse_res.fibonacci
+    if parse_res.fibonacci is not None:
+        dictionary_args["fibonacci"] = True
+        dictionary_args["num_dirs"] = parse_res.fibonacci
 
     dir = parse_res.dir
     if dir:
