@@ -1,5 +1,11 @@
 The Python CSM Package
 ======================
+Changes in version 0.17.5
+-------------------------
+* fibonacci flag can receive  number of directions
+* changes to printout from dircsm
+* added saving of higher cycle maintenance to approx
+
 Changes in version 0.17.4
 -------------------------
 Bug fixes
