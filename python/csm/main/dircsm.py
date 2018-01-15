@@ -11,7 +11,7 @@ import random
 from csm import __version__
 from csm.calculations import Approx
 from csm.calculations.approx.dirs import dirs_orthogonal
-from csm.calculations.basic_calculations import check_perm_cycles
+from csm.calculations.basic_calculations import check_perm_cycles, cart2sph
 from csm.calculations.data_classes import CSMState
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import exact_calculation, CSMValueError
@@ -20,7 +20,6 @@ from csm.input_output.arguments import get_split_arguments
 from csm.input_output.formatters import format_CSM
 from csm.input_output.writers import print_results
 from csm.molecule.molecule import Molecule, MoleculeFactory, MoleculeReader
-import math as m
 
 __author__ = 'Devora Witty'
 
@@ -69,23 +68,9 @@ def direction_parser():
                         help='File address of file with list of dirs for use-input')
     parser.add_argument('--seed', type=str,
                         help='If you\'d like to reproduce a run of random-k with a given seed')
-    parser.add_argument('--statistics', type=str,
-                        help='Print initial direction, final direction, number of iterations, and CSM to file')
-    parser.add_argument('--polar', action='store_true', default=False,
-                        help="Print polar coordinates instead of cartesian coordinates")
     return parser
 
-def cart2sph(x,y,z):
-    def normalize(x, y, z):
-        norm= x*x + y*y + z*z
-        return z/norm, y/norm, z/norm
-    #https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
-    x, y, z = normalize(x, y, z)
-    XsqPlusYsq = x**2 + y**2
-    r = m.sqrt(XsqPlusYsq + z**2)               # r
-    elev = m.atan2(z,m.sqrt(XsqPlusYsq))     # theta
-    az = m.atan2(y,x)                           # phi
-    return r, elev, az
+
 
 class PrintClass:
     file = ""

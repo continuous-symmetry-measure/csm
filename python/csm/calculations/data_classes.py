@@ -124,7 +124,7 @@ class CSMResult:
                     to algorithm result
     chain_perm: the chain permutation (by index-- names can be accessed with chain_perm_string)
     """
-    def __init__(self, state, calc_local=False):
+    def __init__(self, state):
         self.__CSMState=state
         self.molecule=state.molecule.copy()
         self.op_order=state.op_order
@@ -207,24 +207,24 @@ class CSMResult:
 
         return symmetric
 
-    def compute_local_csm(self, molecule, perm, dir, op_type, op_order):
-        size = len(molecule)
+    def compute_local_csm(self):
+        size = len(self.molecule)
         cur_perm = [i for i in range(size)]
         local_csm = np.zeros(size)
-        m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
+        m_pos = np.asarray([np.asarray(atom.pos) for atom in self.molecule.atoms])
 
-        for i in range(op_order):
-            rot = create_rotation_matrix(i, op_type, op_order, dir)
+        for i in range(self.op_order):
+            rot = create_rotation_matrix(i, self.op_type, self.op_order, dir)
 
             # set permutation
-            cur_perm = [perm[cur_perm[j]] for j in range(size)]
+            cur_perm = [self.perm[cur_perm[j]] for j in range(size)]
 
             # apply rotation to each atoms
             rotated = rot @ m_pos[cur_perm[i]]
             difference = rotated - m_pos[i]
             square = np.square(difference)
             sum = np.sum(square)
-            local_csm[i] = sum * (100.0 / (2 * op_order))
+            local_csm[i] = sum * (100.0 / (2 * self.op_order))
         self.local_csm=local_csm
         return local_csm
 
@@ -263,5 +263,7 @@ def process_results(results, calc_local=False):
         """
         retained for legacy purposes
         """
-        r = CSMResult(results, calc_local)
+        r = CSMResult(results)
+        if calc_local:
+            r.compute_local_csm()
         return r

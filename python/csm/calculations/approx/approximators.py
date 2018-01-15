@@ -1,5 +1,8 @@
 import operator
 
+import datetime
+from collections import OrderedDict
+
 import numpy as np
 import math
 from csm.fast import approximate_perm_classic, munkres_wrapper
@@ -12,6 +15,61 @@ from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermute
     ConstraintsSelectedByDistancePermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
+
+
+class ApproxStatistics:
+    class DirectionStatistics:
+        # per direction, we want to store:
+        # 1. every direction passed through
+        # 2. every csm passed through, and percent cycle preservation
+        # 3. runtime
+        def __init__(self, dir, index):
+            self.start_dir=dir
+            self.index=index
+            self.dirs=[]
+            self.csms=[]
+            self.cycle_stats=[]
+        def append(self, result, falsecount, num_invalid, cycle_counts):
+            self.dirs.append(result.dir)
+            self.csms.append(result.csm)
+            self.cycle_stats.append((falsecount, num_invalid, cycle_counts))
+        def stop_reason(self, reason):
+            self.stop_reason=reason
+        def start_clock(self):
+            self.__start_time=datetime.datetime.now()
+        def end_clock(self):
+            now=datetime.datetime.now()
+            time_d = now-self.__start_time
+            self.run_time=time_d.total_seconds()
+        def __repr__(self):
+            return str({
+                "dirs":self.dirs,
+                "csms":self.csms
+            })
+
+        @property
+        def end_dir(self):
+            return self.dirs[-1]
+        @property
+        def start_csm(self):
+            return self.csms[0]
+        @property
+        def end_csm(self):
+            return self.csms[-1]
+        @property
+        def num_iterations(self):
+            return len(self.dirs)
+
+    def __init__(self, initial_directions):
+        self.directions_dict=OrderedDict()
+        for index, dir in enumerate(initial_directions):
+            self.directions_dict[tuple(dir)]=ApproxStatistics.DirectionStatistics(dir, index)
+    def __getitem__(self, key):
+        return self.directions_dict[tuple(key)]
+    def __iter__(self):
+        return self.directions_dict.__iter__()
+    def __str__(self):
+        return str(self.directions_dict)
 
 
 class Approximator:
@@ -33,8 +91,7 @@ class Approximator:
         self._chain_permutations = [[0]]  # this is overwritten by precalculate when chains are used
         self.max_iterations=30
         self.timeout=timeout
-        self._direction_cache=[]
-        self._csm_cache=[]
+        self.statistics=ApproxStatistics(self._initial_directions)
 
     def _for_inversion(self, best):
         # if inversion:
@@ -70,8 +127,9 @@ class Approximator:
         # 1. choose an initial direction
         for dir in self._initial_directions:
             # calculate on the basis of that permutation as detailed in the function
+            self.statistics[dir].start_clock()
             result = self._approximate_from_initial_dir(dir)
-            self._csm_cache.append(result.csm)
+            self.statistics[dir].end_clock()
             # 5. repeat from 1, using a different starting direction (assuming more than one)
             if result.csm < best.csm:
                 best = result
@@ -85,6 +143,7 @@ class Approximator:
                   falsecount, "invalid cycles.", (1 - (self.best_num_invalid.num_invalid/len(self._molecule)))*100, "% of the molecule's atoms are in legal cycles)")
             print("--------")
         # 6. return the best result
+        best.statistics=self.statistics
         return best
 
     def _precalculate(self):
@@ -93,7 +152,6 @@ class Approximator:
     def _approximate_from_initial_dir(self, dir):
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
         self._log("Calculating for initial direction: ", dir)
-        self._direction_cache.append([dir])
 
         for chainperm in self._chain_permutations:
             if len(self._chain_permutations) > 1:
@@ -121,7 +179,7 @@ class Approximator:
                         (num_invalid==self.best_num_invalid.num_invalid and interim_results.csm < self.best_num_invalid.csm):
                     self.best_num_invalid=interim_results
                     self.best_num_invalid.num_invalid=num_invalid
-
+                self.statistics[dir].append(interim_results, falsecount, num_invalid, cycle_counts)
                 #self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
                 if i > 1:
                     self._log("\t\t\tthere are",
@@ -137,21 +195,24 @@ class Approximator:
 
                 # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
                 if i >= self.max_iterations:
+                    self.statistics[dir].stop_reason("Max iterations")
                     self._log("\t\tStopping after %d iterations" % i)
                     break
                 # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
                 #    self._log("\t\tStopping due to CSM ratio")
                 if best_for_chain_perm.csm < CSM_THRESHOLD:
+                    self.statistics[dir].stop_reason("CSM below threshold")
                     self._log("\t\tStopping because the best CSM is good enough")
                     break
                 if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
+                    self.statistics[dir].stop_reason("No change in direction")
                     self._log("\t\tStopping because the direction has not changed")
                     break
                 if interim_results.csm >= old_results.csm:  # We found a worse CSM
+                    self.statistics[dir].stop_reason("No improvement in CSM")
                     self._log("\t\tStopping because CSM did not improve (worse or equal)")
                     break
 
-                self._direction_cache[-1].append(interim_results.dir)
                 old_results = interim_results
 
             if best_for_chain_perm.csm < best.csm:

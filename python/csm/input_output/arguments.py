@@ -91,6 +91,10 @@ def _create_parser():
                              help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
+    approx_args.add_argument('--statistics', type=str,
+                        help='Print statistics about each direction to a file')
+    approx_args.add_argument('--polar', action='store_true', default=False,
+                        help="Print polar coordinates instead of cartesian coordinates")
 
     # output formatting and printing options
     out_args = parser.add_argument_group("Output Arguments")
@@ -250,6 +254,8 @@ def _process_arguments(parse_res):
     dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
     dictionary_args['perms_csv_name'] = parse_res.output_perms
+    dictionary_args['polar']=parse_res.polar
+    dictionary_args['stat_file_name']=parse_res.statistics
 
     permuters.print_branches = parse_res.output_branches
 

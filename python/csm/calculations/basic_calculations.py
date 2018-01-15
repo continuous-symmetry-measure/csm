@@ -1,10 +1,21 @@
 import numpy as np
+import math as m
 
 
 
 
-
-
+def cart2sph(x,y,z, normalize=True):
+    def do_normalize(x, y, z):
+        norm= x*x + y*y + z*z
+        return x/norm, y/norm, z/norm
+    #https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
+    if normalize:
+        x, y, z = do_normalize(x, y, z)
+    XsqPlusYsq = x**2 + y**2
+    r = m.sqrt(XsqPlusYsq + z**2)               # r
+    elev = m.atan2(z,m.sqrt(XsqPlusYsq))     # theta
+    az = m.atan2(y,x)                           # phi
+    return r, elev, az
 
 
 
