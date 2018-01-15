@@ -1,8 +1,9 @@
 The Python CSM Package
 ======================
-Changes in version 0.17.6
+Changes in version 0.18.0
 -------------------------
 * switch to openbabel 2.4.1
+* add flag --selective to approx
 * add support for --statistics and --polar flag to the main csm program
 * bug fix in normcsm
 
