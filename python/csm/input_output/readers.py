@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 def check_perm_validity(mol, perm, **kwargs):
-    falsecount, num_invalid, cycle_counts= check_perm_cycles(perm, kwargs['op_order'], kwargs['op_type'])
+    falsecount, num_invalid, cycle_counts, bad_indices= check_perm_cycles(perm, kwargs['op_order'], kwargs['op_type'])
     if falsecount>0:
         logger.warning("Permutation does not maintain cycle structure")
     if not check_perm_equivalence(mol, perm):

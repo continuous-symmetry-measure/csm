@@ -243,16 +243,15 @@ class ResultWriter:
             print(
                 "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
-        falsecount, num_invalid, cycle_counts = self.result.perm_cycle_info
         if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
             print(
                 "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
-                    falsecount, "cycle" if falsecount == 1 else "cycles",
-                    100 * (len(self.result.molecule) - num_invalid) / len(self.result.molecule)))
-            for cycle_len in sorted(cycle_counts):
+                    self.result.falsecount, "cycle" if self.result.falsecount == 1 else "cycles",
+                    100 * (len(self.result.molecule) - self.result.num_invalid) / len(self.result.molecule)))
+            for cycle_len in sorted(self.result.cycle_counts):
                 valid = cycle_len == 1 or cycle_len == self.result.op_order or (
                     cycle_len == 2 and self.result.op_type == 'SN')
-                count = cycle_counts[cycle_len]
+                count = self.result.cycle_counts[cycle_len]
                 print("There %s %d %s %s of length %d" % (
                     "is" if count == 1 else "are", count, "invalid" if not valid else "",
                     "cycle" if count == 1 else "cycles",

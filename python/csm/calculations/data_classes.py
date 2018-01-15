@@ -156,7 +156,7 @@ class CSMResult:
         #get the chain perm
         self.get_chain_perm()
 
-        self.perm_cycle_info=check_perm_cycles(self.perm, self.op_order, self.op_type)
+        self.falsecount, self.num_invalid, self.cycle_counts, self.bad_indices=check_perm_cycles(self.perm, self.op_order, self.op_type)
 
     def _formula_test(self):
         Q=self.molecule.Q

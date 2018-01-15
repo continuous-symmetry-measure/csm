@@ -61,16 +61,20 @@ def check_perm_cycles(perm, op_order, op_type):
 
     cycle_counts={}
 
+    indices_in_bad_cycles=[]
+
 
     for i, index in enumerate(perm):
         if checked[i]:
             continue
         checked[i]=True
-        cycle_len = 1
+        cycle=[index]
         while not checked[index]:
             checked[index] = True
             index = perm[index]
-            cycle_len += 1
+            cycle.append(index)
+
+        cycle_len=len(cycle)
 
         if cycle_len in cycle_counts:
             cycle_counts[cycle_len]+=1
@@ -82,9 +86,10 @@ def check_perm_cycles(perm, op_order, op_type):
         else:
             num_invalid += cycle_len
             falsecount+=1
+            indices_in_bad_cycles+=cycle
 
 
-    return falsecount, num_invalid, cycle_counts
+    return falsecount, num_invalid, cycle_counts, indices_in_bad_cycles
 
 
 

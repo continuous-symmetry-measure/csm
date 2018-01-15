@@ -32,7 +32,7 @@ class ApproxStatistics:
         def append(self, result):
             self.dirs.append(result.dir)
             self.csms.append(result.csm)
-            self.cycle_stats.append(result.perm_cycle_info)
+            self.cycle_stats.append(result.num_invalid)
         def stop_reason(self, reason):
             self.stop_reason=reason
         def start_clock(self):
@@ -142,7 +142,7 @@ class Approximator:
                 if best.csm < CSM_THRESHOLD:
                     break
         if self.selective:
-            self.selective=False #so we don't fail the if inside approximate from initial
+            self.selective=False #so we don't fail the if inside approximate_from_initial
             sorted_csms=sorted(self.statistics.directions_arr)
             for item in sorted_csms:
                 dir=item.start_dir
@@ -156,9 +156,8 @@ class Approximator:
                     if best.csm < CSM_THRESHOLD:
                         break
 
-        falsecount, num_invalid, cycle_counts = best.perm_cycle_info
-        if self.best_num_invalid.num_invalid< num_invalid:
-            falsecount, num_invalid, cycle_counts = self.best_num_invalid.perm_cycle_info
+        if self.best_num_invalid.num_invalid< best.num_invalid:
+            falsecount=self.best_num_invalid.falsecount
             print("(A result with better preservation of integrity of cycle lengths was found")
             print("Direction: ", self.best_num_invalid.dir, " yields a CSM of", self.best_num_invalid.csm, "\nIt has",
                   falsecount, "invalid cycles.", (1 - (self.best_num_invalid.num_invalid/len(self._molecule)))*100, "% of the molecule's atoms are in legal cycles)")
@@ -191,15 +190,13 @@ class Approximator:
                     interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                                                         keep_structure=False,
                                                         perm=perm)
-                    falsecount, num_invalid, cycle_counts=interim_results.perm_cycle_info
                 except CalculationTimeoutError as e:
                     self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
                     break
 
-                if num_invalid < self.best_num_invalid.num_invalid or\
-                        (num_invalid==self.best_num_invalid.num_invalid and interim_results.csm < self.best_num_invalid.csm):
+                if interim_results.num_invalid < self.best_num_invalid.num_invalid or\
+                        (interim_results.num_invalid==self.best_num_invalid.num_invalid and interim_results.csm < self.best_num_invalid.csm):
                     self.best_num_invalid=interim_results
-                    self.best_num_invalid.num_invalid=num_invalid
                 self.statistics[dir].append(interim_results)
                 #self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
                 if i > 1:
@@ -275,7 +272,9 @@ class HungarianApproximator(ChainPermsApproximator):
     '''
 
     def _create_perm_from_dir(self, dir, chainperm):
-        return self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
+        perm= self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
+        perm= self.cookie_dough(perm)
+        return perm
 
     class DistanceMatrix:
 
@@ -446,6 +445,10 @@ class HungarianApproximator(ChainPermsApproximator):
                 perm = self.hungarian_perm_builder(op_type, op_order, current_atom_indices, distances, perm)
                 # (4. either continue to next group or finish)
         # print(perm)
+        return perm
+
+    def cookie_dough(self, perm):
+        falsecount, num_invalid, cycle_counts, indices_in_bad_cycles = check_perm_cycles(perm, self._op_order, self._op_type)
         return perm
 
 
