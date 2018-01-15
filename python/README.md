@@ -1,5 +1,11 @@
 The Python CSM Package
 ======================
+Changes in version 0.17.6
+-------------------------
+* switch to openbabel 2.4.1
+* add support for --statistics and --polar flag to the main csm program
+* bug fix in normcsm
+
 Changes in version 0.17.5
 -------------------------
 * fibonacci flag can receive  number of directions
