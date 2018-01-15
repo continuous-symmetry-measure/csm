@@ -29,10 +29,10 @@ class ApproxStatistics:
             self.dirs=[]
             self.csms=[]
             self.cycle_stats=[]
-        def append(self, result, falsecount, num_invalid, cycle_counts):
+        def append(self, result):
             self.dirs.append(result.dir)
             self.csms.append(result.csm)
-            self.cycle_stats.append((falsecount, num_invalid, cycle_counts))
+            self.cycle_stats.append(result.perm_cycle_info)
         def stop_reason(self, reason):
             self.stop_reason=reason
         def start_clock(self):
@@ -135,9 +135,9 @@ class Approximator:
                 best = result
                 if best.csm < CSM_THRESHOLD:
                     break
-        falsecount, num_invalid, cycle_counts = check_perm_cycles(best.perm, self._op_order, self._op_type)
+        falsecount, num_invalid, cycle_counts = best.perm_cycle_info
         if self.best_num_invalid.num_invalid< num_invalid:
-            falsecount, num_invalid, cycle_counts = check_perm_cycles(self.best_num_invalid.perm, self._op_order, self._op_type)
+            falsecount, num_invalid, cycle_counts = self.best_num_invalid.perm_cycle_info
             print("(A result with better preservation of integrity of cycle lengths was found")
             print("Direction: ", self.best_num_invalid.dir, " yields a CSM of", self.best_num_invalid.csm, "\nIt has",
                   falsecount, "invalid cycles.", (1 - (self.best_num_invalid.num_invalid/len(self._molecule)))*100, "% of the molecule's atoms are in legal cycles)")
@@ -170,7 +170,7 @@ class Approximator:
                     interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
                                                         keep_structure=False,
                                                         perm=perm)
-                    falsecount, num_invalid, cycle_counts=check_perm_cycles(perm, self._op_order, self._op_type)
+                    falsecount, num_invalid, cycle_counts=interim_results.perm_cycle_info
                 except CalculationTimeoutError as e:
                     self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
                     break
@@ -179,7 +179,7 @@ class Approximator:
                         (num_invalid==self.best_num_invalid.num_invalid and interim_results.csm < self.best_num_invalid.csm):
                     self.best_num_invalid=interim_results
                     self.best_num_invalid.num_invalid=num_invalid
-                self.statistics[dir].append(interim_results, falsecount, num_invalid, cycle_counts)
+                self.statistics[dir].append(interim_results)
                 #self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
                 if i > 1:
                     self._log("\t\t\tthere are",

@@ -228,8 +228,7 @@ def run_dir(index, dir, csm_args, molecule):
                             " the CSM value found was", format_CSM(result.csm),
                             "with a final dir of", result.dir)
 
-    falsecount, num_invalid, cycle_counts = check_perm_cycles(result.perm, result.op_order,
-                                                              result.op_type)
+    falsecount, num_invalid, cycle_counts = result.perm_cycle_info
 
     if False:
         PrintClass.my_print(

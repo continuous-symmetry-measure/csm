@@ -1,6 +1,6 @@
 import numpy as np
 
-from csm.calculations.basic_calculations import create_rotation_matrix
+from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles
 from csm.calculations.constants import MINDOUBLE
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
 from collections import namedtuple
@@ -155,6 +155,8 @@ class CSMResult:
 
         #get the chain perm
         self.get_chain_perm()
+
+        self.perm_cycle_info=check_perm_cycles(self.perm, self.op_order, self.op_type)
 
     def _formula_test(self):
         Q=self.molecule.Q

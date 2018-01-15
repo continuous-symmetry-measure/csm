@@ -91,6 +91,8 @@ def _create_parser():
                              help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
+    approx_args.add_argument('--selective', type=int, default=10,
+                        help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
     approx_args.add_argument('--statistics', type=str,
                         help='Print statistics about each direction to a file')
     approx_args.add_argument('--polar', action='store_true', default=False,
@@ -226,6 +228,12 @@ def _process_arguments(parse_res):
     if parse_res.fibonacci is not None:
         dictionary_args["fibonacci"] = True
         dictionary_args["num_dirs"] = parse_res.fibonacci
+
+    if parse_res.selective is not None:
+        if parse_res.fibonacci is None:
+            raise ValueError("For now --selective must be used with --fibonacci")
+        dictionary_args["selective"] = True
+        dictionary_args["num_selected"] = parse_res.selective
 
     dir = parse_res.dir
     if dir:

@@ -243,8 +243,7 @@ class ResultWriter:
             print(
                 "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
-        falsecount, num_invalid, cycle_counts = check_perm_cycles(self.result.perm, self.result.op_order,
-                                                                  self.result.op_type)
+        falsecount, num_invalid, cycle_counts = self.result.perm_cycle_info
         if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
             print(
                 "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
