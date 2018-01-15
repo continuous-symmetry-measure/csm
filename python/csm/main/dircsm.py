@@ -11,7 +11,8 @@ import random
 from csm import __version__
 from csm.calculations import Approx
 from csm.calculations.approx.dirs import dirs_orthogonal
-from csm.calculations.basic_calculations import check_perm_cycles, CSMState
+from csm.calculations.basic_calculations import check_perm_cycles
+from csm.calculations.data_classes import CSMState
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import exact_calculation, CSMValueError
 from csm.calculations.approx.main import approx_calculation
@@ -75,7 +76,11 @@ def direction_parser():
     return parser
 
 def cart2sph(x,y,z):
+    def normalize(x, y, z):
+        norm= x*x + y*y + z*z
+        return z/norm, y/norm, z/norm
     #https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
+    x, y, z = normalize(x, y, z)
     XsqPlusYsq = x**2 + y**2
     r = m.sqrt(XsqPlusYsq + z**2)               # r
     elev = m.atan2(z,m.sqrt(XsqPlusYsq))     # theta

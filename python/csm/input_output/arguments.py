@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 import logging
 
 from csm.calculations import permuters
-from csm.calculations.basic_calculations import Operation
+from csm.calculations.data_classes import Operation
 
 logger = logging.getLogger(__name__)
 import sys

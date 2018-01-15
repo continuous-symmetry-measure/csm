@@ -1,5 +1,5 @@
 from csm.fast import CythonPermuter
-from csm.calculations.basic_calculations import CSMState, process_results, Operation, Calculation
+from csm.calculations.data_classes import CSMState, process_results, Operation, Calculation
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.permuters import ConstraintPermuter

@@ -4,7 +4,7 @@ import itertools
 import math
 
 import numpy as np
-from csm.calculations.basic_calculations import process_results, CSMState, Operation, Calculation
+from csm.calculations.data_classes import process_results, CSMState, Operation, Calculation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE, start_time
 from csm.fast import calc_ref_plane
 

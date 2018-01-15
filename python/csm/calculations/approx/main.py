@@ -10,7 +10,7 @@ import sys
 from csm.calculations.approx.approximators import HungarianApproximator, GreedyApproximator, ManyChainsApproximator, \
     StructuredApproximator
 from csm.calculations.approx.dirs import DirectionChooser
-from csm.calculations.basic_calculations import process_results, Operation, Calculation
+from csm.calculations.data_classes import process_results, Operation, Calculation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.input_output.readers import check_perm_validity
 
