@@ -2,6 +2,7 @@ from csm.main.csm_run import run as csmrun
 import sys
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords
 from argparse import ArgumentParser
+from csm.input_output.arguments import _create_parser
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.calculations.exact_calculations import exact_calculation
 import numpy as np
@@ -10,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 def get_normalization_type(args):
-    parser = ArgumentParser()
+    parser = _create_parser()
     parser.formatter_class=RawTextHelpFormatter
     parser.usage = "\nnorm_csm normalization type input_molecule output_file [additional arguments]"
     norm_argument= parser.add_argument('normalization', default='0',
@@ -27,15 +28,20 @@ def get_normalization_type(args):
                         choices=['0', '1', '2', '3', '4', '5', '6'],
                         nargs='+', metavar="normalization"
                         )
+    parser._actions.pop()
+    parser._actions.insert(1, norm_argument)
     parser.add_argument('--output-norm', action='store', default=None,
                         help='Write debug information from normalization factors to a file')
-    parsed_args, args = parser.parse_known_args(args)
+    parsed_args = parser.parse_args(args)
     normalizations = parsed_args.normalization
     norm_file=parsed_args.output_norm
+    if norm_file: #remove the norm file arguments
+        args.remove('--output-norm')
+        args.remove(norm_file)
 
     #TODO: add check that by perm is only if keep-structure or use-chains is applied
     if not set(normalizations).isdisjoint(('1', '2', '3', '4')):
-        if "--use-chains" not in args:
+        if not parsed_args.use_chains:
             raise ValueError("You selected a normalization type (1,2,3, or 4) that expects fragments, but did not select --use-chains")
     #TODO: add check that anything using fragments is either a pdb with chains, or includes a fragment file
     return normalizations, norm_file
@@ -121,6 +127,7 @@ def normalize_csm(norm_type, result, file):
     :return: norm_factor, csm
     '''
     original_csm = result.csm
+    result.molecule.create_Q() #make sure Q is up to date
     molecule=result.molecule
     original_norm = molecule.norm_factor ** 2
     #coords = result.normalized_molecule_coords
@@ -137,7 +144,7 @@ def normalize_csm(norm_type, result, file):
         print_numdenom(file, original_csm, norm)
         return norm*original_norm, original_csm/norm
     if norm_type == '2':    #2 normalization according to symmetry of fragments, with existing perm
-        coords = [atom.pos for atom in result.molecule.atoms]
+        coords = result.molecule.Q
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #create a dummy molecule made up of atoms located at center of each mass
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
@@ -155,7 +162,7 @@ def normalize_csm(norm_type, result, file):
         return norm, original_csm*original_norm/norm
 
     if norm_type == '3':    #3 normalization according to symmetry of fragments, withOUT existing perm
-        coords = [atom.pos for atom in result.molecule.atoms]
+        coords = result.molecule.Q
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         #create a dummy molecule made up of atoms located at center of each mass
         coordinates_array=[fragment_centers[chain] for chain in molecule.chains]
@@ -172,7 +179,7 @@ def normalize_csm(norm_type, result, file):
         return norm, original_csm*original_norm/norm
 
     if norm_type == '4':    #4 normalization according to averages of approximation to symmetry of fragments
-        coords = [atom.pos for atom in result.molecule.atoms]
+        coords = result.molecule.Q
         symm = result.symmetric_structure
         #find center of mass of each fragment in the symmetric structure
         fragment_centers= get_fragment_centers(molecule.chains, symm, file)
@@ -185,7 +192,7 @@ def normalize_csm(norm_type, result, file):
         #atom factor validity can be tested by:
         #  multiplying normalized_coords and normalized_symm by x
         #  and verifying that the returned csm is also mutiplied by x
-        coords = [atom.pos for atom in result.molecule.atoms]
+        coords = result.molecule.Q
         symm = result.symmetric_structure
         numerator = 0
         for i in range(len(coords)):
@@ -197,7 +204,7 @@ def normalize_csm(norm_type, result, file):
 
     if norm_type == '6': #6 Linear normalization
         #similar to standard csm but no squaring in numerator/denominator
-        coords = [atom.pos for atom in result.molecule.atoms]
+        coords = result.molecule.Q
         symm = result.symmetric_structure
         numerator = norm = 0
         for i in range(len(coords)):
@@ -252,7 +259,7 @@ def run(args=[]):
                 normalization_results[norm_type]=(norm_factor, final_csm)
                 print("Csm normalized with", normalization_dict[norm_type], "("+ norm_type+ ")", "is:", final_csm)
                 print("Normalization factor is:", norm_factor)
-            except Exception as e:
+            except IOError as e:
                 print("FAILED to normalize csm with",  normalization_dict[norm_type], "("+ norm_type+ ")")
                 print("Cause:", str(e))
         return normalization_results
