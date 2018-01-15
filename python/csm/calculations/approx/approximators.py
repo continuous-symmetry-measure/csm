@@ -59,11 +59,15 @@ class ApproxStatistics:
         @property
         def num_iterations(self):
             return len(self.dirs)
+        def __lt__(self, other):
+            return self.end_csm < other.end_csm
 
     def __init__(self, initial_directions):
         self.directions_dict=OrderedDict()
+        self.directions_arr=[]
         for index, dir in enumerate(initial_directions):
             self.directions_dict[tuple(dir)]=ApproxStatistics.DirectionStatistics(dir, index)
+            self.directions_arr.append(self.directions_dict[tuple(dir)])
     def __getitem__(self, key):
         return self.directions_dict[tuple(key)]
     def __iter__(self):
@@ -80,7 +84,7 @@ class Approximator:
     All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
     '''
 
-    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None, timeout=100):
+    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None, timeout=100, selective=True, num_selected=10):
         self._op_type = op_type
         self._op_order = op_order
         self._molecule = molecule
@@ -92,6 +96,8 @@ class Approximator:
         self.max_iterations=30
         self.timeout=timeout
         self.statistics=ApproxStatistics(self._initial_directions)
+        self.selective=selective
+        self.num_selected=num_selected
 
     def _for_inversion(self, best):
         # if inversion:
@@ -135,6 +141,21 @@ class Approximator:
                 best = result
                 if best.csm < CSM_THRESHOLD:
                     break
+        if self.selective:
+            self.selective=False #so we don't fail the if inside approximate from initial
+            sorted_csms=sorted(self.statistics.directions_arr)
+            for item in sorted_csms:
+                dir=item.start_dir
+                # calculate on the basis of that permutation as detailed in the function
+                self.statistics[dir].start_clock()
+                result = self._approximate_from_initial_dir(dir)
+                self.statistics[dir].end_clock()
+                # 5. repeat from 1, using a different starting direction (assuming more than one)
+                if result.csm < best.csm:
+                    best = result
+                    if best.csm < CSM_THRESHOLD:
+                        break
+
         falsecount, num_invalid, cycle_counts = best.perm_cycle_info
         if self.best_num_invalid.num_invalid< num_invalid:
             falsecount, num_invalid, cycle_counts = self.best_num_invalid.perm_cycle_info
@@ -214,6 +235,8 @@ class Approximator:
                     break
 
                 old_results = interim_results
+                if i>0 and self.selective:
+                    break
 
             if best_for_chain_perm.csm < best.csm:
                 best = best_for_chain_perm
