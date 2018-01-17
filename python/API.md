@@ -7,14 +7,14 @@ A basic run of CSM would be as follows:
 `Molecule`
 2. There are three calculation classes: 
 `csm.calculations.Exact`, `csm.calculations.Trivial`, and `csm.calculations.Approx`.
-Each has its own relevant arguments. All of them have the function calculate(). 
+Each has its own relevant arguments. All of them have the function calculate().
 The result can be accessed via the property `result`.
 In addition, certain statistics about the calculation will be available. Right now
 the properties `dead_ends`, `perm_count`, and `num_branches` are available from Exact.
-3. Additional information can be obtained from the CSMResult class that is returned with the property
+3. Additional information can be obtained from the `CSMResult` class that is returned with the property
 `result`. For example, it is possible to call `compute_local_csm` and obtain the local CSM per atom
 in the molecule
-4. The result can be passed to a ResultWriter class, eg FileWriter
+4. The result can be passed to a `ResultWriter` class, eg `FileWriter`
 
 A simple example:
 
@@ -39,26 +39,26 @@ A static class that creates instances of Molecule from files or strings.
 
 ###Methods:
 
-####from_string:
+####`from_string(...)`:
 
 A static method that returns a Molecule instance read from a string
 
 `from_string(string, format, initialize=True,
               use_chains=False, babel_bond=False,
              remove_hy=False, ignore_symm=False, use_mass=False):`
-                    
+
         :param string: the string to create the molecule from
         :param format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
         :param initialize: boolean, default True, when True equivalence classes and chains are calculated for the molecule
-        :param use_chains: boolean, default False, when True chains are read from the string 
+        :param use_chains: boolean, default False, when True chains are read from the string
         :param babel_bond: boolean, default False, when True OpenBabel will attempt to guess connectivity information
         :param remove_hy: boolean, default False, when True hydrogen atoms will be removed
-        :param ignore_symm: boolean, default False, when True all atom symbols will be "X" instead of elements 
+        :param ignore_symm: boolean, default False, when True all atom symbols will be "X" instead of elements
                             (this affects equivalence class calculation)
         :param use_mass: boolean, default False, when True atomic mass will be used, when False all atoms have a mass of 1
         :return: an instance of class Molecule
 
-####from_file:
+####`from_file(...)`:
 
 A static method that returns a Molecule instance read from a file
 
@@ -68,52 +68,52 @@ A static method that returns a Molecule instance read from a file
                   read_fragments=False, use_sequence=False,
                   keep_structure=False,
                   *args, **kwargs)`
-                  
+
 ```
         :param in_file_name: the name of the file to read the molecule from
         :param format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
         :param initialize: boolean, default True, when True equivalence classes and chains are calculated for the molecule
-        :param use_chains: boolean, default False, when True chains are read from the string 
+        :param use_chains: boolean, default False, when True chains are read from the string
         :param babel_bond: boolean, default False, when True OpenBabel will attempt to guess connectivity information
         :param remove_hy: boolean, default False, when True hydrogen atoms will be removed
-        :param ignore_symm: boolean, default False, when True all atom symbols will be "X" instead of elements 
+        :param ignore_symm: boolean, default False, when True all atom symbols will be "X" instead of elements
                             (this affects equivalence class calculation)
         :param use_mass: boolean, default False, when True atomic mass will be used, when False all atoms have a mass of 1
-        :param read_fragments: boolean, default False, when True, multiple molecules in one file will be treated 
+        :param read_fragments: boolean, default False, when True, multiple molecules in one file will be treated
                                 as "chains" of one composite molecule
-        :param use_sequence: boolean, default False, for pdb files only-- uses pdb sequence information to establish 
+        :param use_sequence: boolean, default False, for pdb files only-- uses pdb sequence information to establish
                                 equivalence (overwrites default equivalence)
-        :param keep_structure: boolean, default False. If keep-structure is specified and molecule has no bond information, 
+        :param keep_structure: boolean, default False. If keep-structure is specified and molecule has no bond information,
                                 the peogram will raise an error and exit
-        :return: an instance of class Molecule 
+        :return: an instance of class Molecule
 ```
 
 ##The Molecule Class
 
 
 Represents a molecule for CSM calculation.
-    
+
 ###Methods:
 
-####print_equivalence_class_summary(display_chains=False)
+####`print_equivalence_class_summary(display_chains=False)`
 
 A method created for backwards compatibility. Initialization statistics regarding
-equivalence classes that were previously printed during 
+equivalence classes that were previously printed during
 initialization, can be printed using this function.
 
-It receives one argument, `display_chains`. When true, 
+It receives one argument, `display_chains`. When true,
 statistics on the molecule's chains will also be printed.
 
-####to_json()
+####`to_json()`
 
-returns a dictionary of the Molecule's field values, can be saved to a file and read from, 
+returns a dictionary of the Molecule's field values, can be saved to a file and read from,
 using `from_json`
 
-####from_json(json)
+####`from_json(json)`
 
 a static method, will return a Molecule with fields initialized
-based on the values within a json dictionary, presumably created using 
-to_json. 
+based on the values within a json dictionary, presumably created using
+to_json.
 
 ###Properties:
 
@@ -128,16 +128,16 @@ to_json.
 
 This class is passed to all the calculation classes.
 
-It is possible to replace this class wth a NamedTuple. The only requirement for the object being passed is it
+It is possible to replace this class with a NamedTuple. The only requirement for the object being passed is it
 must have a field `type` and it must have a field `order`
 
 ###Methods
 
-#### __init__(op, sn_max=8)
+#### `__init__(op, sn_max=8)`
 
 initalized with a case_insensitive op string, eg "C2", "c2", "s8", "S8", "CH", "ch", "CI", "cI", "Ci", "ci"
 
-if sn_max is specified and the op is CH (or Ch, cH, ch), op order will be set to sn_max. 
+if sn_max is specified and the op is CH (or Ch, cH, ch), op order will be set to sn_max.
 
 When not specified, the default value is 8.
 
@@ -147,11 +147,11 @@ When not CH, it is ignored regardless.
 
 ExactCalculation, ApproxCalculation, and TrivialCalculation all inherit from the base Calculation class.
 
-All calculations expect to receive an operation and a molecule (and optionally additional arguments) when initializing. 
+All calculations expect to receive an operation and a molecule (and optionally additional arguments) when initializing.
 
 All calculations have a function `calculate()` which performs the operation (most call it from their __init__ func)
 
-All calculations have a property `result` which gives the CSMResult from the calculate() function 
+All calculations have a property `result` which gives the CSMResult from the calculate() function
 (is also generally returned directly by calls to that function )
 
 ##The ExactCalculation Class
