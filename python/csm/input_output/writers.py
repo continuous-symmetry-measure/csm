@@ -267,9 +267,14 @@ class ResultWriter:
 
 class StatisticWriter:
     def __init__(self, result, stat_file_name, polar):
-        self.statistics=result.statistics
-        self.file_name=stat_file_name
-        self.polar=polar
+        try:
+            self.statistics=result.statistics
+        except:
+            self.statistics=None
+        self.file_name = stat_file_name
+        self.polar = polar
+
+
     def write(self):
         if self.file_name:
             if self.statistics:

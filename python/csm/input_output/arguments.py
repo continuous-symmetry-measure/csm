@@ -91,7 +91,7 @@ def _create_parser():
                              help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
-    approx_args.add_argument('--selective', type=int, default=10,
+    approx_args.add_argument('--selective', type=int,
                         help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
     approx_args.add_argument('--statistics', type=str,
                         help='Print statistics about each direction to a file')
