@@ -15,7 +15,7 @@ from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermute
     ConstraintsSelectedByDistancePermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.fast import CythonPermuter
-
+from csm.input_output.formatters import _print as print
 
 class ApproxStatistics:
     class DirectionStatistics:

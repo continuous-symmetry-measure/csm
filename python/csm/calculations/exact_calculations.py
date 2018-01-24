@@ -13,7 +13,7 @@ from csm.calculations.permuters import ConstraintPermuter
 import logging
 
 from csm.input_output.formatters import format_perm_count
-
+from csm.input_output.formatters import _print as print
 np.set_printoptions(precision=6)
 
 

@@ -1,4 +1,5 @@
 import math
+import sys
 
 def format_perm_count(num):
     if abs(num) < 1000000:
@@ -13,3 +14,7 @@ def non_negative_zero(number):
         return 0.0000
     else:
         return number
+
+
+def _print(*strings, **kwargs):
+    print(*strings, **kwargs, file=sys.stderr)

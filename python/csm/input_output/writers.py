@@ -4,7 +4,7 @@ import io
 from openbabel import OBConversion
 from csm.calculations.basic_calculations import check_perm_structure, check_perm_cycles, cart2sph
 from csm.molecule.molecule import MoleculeReader, get_format
-
+from csm.input_output.formatters import _print as print
 
 # molwriters
 class CSMMolWriter:

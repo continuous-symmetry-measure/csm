@@ -9,7 +9,7 @@ from csm.molecule.atom import Atom, GetAtomicSymbol
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords, calculate_norm_factor
 import logging
 import numpy as np
-
+from csm.input_output.formatters import _print as print
 logger = logging.getLogger("csm")
 
 

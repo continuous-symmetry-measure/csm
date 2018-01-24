@@ -12,7 +12,7 @@ from csm.input_output.writers import FileWriter
 from csm import __version__
 from csm.molecule import molecule
 from csm.molecule.molecule import MoleculeReader
-
+from csm.input_output.formatters import _print as print
 sys.setrecursionlimit(10000)
 
 def read_molecule(dictionary_args):

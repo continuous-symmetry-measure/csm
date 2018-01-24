@@ -5,7 +5,7 @@ import numpy as np
 from csm.fast import PreCalcPIP, PermInProgress
 
 from csm.calculations.constants import start_time, CalculationTimeoutError
-
+from csm.input_output.formatters import _print as print
 __author__ = 'Devora'
 '''
 All the other oermuters are implemented in Cython, this currently hold the constraints permuter and related code only
