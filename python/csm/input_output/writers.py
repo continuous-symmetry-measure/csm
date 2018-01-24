@@ -3,7 +3,7 @@ from csm.input_output.formatters import format_CSM, non_negative_zero
 import io
 from openbabel import OBConversion
 from csm.calculations.basic_calculations import check_perm_structure, check_perm_cycles, cart2sph
-from csm.molecule.molecule import MoleculeReader
+from csm.molecule.molecule import MoleculeReader, get_format
 
 
 # molwriters
@@ -73,7 +73,6 @@ class OBMolWriter:
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
 
         obmol = MoleculeReader._obm_from_file(result.molecule._filename,
-                                              result.molecule._format,
                                               result.molecule._babel_bond)[0]
         for to_remove in result.molecule._deleted_atom_indices:
             obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
@@ -318,10 +317,14 @@ class FileWriter(ResultWriter):
     A ResultWriter class that writes to a file 
     """
 
-    def __init__(self, result, out_file_name, op_name, out_format, print_local=False, json_output=False, stat_file_name=None, polar=False, *args, **kwargs):
+    def __init__(self, result, out_file_name, op_name, print_local=False, json_output=False, stat_file_name=None, polar=False, *args, **kwargs):
         self.out_file_name = out_file_name
         self.json_output = json_output
         self.statistic_writer=StatisticWriter(result, stat_file_name, polar)
+        try:
+            out_format=get_format(None, out_file_name)
+        except ValueError:
+            out_format=get_format(None, result.molecule._filename)
         super().__init__(result, op_name, out_format, print_local)
 
     def write(self):

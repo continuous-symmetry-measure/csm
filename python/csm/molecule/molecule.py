@@ -13,6 +13,17 @@ import numpy as np
 logger = logging.getLogger("csm")
 
 
+def get_format(format, filename):
+    if not format:
+        format=filename.split(".")[-1]
+    if format.lower() == "csm":
+        return "csm"
+    conv = OBConversion()
+    if not conv.SetInFormat(format):
+        format = conv.FormatFromExt(filename)
+    if not format:
+        raise ValueError("Error discovering format from filename " + filename)
+    return format
 
 class Chains(OrderedDict):
     '''
@@ -93,7 +104,6 @@ class Molecule:
             #self._obmol = obmol
             self._filename=None
             self._deleted_atom_indices=[]
-            self._format=None
             self._babel_bond=False
 
 
@@ -109,7 +119,6 @@ class Molecule:
         #m._obmol=self.obmol
         m._filename=self._filename
         m._deleted_atom_indices=self._deleted_atom_indices
-        m._format= self._format
         m._babel_bond = self._babel_bond
 
         m._bondset=self.bondset
@@ -142,7 +151,6 @@ class Molecule:
             #obmol: needed for printing:
             "deleted indices":self._deleted_atom_indices,
             "filename":self._filename,
-            "format":self._format,
             "babel_bond": self._babel_bond,
             #chains
             "chains": self.chains.to_array()
@@ -689,21 +697,12 @@ class MoleculeReader:
                                 the peogram will raise an error and exit
         :return: an instance of class Molecule 
         """
-        def get_format(form):
-            if format.lower()=="csm":
-                return "csm"
-            conv = OBConversion()
-            form = conv.FormatFromExt(in_file_name)
-            if not form:
-                raise ValueError("Error discovering format from filename " + in_file_name)
-            return form
 
         def set_obmol_field(mol):
             mol._filename=in_file_name
             mol._babel_bond=babel_bond
-            mol._format=format
 
-        format = get_format(format)
+        format = get_format(format, in_file_name)
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -719,7 +718,7 @@ class MoleculeReader:
                 mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
 
         else:
-                obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
+                obm = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
                 mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass, read_fragments)
                 if format=="pdb":
                     mol=MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
@@ -753,7 +752,7 @@ class MoleculeReader:
         return [obmol]
 
     @staticmethod
-    def _obm_from_file(filename, format=None, babel_bond=None):
+    def _obm_from_file(filename, babel_bond=None, format=None, ):
         """
         :param filename: name of file to open
         :param format: molecule format of file (eg xyz, pdb)
@@ -762,6 +761,8 @@ class MoleculeReader:
         """
         obmol = OBMol()
         conv = OBConversion()
+        if not format:
+            format=get_format(format, filename)
         if not conv.SetInFormat(format):
             raise ValueError("Error setting openbabel format to" + format)
         if not babel_bond:
@@ -979,7 +980,7 @@ class MoleculeReader:
             except Exception as e:  # TODO: comment why this except is here (I don't actually remember)
                 print(e)
 
-        obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
+        obm = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
         mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass)
         mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
         if remove_hy or ignore_hy:
