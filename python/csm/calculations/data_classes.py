@@ -216,7 +216,7 @@ class CSMResult:
         m_pos = np.asarray([np.asarray(atom.pos) for atom in self.molecule.atoms])
 
         for i in range(self.op_order):
-            rot = create_rotation_matrix(i, self.op_type, self.op_order, dir)
+            rot = create_rotation_matrix(i, self.op_type, self.op_order, self.dir)
 
             # set permutation
             cur_perm = [self.perm[cur_perm[j]] for j in range(size)]
