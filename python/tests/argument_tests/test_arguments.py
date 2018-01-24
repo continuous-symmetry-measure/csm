@@ -14,7 +14,7 @@ class TestExact(Runner):
 
     @pytest.mark.parametrize("run_str",[
         r"ch C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --sn-max 6",
-        r"c2 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --remove-hy",
+        r"c2 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2RLA-3.pdb C:\Users\devora\Sources\temp\csm_testoutput.txt --remove-hy",
         r"c3 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --use-mass",
         r"s8 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --ignore-sym",
         r"s6 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --read-fragments",
@@ -77,10 +77,14 @@ class TestApprox(Runner):
 class TestTrivial(Runner):
     def test_plain(self):
         self.run_args(r"c2 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial")
+    
+    @pytest.mark.parametrize("run_str", [
 
-    def test_input_args(self):
-        self.run_args(r"ch C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --sn-max 6")
-        self.run_args(r"c4 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --babel-bond")
-        self.run_args(r"ci C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --use-chains")
-        self.run_args(r"s2 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --use-sequence")
-        self.run_args(r"s6 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --read-fragments")
+        r"ch C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --sn-max 6",
+        r"c4 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --babel-bond",
+        r"ci C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --use-chains",
+        r"s2 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --use-sequence",
+        r"s6 C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb C:\Users\devora\Sources\temp\csm_testoutput.txt --trivial --read-fragments",
+    ])
+    def test_input_args(self, run_str):
+        self.run_args(run_str)

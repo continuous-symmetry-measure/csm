@@ -19,7 +19,7 @@ class ApproxCalculation(Calculation):
     """
     Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
     """
-    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, keep_structure=False, timeout=100, fibonacci=False, *args, **kwargs):
+    def __init__(self, operation, molecule, approx_algorithm='hungarian', use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, keep_structure=False, timeout=100, fibonacci=False, num_dirs=50, selective=False, num_selected=10, *args, **kwargs):
         """
         Initializes the ApproxCalculation
         :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry
@@ -41,7 +41,9 @@ class ApproxCalculation(Calculation):
             self.approximator_cls = StructuredApproximator
 
         self.timeout=timeout
-        self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs, fibonacci)
+        self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs, fibonacci, num_dirs)
+        self.selective=selective
+        self.num_selected=num_selected
 
     def calculate(self):
         op_type=self.operation.type
@@ -66,7 +68,7 @@ class ApproxCalculation(Calculation):
                     if best_result.csm < MINDOUBLE:
                         break
         else:
-            approximator = self.approximator_cls(op_type, op_order, molecule, self.direction_chooser, self.log, self.timeout)
+            approximator = self.approximator_cls(op_type, op_order, molecule, self.direction_chooser, self.log, self.timeout, self.selective, self.num_selected)
             best_result = approximator.approximate()
         # step three: process and return results
         self.approximator=approximator

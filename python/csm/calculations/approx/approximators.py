@@ -29,12 +29,19 @@ class ApproxStatistics:
             self.dirs=[]
             self.csms=[]
             self.cycle_stats=[]
+            self._stop_reason=""
         def append(self, result):
             self.dirs.append(result.dir)
             self.csms.append(result.csm)
             self.cycle_stats.append(result.num_invalid)
+
+        @property
+        def stop_reason(self):
+            return self._stop_reason
+
+        @stop_reason.setter
         def stop_reason(self, reason):
-            self.stop_reason=reason
+            self._stop_reason=reason
         def start_clock(self):
             self.__start_time=datetime.datetime.now()
         def end_clock(self):
@@ -84,7 +91,7 @@ class Approximator:
     All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
     '''
 
-    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None, timeout=100, selective=True, num_selected=10):
+    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None, timeout=100, selective=False, num_selected=10):
         self._op_type = op_type
         self._op_order = op_order
         self._molecule = molecule
@@ -213,21 +220,21 @@ class Approximator:
 
                 # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
                 if i >= self.max_iterations:
-                    self.statistics[dir].stop_reason("Max iterations")
+                    self.statistics[dir].stop_reason="Max iterations"
                     self._log("\t\tStopping after %d iterations" % i)
                     break
                 # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
                 #    self._log("\t\tStopping due to CSM ratio")
                 if best_for_chain_perm.csm < CSM_THRESHOLD:
-                    self.statistics[dir].stop_reason("CSM below threshold")
+                    self.statistics[dir].stop_reason="CSM below threshold"
                     self._log("\t\tStopping because the best CSM is good enough")
                     break
                 if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
-                    self.statistics[dir].stop_reason("No change in direction")
+                    self.statistics[dir].stop_reason="No change in direction"
                     self._log("\t\tStopping because the direction has not changed")
                     break
                 if interim_results.csm >= old_results.csm:  # We found a worse CSM
-                    self.statistics[dir].stop_reason("No improvement in CSM")
+                    self.statistics[dir].stop_reason="No improvement in CSM"
                     self._log("\t\tStopping because CSM did not improve (worse or equal)")
                     break
 
