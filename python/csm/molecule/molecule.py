@@ -123,10 +123,10 @@ class Molecule:
         m._chain_equivalences=self._chain_equivalences
         return m
 
-    def to_json(self):
+    def to_dict(self):
         return {
             #critical to include
-            "atoms":[atom.to_json() for atom in self.atoms],
+            "atoms":[atom.to_dict() for atom in self.atoms],
 
             # trivial to include
             "norm factor": self.norm_factor,
@@ -693,10 +693,9 @@ class MoleculeReader:
             if format.lower()=="csm":
                 return "csm"
             conv = OBConversion()
+            form = conv.FormatFromExt(in_file_name)
             if not form:
-                form = conv.FormatFromExt(in_file_name)
-                if not form:
-                    raise ValueError("Error discovering format from filename " + in_file_name)
+                raise ValueError("Error discovering format from filename " + in_file_name)
             return form
 
         def set_obmol_field(mol):

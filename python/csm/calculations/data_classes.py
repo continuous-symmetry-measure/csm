@@ -259,6 +259,26 @@ class CSMResult:
             chain_str+=from_chain + "->" + to_chain + ", "
         chain_str=chain_str[:-2] #remove final comma and space
         return chain_str
+    
+    def to_dict(self):
+        json_dict = {"Result":
+            {
+                "molecule": self.molecule.to_dict(),
+                "op_order": self.op_order,
+                "op_type": self.op_type,
+                "csm": self.csm,
+                "perm": self.perm,
+                "dir": list(self.dir),
+                "d_min": self.d_min,
+                "symmetric_structure": [list(i) for i in self.symmetric_structure],
+                "local_csm": self.local_csm,
+                "perm_count": self.perm_count,
+                "formula_csm": self.formula_csm,
+                "normalized_molecule_coords": [list(i) for i in self.normalized_molecule_coords],
+                "normalized_symmetric_structure": [list(i) for i in self.normalized_symmetric_structure],
+            }
+        }
+        return json_dict
 
 # TODO: replace all calls to this class with creation of Result class
 def process_results(results, calc_local=False):

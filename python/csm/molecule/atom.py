@@ -75,7 +75,7 @@ class Atom:
     def __str__(self):
         return "Symbol: %s\tPos: %s\tChain: %s\tAdjacent: %s" % (self.symbol, self.pos, self.chain, self.adjacent)
 
-    def to_json(self):
+    def to_dict(self):
         return {
         "index": self.index,
         "symbol": self._symbol,

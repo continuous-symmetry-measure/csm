@@ -1,8 +1,8 @@
-from csm.main.csm_run import run as csmrun
+from csm.main.csm_run_old import run as csmrun
 import sys
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords
 from argparse import ArgumentParser
-from csm.input_output.arguments import _create_parser
+from csm.input_output.arguments_old import _create_parser
 from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.calculations.exact_calculations import exact_calculation
 import numpy as np

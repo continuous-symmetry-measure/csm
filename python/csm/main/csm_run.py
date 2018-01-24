@@ -5,44 +5,52 @@ import sys
 import timeit
 
 from csm.calculations.constants import CalculationTimeoutError
-from csm.input_output.arguments import get_split_arguments
+from csm.input_output.arguments import get_parsed_args
 from csm.calculations import Approx, Trivial, Exact
 from csm.input_output.readers import read_perm
 from csm.input_output.writers import FileWriter
 from csm import __version__
+from csm.molecule import molecule
 from csm.molecule.molecule import MoleculeReader
 
 sys.setrecursionlimit(10000)
+
+def read_molecule(dictionary_args):
+    mol = MoleculeReader.from_file(**dictionary_args)
+    mol.print_equivalence_class_summary(dictionary_args['use_chains'])
+    return mol
+
+def write_results(dictionary_args, result):
+    # step six: print the results
+    if dictionary_args['calc_local']:
+        result.compute_local_csm()
+    fw = FileWriter(result, **dictionary_args)
+    fw.write()
 
 
 def run(args=[]):
     print("CSM version %s" % __version__)
     if not args:
         args = sys.argv[1:]
-    csv_file = None
-    #step one: parse args
-    dictionary_args = get_split_arguments(args)
-    try:
-        #step two: read molecule from file
-        mol=MoleculeReader.from_file(**dictionary_args)
-        dictionary_args['molecule']=mol
-        dictionary_args['perm']=read_perm(**dictionary_args)
-        #step three: print molecule printouts
-        mol.print_equivalence_class_summary(dictionary_args['use_chains'])
-        #step five: call the calculation
-        if dictionary_args['calc_type'] == 'approx':
-            if dictionary_args['print_approx']:
-                class PrintApprox(Approx):
-                    def log(self, *args, **kwargs):
-                        print(*args)
-                calc=PrintApprox(**dictionary_args)
-            else:
-                calc = Approx(**dictionary_args)
-        elif dictionary_args['calc_type'] == 'trivial':
-            calc = Trivial(**dictionary_args)
+    dictionary_args=get_parsed_args(args)
+
+    command= dictionary_args["command"]
+
+    if command=="read":
+        mol=read_molecule(dictionary_args)
+        sys.stdout.write(str(mol.to_dict()))
+    elif command == "write":
+        write_results(dictionary_args)
+    else:
+        #get input:
+        if dictionary_args["in_file_name"]:
+            dictionary_args['molecule']=read_molecule(dictionary_args)
         else:
-            # step four: create a callback function for the calculation
-            # Outputing permutations
+            dictionary_args['molecule']=molecule.from_json(sys.stdin)
+
+        if command=="exact":
+            #get perm if it exists:
+            dictionary_args['perm'] = read_perm(**dictionary_args)
             csm_state_tracer_func= None
             if dictionary_args['perms_csv_name']:
                 csv_file = open(dictionary_args['perms_csv_name'], 'w')
@@ -53,39 +61,38 @@ def run(args=[]):
                      state.dir,
                      state.csm, ])
             calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
+
+        if command=="approx":
+            if dictionary_args['print_approx']:
+                class PrintApprox(Approx):
+                    def log(self, *args, **kwargs):
+                        print(*args)
+                calc=PrintApprox(**dictionary_args)
+            else:
+                calc = Approx(**dictionary_args)
+
+        if command=="trivial":
+            calc = Trivial(**dictionary_args)
+
+        #run the calculation
         try:
             calc.calculate()
         except CalculationTimeoutError as e:
             print("Timed out")
             return
         result=calc.result
-        #step six: print the results
-        if dictionary_args['calc_local']:
-            result.compute_local_csm()
-        fw=FileWriter(result, **dictionary_args)
-        fw.write()
-        return result
-    except Exception as e:
-        if dictionary_args['json_output']:
-            json_dict = {
-                "Error": str(e)
-            }
-            with open(dictionary_args['out_file_name'], 'w', encoding='utf-8') as f:
-                json.dump(json_dict, f)
-        raise
 
-    finally:
-        if csv_file:
-            csv_file.close()
+        #do output:
+        if dictionary_args["out_file_name"]:
+            write_results(dictionary_args, result)
+        else:
+            sys.stdout.write(str(result.to_dict()))
+
+
 
 def run_no_return(args=[]):
     run(args)
 
-
-def run_many_times():
-    for i in range(100):
-        print(i)
-        run(args=sys.argv[1:])
 
 if __name__ == '__main__':
     #timer = timeit.Timer(lambda: run_many_times())

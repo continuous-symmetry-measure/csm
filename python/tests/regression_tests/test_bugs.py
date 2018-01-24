@@ -1,8 +1,8 @@
 import pytest
 from os import path
 from csm.molecule.molecule import Molecule, MoleculeReader
-from csm.input_output.arguments import get_split_arguments
-from csm.main.csm_run import run as csmrun
+from csm.input_output.arguments_old import get_split_arguments
+from csm.main.csm_run_old import run as csmrun
 from conftest import test_folder
 
 def xtest_pdb_with_chains_hetatm_and_nonequal_equivalence_classes():

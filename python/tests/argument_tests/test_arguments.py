@@ -1,5 +1,5 @@
 import pytest
-from csm.main.csm_run import run
+from csm.main.csm_run_old import run
 
 class Runner:
     def run_args(self, args_str):

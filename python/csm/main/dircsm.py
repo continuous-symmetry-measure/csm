@@ -16,7 +16,7 @@ from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.data_classes import CSMState
 from csm.calculations.exact_calculations import exact_calculation, CSMValueError
 from csm.calculations.approx.main import approx_calculation
-from csm.input_output.arguments import get_split_arguments
+from csm.input_output.arguments_old import get_split_arguments
 from csm.input_output.formatters import format_CSM
 from csm.input_output.writers import print_results
 from csm.molecule.molecule import Molecule, MoleculeFactory, MoleculeReader

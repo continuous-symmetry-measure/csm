@@ -695,7 +695,7 @@ class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
 
 if __name__ == "__main__":
     import sys
-    from csm.input_output.arguments import get_split_arguments
+    from csm.input_output.arguments_old import get_split_arguments
     from csm.input_output.readers import read_inputs
 
     args = sys.argv[1:]

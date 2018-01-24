@@ -159,11 +159,11 @@ class ResultWriter:
         result_io.close()
         return result_string
 
-    def to_json(self):
+    def to_dict(self):
         json_dict = {"Result":
             {
                 "result_string": self.result_string,
-                "molecule": self.result.molecule.to_json(),
+                "molecule": self.result.molecule.to_dict(),
                 "op_order": self.result.op_order,
                 "op_type": self.result.op_type,
                 "csm": self.result.csm,
@@ -318,11 +318,11 @@ class FileWriter(ResultWriter):
     A ResultWriter class that writes to a file 
     """
 
-    def __init__(self, result, out_file_name, op_name, format, print_local=False, json_output=False, stat_file_name=None, polar=False, *args, **kwargs):
+    def __init__(self, result, out_file_name, op_name, out_format, print_local=False, json_output=False, stat_file_name=None, polar=False, *args, **kwargs):
         self.out_file_name = out_file_name
         self.json_output = json_output
         self.statistic_writer=StatisticWriter(result, stat_file_name, polar)
-        super().__init__(result, op_name, format, print_local)
+        super().__init__(result, op_name, out_format, print_local)
 
     def write(self):
         self.print_structure()
@@ -331,7 +331,7 @@ class FileWriter(ResultWriter):
         self.statistic_writer.write()
         if self.json_output:
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
-                json.dump(self.to_json(), f)
+                json.dump(self.to_dict(), f)
         else:
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
                 self._write_results(f)

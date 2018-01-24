@@ -1,6 +1,6 @@
 import os
 import pytest
-from csm.main.csm_run import run as csmrun
+from csm.main.csm_run_old import run as csmrun
 from tests.utils.run_test import close_enough, YaffaError
 from conftest import test_folder, output_file, my_tolerance
 
