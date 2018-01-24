@@ -15,7 +15,6 @@ class OurParser(ArgumentParser):
 
 def _create_parser_2():
     def input_utility_func(parser):
-        parser.add_argument('--format', help='Use a specific input/output format')
         parser.add_argument('--remove-hy', action='store_true', default=False,
                             help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
         parser.add_argument('--ignore-sym', action='store_true', default=False,
@@ -32,7 +31,6 @@ def _create_parser_2():
                             help='Read fragments from .mol or .pdb file as chains')
 
     def output_utility_func(parser):
-        parser.add_argument('--out-format', help='Use a specific input/output format')
         parser.add_argument('--json-output', action='store_true', default=False,
                             help='Print output in json format to a file')
         parser.add_argument('--print-local', action='store_true', default=False,
@@ -48,6 +46,14 @@ def _create_parser_2():
                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
         parser.add_argument('--sn-max', type=int, default=8,
                             help='The maximal sn to try, relevant only for chirality')
+
+    def add_input_output_utility_func(parser):
+        parser_input_args = parser.add_argument_group("Args for input (default is read from stdin)")
+        parser_input_args.add_argument("--input")
+        input_utility_func(parser_input_args)
+        parser_output_args = parser.add_argument_group("Args for output (default is json to stdout)")
+        parser_output_args.add_argument("--output")
+        output_utility_func(parser_output_args)
 
     parser = OurParser(allow_abbrev=False)
     commands = parser.add_subparsers(title="Available commands", dest="command")
@@ -76,17 +82,14 @@ def _create_parser_2():
                             help='Writes all backtracking branches to the console')
     exact_args.add_argument('--output-perms', action='store', default=None,
                             help='Writes all enumerated permutations to file')
-    exact_input_args = exact_args_.add_argument_group("Args for input (default is read from stdin)")
-    exact_input_args.add_argument("--input")
-    input_utility_func(exact_input_args)
-    exact_output_args = exact_args_.add_argument_group("Args for output (default is json to stdout)")
-    exact_output_args.add_argument("--output")
-    output_utility_func(exact_output_args)
+    add_input_output_utility_func(exact_args_)
+
 
     #APPROX
     approx_args_ = commands.add_parser('approx', help="Approximate the CSM value", conflict_handler='resolve', usage='csm approx TYPE [optional args]')
     approx_args = approx_args_.add_argument_group("Args for approx")
     shared_calc_utility_func(approx_args)
+    #choosing dir:
     approx_args.add_argument('--detect-outliers', action='store_true', default=False,
                              help="Use outlier detection to improve guesses for initial directions in approx algorithm")
     approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
@@ -95,28 +98,26 @@ def _create_parser_2():
                              help="Use fibonacci sphere to generate 50 starting directions")
     approx_args.add_argument('--use-best-dir', action='store_true', default=False,
                              help='Only use the best direction')
-    approx_args.add_argument('--many-chains', action='store_true', default=False,
-                             help='Use the new chains algorithm for many chains. Will automatically apply use-chains')
-    approx_args.add_argument('--greedy', action='store_true', default=False,
-                             help='use the old greedy approx algorithm (no hungarian)')
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
+    #algorithm choice
+    approx_args.add_argument('--greedy', action='store_true', default=False,
+                             help='use the old greedy approx algorithm (no hungarian)')
+    approx_args.add_argument('--many-chains', action='store_true', default=False,
+                             help='Use the new chains algorithm for many chains. Will automatically apply use-chains')
+    approx_args.add_argument('--keep-structure', action='store_true', default=False,
+                             help='Use keep-structure approximate algorithm')
     approx_args.add_argument('--selective', type=int,
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
+    #outputs
     approx_args.add_argument('--statistics', type=str,
                              help='Print statistics about each direction to a file')
     approx_args.add_argument('--polar', action='store_true', default=False,
                              help="Print polar coordinates instead of cartesian coordinates in statistics")
-    approx_args.add_argument('--keep-structure', action='store_true', default=False,
-                             help='Maintain molecule structure from being distorted')
     approx_args.add_argument('--print-approx', action='store_true', default=False,
                              help='add some printouts to approx')
-    approx_input_args = approx_args_.add_argument_group("Args for input (default is read from stdin)")
-    approx_input_args.add_argument("--input")
-    input_utility_func(approx_input_args)
-    approx_output_args = approx_args_.add_argument_group("Args for output (default is json to stdout)")
-    approx_output_args.add_argument("--output")
-    output_utility_func(approx_output_args)
+
+    add_input_output_utility_func(approx_args_)
 
 
     #TRIVIAL
@@ -125,21 +126,11 @@ def _create_parser_2():
     trivial_args.add_argument('--sn-max', type=int, default=8,
                               help='The maximal sn to try, relevant only for chirality')
     trivial_args.add_argument('--permute-chains', action='store_true', default=False)
-    trivial_input_args = trivial_args_.add_argument_group("Args for input (default is read from stdin)")
-    trivial_input_args.add_argument("--input")
-    input_utility_func(trivial_input_args)
-    trivial_output_args = trivial_args_.add_argument_group("Args for output (default is json to stdout)")
-    trivial_output_args.add_argument("--output")
-    output_utility_func(trivial_output_args)
-
+    add_input_output_utility_func(trivial_args_)
     return parser
 
 def _process_arguments2(parse_res):
     def parse_input(dictionary_args):
-        dictionary_args['format'] = parse_res.format
-        if not dictionary_args['format']:
-            # get output file extension
-            dictionary_args['format'] = parse_res.input.split(".")[-1]
         dictionary_args['in_file_name'] = parse_res.input
         dictionary_args['remove_hy'] = parse_res.remove_hy
         dictionary_args['ignore_symm'] = parse_res.ignore_sym
@@ -156,14 +147,8 @@ def _process_arguments2(parse_res):
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
         dictionary_args['json_output'] = parse_res.json_output
-        dictionary_args['print_denorm'] = parse_res.print_denorm
-        dictionary_args['out_format'] = parse_res.out_format
-        if not dictionary_args['format']:
-            # get output file extension
-            dictionary_args['format'] = parse_res.output.split(".")[-1]
         dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
-
-
+        dictionary_args['print_denorm'] = parse_res.print_denorm
 
     dictionary_args = {}
     dictionary_args["command"]=parse_res.command
@@ -193,42 +178,48 @@ def _process_arguments2(parse_res):
         dictionary_args['sn_max'] = parse_res.sn_max
 
         if parse_res.command == 'exact':
-            dictionary_args['perms_csv_name'] = parse_res.output_perms
             if parse_res.use_perm:
                 dictionary_args['perm_file_name'] = parse_res.use_perm
-            dictionary_args['print_perms'] = parse_res.output_perms
             dictionary_args['keep_structure'] = parse_res.keep_structure
             dictionary_args['no_constraint'] = parse_res.no_constraint
             dictionary_args['print_branches'] = parse_res.output_branches
             permuters.print_branches = parse_res.output_branches
+            dictionary_args['perms_csv_name'] = parse_res.output_perms
+            dictionary_args['print_perms'] = parse_res.output_perms
+
+
+
+
         if parse_res.command == 'approx':
-            dictionary_args['print_approx'] = parse_res.print_approx
-            dictionary_args['keep_structure'] = parse_res.keep_structure
+            #choose dir:
+            dictionary_args['detect_outliers'] = parse_res.detect_outliers
+            dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
+            if parse_res.fibonacci is not None:
+                dictionary_args["fibonacci"] = True
+                dictionary_args["num_dirs"] = parse_res.fibonacci
+            dictionary_args['use_best_dir'] = parse_res.use_best_dir
+            dir = parse_res.dir
+            if dir:
+                dictionary_args['dirs'] = [dir]
+
+            #algorithm choice:
             dictionary_args['approx_algorithm'] = 'hungarian'
+            if parse_res.greedy:
+                dictionary_args['approx_algorithm'] = 'greedy'
             if parse_res.many_chains:
                 if parse_res.greedy:
                     raise ValueError("--many-chains and --greedy are mutually exclusive")
                 dictionary_args['use_chains'] = True
                 dictionary_args['approx_algorithm'] = 'many-chains'
-            if parse_res.greedy:
-                dictionary_args['approx_algorithm'] = 'greedy'
-            dictionary_args['detect_outliers'] = parse_res.detect_outliers
-            dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
-            dictionary_args['use_best_dir'] = parse_res.use_best_dir
-
-            if parse_res.fibonacci is not None:
-                dictionary_args["fibonacci"] = True
-                dictionary_args["num_dirs"] = parse_res.fibonacci
-
+            dictionary_args['keep_structure'] = parse_res.keep_structure
             if parse_res.selective is not None:
                 if parse_res.fibonacci is None:
                     raise ValueError("For now --selective must be used with --fibonacci")
                 dictionary_args["selective"] = True
                 dictionary_args["num_selected"] = parse_res.selective
 
-            dir = parse_res.dir
-            if dir:
-                dictionary_args['dirs'] = [dir]
+            #outputs:
+            dictionary_args['print_approx'] = parse_res.print_approx
             dictionary_args['polar'] = parse_res.polar
             dictionary_args['stat_file_name'] = parse_res.statistics
 
