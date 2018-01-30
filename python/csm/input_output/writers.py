@@ -4,7 +4,7 @@ import io
 from openbabel import OBConversion
 from csm.calculations.basic_calculations import check_perm_structure, check_perm_cycles, cart2sph
 from csm.molecule.molecule import MoleculeReader, get_format
-from csm.input_output.formatters import _print as print
+from csm.input_output.formatters import csm_log as print
 
 # molwriters
 class CSMMolWriter:
@@ -317,14 +317,15 @@ class FileWriter(ResultWriter):
     A ResultWriter class that writes to a file 
     """
 
-    def __init__(self, result, out_file_name, op_name, print_local=False, json_output=False, stat_file_name=None, polar=False, *args, **kwargs):
+    def __init__(self, result, out_file_name, op_name, print_local=False, json_output=False, stat_file_name=None, polar=False, out_format=None, *args, **kwargs):
         self.out_file_name = out_file_name
         self.json_output = json_output
         self.statistic_writer=StatisticWriter(result, stat_file_name, polar)
-        try:
-            out_format=get_format(None, out_file_name)
-        except ValueError:
-            out_format=get_format(None, result.molecule._filename)
+        if not out_format:
+            try:
+                out_format=get_format(None, out_file_name)
+            except ValueError:
+                out_format=get_format(None, result.molecule._filename)
         super().__init__(result, op_name, out_format, print_local)
 
     def write(self):

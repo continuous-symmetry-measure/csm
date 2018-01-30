@@ -50,10 +50,15 @@ def _create_parser_2():
     def add_input_output_utility_func(parser):
         parser_input_args = parser.add_argument_group("Args for input (default is read from stdin)")
         parser_input_args.add_argument("--input")
+        parser_input_args.add_argument('--in-format', help='override guessing format from input file ending with provided format (must be correct for both input and ',
+                                default=None)
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output (default is json to stdout)")
         parser_output_args.add_argument("--output")
+        parser_output_args.add_argument('--out-format', help='override guessing format from output file ending with provided format (must be correct for both input and ',
+                                default=None)
         output_utility_func(parser_output_args)
+
 
     parser = OurParser(allow_abbrev=False)
     commands = parser.add_subparsers(title="Available commands", dest="command")
@@ -61,11 +66,14 @@ def _create_parser_2():
     #READ
     input_args = commands.add_parser('read', help="Read a molecule file into a json in CSM format", usage="csm read filename [optional args]")
     input_args.add_argument('input', help='molecule file')
+    input_args.add_argument('--format', help='override guessing format from file ending with provided format', default=None)
     input_utility_func(input_args)
 
     #WRITE
     out_args = commands.add_parser('write', help="Output the results of the calculation to a file", usage="csm write filename [optional args]")
     out_args.add_argument('output', default='output.txt', help='Output file')
+    out_args.add_argument('--format', help='override guessing format from file ending with provided format',
+                            default=None)
     output_utility_func(out_args)
 
     #EXACT
@@ -153,17 +161,21 @@ def _process_arguments2(parse_res):
     dictionary_args = {}
     dictionary_args["command"]=parse_res.command
     if parse_res.command == "read":
+        dictionary_args["in_format"]=parse_res.format
         parse_input(dictionary_args)
     elif parse_res.command == "write":
+        dictionary_args["out_format"] = parse_res.format
         parse_output(dictionary_args)
     else:
         # get input/output if relevant
         if parse_res.input != None:
             parse_input(dictionary_args)
+            dictionary_args["in_format"] = parse_res.in_format
         else:
             dictionary_args["in_file_name"]=None
         if parse_res.output != None:
             parse_output(dictionary_args)
+            dictionary_args["out_format"] = parse_res.out_format
         else:
             dictionary_args["out_file_name"]=None
 

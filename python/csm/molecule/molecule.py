@@ -9,7 +9,8 @@ from csm.molecule.atom import Atom, GetAtomicSymbol
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords, calculate_norm_factor
 import logging
 import numpy as np
-from csm.input_output.formatters import _print as print
+import json
+from csm.input_output.formatters import csm_log as print
 logger = logging.getLogger("csm")
 
 
@@ -161,32 +162,37 @@ class Molecule:
                 }
 
     @staticmethod
-    def from_json(json):
-        atoms=[Atom.from_json(a) for a in json["atoms"]]
+    def from_json(raw_json):
+        json_dict=json.loads(raw_json)
+        return Molecule.from_dict(json_dict)
+
+    @staticmethod
+    def from_dict(in_dict):
+        atoms=[Atom.from_dict(a) for a in in_dict["atoms"]]
         m=Molecule(atoms)
 
-        m.norm_factor=json["norm factor"]
+        m.norm_factor=in_dict["norm factor"]
 
         c=Chains()
-        c.from_array(json["chains"])
+        c.from_array(in_dict["chains"])
         m._chains=c
 
-        m._filename=json["filename"]
-        m._deleted_atom_indices = json["deleted indices"]
-        m._format=json["format"]
-        m._babel_bond=json["babel_bond"]
+        m._filename=in_dict["filename"]
+        m._deleted_atom_indices = in_dict["deleted indices"]
+        #m._format=in_dict["format"]
+        m._babel_bond=in_dict["babel_bond"]
 
-        m._center_of_mass=json["center of mass"]
-        m._equivalence_classes=json["equivalence classes"]
-        unfixed_groups=json["groups_with_internal_chains"]
+        m._center_of_mass=in_dict["center of mass"]
+        m._equivalence_classes=in_dict["equivalence classes"]
+        unfixed_groups=in_dict["groups_with_internal_chains"]
         m._groups_with_internal_chains=[]
         for group in unfixed_groups:
             fixed={int(key): value for key, value in group.items()}
             m._groups_with_internal_chains.append(fixed)
-        unfixed_chains=json["chains_with_internal_groups"]
+        unfixed_chains=in_dict["chains_with_internal_groups"]
         fixed = {int(key): value for key, value in unfixed_chains.items()}
         m._chains_with_internal_groups=fixed
-        m._chain_equivalences=json["chain_equivalences"]
+        m._chain_equivalences=in_dict["chain_equivalences"]
 
         m.create_Q()
         m._create_bondset()
@@ -673,7 +679,7 @@ class MoleculeReader:
         return mol
 
     @staticmethod
-    def from_file(in_file_name, format=None, initialize=True,
+    def from_file(in_file_name, in_format=None, initialize=True,
                   use_chains=False, babel_bond=False,
                   remove_hy=False, ignore_symm=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
@@ -681,7 +687,7 @@ class MoleculeReader:
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
-        :param format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
+        :param in_format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
         :param initialize: boolean, default True, when True equivalence classes and chains are calculated for the molecule
         :param use_chains: boolean, default False, when True chains are read from the string 
         :param babel_bond: boolean, default False, when True OpenBabel will attempt to guess connectivity information
@@ -702,7 +708,7 @@ class MoleculeReader:
             mol._filename=in_file_name
             mol._babel_bond=babel_bond
 
-        format = get_format(format, in_file_name)
+        format = get_format(in_format, in_file_name)
 
         if use_sequence:
             if format.lower() != 'pdb':

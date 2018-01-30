@@ -4,7 +4,7 @@ Functions for finding the symmetry directions prior to running approx
 import math
 import numpy as np
 from csm.fast import external_get_eigens as cppeigen
-from csm.input_output.formatters import _print as print
+from csm.input_output.formatters import csm_log as print
 from csm.calculations.constants import MINDOUBLE
 
 MIN_GROUPS_FOR_OUTLIERS = 10

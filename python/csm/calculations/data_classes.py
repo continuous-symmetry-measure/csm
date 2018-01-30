@@ -2,6 +2,7 @@ import numpy as np
 
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles
 from csm.calculations.constants import MINDOUBLE
+from csm.molecule.molecule import Molecule
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
 from collections import namedtuple
 class CSMState(namedtuple('CSMState', ['molecule',
@@ -279,6 +280,14 @@ class CSMResult:
             }
         }
         return json_dict
+
+    @staticmethod
+    def from_dict(input):
+        result=input["Result"]
+        molecule=Molecule.from_dict(result["molecule"])
+        state=CSMState(molecule, result["op_order"], result["op_type"], result["csm"], result["perm"], result["dir"], result["perm_count"])
+        result=CSMResult(state)
+        return result
 
 # TODO: replace all calls to this class with creation of Result class
 def process_results(results, calc_local=False):

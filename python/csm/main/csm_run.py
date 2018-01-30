@@ -5,14 +5,15 @@ import sys
 import timeit
 
 from csm.calculations.constants import CalculationTimeoutError
+from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
 from csm.calculations import Approx, Trivial, Exact
 from csm.input_output.readers import read_perm
 from csm.input_output.writers import FileWriter
 from csm import __version__
 from csm.molecule import molecule
-from csm.molecule.molecule import MoleculeReader
-from csm.input_output.formatters import _print as print
+from csm.molecule.molecule import MoleculeReader, Molecule
+from csm.input_output.formatters import csm_log as print
 sys.setrecursionlimit(10000)
 
 def read_molecule(dictionary_args):
@@ -22,9 +23,10 @@ def read_molecule(dictionary_args):
 
 def write_results(dictionary_args, result):
     # step six: print the results
+    op=Operation.placeholder(result.op_type, result.op_order)
     if dictionary_args['calc_local']:
         result.compute_local_csm()
-    fw = FileWriter(result, **dictionary_args)
+    fw = FileWriter(result, op_name=op.name, **dictionary_args)
     fw.write()
 
 
@@ -38,15 +40,21 @@ def run(args=[]):
 
     if command=="read":
         mol=read_molecule(dictionary_args)
-        sys.stdout.write(str(mol.to_dict()))
+        sys.stdout.write(json.dumps(mol.to_dict(), indent=4))
     elif command == "write":
-        write_results(dictionary_args)
+        raw_json = sys.stdin.read()
+        result_dict=json.loads(raw_json)
+        result=CSMResult.from_dict(result_dict)
+        write_results(dictionary_args, result)
     else:
         #get input:
         if dictionary_args["in_file_name"]:
             dictionary_args['molecule']=read_molecule(dictionary_args)
         else:
-            dictionary_args['molecule']=molecule.from_json(sys.stdin)
+            print("reading from stdin")
+            raw_json=sys.stdin.read()
+            print("raw json", raw_json)
+            dictionary_args['molecule']=Molecule.from_json(raw_json)
 
         if command=="exact":
             #get perm if it exists:
@@ -86,7 +94,7 @@ def run(args=[]):
         if dictionary_args["out_file_name"]:
             write_results(dictionary_args, result)
         else:
-            sys.stdout.write(str(result.to_dict()))
+            sys.stdout.write(json.dumps(result.to_dict(), indent=4))
 
 
 

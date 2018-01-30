@@ -87,11 +87,11 @@ class Atom:
         }
 
     @staticmethod
-    def from_json(in_json):
-        a=Atom(in_json["symbol"], in_json["pos"], in_json["index"], chain=in_json["chain"])
-        a._mass=in_json["mass"]
-        a._adjacent=in_json["adjacent"]
-        a._equivalency=in_json["equivalency"]
+    def from_dict(in_dict):
+        a=Atom(in_dict["symbol"], in_dict["pos"], in_dict["index"], chain=in_dict["chain"])
+        a._mass=in_dict["mass"]
+        a._adjacent=in_dict["adjacent"]
+        a._equivalency=in_dict["equivalency"]
         return a
 
 
