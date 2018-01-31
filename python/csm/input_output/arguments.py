@@ -1,7 +1,5 @@
 from argparse import ArgumentParser
 import logging
-
-from csm.calculations import permuters
 from csm.calculations.data_classes import Operation
 
 logger = logging.getLogger(__name__)
@@ -13,7 +11,7 @@ class OurParser(ArgumentParser):
         print("Enter csm --help for help", file=sys.stderr)
         sys.exit(2)
 
-def _create_parser_2():
+def _create_parser():
     def input_utility_func(parser):
         parser.add_argument('--remove-hy', action='store_true', default=False,
                             help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
@@ -24,7 +22,7 @@ def _create_parser_2():
         parser.add_argument('--babel-bond', action='store_true', default=False,
                             help='Let OpenBabel compute bonding')
         parser.add_argument('--use-sequence', action='store_true', default=False,
-                            help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
+                            help='create equivalence class for pdb file using sequence information.')
         parser.add_argument('--use-chains', action='store_true', default=False,
                             help='When a molecule has chains, use them (affects trivial, approx)')
         parser.add_argument('--read-fragments', action='store_true', default=False,
@@ -48,14 +46,14 @@ def _create_parser_2():
                             help='The maximal sn to try, relevant only for chirality')
 
     def add_input_output_utility_func(parser):
-        parser_input_args = parser.add_argument_group("Args for input (default is read from stdin)")
-        parser_input_args.add_argument("--input")
-        parser_input_args.add_argument('--in-format', help='override guessing format from input file ending with provided format (must be correct for both input and ',
+        parser_input_args = parser.add_argument_group("Args for input (requires --input. default is read from stdin)")
+        parser_input_args.add_argument("--input", help="molecule file")
+        parser_input_args.add_argument('--in-format', help='override guessing format from input file ending with provided format',
                                 default=None)
         input_utility_func(parser_input_args)
-        parser_output_args = parser.add_argument_group("Args for output (default is json to stdout)")
-        parser_output_args.add_argument("--output")
-        parser_output_args.add_argument('--out-format', help='override guessing format from output file ending with provided format (must be correct for both input and ',
+        parser_output_args = parser.add_argument_group("Args for output (requires --output. default is json to stdout)")
+        parser_output_args.add_argument("--output", help="output file")
+        parser_output_args.add_argument('--out-format', help='override guessing format from output file ending with provided format',
                                 default=None)
         output_utility_func(parser_output_args)
 
@@ -78,16 +76,12 @@ def _create_parser_2():
 
     #EXACT
     exact_args_ = commands.add_parser('exact', help="Perform an exact CSM calculation", conflict_handler='resolve', usage='csm exact TYPE [optional args]')
-    exact_args = exact_args_.add_argument_group("Args for exact")
+    exact_args = exact_args_.add_argument_group("Args for exact calculation")
     shared_calc_utility_func(exact_args)
     exact_args.add_argument('--use-perm', type=str,
                             help='Compute exact CSM for a single permutation')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
-                            help='Maintain molecule structure from being distorted')
-    exact_args.add_argument('--no-constraint', action='store_true', default=False,
-                            help='Do not use the constraints algorithm to traverse the permutation tree')
-    exact_args.add_argument('--output-branches', action='store_true', default=False,
-                            help='Writes all backtracking branches to the console')
+                            help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-perms', action='store', default=None,
                             help='Writes all enumerated permutations to file')
     add_input_output_utility_func(exact_args_)
@@ -95,7 +89,7 @@ def _create_parser_2():
 
     #APPROX
     approx_args_ = commands.add_parser('approx', help="Approximate the CSM value", conflict_handler='resolve', usage='csm approx TYPE [optional args]')
-    approx_args = approx_args_.add_argument_group("Args for approx")
+    approx_args = approx_args_.add_argument_group("Args for approx calculation")
     shared_calc_utility_func(approx_args)
     #choosing dir:
     approx_args.add_argument('--detect-outliers', action='store_true', default=False,
@@ -123,16 +117,15 @@ def _create_parser_2():
     approx_args.add_argument('--polar', action='store_true', default=False,
                              help="Print polar coordinates instead of cartesian coordinates in statistics")
     approx_args.add_argument('--print-approx', action='store_true', default=False,
-                             help='add some printouts to approx')
+                             help='print log to screen from approx')
 
     add_input_output_utility_func(approx_args_)
 
 
     #TRIVIAL
     trivial_args_ = commands.add_parser('trivial', help="Calculate trivial (identity) CSM", conflict_handler='resolve', usage='csm trivial TYPE [optional args]')
-    trivial_args = trivial_args_.add_argument_group("args for trivial calculation")
-    trivial_args.add_argument('--sn-max', type=int, default=8,
-                              help='The maximal sn to try, relevant only for chirality')
+    trivial_args = trivial_args_.add_argument_group("Args for trivial calculation")
+    shared_calc_utility_func(trivial_args)
     trivial_args.add_argument('--permute-chains', action='store_true', default=False)
     add_input_output_utility_func(trivial_args_)
     return parser
@@ -193,9 +186,9 @@ def _process_arguments2(parse_res):
             if parse_res.use_perm:
                 dictionary_args['perm_file_name'] = parse_res.use_perm
             dictionary_args['keep_structure'] = parse_res.keep_structure
-            dictionary_args['no_constraint'] = parse_res.no_constraint
-            dictionary_args['print_branches'] = parse_res.output_branches
-            permuters.print_branches = parse_res.output_branches
+            #dictionary_args['no_constraint'] = parse_res.no_constraint
+            #dictionary_args['print_branches'] = parse_res.output_branches
+            #permuters.print_branches = parse_res.output_branches
             dictionary_args['perms_csv_name'] = parse_res.output_perms
             dictionary_args['print_perms'] = parse_res.output_perms
 
@@ -238,7 +231,7 @@ def _process_arguments2(parse_res):
     return dictionary_args
 
 def get_parsed_args(args):
-    parser = _create_parser_2()
+    parser = _create_parser()
     parsed_args = parser.parse_args(args)
     processed_args = _process_arguments2(parsed_args)
     return processed_args
@@ -246,6 +239,6 @@ def get_parsed_args(args):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
-    parser = _create_parser_2()
+    parser = _create_parser()
     parsed_args = parser.parse_args(args)
     processed_args = _process_arguments2(parsed_args)
