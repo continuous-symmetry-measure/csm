@@ -73,7 +73,8 @@ class OBMolWriter:
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
 
         obmol = MoleculeReader._obm_from_file(result.molecule._filename,
-                                              result.molecule._babel_bond)[0]
+                                              result.molecule._babel_bond,
+                                              result.molecule._format)[0]
         for to_remove in result.molecule._deleted_atom_indices:
             obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
 

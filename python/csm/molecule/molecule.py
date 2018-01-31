@@ -104,6 +104,7 @@ class Molecule:
         #getting rid of obmol:
             #self._obmol = obmol
             self._filename=None
+            self._format=None
             self._deleted_atom_indices=[]
             self._babel_bond=False
 
@@ -119,6 +120,7 @@ class Molecule:
 
         #m._obmol=self.obmol
         m._filename=self._filename
+        m._format=self._format
         m._deleted_atom_indices=self._deleted_atom_indices
         m._babel_bond = self._babel_bond
 
@@ -152,6 +154,7 @@ class Molecule:
             #obmol: needed for printing:
             "deleted indices":self._deleted_atom_indices,
             "filename":self._filename,
+            "format":self._format,
             "babel_bond": self._babel_bond,
             #chains
             "chains": self.chains.to_array()
@@ -178,6 +181,7 @@ class Molecule:
         m._chains=c
 
         m._filename=in_dict["filename"]
+        m._format=in_dict["format"]
         m._deleted_atom_indices = in_dict["deleted indices"]
         #m._format=in_dict["format"]
         m._babel_bond=in_dict["babel_bond"]
@@ -671,6 +675,7 @@ class MoleculeReader:
         # step one: get the molecule object
         obm = MoleculeReader._obm_from_string(string, format, babel_bond)
         mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass)
+        mol._format=format
 
 
         if initialize:
@@ -743,6 +748,7 @@ class MoleculeReader:
                 elif use_chains:
                     logger.warn("You specified --use-chains but molecule only has one chain")
         set_obmol_field(mol)
+        mol._format=format
         return mol
 
 
