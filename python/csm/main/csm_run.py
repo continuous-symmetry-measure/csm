@@ -9,7 +9,7 @@ from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
 from csm.calculations import Approx, Trivial, Exact
 from csm.input_output.readers import read_perm
-from csm.input_output.writers import FileWriter
+from csm.input_output.writers import FileWriter, StatisticWriter
 from csm import __version__
 from csm.molecule import molecule
 from csm.molecule.molecule import MoleculeReader, Molecule
@@ -23,10 +23,12 @@ def read_molecule(dictionary_args):
 
 def write_results(dictionary_args, result):
     # step six: print the results
-    op=Operation.placeholder(result.op_type, result.op_order)
+    if "op_name" not in dictionary_args:
+        op=Operation.placeholder(result.op_type, result.op_order)
+        dictionary_args["op_name"]=op.name
     if dictionary_args['calc_local']:
         result.compute_local_csm()
-    fw = FileWriter(result, op_name=op.name, **dictionary_args)
+    fw = FileWriter(result, **dictionary_args)
     fw.write()
 
 
@@ -89,6 +91,14 @@ def run(args=[]):
             print("Timed out")
             return
         result=calc.result
+
+        #statistics for approx
+        try:
+            if dictionary_args["stat_file_name"] is not None:
+                sw=StatisticWriter(result.statistics, dictionary_args["stat_file_name"], dictionary_args["polar"])
+                sw.write()
+        except KeyError:
+            pass
 
         #do output:
         if dictionary_args["out_file_name"]:

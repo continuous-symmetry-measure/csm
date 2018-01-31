@@ -266,62 +266,56 @@ class ResultWriter:
             print("Chain perm: ", self.result.chain_perm_string())
 
 class StatisticWriter:
-    def __init__(self, result, stat_file_name, polar):
-        try:
-            self.statistics=result.statistics
-        except:
-            self.statistics=None
+    def __init__(self, statistics, stat_file_name, polar):
+        self.statistics=statistics
         self.file_name = stat_file_name
         self.polar = polar
 
 
     def write(self):
-        if self.file_name:
-            if self.statistics:
-                with open(self.file_name, 'w') as file:
-                    if self.polar:
-                        file.write("Index"
-                                "\tr_i\tth_i\tph_i"
-                               "\tCSM_i"
-                               "\tr_f\tth_f\tph_f"
-                               "\tCSM_f"
-                                "\tRuntime"
-                                "\t No Iterations"
-                                "\n")
-                    else:
-                        file.write("Index"
-                                "\tx_i\ty_i\tz_i"
-                               "\tCSM_i"
-                               "\tx_f\ty_f\tz_f"
-                               "\tCSM_f"
-                                "\tRuntime"
-                                "\t No Iterations"
-                                "\n")
-                    for key in self.statistics:
-                        stat=self.statistics[key]
-                        x,y,z=stat.start_dir
-                        xf,yf,zf=stat.end_dir
-                        if self.polar:
-                            x,y,z=cart2sph(x,y,z)
-                            xf,yf,zf=cart2sph(xf,yf,zf)
+        with open(self.file_name, 'w') as file:
+            if self.polar:
+                file.write("Index"
+                        "\tr_i\tth_i\tph_i"
+                       "\tCSM_i"
+                       "\tr_f\tth_f\tph_f"
+                       "\tCSM_f"
+                        "\tRuntime"
+                        "\t No Iterations"
+                        "\n")
+            else:
+                file.write("Index"
+                        "\tx_i\ty_i\tz_i"
+                       "\tCSM_i"
+                       "\tx_f\ty_f\tz_f"
+                       "\tCSM_f"
+                        "\tRuntime"
+                        "\t No Iterations"
+                        "\n")
+            for key in self.statistics:
+                stat=self.statistics[key]
+                x,y,z=stat.start_dir
+                xf,yf,zf=stat.end_dir
+                if self.polar:
+                    x,y,z=cart2sph(x,y,z)
+                    xf,yf,zf=cart2sph(xf,yf,zf)
 
-                        file.write(str(stat.index) +"\t"
-                                   + format_CSM(x)+ "\t"+format_CSM(y)+ "\t"+format_CSM(z)+ "\t"
-                                   + format_CSM(stat.start_csm)+"\t"
-                                   + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
-                                   + format_CSM(stat.end_csm) + "\t"
-                                   + str(stat.run_time) + "\t"
-                                   + str(stat.num_iterations) + "\n")
+                file.write(str(stat.index) +"\t"
+                           + format_CSM(x)+ "\t"+format_CSM(y)+ "\t"+format_CSM(z)+ "\t"
+                           + format_CSM(stat.start_csm)+"\t"
+                           + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
+                           + format_CSM(stat.end_csm) + "\t"
+                           + str(stat.run_time) + "\t"
+                           + str(stat.num_iterations) + "\n")
 
 class FileWriter(ResultWriter):
     """
     A ResultWriter class that writes to a file 
     """
 
-    def __init__(self, result, out_file_name, op_name, print_local=False, json_output=False, stat_file_name=None, polar=False, out_format=None, *args, **kwargs):
+    def __init__(self, result, out_file_name, op_name, print_local=False, json_output=False, out_format=None, *args, **kwargs):
         self.out_file_name = out_file_name
         self.json_output = json_output
-        self.statistic_writer=StatisticWriter(result, stat_file_name, polar)
         if not out_format:
             try:
                 out_format=get_format(None, out_file_name)
@@ -333,7 +327,6 @@ class FileWriter(ResultWriter):
         self.print_structure()
         self.print_result()
         self.print_chain_perm()
-        self.statistic_writer.write()
         if self.json_output:
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
                 json.dump(self.to_dict(), f)
