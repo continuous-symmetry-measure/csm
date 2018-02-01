@@ -1,5 +1,19 @@
 The Python CSM Package
 ======================
+Changes in version 0.19.0
+-------------------------
+
+MAJOR UPDATE
+This update is NOT backwards compatible.
+
+The program has been split into parts, with commands `read`, `exact`, `approx`, `trivial`, and `write`.
+This enables the program to be treated as separate, pipeable scripts
+Arguments have been divided between their relevant commands,
+although exact, approx, and trivial allow commands from read/write in conjunction with --input, --output
+
+the flag --no-constraint has been removed
+
+
 Changes in version 0.18.0
 -------------------------
 * switch to openbabel 2.4.1
