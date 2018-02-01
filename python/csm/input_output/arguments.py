@@ -1,5 +1,7 @@
 from argparse import ArgumentParser
 import logging
+
+from csm.calculations import permuters
 from csm.calculations.data_classes import Operation
 
 logger = logging.getLogger(__name__)
@@ -81,6 +83,8 @@ def _create_parser():
     exact_args.add_argument('--use-perm', type=str,
                             help='Compute exact CSM for a single permutation')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
+                            help="Don't allow permutations that break bonds")
+    exact_args.add_argument('--output-branches', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-perms', action='store', default=None,
                             help='Writes all enumerated permutations to file')
@@ -187,8 +191,8 @@ def _process_arguments2(parse_res):
                 dictionary_args['perm_file_name'] = parse_res.use_perm
             dictionary_args['keep_structure'] = parse_res.keep_structure
             #dictionary_args['no_constraint'] = parse_res.no_constraint
-            #dictionary_args['print_branches'] = parse_res.output_branches
-            #permuters.print_branches = parse_res.output_branches
+            dictionary_args['print_branches'] = parse_res.output_branches
+            permuters.print_branches = parse_res.output_branches
             dictionary_args['perms_csv_name'] = parse_res.output_perms
             dictionary_args['print_perms'] = parse_res.output_perms
 
