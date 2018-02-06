@@ -265,7 +265,7 @@ class ResultWriter:
         if len(self.result.molecule.chains)>1:
             print("Chain perm: ", self.result.chain_perm_string())
 
-class StatisticWriter:
+class ApproxStatisticWriter:
     def __init__(self, statistics, stat_file_name, polar):
         self.statistics=statistics
         self.file_name = stat_file_name

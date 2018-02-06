@@ -26,7 +26,6 @@ class TestExact(Runner):
         self.run_args(run_str)
     def test_exact_args(self):
         self.run_args(r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_testoutput.txt --keep-structure")
-        self.run_args(r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_testoutput.txt --no-constraint")
 
     @pytest.mark.parametrize("run_str",
                              [

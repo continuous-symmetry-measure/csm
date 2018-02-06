@@ -56,10 +56,3 @@ class TrivialCalculation(Calculation):
 
         self._csm_result = best
         return self.result
-
-
-def trivial_calculation(op_type, op_order, molecule, sn_max=8, use_chains=True, *args, **kwargs):
-    tc=TrivialCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, use_chains)
-    tc.calculate()
-    return tc.result
-

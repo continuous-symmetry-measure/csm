@@ -31,6 +31,30 @@ class CSMValueError(ValueError):
         self.CSMState = CSMState
         super().__init__(arg1)
 
+
+class ExactStatistics:
+    def __init__(self, permuter):
+        self._perm_count=permuter.count
+        self._truecount=permuter.truecount
+        self._falsecount=permuter.falsecount
+
+    def write_to_screen(self):
+        print("Number of permutations: %s" % format_perm_count(self.perm_count))
+        print("Number of branches in permutation tree: %s" % format_perm_count(self.num_branches))
+        print("Number of dead ends: %s" % format_perm_count(self.dead_ends))
+
+    @property
+    def dead_ends(self):
+        return self._falsecount
+
+    @property
+    def perm_count(self):
+        return self._perm_count
+
+    @property
+    def num_branches(self):
+        return self._truecount
+
 class ExactCalculation(Calculation):
     def __init__(self, operation, molecule, keep_structure=False, perm=None, no_constraint=False, timeout=300, callback_func=None, *args, **kwargs):
         """
@@ -118,9 +142,7 @@ class ExactCalculation(Calculation):
             if csm < best_csm.csm:
                 best_csm = best_csm._replace(csm=csm, dir=dir, perm=list(calc_state.perm))
 
-        self._perm_count=permuter.count
-        self._truecount=permuter.truecount
-        self._falsecount=permuter.falsecount
+        self.statistics=ExactStatistics(permuter)
 
         if best_csm.csm == MAXDOUBLE:
             # failed to find csm value for any permutation
@@ -128,31 +150,12 @@ class ExactCalculation(Calculation):
             raise CSMValueError("Failed to calculate a csm value for %s %d" % (op_type, op_order), best_csm)
         return best_csm
 
-    @property
-    def dead_ends(self):
-        return self._falsecount
-
-    @property
-    def perm_count(self):
-        return self._perm_count
-
-    @property
-    def num_branches(self):
-        return self._truecount
-
-
-def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
-    ec= ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm, no_constraint, timeout)
-    ec.calculate()
-    if not perm and not suppress_print:
-        print("Number of permutations: %s" % format_perm_count(ec.perm_count))
-        print("Number of branches in permutation tree: %s" % format_perm_count(ec.num_branches))
-        print("Number of dead ends: %s" % format_perm_count(ec.dead_ends))
-    return ec.result
-
-
-
-
+    @staticmethod
+    def exact_calculation_for_approx(op_type, op_order, molecule, perm):
+        ec = ExactCalculation(Operation.placeholder(op_type, op_order, 8), molecule, False, perm,
+                              False)
+        ec.calculate()
+        return ec.result
 
 
 

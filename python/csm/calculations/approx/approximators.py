@@ -1,86 +1,18 @@
 import operator
-
-import datetime
-from collections import OrderedDict
-
 import numpy as np
-import math
 from csm.fast import approximate_perm_classic, munkres_wrapper
-from csm.fast import approximate_perm_hungarian as cython_hungarian
-from csm.calculations.exact_calculations import exact_calculation
+
+from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance,  check_perm_cycles
 from csm.calculations.data_classes import CSMState
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
     ConstraintsSelectedByDistancePermuter
-from csm.molecule.molecule import Molecule, MoleculeFactory
+from csm.molecule.molecule import MoleculeFactory
 from csm.fast import CythonPermuter
 from csm.input_output.formatters import csm_log as print
 
-class ApproxStatistics:
-    class DirectionStatistics:
-        # per direction, we want to store:
-        # 1. every direction passed through
-        # 2. every csm passed through, and percent cycle preservation
-        # 3. runtime
-        def __init__(self, dir, index):
-            self.start_dir=dir
-            self.index=index
-            self.dirs=[]
-            self.csms=[]
-            self.cycle_stats=[]
-            self._stop_reason=""
-        def append(self, result):
-            self.dirs.append(result.dir)
-            self.csms.append(result.csm)
-            self.cycle_stats.append(result.num_invalid)
 
-        @property
-        def stop_reason(self):
-            return self._stop_reason
-
-        @stop_reason.setter
-        def stop_reason(self, reason):
-            self._stop_reason=reason
-        def start_clock(self):
-            self.__start_time=datetime.datetime.now()
-        def end_clock(self):
-            now=datetime.datetime.now()
-            time_d = now-self.__start_time
-            self.run_time=time_d.total_seconds()
-        def __repr__(self):
-            return str({
-                "dirs":self.dirs,
-                "csms":self.csms
-            })
-
-        @property
-        def end_dir(self):
-            return self.dirs[-1]
-        @property
-        def start_csm(self):
-            return self.csms[0]
-        @property
-        def end_csm(self):
-            return self.csms[-1]
-        @property
-        def num_iterations(self):
-            return len(self.dirs)
-        def __lt__(self, other):
-            return self.end_csm < other.end_csm
-
-    def __init__(self, initial_directions):
-        self.directions_dict=OrderedDict()
-        self.directions_arr=[]
-        for index, dir in enumerate(initial_directions):
-            self.directions_dict[tuple(dir)]=ApproxStatistics.DirectionStatistics(dir, index)
-            self.directions_arr.append(self.directions_dict[tuple(dir)])
-    def __getitem__(self, key):
-        return self.directions_dict[tuple(key)]
-    def __iter__(self):
-        return self.directions_dict.__iter__()
-    def __str__(self):
-        return str(self.directions_dict)
 
 
 class Approximator:
@@ -91,20 +23,20 @@ class Approximator:
     All inheriting classes must implement _approximate_from_initial_direction, and may optionally implement _precalculate
     '''
 
-    def __init__(self, op_type, op_order, molecule, dir_chooser, log_func=lambda *args: None, timeout=100, selective=False, num_selected=10):
+    def __init__(self, op_type, op_order, molecule, directions, statistics, log_func=lambda *args: None, timeout=100, selective=False, num_selected=10):
         self._op_type = op_type
         self._op_order = op_order
         self._molecule = molecule
-        self._initial_directions = dir_chooser.dirs
+        self._initial_directions = directions
         self._log = log_func
         if len(self._initial_directions) >1:
             self._log("There are", len(self._initial_directions), "initial directions to search for the best permutation")
         self._chain_permutations = [[0]]  # this is overwritten by precalculate when chains are used
         self.max_iterations=30
         self.timeout=timeout
-        self.statistics=ApproxStatistics(self._initial_directions)
         self.selective=selective
         self.num_selected=num_selected
+        self.statistics=statistics
 
     def _for_inversion(self, best):
         # if inversion:
@@ -119,7 +51,7 @@ class Approximator:
         for chainperm in self._chain_permutations:
             self._log("Calculating for chain permutation ", chainperm)
             perm = self._create_perm_from_dir(dir, chainperm)
-            best_for_chain_perm = exact_calculation(self._op_type, self._op_order, self._molecule, keep_structure=False,
+            best_for_chain_perm = ExactCalculation.exact_calculation_for_approx(self._op_type, self._op_order, self._molecule,
                                                     perm=perm)
             if best_for_chain_perm.csm < best.csm:
                 best = best_for_chain_perm
@@ -194,9 +126,7 @@ class Approximator:
 
                 try:
                     perm = self._create_perm_from_dir(old_results.dir, chainperm)
-                    interim_results = exact_calculation(self._op_type, self._op_order, self._molecule,
-                                                        keep_structure=False,
-                                                        perm=perm)
+                    interim_results = ExactCalculation.exact_calculation_for_approx(self._op_type, self._op_order, self._molecule, perm=perm)
                 except CalculationTimeoutError as e:
                     self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
                     break

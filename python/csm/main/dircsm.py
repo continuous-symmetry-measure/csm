@@ -9,13 +9,12 @@ from argparse import RawTextHelpFormatter, ArgumentParser
 import math
 import random
 from csm import __version__
-from csm.calculations import Approx
+from csm.calculations import Approx, ApproxCalculation
 from csm.calculations.approx.dirs import dirs_orthogonal
 from csm.calculations.basic_calculations import check_perm_cycles
 from csm.calculations.constants import MAXDOUBLE
-from csm.calculations.data_classes import CSMState
-from csm.calculations.exact_calculations import exact_calculation, CSMValueError
-from csm.calculations.approx.main import approx_calculation
+from csm.calculations.data_classes import CSMState, Operation
+from csm.calculations.exact_calculations import CSMValueError, ExactCalculation
 from csm.input_output.arguments_old import get_split_arguments
 from csm.input_output.formatters import format_CSM
 from csm.input_output.writers import print_results
@@ -27,6 +26,15 @@ __author__ = 'Devora Witty'
 '''
 accessory program for running different kinds of direction finding algorithms with the CSM approx algorithm
 '''
+def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None, keep_structure=False, *args, **kwargs):
+    ac=ApproxCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs, keep_structure)
+    ac.calculate()
+    return ac.result
+
+def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
+    ec= ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm, no_constraint, timeout)
+    ec.calculate()
+    return ec.result
 
 choice_dict = {
     '0': 'user-input',
@@ -228,7 +236,7 @@ def run_dir(index, dir, csm_args, molecule):
                             " the CSM value found was", format_CSM(result.csm),
                             "with a final dir of", result.dir)
 
-    falsecount, num_invalid, cycle_counts = result.perm_cycle_info
+    falsecount, num_invalid, cycle_counts = result.falsecount, result.num_invalid, result.cycle_counts
 
     if False:
         PrintClass.my_print(

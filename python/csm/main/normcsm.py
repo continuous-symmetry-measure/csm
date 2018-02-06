@@ -1,14 +1,21 @@
+from csm.calculations import ExactCalculation
+from csm.calculations.data_classes import Operation
 from csm.main.csm_run_old import run as csmrun
 import sys
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords
 from argparse import ArgumentParser
 from csm.input_output.arguments_old import _create_parser
 from csm.molecule.molecule import Molecule, MoleculeFactory
-from csm.calculations.exact_calculations import exact_calculation
 import numpy as np
 from argparse import RawTextHelpFormatter
 import logging
 logger = logging.getLogger(__name__)
+
+
+def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
+    ec= ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm, no_constraint, timeout)
+    ec.calculate()
+    return ec.result
 
 def get_normalization_type(args):
     parser = _create_parser()

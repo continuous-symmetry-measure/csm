@@ -9,7 +9,7 @@ from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
 from csm.calculations import Approx, Trivial, Exact
 from csm.input_output.readers import read_perm
-from csm.input_output.writers import FileWriter, StatisticWriter
+from csm.input_output.writers import FileWriter, ApproxStatisticWriter
 from csm import __version__
 from csm.molecule import molecule
 from csm.molecule.molecule import MoleculeReader, Molecule
@@ -92,10 +92,17 @@ def run(args=[]):
             return
         result=calc.result
 
+        #statistics for exact:
+        try:
+            if dictionary_args["print_branches"]:
+                calc.statistics.write_to_screen()
+        except KeyError:
+            pass
+
         #statistics for approx
         try:
             if dictionary_args["stat_file_name"] is not None:
-                sw=StatisticWriter(result.statistics, dictionary_args["stat_file_name"], dictionary_args["polar"])
+                sw=ApproxStatisticWriter(calc.statistics, dictionary_args["stat_file_name"], dictionary_args["polar"])
                 sw.write()
         except KeyError:
             pass

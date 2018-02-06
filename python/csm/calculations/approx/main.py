@@ -3,7 +3,9 @@ This is where the outside wrapper for the approximate calculation is located and
 """
 
 import math
+from collections import OrderedDict
 
+import datetime
 import numpy as np
 import sys
 
@@ -14,6 +16,72 @@ from csm.calculations.data_classes import process_results, Operation, Calculatio
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.input_output.readers import check_perm_validity
 from csm.input_output.formatters import csm_log as print
+
+
+class ApproxStatistics:
+    class DirectionStatistics:
+        # per direction, we want to store:
+        # 1. every direction passed through
+        # 2. every csm passed through, and percent cycle preservation
+        # 3. runtime
+        def __init__(self, dir, index):
+            self.start_dir=dir
+            self.index=index
+            self.dirs=[]
+            self.csms=[]
+            self.cycle_stats=[]
+            self._stop_reason=""
+        def append(self, result):
+            self.dirs.append(result.dir)
+            self.csms.append(result.csm)
+            self.cycle_stats.append(result.num_invalid)
+
+        @property
+        def stop_reason(self):
+            return self._stop_reason
+
+        @stop_reason.setter
+        def stop_reason(self, reason):
+            self._stop_reason=reason
+        def start_clock(self):
+            self.__start_time=datetime.datetime.now()
+        def end_clock(self):
+            now=datetime.datetime.now()
+            time_d = now-self.__start_time
+            self.run_time=time_d.total_seconds()
+        def __repr__(self):
+            return str({
+                "dirs":self.dirs,
+                "csms":self.csms
+            })
+
+        @property
+        def end_dir(self):
+            return self.dirs[-1]
+        @property
+        def start_csm(self):
+            return self.csms[0]
+        @property
+        def end_csm(self):
+            return self.csms[-1]
+        @property
+        def num_iterations(self):
+            return len(self.dirs)
+        def __lt__(self, other):
+            return self.end_csm < other.end_csm
+
+    def __init__(self, initial_directions):
+        self.directions_dict=OrderedDict()
+        self.directions_arr=[]
+        for index, dir in enumerate(initial_directions):
+            self.directions_dict[tuple(dir)]=ApproxStatistics.DirectionStatistics(dir, index)
+            self.directions_arr.append(self.directions_dict[tuple(dir)])
+    def __getitem__(self, key):
+        return self.directions_dict[tuple(key)]
+    def __iter__(self):
+        return self.directions_dict.__iter__()
+    def __str__(self):
+        return str(self.directions_dict)
 
 class ApproxCalculation(Calculation):
     """
@@ -41,7 +109,9 @@ class ApproxCalculation(Calculation):
             self.approximator_cls = StructuredApproximator
 
         self.timeout=timeout
-        self.direction_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs, fibonacci, num_dirs)
+        dir_chooser=DirectionChooser(molecule, operation.type, operation.order, use_best_dir, get_orthogonal, detect_outliers, dirs, fibonacci, num_dirs)
+        self.directions=dir_chooser.dirs
+        self.statistics=ApproxStatistics(self.directions)
         self.selective=selective
         self.num_selected=num_selected
 
@@ -53,11 +123,11 @@ class ApproxCalculation(Calculation):
         # step two: run the appropriate approximator
         if op_type == 'CH':  # Chirality
             # First CS
-            approximator = self.approximator_cls('CS', 2, molecule, self.direction_chooser, self.log)
+            approximator = self.approximator_cls('CS', 2, molecule, self.directions, self.statistics, self.log)
             best_result = approximator.approximate()
             if best_result.csm > MINDOUBLE:
                 # Try the SN's
-                approximator = self.approximator_cls('SN', 2, molecule, self.direction_chooser, self.log)
+                approximator = self.approximator_cls('SN', 2, molecule, self.directions, self.statistics, self.log)
                 for op_order in range(2, self.operation.order + 1, 2):
                     approximator._op_order = op_order
                     result = approximator.approximate()
@@ -68,7 +138,7 @@ class ApproxCalculation(Calculation):
                     if best_result.csm < MINDOUBLE:
                         break
         else:
-            approximator = self.approximator_cls(op_type, op_order, molecule, self.direction_chooser, self.log, self.timeout, self.selective, self.num_selected)
+            approximator = self.approximator_cls(op_type, op_order, molecule, self.directions, self.statistics, self.log, self.timeout, self.selective, self.num_selected)
             best_result = approximator.approximate()
         # step three: process and return results
         self.approximator=approximator
@@ -82,29 +152,5 @@ class ApproxCalculation(Calculation):
 class PrintApprox(ApproxCalculation):
     def log(self, *args, **kwargs):
         print(*args)
-
-def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None, keep_structure=False, *args, **kwargs):
-    """
-    Runs an approximate algorithm to estimate the csm value, using directions to create permutations iteratively
-
-    :param op_type: type of symmetry (CS, CN, CH, CI, SN)
-    :param op_order: order of symmetry (2, 3, 4...)
-    :param molecule: instance of Molecule class whose symmetry is being measured
-    :param approx_algorithm: string, 'hungarian', 'greedy', or 'many-chains'. many chains is hungarian optimized for many chains.
-    :param sn_max: for chirality, the maximum SN symmetry to measure
-    :param use_best_dir: use only the best direction 
-    :param get_orthogonal: get orthogonal direction vectors from the main directions
-    :param detect_outliers: detect outliers and use the imrpoved direction vectors
-    :param print_approx: 
-    :param dirs: a list of directions to use as initial dire
-    :return: CSMResult of approximate calculation
-    """
-    if print_approx:
-        ac=PrintApprox(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs, keep_structure)
-    else:
-        ac=ApproxCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, approx_algorithm, use_best_dir, get_orthogonal, detect_outliers, dirs, keep_structure)
-    ac.calculate()
-    return ac.result
-
 
 
