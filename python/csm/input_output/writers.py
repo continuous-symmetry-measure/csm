@@ -284,29 +284,32 @@ class ApproxStatisticWriter:
                         "\t No Iterations"
                         "\n")
             else:
-                file.write("Index"
-                        "\tx_i\ty_i\tz_i"
+                file.write("Index\t"
+                        "x_i\ty_i\tz_i"
                        "\tCSM_i"
                        "\tx_f\ty_f\tz_f"
                        "\tCSM_f"
                         "\tRuntime"
                         "\t No Iterations"
                         "\n")
-            for key in self.statistics:
-                stat=self.statistics[key]
-                x,y,z=stat.start_dir
-                xf,yf,zf=stat.end_dir
-                if self.polar:
-                    x,y,z=cart2sph(x,y,z)
-                    xf,yf,zf=cart2sph(xf,yf,zf)
+            for index, key in enumerate(self.statistics):
+                try:
+                    stat=self.statistics[key]
+                    x,y,z=stat.start_dir
+                    xf,yf,zf=stat.end_dir
+                    if self.polar:
+                        x,y,z=cart2sph(x,y,z)
+                        xf,yf,zf=cart2sph(xf,yf,zf)
 
-                file.write(str(stat.index) +"\t"
-                           + format_CSM(x)+ "\t"+format_CSM(y)+ "\t"+format_CSM(z)+ "\t"
-                           + format_CSM(stat.start_csm)+"\t"
-                           + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
-                           + format_CSM(stat.end_csm) + "\t"
-                           + str(stat.run_time) + "\t"
-                           + str(stat.num_iterations) + "\n")
+                    file.write(str(index) +"\t" +
+                               format_CSM(x)+ "\t"+format_CSM(y)+ "\t"+format_CSM(z)+ "\t"
+                               + format_CSM(stat.start_csm)+"\t"
+                               + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
+                               + format_CSM(stat.end_csm) + "\t"
+                               + str(stat.run_time) + "\t"
+                               + str(stat.num_iterations) + "\n")
+                except IndexError:
+                    pass #TODO: right now a good first direction stops fibonacci from running any of the othes, we may want to override this
 
 class FileWriter(ResultWriter):
     """

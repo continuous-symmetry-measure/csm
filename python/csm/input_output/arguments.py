@@ -115,6 +115,8 @@ def _create_parser():
                              help='Use keep-structure approximate algorithm')
     approx_args.add_argument('--selective', type=int,
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
+    approx_args.add_argument('--parallel', action='store_true', default=False,
+                             help='Calculate directions in parallel. Recommended for use with fibonacci')
     #outputs
     approx_args.add_argument('--statistics', type=str,
                              help='Print statistics about each direction to a file')
@@ -134,7 +136,7 @@ def _create_parser():
     add_input_output_utility_func(trivial_args_)
     return parser
 
-def _process_arguments2(parse_res):
+def _process_arguments(parse_res):
     def parse_input(dictionary_args):
         dictionary_args['in_file_name'] = parse_res.input
         dictionary_args['remove_hy'] = parse_res.remove_hy
@@ -220,12 +222,14 @@ def _process_arguments2(parse_res):
                     raise ValueError("--many-chains and --greedy are mutually exclusive")
                 dictionary_args['use_chains'] = True
                 dictionary_args['approx_algorithm'] = 'many-chains'
-            dictionary_args['keep_structure'] = parse_res.keep_structure
+            if parse_res.keep_structure:
+                dictionary_args['approx_algorithm'] = 'structured'
+
             if parse_res.selective is not None:
-                if parse_res.fibonacci is None:
-                    raise ValueError("For now --selective must be used with --fibonacci")
                 dictionary_args["selective"] = True
                 dictionary_args["num_selected"] = parse_res.selective
+
+            dictionary_args['parallel']=parse_res.parallel
 
             #outputs:
             dictionary_args['print_approx'] = parse_res.print_approx
@@ -237,12 +241,7 @@ def _process_arguments2(parse_res):
 def get_parsed_args(args):
     parser = _create_parser()
     parsed_args = parser.parse_args(args)
-    processed_args = _process_arguments2(parsed_args)
+    if parsed_args.command is None:
+        parser.error("You must select a command from: read, exact, approx, trivial, write")
+    processed_args = _process_arguments(parsed_args)
     return processed_args
-
-
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    parser = _create_parser()
-    parsed_args = parser.parse_args(args)
-    processed_args = _process_arguments2(parsed_args)

@@ -4,14 +4,14 @@ import logging
 import sys
 import timeit
 
+from csm.calculations.approx.approximators import ParallelApprox
 from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
-from csm.calculations import Approx, Trivial, Exact
+from csm.calculations import Approx, Trivial, Exact, DirectionChooser
 from csm.input_output.readers import read_perm
 from csm.input_output.writers import FileWriter, ApproxStatisticWriter
 from csm import __version__
-from csm.molecule import molecule
 from csm.molecule.molecule import MoleculeReader, Molecule
 from csm.input_output.formatters import csm_log as print
 sys.setrecursionlimit(10000)
@@ -73,12 +73,15 @@ def run(args=[]):
             calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
 
         if command=="approx":
-            if dictionary_args['print_approx']:
-                class PrintApprox(Approx):
+            dir_choose = DirectionChooser(**dictionary_args)
+            dictionary_args["direction_chooser"] = dir_choose
+            if dictionary_args["parallel"]:
+                calc=ParallelApprox(**dictionary_args)
+            else:
+                if dictionary_args['print_approx']:
                     def log(self, *args, **kwargs):
                         print(*args)
-                calc=PrintApprox(**dictionary_args)
-            else:
+                    dictionary_args["log_func"]=log
                 calc = Approx(**dictionary_args)
 
         if command=="trivial":
