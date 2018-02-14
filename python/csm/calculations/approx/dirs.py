@@ -9,18 +9,19 @@ from csm.calculations.constants import MINDOUBLE
 
 MIN_GROUPS_FOR_OUTLIERS = 10
 
-class DirectionChooser:
-    def __init__(self, molecule, op_type, op_order, use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, fibonacci=False, num_dirs=50, *args, **kwargs):
-        if dirs is not None:
-            self._dirs = dirs
-        elif fibonacci:
-            self._dirs=self.fibonacci_sphere(num_dirs)
-        else:
-            self._op_type=op_type
-            self._op_order=op_order
-            self._dirs = self._choose_initial_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
-                                        op_type)
 
+class DirectionChooser:
+    @property
+    def dirs(self):
+        return self._dirs
+
+class ClassicDirectionChooser(DirectionChooser):
+    def __init__(self, molecule, op_type, op_order, use_best_dir=False, get_orthogonal=True, detect_outliers=False, *args, **kwargs):
+        self._op_type = op_type
+        self._op_order = op_order
+        self._dirs = self._choose_initial_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
+                                                     op_type)
+        pass
     def _choose_initial_directions(self, molecule, use_best_dir, get_orthogonal, detect_outliers,
                                            op_type):
         # if inversion:
@@ -32,34 +33,6 @@ class DirectionChooser:
             initial_directions = self.find_symmetry_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
                                                           op_type)
         return initial_directions
-
-    def fibonacci_sphere(self, num_dirs, randomize=False):
-        # https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere/26127012#26127012
-        rnd = 1.
-        # if randomize:
-        #    rnd = random.random() * samples
-
-        dirs = []
-        offset = 2. / num_dirs
-        increment = math.pi * (3. - math.sqrt(5.));
-
-        for i in range(num_dirs):
-            y = ((i * offset) - 1) + (offset / 2);
-            r = math.sqrt(1 - pow(y, 2))
-
-            phi = ((i + rnd) % num_dirs) * increment
-
-            x = math.cos(phi) * r
-            z = math.sin(phi) * r
-
-            dirs.append([x, y, z])
-
-        return dirs
-
-    @property
-    def dirs(self):
-        return self._dirs
-
     def find_symmetry_directions(self, molecule, use_best_dir, get_orthogonal, detect_outliers, op_type):
         # get average position of each equivalence group:
         group_averages = []
@@ -78,7 +51,6 @@ class DirectionChooser:
         if get_orthogonal:
             dirs = self.dirs_orthogonal(dirs)
         return dirs
-
 
     def normalize_dir(self,dir):
         dir = np.array(dir)  # lists also get sent to this function, but can't be /='d
@@ -191,67 +163,13 @@ class DirectionChooser:
 
         return np.array(added_dirs)
 
-
-def dirs_orthogonal(dirs):
-    """
-    this function is called by dircsm, and until that gets killed and moved to here, it stays
-    :param dirs: 
-    :return: 
-    """
-    dc = DirectionChooser(None, None, None, dirs=[1, 1, 1])
-    return dc.dirs_orthogonal(dirs)
-
-
-
-class DirectionChooserNew:
-    def __init__(self, molecule, chooser_type, orthogonal, num_dirs, dirs=None):
-        dirs=[]
-        if orthogonal:
-            dirs = dirs_orthogonal(dirs)
-        #remove doubles (can be introduced by orth)
-        dirs=list(set(dirs))
-        pass
-
-    def classic(self):
-        pass
-
-    def atom_vectors(self):
-        molecule=self.molecule
-        dirs=[]
-        for atom in molecule.atoms:
-            dir = [atom.pos[0] - molecule.center_of_mass[0],
-                   atom.pos[1] - molecule.center_of_mass[1],
-                   atom.pos[2] - molecule.center_of_mass[2]]
-            dir /= np.linalg.norm(dir)
-            dirs.append(dir)
-        return dirs
-
-    def cube_corners(self):
-        molecule=self.molecule
-        dirs=[]
-        center = molecule.center_of_mass
-        corner = np.add(center, [.5, .5, .5])
-        dirs.append(corner)
-        corner = np.add(center, [.5, .5, -.5])
-        dirs.append(corner)
-        corner = np.add(center, [.5, -.5, .5])
-        dirs.append(corner)
-        corner = np.add(center, [.5, -.5, -.5])
-        dirs.append(corner)
-        corner = np.add(center, [-.5, .5, .5])
-        dirs.append(corner)
-        corner = np.add(center, [-.5, .5, -.5])
-        dirs.append(corner)
-        corner = np.add(center, [-.5, -.5, .5])
-        dirs.append(corner)
-        corner = np.add(center, [-.5, -.5, -.5])
-        dirs.append(corner)
-        return dirs
-
+class FibonacciDirectionChooser(DirectionChooser):
+    def __init__(self, num_dirs=50):
+        self._dirs = self.fibonacci_sphere(num_dirs)
     def fibonacci_sphere(self, num_dirs, randomize=False):
         # https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere/26127012#26127012
         rnd = 1.
-        #if randomize:
+        # if randomize:
         #    rnd = random.random() * samples
 
         dirs = []
@@ -270,5 +188,28 @@ class DirectionChooserNew:
             dirs.append([x, y, z])
 
         return dirs
+
+class PseudoDirectionChooser(DirectionChooser):
+    def __init__(self, dirs):
+        self._dirs=dirs
+
+
+def get_direction_chooser(molecule=None, op_type=None, op_order=None, use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, fibonacci=False, num_dirs=50, *args, **kwargs):
+    if dirs is not None:
+        return PseudoDirectionChooser(dirs)
+    elif fibonacci:
+        return FibonacciDirectionChooser(num_dirs)
+    else:
+        return ClassicDirectionChooser(molecule, op_type, op_order, use_best_dir, get_orthogonal, detect_outliers)
+
+
+
+
+
+
+
+
+
+
 
 
