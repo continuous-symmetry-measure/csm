@@ -5,6 +5,7 @@ import sys
 import timeit
 
 from csm.calculations.approx.approximators import ParallelApprox
+from csm.calculations.approx.dirs import get_direction_chooser
 from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
@@ -73,8 +74,8 @@ def run(args=[]):
             calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
 
         if command=="approx":
-            dir_choose = DirectionChooser(**dictionary_args)
-            dictionary_args["direction_chooser"] = dir_choose
+            dir_chooser = get_direction_chooser(**dictionary_args)
+            dictionary_args["direction_chooser"] = dir_chooser
             if dictionary_args["parallel"]:
                 calc=ParallelApprox(**dictionary_args)
             else:

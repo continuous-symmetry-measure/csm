@@ -8,7 +8,7 @@ import numpy as np
 from csm.fast import approximate_perm_classic, munkres_wrapper
 from csm.input_output.formatters import format_CSM
 from csm.calculations.exact_calculations import ExactCalculation
-from csm.calculations.basic_calculations import create_rotation_matrix, array_distance,  check_perm_cycles
+from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, check_perm_cycles
 from csm.calculations.data_classes import CSMState, Operation
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
@@ -74,40 +74,43 @@ class SingleDirectionStatistics:
         return len(self.dirs)
 
     def __lt__(self, other):
-        try: #iof other doesn't have csm, we are less than them
-            that_one=other.end_csm
+        try:  # iof other doesn't have csm, we are less than them
+            that_one = other.end_csm
         except:
             return True
 
-        try: #if we don't have csm, other is less than us
-            this_one=self.end_csm
+        try:  # if we don't have csm, other is less than us
+            this_one = self.end_csm
         except:
             return False
 
         return self.end_csm < other.end_csm
 
-class _SingleDirApproximator:
-    def __init__(self,  op_type, op_order, molecule, log_func=None, timeout=100, max_iterations=50):
-        self._molecule=molecule
-        self._op_type=op_type
-        self._op_order=op_order
-        self.max_iterations=max_iterations
-        self._chain_permutations=[[0]] #overriden by precalculate when relevant
-        self._precalculate()
-        self._log_func=log_func
+
+class SingleDirApproximator:
+    def __init__(self, operation, molecule, perm_from_dir_builder, log_func=None, timeout=100,
+                 max_iterations=50):
+        self._molecule = molecule
+        self._op_type = operation.type
+        self._op_order = operation.order
+        self.max_iterations = max_iterations
+        self._log_func = log_func
+        self.perm_from_dir_builder = perm_from_dir_builder(operation, molecule, log_func, timeout)
+        self._chain_permutations = self.perm_from_dir_builder.get_chain_perms()
+
 
     def _precalculate(self):
         pass
 
     def _create_perm_from_dir(self, dir, chainperm):
-        raise NotImplementedError
+        return self.perm_from_dir_builder.create_perm_from_dir(dir, chainperm)
 
     def calculate(self, dir):
-        self.statistics=SingleDirectionStatistics(dir)
+        self.statistics = SingleDirectionStatistics(dir)
         self.statistics.start_clock()
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
-        self.least_invalid=CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
-                                    csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
+        self.least_invalid = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
+                                      csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
         self._log("Calculating for initial direction: ", dir)
         for chainperm in self._chain_permutations:
             if len(self._chain_permutations) > 1:
@@ -122,16 +125,18 @@ class _SingleDirApproximator:
 
                 try:
                     perm = self._create_perm_from_dir(old_results.dir, chainperm)
-                    interim_results = ExactCalculation.exact_calculation_for_approx(self._op_type, self._op_order, self._molecule, perm=perm)
+                    interim_results = ExactCalculation.exact_calculation_for_approx(self._op_type, self._op_order,
+                                                                                    self._molecule, perm=perm)
                 except CalculationTimeoutError as e:
                     self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
                     break
 
-                if interim_results.num_invalid < self.least_invalid.num_invalid or\
-                        (interim_results.num_invalid == self.least_invalid.num_invalid and interim_results.csm < self.least_invalid.csm):
-                    self.least_invalid=interim_results
+                if interim_results.num_invalid < self.least_invalid.num_invalid or \
+                        (
+                                interim_results.num_invalid == self.least_invalid.num_invalid and interim_results.csm < self.least_invalid.csm):
+                    self.least_invalid = interim_results
                 self.statistics.append(interim_results)
-                #self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
+                # self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
                 if i > 1:
                     self._log("\t\t\tthere are",
                               len(perm) - np.sum(np.array(perm) == np.array(old_results.perm)),
@@ -146,21 +151,21 @@ class _SingleDirApproximator:
 
                 # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
                 if i >= self.max_iterations:
-                    self.statistics.stop_reason="Max iterations"
+                    self.statistics.stop_reason = "Max iterations"
                     self._log("\t\tStopping after %d iterations" % i)
                     break
                 # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
                 #    self._log("\t\tStopping due to CSM ratio")
                 if best_for_chain_perm.csm < CSM_THRESHOLD:
-                    self.statistics.stop_reason="CSM below threshold"
+                    self.statistics.stop_reason = "CSM below threshold"
                     self._log("\t\tStopping because the best CSM is good enough")
                     break
                 if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
-                    self.statistics.stop_reason="No change in direction"
+                    self.statistics.stop_reason = "No change in direction"
                     self._log("\t\tStopping because the direction has not changed")
                     break
                 if interim_results.csm >= old_results.csm:  # We found a worse CSM
-                    self.statistics.stop_reason="No improvement in CSM"
+                    self.statistics.stop_reason = "No improvement in CSM"
                     self._log("\t\tStopping because CSM did not improve (worse or equal)")
                     break
 
@@ -171,7 +176,7 @@ class _SingleDirApproximator:
                 if best_for_chain_perm.csm < CSM_THRESHOLD:
                     break
 
-        self.result=best
+        self.result = best
         self.statistics.end_clock()
         return best, self.statistics
 
@@ -180,7 +185,27 @@ class _SingleDirApproximator:
             self._log_func(*args)
 
 
-class _ChainPermsApproximator(_SingleDirApproximator):
+class _PermFromDirBuilder:
+    def __init__(self, operation, molecule, log_func, timeout):
+        self._molecule = molecule
+        self._op_type = operation.type
+        self._op_order = operation.order
+        self._log_func = log_func
+        self.timeout = timeout
+        self._precalculate()
+
+    def _precalculate(self):
+        '''should be overridden by inheriting classes that need chain permutations'''
+        self._chain_permutations=[[0]]
+
+    def get_chain_perms(self):
+        return self._chain_permutations
+
+    def create_perm_from_dir(self, dir, chainperm):
+        raise NotImplementedError
+
+
+class _ChainPermsPermBuilder(_PermFromDirBuilder):
     def _calc_chain_permutations(self):
         chain_permutations = []
         dummy = MoleculeFactory.dummy_molecule_from_size(len(self._molecule.chains), self._molecule.chain_equivalences)
@@ -192,25 +217,26 @@ class _ChainPermsApproximator(_SingleDirApproximator):
     def _precalculate(self):
         self._chain_permutations = self._calc_chain_permutations()
 
-class GreedyApproximator(_ChainPermsApproximator):
+
+class GreedyPermBuilder(_ChainPermsPermBuilder):
     '''
     This uses the Cython implementation of the classic (greedy) approximate algorithm.
     It is not optimized for molecules with many chain permutations.
     '''
 
-    def _create_perm_from_dir(self, dir, chainperm):
+    def create_perm_from_dir(self, dir, chainperm):
         return approximate_perm_classic(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
 
-class HungarianApproximator(_ChainPermsApproximator):
+class HungarianPermBuilder(_ChainPermsPermBuilder):
     '''
     This uses the Hungarian (munkres) algorithm for optimization of cost matrix.
          It is not optimized for molecules with many chain permutations.
     '''
 
-    def _create_perm_from_dir(self, dir, chainperm):
-        perm= self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
-        perm= self.cookie_dough(perm)
+    def create_perm_from_dir(self, dir, chainperm):
+        perm = self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
+        perm = self.cookie_dough(perm)
         return perm
 
     class DistanceMatrix:
@@ -385,23 +411,24 @@ class HungarianApproximator(_ChainPermsApproximator):
         return perm
 
     def cookie_dough(self, perm):
-        falsecount, num_invalid, cycle_counts, indices_in_bad_cycles = check_perm_cycles(perm, self._op_order, self._op_type)
+        falsecount, num_invalid, cycle_counts, indices_in_bad_cycles = check_perm_cycles(perm, self._op_order,
+                                                                                         self._op_type)
         return perm
 
 
-class ManyChainsApproximator(_SingleDirApproximator):
+class ManyChainsPermBuilder(_PermFromDirBuilder):
     '''
     This approximator uses the Hungarian (munkwres) algorithm to choose the optimal permutation of chains, rather than
     iterating through all possible chain permutations. It is hence more efficient for molecules with many possible chain
     permutations
     '''
 
-    def _create_perm_from_dir(self, dir, chainperm="dont care"):
+    def create_perm_from_dir(self, dir, chainperm="dont care"):
 
-        chain_len=len(self._molecule.chains[0])
+        chain_len = len(self._molecule.chains[0])
         for chain in self._molecule.chains:
-            test_len=len(self._molecule.chains[chain])
-            if test_len!=chain_len:
+            test_len = len(self._molecule.chains[chain])
+            if test_len != chain_len:
                 raise ValueError("--many-chains currently expects all chains to be of same length")
 
         rotation_mat = create_rotation_matrix(1, self._op_type, self._op_order, dir)
@@ -473,8 +500,8 @@ class ManyChainsApproximator(_SingleDirApproximator):
         return indexes, group_distance_matrix
 
 
-class StructuredApproximator(_SingleDirApproximator):
-    def _create_perm_from_dir(self, dir, chainperm="dontcare"):
+class StructuredPermBuilder(_PermFromDirBuilder):
+    def create_perm_from_dir(self, dir, chainperm="dontcare"):
         return self.build_perm_and_state_version_dict(self._op_type, self._op_order, self._molecule, dir)
 
     def build_perm_and_state_version_list(self, op_type, op_order, molecule, dir):
@@ -489,7 +516,8 @@ class StructuredApproximator(_SingleDirApproximator):
                     distances_list.append(((index_a, index_b), distance))
 
         distances_list.sort(key=operator.itemgetter(1))
-        permuter = ContraintsSelectedFromDistanceListPermuter(self._molecule, self._op_order, self._op_type, distances_list, timeout=30000)
+        permuter = ContraintsSelectedFromDistanceListPermuter(self._molecule, self._op_order, self._op_type,
+                                                              distances_list, timeout=30000)
         state = permuter.permute().__next__()
         self._log("\t\t\t Permutation took ", permuter.run_time, "seconds to find")
         perm = state.perm
@@ -499,15 +527,15 @@ class StructuredApproximator(_SingleDirApproximator):
         rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
         rotated = (rotation_mat @ molecule.Q.T).T
 
-        distances_dict={}
+        distances_dict = {}
         for index_a, a in enumerate(molecule.Q):
-            distances_dict[index_a]={}
+            distances_dict[index_a] = {}
             for index_b, b in enumerate(rotated):
                 if index_b in molecule.atoms[index_a].equivalency:
                     distance = array_distance(a, b)
-                    distances_dict[index_a][index_b]=distance
+                    distances_dict[index_a][index_b] = distance
 
-        permuter_class=ConstraintsOrderedByDistancePermuter #ConstraintsSelectedByDistancePermuter
+        permuter_class = ConstraintsOrderedByDistancePermuter  # ConstraintsSelectedByDistancePermuter
         permuter = permuter_class(self._molecule, self._op_order, self._op_type, distances_dict, perm_timeout=30000)
         state = permuter.permute().__next__()
         self._log("\t\t\tit took ", permuter.run_time, "seconds to find the permutation")
@@ -517,76 +545,92 @@ class StructuredApproximator(_SingleDirApproximator):
 
 class ApproxStatistics:
     def __init__(self, initial_directions):
-        self.directions_dict=OrderedDict()
-        self.directions_arr=[]
+        self.directions_dict = OrderedDict()
+        self.directions_arr = []
         for index, dir in enumerate(initial_directions):
-            self.directions_dict[tuple(dir)]=SingleDirectionStatistics(dir)
+            self.directions_dict[tuple(dir)] = SingleDirectionStatistics(dir)
             self.directions_arr.append(self.directions_dict[tuple(dir)])
+
     def __getitem__(self, key):
         return self.directions_dict[tuple(key)]
+
     def __setitem__(self, key, value):
-        self.directions_dict[tuple(key)]=value
+        self.directions_dict[tuple(key)] = value
+
     def __iter__(self):
         return self.directions_dict.__iter__()
+
     def __str__(self):
         return str(self.directions_dict)
+
+
+class ApproxApplier:
+    def __init__(self, operation, molecule, perm_builder):
+        self._op_type = operation.type
+        self._op_order = operation.order
+        self._molecule = molecule
+        self.perm_builder=perm_builder
+
+
 
 class ApproxCalculation:
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=lambda *args: None, timeout=100, selective=False, num_selected=10, *args, **kwargs):
+        self.operation=operation
         self._op_type = operation.type
         self._op_order = operation.order
         self._molecule = molecule
 
         self._log_func = log_func
 
-        #choose the approximator class
+        # choose the approximator class
         if approx_algorithm == 'hungarian':
-            self.approximator_cls = HungarianApproximator
+            self.perm_builder = HungarianPermBuilder
         if approx_algorithm == 'greedy':
-            self.approximator_cls = GreedyApproximator
+            self.perm_builder = GreedyPermBuilder
         if approx_algorithm == 'many-chains':
-            self.approximator_cls = ManyChainsApproximator
+            self.perm_builder = ManyChainsPermBuilder
         if approx_algorithm == 'structured':
-            self.approximator_cls = StructuredApproximator
+            self.perm_builder = StructuredPermBuilder
 
-        #get the directions
-        self._initial_directions=direction_chooser.dirs
-        if len(self._initial_directions) >1:
-            self._log("There are", len(self._initial_directions), "initial directions to search for the best permutation")
+        # get the directions
+        self._initial_directions = direction_chooser.dirs
+        if len(self._initial_directions) > 1:
+            self._log("There are", len(self._initial_directions),
+                      "initial directions to search for the best permutation")
 
-        self.timeout=timeout
-        self.selective=selective
-        self.num_selected=num_selected
-        self.statistics=ApproxStatistics(self._initial_directions)
-        self._max_iterations=30
+        self.timeout = timeout
+        self.selective = selective
+        self.num_selected = num_selected
+        self.statistics = ApproxStatistics(self._initial_directions)
+        self._max_iterations = 30
 
     def calculate(self):
         if self._op_type == 'CI' or (self._op_type == 'SN' and self._op_order == 2):
-            dir=[1.0, 0.0, 0.0]
+            dir = [1.0, 0.0, 0.0]
             if self._op_type == 'SN':
                 op_msg = 'S2'
             else:
                 op_msg = 'CI'
             self._log("Operation %s - using just one direction: %s" % (op_msg, dir))
-            best_results=self._calculate_for_directions([dir], 1)
+            best_results = self._calculate_for_directions([dir], 1)
         else:
             if self.selective:
                 self._calculate_for_directions(self._initial_directions, 1)
-                best_dirs=[]
+                best_dirs = []
                 sorted_csms = sorted(self.statistics.directions_arr)
                 for item in sorted_csms[:self.num_selected]:
                     best_dirs.append(item.start_dir)
                     self._log("Running again on the", self.num_selected, "best directions")
-                best_results=self._calculate_for_directions(best_dirs, self._max_iterations)
+                best_results = self._calculate_for_directions(best_dirs, self._max_iterations)
 
             else:
-                best_results=self._calculate_for_directions(self._initial_directions, self._max_iterations)
+                best_results = self._calculate_for_directions(self._initial_directions, self._max_iterations)
 
-        best_result, least_invalid= best_results
+        best_result, least_invalid = best_results
         if least_invalid.num_invalid < best_result.num_invalid:
             if least_invalid.csm <= best_result.csm:
-                best_result=least_invalid
+                best_result = least_invalid
             else:
                 falsecount = least_invalid.falsecount
                 print("(A result with better preservation of integrity of cycle lengths was found")
@@ -597,15 +641,16 @@ class ApproxCalculation:
                       "% of the molecule's atoms are in legal cycles)")
                 print("--------")
 
-        self.result=best_result
+        self.result = best_result
         return best_result
 
     def _calculate_for_directions(self, dirs, max_iterations):
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE,
                         num_invalid=MAXDOUBLE)
         least_invalid = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
-                                    csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
-        single_dir_approximator = self.approximator_cls(self._op_type, self._op_order, self._molecule, self._log,
+                                 csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
+        single_dir_approximator = SingleDirApproximator(self.operation, self._molecule,
+                                                        self.perm_builder, self._log,
                                                         self.timeout, max_iterations=max_iterations)
         for dir in dirs:
             best_result_for_dir, statistics = single_dir_approximator.calculate(dir)
@@ -613,8 +658,8 @@ class ApproxCalculation:
             if least_invalid_for_dir.num_invalid < least_invalid.num_invalid or \
                     (least_invalid_for_dir.num_invalid == least_invalid.num_invalid and least_invalid_for_dir.csm < least_invalid.csm):
                 least_invalid = least_invalid_for_dir
-            if best_result_for_dir.csm<best.csm:
-                best=best_result_for_dir
+            if best_result_for_dir.csm < best.csm:
+                best = best_result_for_dir
                 if best.csm < CSM_THRESHOLD:
                     break
         return best, least_invalid
@@ -623,37 +668,37 @@ class ApproxCalculation:
         if self._log_func:
             self._log_func(*args)
 
+
 class ParallelApprox(ApproxCalculation):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=None, timeout=100, selective=False, num_selected=10, *args, **kwargs):
         if log_func is not None:
             raise ValueError("Cannot run logging on approx in parallel calculation")
         super().__init__(operation, molecule, direction_chooser, approx_algorithm,
-                 log_func, timeout, selective, num_selected)
-
+                         log_func, timeout, selective, num_selected)
 
     def calculate(self):
         if self._op_type == 'CI' or (self._op_type == 'SN' and self._op_order == 2):
             raise ValueError("Please don't use parallel calculation for inversion")
         else:
             if self.selective:
-                self.max_iterations=1
+                self.max_iterations = 1
                 self._calculate_for_directions(self._initial_directions)
-                best_dirs=[]
+                best_dirs = []
                 sorted_csms = sorted(self.statistics.directions_arr)
                 for item in sorted_csms[:self.num_selected]:
                     best_dirs.append(item.start_dir)
-                self.max_iterations=self._max_iterations
-                best_result=self._calculate_for_directions(best_dirs)
+                self.max_iterations = self._max_iterations
+                best_result = self._calculate_for_directions(best_dirs)
 
             else:
-                self.max_iterations=self._max_iterations
-                best_result=self._calculate_for_directions(self._initial_directions)
+                self.max_iterations = self._max_iterations
+                best_result = self._calculate_for_directions(self._initial_directions)
 
         return best_result
 
     def _calculate_for_directions(self, dirs):
-        pool_size = multiprocessing.cpu_count()-1
+        pool_size = multiprocessing.cpu_count() - 1
         pool = multiprocessing.Pool(processes=pool_size)
         single_dir_approximator = self.approximator_cls(self._op_type, self._op_order, self._molecule, self._log,
                                                         self.timeout, max_iterations=self.max_iterations)
@@ -663,19 +708,9 @@ class ParallelApprox(ApproxCalculation):
         best_result = CSMState(csm=MAXDOUBLE)
         self.statistics = ApproxStatistics(dirs)
         for (result, statistics) in pool_outputs:
-            dir=statistics.start_dir
-            self.statistics[dir]=statistics
+            dir = statistics.start_dir
+            self.statistics[dir] = statistics
             if result.csm < best_result.csm:
                 best_result = result
         self.result = best_result
         return best_result
-
-
-
-def approx_calculation(op_type, op_order, molecule, approx_algorithm='hungarian', sn_max=8, use_best_dir=False, get_orthogonal=True, detect_outliers=False, print_approx=False, dirs=None, keep_structure=False, *args, **kwargs):
-    '''backwards compatible convenience function'''
-    from csm.calculations.approx.dirs import DirectionChooser
-    direction_chooser= DirectionChooser(molecule, op_type, op_order, use_best_dir, get_orthogonal, detect_outliers, dirs)
-    ac=ApproxCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, direction_chooser, approx_algorithm)
-    ac.calculate()
-    return ac.result

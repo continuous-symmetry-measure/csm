@@ -181,9 +181,9 @@ def _process_arguments(parse_res):
         # get shared arguments:
         op = Operation(parse_res.type)
         dictionary_args['operation'] = op
-        dictionary_args['op_type'] = op.type
-        dictionary_args['op_order'] = op.order
-        dictionary_args['op_name'] = op.name
+        #dictionary_args['op_type'] = op.type
+        #dictionary_args['op_order'] = op.order
+        #dictionary_args['op_name'] = op.name
 
         dictionary_args['timeout'] = parse_res.timeout
         dictionary_args['sn_max'] = parse_res.sn_max
