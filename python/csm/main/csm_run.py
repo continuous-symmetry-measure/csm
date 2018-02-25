@@ -33,6 +33,77 @@ def write_results(dictionary_args, result):
     fw.write()
 
 
+def run_calculation(dictionary_args):
+    command = dictionary_args["command"]
+    #get input:
+    if dictionary_args["in_file_name"]:
+        dictionary_args['molecule']=read_molecule(dictionary_args)
+    else:
+        print("reading from stdin")
+        raw_json=sys.stdin.read()
+        print("raw json", raw_json)
+        dictionary_args['molecule']=Molecule.from_json(raw_json)
+
+    if command=="exact":
+        #get perm if it exists:
+        dictionary_args['perm'] = read_perm(**dictionary_args)
+        csm_state_tracer_func= None
+        if dictionary_args['perms_csv_name']:
+            csv_file = open(dictionary_args['perms_csv_name'], 'w')
+            perm_writer = csv.writer(csv_file, lineterminator='\n')
+            perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
+            csm_state_tracer_func = lambda state: perm_writer.writerow(
+                [[p + 1 for p in state.perm],
+                 state.dir,
+                 state.csm, ])
+        calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
+
+    if command=="approx":
+        dir_chooser = get_direction_chooser(**dictionary_args)
+        dictionary_args["direction_chooser"] = dir_chooser
+        if dictionary_args["parallel"]:
+            calc=ParallelApprox(**dictionary_args)
+        else:
+            if dictionary_args['print_approx']:
+                def log(self, *args, **kwargs):
+                    print(*args)
+                dictionary_args["log_func"]=log
+            calc = Approx(**dictionary_args)
+
+    if command=="trivial":
+        calc = Trivial(**dictionary_args)
+
+    #run the calculation
+    try:
+        calc.calculate()
+    except CalculationTimeoutError as e:
+        print("Timed out")
+        return
+    result=calc.result
+
+    #statistics for exact:
+    try:
+        if dictionary_args["print_branches"]:
+            calc.statistics.write_to_screen()
+    except KeyError:
+        pass
+
+    #statistics for approx
+    try:
+        if dictionary_args["stat_file_name"] is not None:
+            sw=ApproxStatisticWriter(calc.statistics, dictionary_args["stat_file_name"], dictionary_args["polar"])
+            sw.write()
+    except KeyError:
+        pass
+
+    #do output:
+    if dictionary_args["out_file_name"]:
+        write_results(dictionary_args, result)
+    else:
+        sys.stdout.write(json.dumps(result.to_dict(), indent=4))
+
+    return result
+
 def run(args=[]):
     print("CSM version %s" % __version__)
     if not args:
@@ -50,72 +121,7 @@ def run(args=[]):
         result=CSMResult.from_dict(result_dict)
         write_results(dictionary_args, result)
     else:
-        #get input:
-        if dictionary_args["in_file_name"]:
-            dictionary_args['molecule']=read_molecule(dictionary_args)
-        else:
-            print("reading from stdin")
-            raw_json=sys.stdin.read()
-            print("raw json", raw_json)
-            dictionary_args['molecule']=Molecule.from_json(raw_json)
-
-        if command=="exact":
-            #get perm if it exists:
-            dictionary_args['perm'] = read_perm(**dictionary_args)
-            csm_state_tracer_func= None
-            if dictionary_args['perms_csv_name']:
-                csv_file = open(dictionary_args['perms_csv_name'], 'w')
-                perm_writer = csv.writer(csv_file, lineterminator='\n')
-                perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-                csm_state_tracer_func = lambda state: perm_writer.writerow(
-                    [[p + 1 for p in state.perm],
-                     state.dir,
-                     state.csm, ])
-            calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
-
-        if command=="approx":
-            dir_chooser = get_direction_chooser(**dictionary_args)
-            dictionary_args["direction_chooser"] = dir_chooser
-            if dictionary_args["parallel"]:
-                calc=ParallelApprox(**dictionary_args)
-            else:
-                if dictionary_args['print_approx']:
-                    def log(self, *args, **kwargs):
-                        print(*args)
-                    dictionary_args["log_func"]=log
-                calc = Approx(**dictionary_args)
-
-        if command=="trivial":
-            calc = Trivial(**dictionary_args)
-
-        #run the calculation
-        try:
-            calc.calculate()
-        except CalculationTimeoutError as e:
-            print("Timed out")
-            return
-        result=calc.result
-
-        #statistics for exact:
-        try:
-            if dictionary_args["print_branches"]:
-                calc.statistics.write_to_screen()
-        except KeyError:
-            pass
-
-        #statistics for approx
-        try:
-            if dictionary_args["stat_file_name"] is not None:
-                sw=ApproxStatisticWriter(calc.statistics, dictionary_args["stat_file_name"], dictionary_args["polar"])
-                sw.write()
-        except KeyError:
-            pass
-
-        #do output:
-        if dictionary_args["out_file_name"]:
-            write_results(dictionary_args, result)
-        else:
-            sys.stdout.write(json.dumps(result.to_dict(), indent=4))
+        return run_calculation(dictionary_args)
 
 
 
