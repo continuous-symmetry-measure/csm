@@ -46,6 +46,20 @@ def _create_parser():
                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
         parser.add_argument('--sn-max', type=int, default=8,
                             help='The maximal sn to try, relevant only for chirality')
+        parser.add_argument('--normalizations', default=[],
+                            help='Types of normalization available:\n'
+                                 '0: standard normalization, according to centers of mass (without scaling)\n'
+                                 '1: normalization according to the center of mass of each fragment\n'
+                                 '2: normalization according to an approximation of the symmetric structure of the centers '
+                                 'of mass of each fragment, based on the solution permutation\n'
+                                 '3: normalization according to an approximation of the symmetric structure of the centers '
+                                 'of mass of each fragment, without using the solution permutation\n'
+                                 '4: normalization according to averages of approximation to symmetry of fragments\n'
+                                 '5: normalization according to number of atoms\n'
+                                 '6: linear normalization',
+                            choices=['0', '1', '2', '3', '4', '5', '6'],
+                            nargs='+', metavar="normalization"
+                            )
 
     def add_input_output_utility_func(parser):
         parser_input_args = parser.add_argument_group("Args for input (requires --input. default is read from stdin)")
@@ -187,6 +201,7 @@ def _process_arguments(parse_res):
 
         dictionary_args['timeout'] = parse_res.timeout
         dictionary_args['sn_max'] = parse_res.sn_max
+        dictionary_args['normalizations']=parse_res.normalizations
 
         if parse_res.command == 'exact':
             if parse_res.use_perm:

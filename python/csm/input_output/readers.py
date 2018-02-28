@@ -1,4 +1,5 @@
-from csm.molecule.molecule import Molecule, MoleculeFactory, MoleculeReader
+import sys
+from csm.molecule.molecule import MoleculeReader
 from csm.calculations.basic_calculations import check_perm_structure, check_perm_equivalence, check_perm_cycles
 import logging
 logger = logging.getLogger(__name__)
@@ -108,3 +109,11 @@ def read_perm_file(filename):
 
     return result
 
+
+
+def read_from_sys_std_in():
+    if not sys.stdin.isatty():
+        raw_json = sys.stdin.read()
+        return raw_json
+    else:
+        raise ValueError("No input in sys.stdin")

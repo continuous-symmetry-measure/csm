@@ -10,11 +10,12 @@ from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
 from csm.calculations import Approx, Trivial, Exact, DirectionChooser
-from csm.input_output.readers import read_perm
+from csm.input_output.readers import read_perm, read_from_sys_std_in
 from csm.input_output.writers import FileWriter, ApproxStatisticWriter
 from csm import __version__
 from csm.molecule.molecule import MoleculeReader, Molecule
 from csm.input_output.formatters import csm_log as print
+from csm.main.normcsm import norm_calc
 sys.setrecursionlimit(10000)
 
 def read_molecule(dictionary_args):
@@ -39,9 +40,7 @@ def run_calculation(dictionary_args):
     if dictionary_args["in_file_name"]:
         dictionary_args['molecule']=read_molecule(dictionary_args)
     else:
-        print("reading from stdin")
-        raw_json=sys.stdin.read()
-        print("raw json", raw_json)
+        raw_json=read_from_sys_std_in()
         dictionary_args['molecule']=Molecule.from_json(raw_json)
 
     if command=="exact":
@@ -102,6 +101,10 @@ def run_calculation(dictionary_args):
     else:
         sys.stdout.write(json.dumps(result.to_dict(), indent=4))
 
+
+    if len(dictionary_args['normalizations'])>0:
+        norm_calc(result, dictionary_args['normalizations'])
+
     return result
 
 def run(args=[]):
@@ -116,7 +119,7 @@ def run(args=[]):
         mol=read_molecule(dictionary_args)
         sys.stdout.write(json.dumps(mol.to_dict(), indent=4))
     elif command == "write":
-        raw_json = sys.stdin.read()
+        raw_json = read_from_sys_std_in()
         result_dict=json.loads(raw_json)
         result=CSMResult.from_dict(result_dict)
         write_results(dictionary_args, result)
