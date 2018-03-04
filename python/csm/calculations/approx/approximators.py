@@ -204,6 +204,10 @@ class _PermFromDirBuilder:
     def create_perm_from_dir(self, dir, chainperm):
         raise NotImplementedError
 
+    def _log(self, *args):
+        if self._log_func:
+            self._log_func(*args)
+
 
 class _ChainPermsPermBuilder(_PermFromDirBuilder):
     def _calc_chain_permutations(self):
