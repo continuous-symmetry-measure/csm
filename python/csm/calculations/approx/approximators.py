@@ -1,3 +1,7 @@
+'''
+the classes used for running the approximate algorithm
+'''
+
 import multiprocessing
 import operator
 
@@ -671,9 +675,12 @@ class ApproxCalculation:
 
 class ParallelApprox(ApproxCalculation):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
-                 log_func=None, timeout=100, selective=False, num_selected=10, *args, **kwargs):
+                 log_func=None, timeout=100, selective=False, num_selected=10, pool_size=0, *args, **kwargs):
         if log_func is not None:
             raise ValueError("Cannot run logging on approx in parallel calculation")
+        self.pool_size=pool_size
+        if pool_size==0:
+            self.pool_size= multiprocessing.cpu_count() - 1
         super().__init__(operation, molecule, direction_chooser, approx_algorithm,
                          log_func, timeout, selective, num_selected)
 
@@ -698,9 +705,10 @@ class ParallelApprox(ApproxCalculation):
         return best_result
 
     def _calculate_for_directions(self, dirs):
-        pool_size = multiprocessing.cpu_count() - 1
-        pool = multiprocessing.Pool(processes=pool_size)
-        single_dir_approximator = self.approximator_cls(self._op_type, self._op_order, self._molecule, self._log,
+        pool = multiprocessing.Pool(processes=self.pool_size)
+        print("Approximating across", self.pool_size, "processes")
+        single_dir_approximator = SingleDirApproximator(self.operation, self._molecule,
+                                                        self.perm_builder, self._log,
                                                         self.timeout, max_iterations=self.max_iterations)
         pool_outputs = pool.map(single_dir_approximator.calculate, dirs)
         pool.close()

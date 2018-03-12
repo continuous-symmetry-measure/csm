@@ -115,7 +115,7 @@ def _create_parser():
     approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
                              help="Don't add orthogonal directions to calculated directions")
     approx_args.add_argument('--fibonacci', type=int,
-                             help="Use fibonacci sphere to generate 50 starting directions")
+                             help="Use fibonacci sphere to generate N starting directions")
     approx_args.add_argument('--use-best-dir', action='store_true', default=False,
                              help='Only use the best direction')
     approx_args.add_argument('--dir', nargs=3, type=float,
@@ -129,8 +129,8 @@ def _create_parser():
                              help='Use keep-structure approximate algorithm')
     approx_args.add_argument('--selective', type=int,
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
-    approx_args.add_argument('--parallel', action='store_true', default=False,
-                             help='Calculate directions in parallel. Recommended for use with fibonacci')
+    approx_args.add_argument('--parallel', type=int, default=0,
+                             help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used')
     #outputs
     approx_args.add_argument('--statistics', type=str,
                              help='Print statistics about each direction to a file')
@@ -244,7 +244,8 @@ def _process_arguments(parse_res):
                 dictionary_args["selective"] = True
                 dictionary_args["num_selected"] = parse_res.selective
 
-            dictionary_args['parallel']=parse_res.parallel
+            dictionary_args['parallel'] = parse_res.parallel is not None
+            dictionary_args['pool_size'] = parse_res.parallel
 
             #outputs:
             dictionary_args['print_approx'] = parse_res.print_approx
