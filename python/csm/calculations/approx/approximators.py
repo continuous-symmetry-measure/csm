@@ -22,6 +22,13 @@ from csm.fast import CythonPermuter
 from csm.input_output.formatters import csm_log as print
 
 
+class OptionalLogger:
+    def __init__(self, log_func=None):
+        self._log_func = log_func
+    def _log(self, *args):
+        if self._log_func:
+            self._log_func(*args)
+
 class SingleDirectionStatistics:
     # per direction, we want to store:
     # 1. every direction passed through
@@ -91,20 +98,16 @@ class SingleDirectionStatistics:
         return self.end_csm < other.end_csm
 
 
-class SingleDirApproximator:
+class SingleDirApproximator(OptionalLogger):
     def __init__(self, operation, molecule, perm_from_dir_builder, log_func=None, timeout=100,
                  max_iterations=50):
+        self._log_func = log_func
         self._molecule = molecule
         self._op_type = operation.type
         self._op_order = operation.order
         self.max_iterations = max_iterations
-        self._log_func = log_func
         self.perm_from_dir_builder = perm_from_dir_builder(operation, molecule, log_func, timeout)
         self._chain_permutations = self.perm_from_dir_builder.get_chain_perms()
-
-
-    def _precalculate(self):
-        pass
 
     def _create_perm_from_dir(self, dir, chainperm):
         return self.perm_from_dir_builder.create_perm_from_dir(dir, chainperm)
@@ -136,8 +139,8 @@ class SingleDirApproximator:
                     break
 
                 if interim_results.num_invalid < self.least_invalid.num_invalid or \
-                        (
-                                interim_results.num_invalid == self.least_invalid.num_invalid and interim_results.csm < self.least_invalid.csm):
+                        (interim_results.num_invalid == self.least_invalid.num_invalid
+                                     and interim_results.csm < self.least_invalid.csm):
                     self.least_invalid = interim_results
                 statistics.append_sub_direction(interim_results)
                 # self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
@@ -180,21 +183,18 @@ class SingleDirApproximator:
                 if best_for_chain_perm.csm < CSM_THRESHOLD:
                     break
 
-        self.result = best
+        #self.result = best
         statistics.end_clock()
         return best, statistics
 
-    def _log(self, *args):
-        if self._log_func:
-            self._log_func(*args)
 
 
-class _PermFromDirBuilder:
+class _PermFromDirBuilder(OptionalLogger):
     def __init__(self, operation, molecule, log_func, timeout):
+        self._log_func = log_func
         self._molecule = molecule
         self._op_type = operation.type
         self._op_order = operation.order
-        self._log_func = log_func
         self.timeout = timeout
         self._precalculate()
 
@@ -207,10 +207,6 @@ class _PermFromDirBuilder:
 
     def create_perm_from_dir(self, dir, chainperm):
         raise NotImplementedError
-
-    def _log(self, *args):
-        if self._log_func:
-            self._log_func(*args)
 
 
 class _ChainPermsPermBuilder(_PermFromDirBuilder):
@@ -581,7 +577,7 @@ class ApproxApplier:
 
 
 
-class ApproxCalculation:
+class ApproxCalculation(OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=lambda *args: None, timeout=100, selective=False, num_selected=10, *args, **kwargs):
         self.operation=operation
@@ -672,11 +668,6 @@ class ApproxCalculation:
                 if best.csm < CSM_THRESHOLD:
                     break
         return best, least_invalid
-
-    def _log(self, *args):
-        if self._log_func:
-            self._log_func(*args)
-
 
 class ParallelApprox(ApproxCalculation):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
