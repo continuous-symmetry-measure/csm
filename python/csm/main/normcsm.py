@@ -41,12 +41,6 @@ def process_args(args):
     parsed_args = parser.parse_args(args)
     normalizations = parsed_args.normalization
     norm_file = parsed_args.output_norm
-    # TODO: add check that by perm is only if keep-structure or use-chains is applied
-    if not set(normalizations).isdisjoint(('1', '2', '3', '4')):
-        if not parsed_args.use_chains:
-            raise ValueError(
-                "You selected a normalization type (1,2,3, or 4) that expects fragments, but did not select --use-chains")
-    # TODO: add check that anything using fragments is either a pdb with chains, or includes a fragment file
     return normalizations, norm_file
 
 
