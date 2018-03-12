@@ -34,7 +34,7 @@ class SingleDirectionStatistics:
         self.cycle_stats = []
         self._stop_reason = ""
 
-    def append(self, result):
+    def append_sub_direction(self, result):
         self.dirs.append(result.dir)
         self.csms.append(result.csm)
         self.cycle_stats.append(result.num_invalid)
@@ -110,8 +110,8 @@ class SingleDirApproximator:
         return self.perm_from_dir_builder.create_perm_from_dir(dir, chainperm)
 
     def calculate(self, dir):
-        self.statistics = SingleDirectionStatistics(dir)
-        self.statistics.start_clock()
+        statistics = SingleDirectionStatistics(dir)
+        statistics.start_clock()
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
         self.least_invalid = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
                                       csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
@@ -139,7 +139,7 @@ class SingleDirApproximator:
                         (
                                 interim_results.num_invalid == self.least_invalid.num_invalid and interim_results.csm < self.least_invalid.csm):
                     self.least_invalid = interim_results
-                self.statistics.append(interim_results)
+                statistics.append_sub_direction(interim_results)
                 # self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
                 if i > 1:
                     self._log("\t\t\tthere are",
@@ -155,21 +155,21 @@ class SingleDirApproximator:
 
                 # Various stop conditions for the loop, listed as multiple if statements so that the code is clearer
                 if i >= self.max_iterations:
-                    self.statistics.stop_reason = "Max iterations"
+                    statistics.stop_reason = "Max iterations"
                     self._log("\t\tStopping after %d iterations" % i)
                     break
                 # if i > 1 and math.fabs(old_results.csm - interim_results.csm) / math.fabs(old_results.csm) > 0.01:
                 #    self._log("\t\tStopping due to CSM ratio")
                 if best_for_chain_perm.csm < CSM_THRESHOLD:
-                    self.statistics.stop_reason = "CSM below threshold"
+                    statistics.stop_reason = "CSM below threshold"
                     self._log("\t\tStopping because the best CSM is good enough")
                     break
                 if abs(np.linalg.norm(interim_results.dir - old_results.dir)) <= 0:
-                    self.statistics.stop_reason = "No change in direction"
+                    statistics.stop_reason = "No change in direction"
                     self._log("\t\tStopping because the direction has not changed")
                     break
                 if interim_results.csm >= old_results.csm:  # We found a worse CSM
-                    self.statistics.stop_reason = "No improvement in CSM"
+                    statistics.stop_reason = "No improvement in CSM"
                     self._log("\t\tStopping because CSM did not improve (worse or equal)")
                     break
 
@@ -181,8 +181,8 @@ class SingleDirApproximator:
                     break
 
         self.result = best
-        self.statistics.end_clock()
-        return best, self.statistics
+        statistics.end_clock()
+        return best, statistics
 
     def _log(self, *args):
         if self._log_func:
@@ -662,6 +662,7 @@ class ApproxCalculation:
                                                         self.timeout, max_iterations=max_iterations)
         for dir in dirs:
             best_result_for_dir, statistics = single_dir_approximator.calculate(dir)
+            self.statistics[dir]=statistics
             least_invalid_for_dir = single_dir_approximator.least_invalid
             if least_invalid_for_dir.num_invalid < least_invalid.num_invalid or \
                     (least_invalid_for_dir.num_invalid == least_invalid.num_invalid and least_invalid_for_dir.csm < least_invalid.csm):
