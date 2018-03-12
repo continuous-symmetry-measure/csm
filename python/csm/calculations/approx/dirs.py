@@ -11,17 +11,24 @@ MIN_GROUPS_FOR_OUTLIERS = 10
 
 
 class DirectionChooser:
+    '''
+    Any direction chooser simply needs a property dirs
+    '''
     @property
     def dirs(self):
         return self._dirs
 
 class ClassicDirectionChooser(DirectionChooser):
+    '''
+    This class implements the classic direction chooser algorithm described in the paper [citation needed].
+    '''
     def __init__(self, molecule, op_type, op_order, use_best_dir=False, get_orthogonal=True, detect_outliers=False, *args, **kwargs):
         self._op_type = op_type
         self._op_order = op_order
         self._dirs = self._choose_initial_directions(molecule, use_best_dir, get_orthogonal, detect_outliers,
                                                      op_type)
-        pass
+
+
     def _choose_initial_directions(self, molecule, use_best_dir, get_orthogonal, detect_outliers,
                                            op_type):
         # if inversion:
@@ -164,6 +171,9 @@ class ClassicDirectionChooser(DirectionChooser):
         return np.array(added_dirs)
 
 class FibonacciDirectionChooser(DirectionChooser):
+    '''
+    this class chooses directions based on an approximation of evenly distributing n points on a sphere using a fibonacci spiral
+    '''
     def __init__(self, num_dirs=50):
         self._dirs = self.fibonacci_sphere(num_dirs)
     def fibonacci_sphere(self, num_dirs, randomize=False):
@@ -190,6 +200,9 @@ class FibonacciDirectionChooser(DirectionChooser):
         return dirs
 
 class PseudoDirectionChooser(DirectionChooser):
+    '''
+    this class simply returns the directions it receives at initialization
+    '''
     def __init__(self, dirs):
         self._dirs=dirs
 

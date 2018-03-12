@@ -4,12 +4,11 @@ import logging
 import sys
 import timeit
 
-from csm.calculations.approx.approximators import ParallelApprox
 from csm.calculations.approx.dirs import get_direction_chooser
 from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
-from csm.calculations import Approx, Trivial, Exact, DirectionChooser
+from csm.calculations import Approx, Trivial, Exact, ParallelApprox, DirectionChooser
 from csm.input_output.readers import read_perm, read_from_sys_std_in
 from csm.input_output.writers import FileWriter, ApproxStatisticWriter
 from csm import __version__

@@ -22,14 +22,14 @@ from csm.fast import CythonPermuter
 from csm.input_output.formatters import csm_log as print
 
 
-class OptionalLogger:
+class _OptionalLogger:
     def __init__(self, log_func=None):
         self._log_func = log_func
     def _log(self, *args):
         if self._log_func:
             self._log_func(*args)
 
-class SingleDirectionStatistics:
+class _SingleDirectionStatistics:
     # per direction, we want to store:
     # 1. every direction passed through
     # 2. every csm passed through, and percent cycle preservation
@@ -98,7 +98,7 @@ class SingleDirectionStatistics:
         return self.end_csm < other.end_csm
 
 
-class SingleDirApproximator(OptionalLogger):
+class SingleDirApproximator(_OptionalLogger):
     def __init__(self, operation, molecule, perm_from_dir_builder, log_func=None, timeout=100,
                  max_iterations=50):
         self._log_func = log_func
@@ -113,7 +113,7 @@ class SingleDirApproximator(OptionalLogger):
         return self.perm_from_dir_builder.create_perm_from_dir(dir, chainperm)
 
     def calculate(self, dir):
-        statistics = SingleDirectionStatistics(dir)
+        statistics = _SingleDirectionStatistics(dir)
         statistics.start_clock()
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
         self.least_invalid = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
@@ -189,7 +189,7 @@ class SingleDirApproximator(OptionalLogger):
 
 
 
-class _PermFromDirBuilder(OptionalLogger):
+class _PermFromDirBuilder(_OptionalLogger):
     def __init__(self, operation, molecule, log_func, timeout):
         self._log_func = log_func
         self._molecule = molecule
@@ -222,7 +222,7 @@ class _ChainPermsPermBuilder(_PermFromDirBuilder):
         self._chain_permutations = self._calc_chain_permutations()
 
 
-class GreedyPermBuilder(_ChainPermsPermBuilder):
+class _GreedyPermBuilder(_ChainPermsPermBuilder):
     '''
     This uses the Cython implementation of the classic (greedy) approximate algorithm.
     It is not optimized for molecules with many chain permutations.
@@ -232,7 +232,7 @@ class GreedyPermBuilder(_ChainPermsPermBuilder):
         return approximate_perm_classic(self._op_type, self._op_order, self._molecule, dir, chainperm)
 
 
-class HungarianPermBuilder(_ChainPermsPermBuilder):
+class _HungarianPermBuilder(_ChainPermsPermBuilder):
     '''
     This uses the Hungarian (munkres) algorithm for optimization of cost matrix.
          It is not optimized for molecules with many chain permutations.
@@ -420,7 +420,7 @@ class HungarianPermBuilder(_ChainPermsPermBuilder):
         return perm
 
 
-class ManyChainsPermBuilder(_PermFromDirBuilder):
+class _ManyChainsPermBuilder(_PermFromDirBuilder):
     '''
     This approximator uses the Hungarian (munkwres) algorithm to choose the optimal permutation of chains, rather than
     iterating through all possible chain permutations. It is hence more efficient for molecules with many possible chain
@@ -504,7 +504,7 @@ class ManyChainsPermBuilder(_PermFromDirBuilder):
         return indexes, group_distance_matrix
 
 
-class StructuredPermBuilder(_PermFromDirBuilder):
+class _StructuredPermBuilder(_PermFromDirBuilder):
     def create_perm_from_dir(self, dir, chainperm="dontcare"):
         return self.build_perm_and_state_version_dict(self._op_type, self._op_order, self._molecule, dir)
 
@@ -552,7 +552,7 @@ class ApproxStatistics:
         self.directions_dict = OrderedDict()
         self.directions_arr = []
         for index, dir in enumerate(initial_directions):
-            self.directions_dict[tuple(dir)] = SingleDirectionStatistics(dir)
+            self.directions_dict[tuple(dir)] = _SingleDirectionStatistics(dir)
             self.directions_arr.append(self.directions_dict[tuple(dir)])
 
     def __getitem__(self, key):
@@ -567,17 +567,7 @@ class ApproxStatistics:
     def __str__(self):
         return str(self.directions_dict)
 
-
-class ApproxApplier:
-    def __init__(self, operation, molecule, perm_builder):
-        self._op_type = operation.type
-        self._op_order = operation.order
-        self._molecule = molecule
-        self.perm_builder=perm_builder
-
-
-
-class ApproxCalculation(OptionalLogger):
+class ApproxCalculation(_OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=lambda *args: None, timeout=100, selective=False, num_selected=10, *args, **kwargs):
         self.operation=operation
@@ -589,13 +579,13 @@ class ApproxCalculation(OptionalLogger):
 
         # choose the approximator class
         if approx_algorithm == 'hungarian':
-            self.perm_builder = HungarianPermBuilder
+            self.perm_builder = _HungarianPermBuilder
         if approx_algorithm == 'greedy':
-            self.perm_builder = GreedyPermBuilder
+            self.perm_builder = _GreedyPermBuilder
         if approx_algorithm == 'many-chains':
-            self.perm_builder = ManyChainsPermBuilder
+            self.perm_builder = _ManyChainsPermBuilder
         if approx_algorithm == 'structured':
-            self.perm_builder = StructuredPermBuilder
+            self.perm_builder = _StructuredPermBuilder
 
         # get the directions
         self._initial_directions = direction_chooser.dirs
