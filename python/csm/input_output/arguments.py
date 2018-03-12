@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
 import logging
 
+import os
+
 from csm.calculations import permuters
 from csm.calculations.data_classes import Operation
 
@@ -100,8 +102,8 @@ def _create_parser():
                             help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-branches', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
-    exact_args.add_argument('--output-perms', action='store', default=None,
-                            help='Writes all enumerated permutations to file')
+    exact_args.add_argument('--output-perms', const="DEFAULT", nargs='?',
+                            help='Writes all enumerated permutations to file. Default is current_directory/perms.csv, if --output is provided than the directory_from_that/perms.csv')
     add_input_output_utility_func(exact_args_)
 
 
@@ -129,11 +131,11 @@ def _create_parser():
                              help='Use keep-structure approximate algorithm')
     approx_args.add_argument('--selective', type=int,
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
-    approx_args.add_argument('--parallel', type=int, default=0,
+    approx_args.add_argument('--parallel', type=int, const=0, nargs='?',
                              help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used')
     #outputs
-    approx_args.add_argument('--statistics', type=str,
-                             help='Print statistics about each direction to a file')
+    approx_args.add_argument('--statistics', const="DEFAULT", nargs='?',
+                             help='Print statistics about each direction to a file. Default is current_directory/csm_statistics.txt, if --output is provided than the directory_from_that/csm_statistics.txt')
     approx_args.add_argument('--polar', action='store_true', default=False,
                              help="Print polar coordinates instead of cartesian coordinates in statistics")
     approx_args.add_argument('--print-approx', action='store_true', default=False,
@@ -210,8 +212,14 @@ def _process_arguments(parse_res):
             #dictionary_args['no_constraint'] = parse_res.no_constraint
             dictionary_args['print_branches'] = parse_res.output_branches
             permuters.print_branches = parse_res.output_branches
+
             dictionary_args['perms_csv_name'] = parse_res.output_perms
-            dictionary_args['print_perms'] = parse_res.output_perms
+            if parse_res.output_perms=="DEFAULT":
+                try:
+                    base_path= os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
+                    dictionary_args['perms_csv_name']=os.path.join(base_path, "perms.csv")
+                except:
+                    dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
 
 
 
@@ -251,6 +259,13 @@ def _process_arguments(parse_res):
             dictionary_args['print_approx'] = parse_res.print_approx
             dictionary_args['polar'] = parse_res.polar
             dictionary_args['stat_file_name'] = parse_res.statistics
+            if parse_res.statistics=="DEFAULT":
+                if dictionary_args["out_file_name"] is not None:
+                    base_path= os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
+                    dictionary_args['stat_file_name']=os.path.join(base_path, "csm_statistics.txt")
+                else:
+                    dictionary_args['stat_file_name'] = os.path.join("csm_statistics.txt")
+
 
     return dictionary_args
 

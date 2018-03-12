@@ -710,7 +710,7 @@ class ParallelApprox(ApproxCalculation):
 
     def _calculate_for_directions(self, dirs):
         pool = multiprocessing.Pool(processes=self.pool_size)
-        print("Approximating across", self.pool_size, "processes")
+        print("Approximating across {} processes".format(self.pool_size))
         single_dir_approximator = SingleDirApproximator(self.operation, self._molecule,
                                                         self.perm_builder, self._log,
                                                         self.timeout, max_iterations=self.max_iterations)
