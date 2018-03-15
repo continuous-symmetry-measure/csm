@@ -24,6 +24,7 @@ class TrivialCalculation(Calculation):
         """
         super().__init__(operation, molecule)
         self.use_chains=use_chains
+        self.statistics={}
 
     def calculate(self):
         molecule=self.molecule

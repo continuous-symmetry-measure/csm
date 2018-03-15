@@ -23,6 +23,9 @@ from csm.input_output.formatters import csm_log as print
 
 
 class _OptionalLogger:
+    '''
+    Utility class for having calls to a function which, if non-existent, does nothing
+    '''
     def __init__(self, log_func=None):
         self._log_func = log_func
     def _log(self, *args):
@@ -97,6 +100,30 @@ class _SingleDirectionStatistics:
 
         return self.end_csm < other.end_csm
 
+class DirectionStatisticsContainer:
+    def __init__(self, initial_directions):
+        self.directions_dict = OrderedDict()
+        self.directions_arr = []
+        for index, dir in enumerate(initial_directions):
+            self.directions_dict[tuple(dir)] = _SingleDirectionStatistics(dir)
+            self.directions_arr.append(self.directions_dict[tuple(dir)])
+
+    def __getitem__(self, key):
+        return self.directions_dict[tuple(key)]
+
+    def __setitem__(self, key, value):
+        self.directions_dict[tuple(key)] = value
+
+    def __iter__(self):
+        return self.directions_dict.__iter__()
+
+    def __str__(self):
+        return str(self.directions_dict)
+
+class ApproxStatistics(DirectionStatisticsContainer):
+    pass
+
+
 
 class SingleDirApproximator(_OptionalLogger):
     def __init__(self, operation, molecule, perm_from_dir_builder, log_func=None, timeout=100,
@@ -105,6 +132,7 @@ class SingleDirApproximator(_OptionalLogger):
         self._molecule = molecule
         self._op_type = operation.type
         self._op_order = operation.order
+        self._operation=operation
         self.max_iterations = max_iterations
         self.perm_from_dir_builder = perm_from_dir_builder(operation, molecule, log_func, timeout)
         self._chain_permutations = self.perm_from_dir_builder.get_chain_perms()
@@ -132,7 +160,7 @@ class SingleDirApproximator(_OptionalLogger):
 
                 try:
                     perm = self._create_perm_from_dir(old_results.dir, chainperm)
-                    interim_results = ExactCalculation.exact_calculation_for_approx(self._op_type, self._op_order,
+                    interim_results = ExactCalculation.exact_calculation_for_approx(self._operation,
                                                                                     self._molecule, perm=perm)
                 except CalculationTimeoutError as e:
                     self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
@@ -186,8 +214,6 @@ class SingleDirApproximator(_OptionalLogger):
         #self.result = best
         statistics.end_clock()
         return best, statistics
-
-
 
 class _PermFromDirBuilder(_OptionalLogger):
     def __init__(self, operation, molecule, log_func, timeout):
@@ -545,27 +571,6 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
         self._log("\t\t\tit took ", permuter.run_time, "seconds to find the permutation")
         perm = state.perm
         return perm
-
-
-class ApproxStatistics:
-    def __init__(self, initial_directions):
-        self.directions_dict = OrderedDict()
-        self.directions_arr = []
-        for index, dir in enumerate(initial_directions):
-            self.directions_dict[tuple(dir)] = _SingleDirectionStatistics(dir)
-            self.directions_arr.append(self.directions_dict[tuple(dir)])
-
-    def __getitem__(self, key):
-        return self.directions_dict[tuple(key)]
-
-    def __setitem__(self, key, value):
-        self.directions_dict[tuple(key)] = value
-
-    def __iter__(self):
-        return self.directions_dict.__iter__()
-
-    def __str__(self):
-        return str(self.directions_dict)
 
 class ApproxCalculation(_OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',

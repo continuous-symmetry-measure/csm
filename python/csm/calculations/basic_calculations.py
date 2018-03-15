@@ -102,7 +102,14 @@ def check_perm_equivalence(mol, perm):
             return False
     return True
 
-def check_perm_structure(mol, perm):
+def check_perm_structure_preservation(mol, perm):
+    '''
+    checks what percent of a permutation does not break bonds in the molecule--
+    so a return value of 1 would be a perfectly preserved bond structure, of 0.5 would mean half of the molecules bonds are broken
+    :param mol: the molecule being permuted
+    :param perm: the permutation whose structure preservation is being measured
+    :return:
+    '''
     if len(mol.bondset)==0:
         raise ValueError("Molecule does not have any bond information")
 

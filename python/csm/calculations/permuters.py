@@ -691,14 +691,3 @@ class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
 
         # undo the handling of len ones
         self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
-
-
-if __name__ == "__main__":
-    import sys
-    from csm.input_output.arguments_old import get_split_arguments
-    from csm.input_output.readers import read_inputs
-
-    args = sys.argv[1:]
-    in_args, calc_args, out_args = get_split_arguments(args)
-    calc_args['molecule'], calc_args['perm'], calc_args['dirs'] = read_inputs(**in_args)
-    c = ConstraintPermuter(**calc_args)

@@ -151,9 +151,8 @@ class ExactCalculation(Calculation):
         return best_csm
 
     @staticmethod
-    def exact_calculation_for_approx(op_type, op_order, molecule, perm):
-        ec = ExactCalculation(Operation.placeholder(op_type, op_order, 8), molecule, False, perm,
-                              False)
+    def exact_calculation_for_approx(operation, molecule, perm):
+        ec = ExactCalculation(operation, molecule, perm=perm)
         ec.calculate()
         return ec.result
 

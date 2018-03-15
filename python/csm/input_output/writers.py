@@ -2,7 +2,7 @@ import json
 from csm.input_output.formatters import format_CSM, non_negative_zero
 import io
 from openbabel import OBConversion
-from csm.calculations.basic_calculations import check_perm_structure, check_perm_cycles, cart2sph
+from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_cycles, cart2sph
 from csm.molecule.molecule import MoleculeReader, get_format
 from csm.input_output.formatters import csm_log as print
 
@@ -142,9 +142,9 @@ class ResultWriter:
     Inheriting classes are recommended to inherit a write() function that can be called from main()
     """
 
-    def __init__(self, result, op_name, format, print_local=False, *args, **kwargs):
+    def __init__(self, result, operation, format, print_local=False, *args, **kwargs):
         self.result = result
-        self.op_name = op_name
+        self.op_name = operation.name
         self.format = str.lower(format)
         self.print_local = print_local
         self.result_string = self.get_result_string()
@@ -235,7 +235,7 @@ class ResultWriter:
     def print_structure(self):
         # print CSM, initial molecule, resulting structure and direction according to format specified
         try:
-            percent_structure = check_perm_structure(self.result.molecule, self.result.perm)
+            percent_structure = check_perm_structure_preservation(self.result.molecule, self.result.perm)
             print("The permutation found maintains",
                   str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
 
@@ -321,7 +321,7 @@ class FileWriter(ResultWriter):
     A ResultWriter class that writes to a file 
     """
 
-    def __init__(self, result, out_file_name, op_name, print_local=False, json_output=False, out_format=None, *args, **kwargs):
+    def __init__(self, result, out_file_name, operation, print_local=False, json_output=False, out_format=None, *args, **kwargs):
         self.out_file_name = out_file_name
         self.json_output = json_output
         if not out_format:
@@ -329,7 +329,7 @@ class FileWriter(ResultWriter):
                 out_format=get_format(None, out_file_name)
             except ValueError:
                 out_format=get_format(None, result.molecule._filename)
-        super().__init__(result, op_name, out_format, print_local)
+        super().__init__(result, operation, out_format, print_local)
 
     def write(self):
         self.print_structure()
