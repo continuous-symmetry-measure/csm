@@ -48,7 +48,9 @@ def _create_parser():
                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
         parser.add_argument('--sn-max', type=int, default=8,
                             help='The maximal sn to try, relevant only for chirality')
-        parser.add_argument('--normalizations', default=[],
+
+    def shared_normalization_utility_func(parser): #I made this because having normalization stuck in the calc utility func was ugly
+        parser.add_argument('--normalize', default=[],
                             help='Types of normalization available:\n'
                                  '0: standard normalization, according to centers of mass (without scaling)\n'
                                  '1: normalization according to the center of mass of each fragment\n'
@@ -60,7 +62,7 @@ def _create_parser():
                                  '5: normalization according to number of atoms\n'
                                  '6: linear normalization',
                             choices=['0', '1', '2', '3', '4', '5', '6'],
-                            nargs='+', metavar="normalization"
+                            nargs='+'
                             )
 
     def add_input_output_utility_func(parser):
@@ -104,6 +106,7 @@ def _create_parser():
                             help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-perms', const="DEFAULT", nargs='?',
                             help='Writes all enumerated permutations to file. Default is current_directory/perms.csv, if --output is provided than the directory_from_that/perms.csv')
+    shared_normalization_utility_func(exact_args)
     add_input_output_utility_func(exact_args_)
 
 
@@ -140,7 +143,7 @@ def _create_parser():
                              help="Print polar coordinates instead of cartesian coordinates in statistics")
     approx_args.add_argument('--print-approx', action='store_true', default=False,
                              help='print log to screen from approx')
-
+    shared_normalization_utility_func(approx_args)
     add_input_output_utility_func(approx_args_)
 
 
@@ -148,7 +151,11 @@ def _create_parser():
     trivial_args_ = commands.add_parser('trivial', help="Calculate trivial (identity) CSM", conflict_handler='resolve', usage='csm trivial TYPE [optional args]')
     trivial_args = trivial_args_.add_argument_group("Args for trivial calculation")
     shared_calc_utility_func(trivial_args)
-    trivial_args.add_argument('--permute-chains', action='store_true', default=False)
+    #this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
+    #documentation specifically under calculation arguments for trivial, as it's THe main calculation choice for trivial
+    trivial_args.add_argument('--permute-chains', action='store_true', default=False, help="Permute the chains before calculating trivial calculation. "
+                                                                                           "Will automatically activate --use-chains, and is automatically activated if --use-chains is provided")
+    shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
 
@@ -197,13 +204,9 @@ def _process_arguments(parse_res):
         # get shared arguments:
         op = Operation(parse_res.type)
         dictionary_args['operation'] = op
-        #dictionary_args['op_type'] = op.type
-        #dictionary_args['op_order'] = op.order
-        #dictionary_args['op_name'] = op.name
-
         dictionary_args['timeout'] = parse_res.timeout
         dictionary_args['sn_max'] = parse_res.sn_max
-        dictionary_args['normalizations']=parse_res.normalizations
+        dictionary_args['normalizations']=parse_res.normalize
 
         if parse_res.command == 'exact':
             if parse_res.use_perm:
@@ -220,10 +223,6 @@ def _process_arguments(parse_res):
                     dictionary_args['perms_csv_name']=os.path.join(base_path, "perms.csv")
                 except:
                     dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
-
-
-
-
         if parse_res.command == 'approx':
             #choose dir:
             dictionary_args['detect_outliers'] = parse_res.detect_outliers
@@ -265,7 +264,9 @@ def _process_arguments(parse_res):
                     dictionary_args['stat_file_name']=os.path.join(base_path, "csm_statistics.txt")
                 else:
                     dictionary_args['stat_file_name'] = os.path.join("csm_statistics.txt")
-
+        if parse_res.command == 'trivial':
+            if parse_res.permute_chains or parse_res.use_chains:
+                dictionary_args["use_chains"]=True
 
     return dictionary_args
 
