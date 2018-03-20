@@ -1,3 +1,9 @@
+'''
+A set of tests to check that a variety of input arguments are still valid and haven't broken from changes introduced to the code-- doesn't test validity of result, just
+that the code runs successfully and returns A result.
+'''
+
+
 import pytest
 from csm.main.csm_run import run
 
@@ -5,8 +11,7 @@ class Runner:
     def run_args(self, args_str):
         args=args_str.split()
         result=run(args)
-
-
+        assert result.csm is not None
 
 class TestExact(Runner):
     def test_plain(self):
