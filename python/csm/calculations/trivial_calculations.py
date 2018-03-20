@@ -1,5 +1,5 @@
 from csm.fast import CythonPermuter
-from csm.calculations.data_classes import CSMState, process_results, Operation, Calculation
+from csm.calculations.data_classes import CSMState, Operation
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.permuters import ConstraintPermuter
@@ -10,7 +10,7 @@ contains the trivial calculation (identity perm on a chain permutation)
 and the perm count
 '''
 
-class TrivialCalculation(Calculation):
+class TrivialCalculation:
     """
     Calculates the CSM of the identity permutation of a molecule. 
     If use-chains is specified, calculates the identity permutation of every possible chain permutation, returns best.
@@ -22,7 +22,8 @@ class TrivialCalculation(Calculation):
         :param use_chains: default True. When True, all possible chain permutations with an identity perm on their components are measured.
                 When false, only the pure identity perm is measured.
         """
-        super().__init__(operation, molecule)
+        self.operation=operation
+        self.molecule=molecule
         self.use_chains=use_chains
         self.statistics={}
 
@@ -57,3 +58,7 @@ class TrivialCalculation(Calculation):
 
         self._csm_result = best
         return self.result
+
+    @property
+    def result(self):
+        return self._csm_result

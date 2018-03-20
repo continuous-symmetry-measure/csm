@@ -18,13 +18,14 @@ class CSMState(namedtuple('CSMState', ['molecule',
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 class Operation:
-    def __init__(self, op, sn_max=8):
-        op=self._get_operation_data(op)
-        self.type= op.type
-        self.order = op.order
-        if op.type=="CH":
-            self.order=sn_max
-        self.name = op.name
+    def __init__(self, op, sn_max=8, init=True):
+        if init:
+            op=self._get_operation_data(op)
+            self.type= op.type
+            self.order = op.order
+            if op.type=="CH":
+                self.order=sn_max
+            self.name = op.name
 
     def _get_operation_data(self, opcode):
         """
@@ -82,7 +83,7 @@ class Operation:
     @staticmethod
     def placeholder(op_type, op_order, sn_max=8):
         #make an arbitrary operation
-        o=Operation("C2")
+        o=Operation("C2", init=False)
         #overwrite values to match input
         o.type=op_type
         o.order=op_order
@@ -90,18 +91,22 @@ class Operation:
             o.order=sn_max
         return o
 
-class Calculation:
-    def __init__(self, operation, molecule, timeout=300, *args, **kwargs):
-        self.operation=operation
-        self.molecule=molecule
-        self._timeout = timeout
+    def to_dict(self):
+        return {
+            "name":self.name,
+            "order":self.order,
+            "type":self.type
+        }
 
-    def calculate(self):
-        pass
+    @staticmethod
+    def from_dict(self, in_dict):
+        #make an arbitrary operation
+        o=Operation("C2", init=False)
+        #overwrite values
+        o.type=in_dict["type"]
+        o.name=in_dict["name"]
+        o.order=in_dict["order"]
 
-    @property
-    def result(self):
-        return self._csm_result
 
 class CSMResult:
     """
@@ -125,11 +130,10 @@ class CSMResult:
                     to algorithm result
     chain_perm: the chain permutation (by index-- names can be accessed with chain_perm_string)
     """
-    def __init__(self, state):
+    def __init__(self, state, operation):
         self.__CSMState=state
         self.molecule=state.molecule.copy()
-        self.op_order=state.op_order
-        self.op_type=state.op_type
+        self.operation=operation
         self.csm=state.csm
         self.perm=state.perm
         self.dir=state.dir
@@ -137,14 +141,21 @@ class CSMResult:
         self.local_csm=""
         self._process_results()
 
+    @property
+    def op_type(self):
+        return self.operation.type
+
+    @property
+    def op_order(self):
+        return self.operation.order
 
     def _process_results(self):
-        self.d_min = 1.0 - (self.csm / 100 * self.op_order / (self.op_order - 1))  # this is the scaling factor
+        self.d_min = 1.0 - (self.csm / 100 * self.operation.order / (self.operation.order - 1))  # this is the scaling factor
 
 
         # save the normalized coords before we denormalize
-        self.normalized_symmetric_structure = self.create_symmetric_structure(self.molecule, self.perm, self.dir, self.op_type,
-                                                         self.op_order)
+        self.normalized_symmetric_structure = self.create_symmetric_structure(self.molecule, self.perm, self.dir, self.operation.type,
+                                                         self.operation.order)
         self.normalized_molecule_coords=np.array(self.molecule.Q)
 
         #denormalize
@@ -157,7 +168,7 @@ class CSMResult:
         #get the chain perm
         self.get_chain_perm()
 
-        self.falsecount, self.num_invalid, self.cycle_counts, self.bad_indices=check_perm_cycles(self.perm, self.op_order, self.op_type)
+        self.falsecount, self.num_invalid, self.cycle_counts, self.bad_indices=check_perm_cycles(self.perm, self.operation.order, self.operation.type)
 
     def _formula_test(self):
         Q=self.molecule.Q
@@ -216,8 +227,8 @@ class CSMResult:
         local_csm = np.zeros(size)
         m_pos = np.asarray([np.asarray(atom.pos) for atom in self.molecule.atoms])
 
-        for i in range(self.op_order):
-            rot = create_rotation_matrix(i, self.op_type, self.op_order, self.dir)
+        for i in range(self.operation.order):
+            rot = create_rotation_matrix(i, self.operation.type, self.operation.order, self.dir)
 
             # set permutation
             cur_perm = [self.perm[cur_perm[j]] for j in range(size)]
@@ -227,7 +238,7 @@ class CSMResult:
             difference = rotated - m_pos[i]
             square = np.square(difference)
             sum = np.sum(square)
-            local_csm[i] = sum * (100.0 / (2 * self.op_order))
+            local_csm[i] = sum * (100.0 / (2 * self.operation.order))
         self.local_csm=local_csm
         return local_csm
 
@@ -265,8 +276,7 @@ class CSMResult:
         json_dict = {"Result":
             {
                 "molecule": self.molecule.to_dict(),
-                "op_order": self.op_order,
-                "op_type": self.op_type,
+                "operation": self.operation.to_dict(),
                 "csm": self.csm,
                 "perm": self.perm,
                 "dir": list(self.dir),
@@ -285,16 +295,7 @@ class CSMResult:
     def from_dict(input):
         result=input["Result"]
         molecule=Molecule.from_dict(result["molecule"])
+        operation=result["operation"]
         state=CSMState(molecule, result["op_order"], result["op_type"], result["csm"], result["perm"], result["dir"], result["perm_count"])
-        result=CSMResult(state)
+        result=CSMResult(state, operation)
         return result
-
-# TODO: replace all calls to this class with creation of Result class
-def process_results(results, calc_local=False):
-        """
-        retained for legacy purposes
-        """
-        r = CSMResult(results)
-        if calc_local:
-            r.compute_local_csm()
-        return r

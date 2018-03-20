@@ -142,9 +142,9 @@ class ResultWriter:
     Inheriting classes are recommended to inherit a write() function that can be called from main()
     """
 
-    def __init__(self, result, operation, format, print_local=False, *args, **kwargs):
+    def __init__(self, result, format, print_local=False, *args, **kwargs):
         self.result = result
-        self.op_name = operation.name
+        self.op_name = result.operation.name
         self.format = str.lower(format)
         self.print_local = print_local
         self.result_string = self.get_result_string()
@@ -316,12 +316,12 @@ class ApproxStatisticWriter:
                 except:
                     file.write(start_str + "failed to read statistics\n")
 
-class FileWriter(ResultWriter):
+class OldFormatFileWriter(ResultWriter):
     """
     A ResultWriter class that writes to a file 
     """
 
-    def __init__(self, result, out_file_name, operation, print_local=False, json_output=False, out_format=None, *args, **kwargs):
+    def __init__(self, result, out_file_name, print_local=False, json_output=False, out_format=None, *args, **kwargs):
         self.out_file_name = out_file_name
         self.json_output = json_output
         if not out_format:
@@ -329,7 +329,7 @@ class FileWriter(ResultWriter):
                 out_format=get_format(None, out_file_name)
             except ValueError:
                 out_format=get_format(None, result.molecule._filename)
-        super().__init__(result, operation, out_format, print_local)
+        super().__init__(result, out_format, print_local)
 
     def write(self):
         self.print_structure()
@@ -342,16 +342,22 @@ class FileWriter(ResultWriter):
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
                 self._write_results(f)
 
+class ScriptWriter(ResultWriter):
+    #logsymm1:
+    #creates folder with each result.out for molecule
+    #creates output.txt with all the outputs from screen
+    #creates a tsv file with CSM per molecule
+
+    #xyzsymm/pdbsymm:
+    #creates a tsv for directions
+    #creates a tsv for permutations (needs to handle extra long permutations somehow)
+    #chained file of initial structures
+    #chained file of symmetric structures
+    pass
+
 
 class FolderWriter(ResultWriter):
     pass
 
 
-def print_results(result, dictionary_args):
-    """
-    Prints the CSM calculation results
-    :param result:
-    :param dictionary_args:
-    """
-    filewriter = FileWriter(result, **dictionary_args)
-    filewriter.write()
+

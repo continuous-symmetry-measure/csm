@@ -4,7 +4,7 @@ import itertools
 import math
 
 import numpy as np
-from csm.calculations.data_classes import process_results, CSMState, Operation, Calculation
+from csm.calculations.data_classes import CSMState, Operation, CSMResult
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE, start_time
 from csm.fast import calc_ref_plane
 
@@ -55,7 +55,7 @@ class ExactStatistics:
     def num_branches(self):
         return self._truecount
 
-class ExactCalculation(Calculation):
+class ExactCalculation:
     def __init__(self, operation, molecule, keep_structure=False, perm=None, no_constraint=False, timeout=300, callback_func=None, *args, **kwargs):
         """
         A class for running the exact CSM Algorithm
@@ -70,7 +70,8 @@ class ExactCalculation(Calculation):
         :param callback_func: default None, this function is called for every single permutation calculated with an argument of a single 
         CSMState, can be used for printing in-progress reports, outputting to an excel, etc.
         """
-        super().__init__(operation, molecule)
+        self.operation=operation
+        self.molecule=molecule
         self.keep_structure=keep_structure
         self.perm=perm
         self.no_constraint=no_constraint
@@ -103,7 +104,7 @@ class ExactCalculation(Calculation):
         else:
             best_result = self.csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, timeout)
 
-        self._csm_result = process_results(best_result)
+        self._csm_result = CSMResult(best_result, self.operation)
         return self.result
 
     def csm_operation(self, op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False, timeout=300):
@@ -156,7 +157,9 @@ class ExactCalculation(Calculation):
         ec.calculate()
         return ec.result
 
-
+    @property
+    def result(self):
+        return self._csm_result
 
 
 

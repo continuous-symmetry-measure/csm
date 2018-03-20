@@ -152,7 +152,7 @@ def _create_parser():
     trivial_args = trivial_args_.add_argument_group("Args for trivial calculation")
     shared_calc_utility_func(trivial_args)
     #this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
-    #documentation specifically under calculation arguments for trivial, as it's THe main calculation choice for trivial
+    #documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
     trivial_args.add_argument('--permute-chains', action='store_true', default=False, help="Permute the chains before calculating trivial calculation. "
                                                                                            "Will automatically activate --use-chains, and is automatically activated if --use-chains is provided")
     shared_normalization_utility_func(trivial_args)

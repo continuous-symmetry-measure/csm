@@ -211,7 +211,6 @@ class SingleDirApproximator(_OptionalLogger):
                 if best_for_chain_perm.csm < CSM_THRESHOLD:
                     break
 
-        #self.result = best
         statistics.end_clock()
         return best, statistics
 
@@ -576,8 +575,6 @@ class ApproxCalculation(_OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=lambda *args: None, timeout=100, selective=False, num_selected=10, *args, **kwargs):
         self.operation=operation
-        self._op_type = operation.type
-        self._op_order = operation.order
         self._molecule = molecule
 
         self._log_func = log_func
@@ -605,9 +602,9 @@ class ApproxCalculation(_OptionalLogger):
         self._max_iterations = 30
 
     def calculate(self):
-        if self._op_type == 'CI' or (self._op_type == 'SN' and self._op_order == 2):
+        if self.operation.type == 'CI' or (self.operation.type == 'SN' and self.operation.order == 2):
             dir = [1.0, 0.0, 0.0]
-            if self._op_type == 'SN':
+            if self.operation.type == 'SN':
                 op_msg = 'S2'
             else:
                 op_msg = 'CI'
@@ -644,9 +641,9 @@ class ApproxCalculation(_OptionalLogger):
         return best_result
 
     def _calculate_for_directions(self, dirs, max_iterations):
-        best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE,
+        best = CSMState(molecule=self._molecule, op_type=self.operation.type, op_order=self.operation.order, csm=MAXDOUBLE,
                         num_invalid=MAXDOUBLE)
-        least_invalid = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
+        least_invalid = CSMState(molecule=self._molecule,  op_type=self.operation.type, op_order=self.operation.order,
                                  csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
         single_dir_approximator = SingleDirApproximator(self.operation, self._molecule,
                                                         self.perm_builder, self._log,
@@ -676,7 +673,7 @@ class ParallelApprox(ApproxCalculation):
                          log_func, timeout, selective, num_selected)
 
     def calculate(self):
-        if self._op_type == 'CI' or (self._op_type == 'SN' and self._op_order == 2):
+        if self.operation.type == 'CI' or (self.operation.type == 'SN' and self.operation.order == 2):
             raise ValueError("Please don't use parallel calculation for inversion")
         else:
             if self.selective:
