@@ -1,4 +1,4 @@
-README v0.0 / 15 March 2018
+README v0.1 / 15 March 2018
 
 # CSM
 
@@ -8,6 +8,19 @@ The CSM (Continuous Symmetry Measure) program allows users to measure the contin
 Molecules can be input in a variety of file formats (any supported by the OpenBabel program). The CSM can be measured
 precisely for smaller molecules, or approximated for larger molecules where the runtime for calculating 
 the exact measure would be unreasonable.
+
+##Features
+
+* The exact continuous symmetry measure calculator: The calculator goes through every single possible (valid) permutation
+ of the molecule's atoms, and selects the permutation with the lowest continuous symmetry.
+ 
+ * The approximate continuous symmetry measure calculator: For molecules large enough that going through all the permutations
+ is not feasible, a good alternative is the approximate algorithm, which uses an iterative algorithm based on building
+ permutations around a selection of possible symmetry axes to approximate the molecule's continous symmetry measure
+ 
+ * The trivial continuous symmetry measure calculator: Particularly well suited to proteins with almost identical sub-polymers,
+ the trivial continous symmetry measure returns the symmetry measure of the molecule without any displacement of molecules within
+ each fragment.
 
 ## Usage
 
@@ -29,7 +42,7 @@ Help for any of the options can be accessed by entering `csm <OPTION_NAME> -h`, 
 This will provide a full list of optional and required arguments, with explanations.
 
 In addition to the possibility of using CSM from the command line, CSM can be accessed programmatically through its API, 
-detailed in the file API.md
+detailed in the file API.md (including examples)
 
 ## Installation
 
@@ -39,7 +52,7 @@ CSM can be installed on Windows and Linux machines.
 Before installing CSM, you must first install Openbabel (http://openbabel.org/wiki/Category:Installation), 
 version 2.4.0 or later.
 
-You must also `pip install both openbabel` (openbabel's python bindings) and `pip install numpy`
+You must also install openbabel's python bindings (`pip install openbabel`) and numpy (`pip install numpy`)
 
 ### Installation
 
@@ -78,12 +91,8 @@ Devora@chelem.co.il or via the contact form at chelem.co.il
 
 ### Help
 
-Send requests for help to Devora@chelem.co.il or via the contact form at chelem.co.il
+Similarly, send requests for help to Devora@chelem.co.il or via the contact form at chelem.co.il
 
 ## License
 
 This project is provided under the 3-clause BSD license.
-
-The license should be in a separate file called LICENSE, so don't explain it in detail within your documentation. 
-
-Also, don't forget to specify licenses of third-party libraries and programs you use.
