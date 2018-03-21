@@ -99,14 +99,14 @@ class Operation:
         }
 
     @staticmethod
-    def from_dict(self, in_dict):
+    def from_dict(in_dict):
         #make an arbitrary operation
         o=Operation("C2", init=False)
         #overwrite values
         o.type=in_dict["type"]
         o.name=in_dict["name"]
         o.order=in_dict["order"]
-
+        return o
 
 class CSMResult:
     """
@@ -295,7 +295,9 @@ class CSMResult:
     def from_dict(input):
         result=input["Result"]
         molecule=Molecule.from_dict(result["molecule"])
-        operation=result["operation"]
-        state=CSMState(molecule, result["op_order"], result["op_type"], result["csm"], result["perm"], result["dir"], result["perm_count"])
+        operation=Operation.from_dict(result["operation"])
+        state=CSMState(molecule, operation.order, operation.type, result["csm"], result["perm"], result["dir"], result["perm_count"])
         result=CSMResult(state, operation)
         return result
+
+
