@@ -4,7 +4,7 @@
 
 from collections import OrderedDict
 import copy
-from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter
+from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
 from csm.molecule.atom import Atom, GetAtomicSymbol
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords, calculate_norm_factor
 import logging
@@ -689,6 +689,7 @@ class MoleculeReader:
                   remove_hy=False, ignore_symm=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
                   keep_structure=False,
+                  ob_debug=False,
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
@@ -708,6 +709,9 @@ class MoleculeReader:
                                 the peogram will raise an error and exit
         :return: an instance of class Molecule 
         """
+        # suppress warnings from openbabel
+        if not ob_debug:
+            obErrorLog.SetOutputLevel(obError)
 
         def set_obmol_field(mol):
             mol._filename=in_file_name

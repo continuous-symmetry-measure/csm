@@ -25,6 +25,8 @@ def _create_parser():
                             help='Use the atomic masses to define center of mass')
         parser.add_argument('--babel-bond', action='store_true', default=False,
                             help='Let OpenBabel compute bonding')
+        parser.add_argument('--ob-debug', action='store_true', default=False,
+                            help='By default OpenBabel warnings are suppressed, --ob-debug will unsuppress them')
         parser.add_argument('--use-sequence', action='store_true', default=False,
                             help='create equivalence class for pdb file using sequence information.')
         parser.add_argument('--use-chains', action='store_true', default=False,
@@ -43,7 +45,8 @@ def _create_parser():
     def shared_calc_utility_func(parser):
         parser.add_argument('type',
                             # choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
-                            help='The type of operation: cs, ci, ch, cN, sN')
+                            help='The type of operation: cs, ci, ch, cN, sN',)
+                            #nargs="+")
         parser.add_argument('--timeout', default=300,
                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
         parser.add_argument('--sn-max', type=int, default=8,
@@ -171,8 +174,9 @@ def _process_arguments(parse_res):
         dictionary_args['read_fragments'] = parse_res.read_fragments
         if not dictionary_args['use_chains'] and parse_res.read_fragments:
             dictionary_args['use_chains'] = True
-            logger.warn(
+            logger.warning(
                 "--read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
+        dictionary_args['ob_debug']=parse_res.ob_debug
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
@@ -202,8 +206,13 @@ def _process_arguments(parse_res):
             dictionary_args["out_file_name"]=None
 
         # get shared arguments:
-        op = Operation(parse_res.type)
-        dictionary_args['operation'] = op
+        #types=parse_res.type
+        #ops=[]
+        #for type in types:
+        #    op = Operation(type)
+        #    ops.append(op)
+        #dictionary_args['operations'] = ops
+        dictionary_args['operation'] = Operation(parse_res.type)
         dictionary_args['timeout'] = parse_res.timeout
         dictionary_args['sn_max'] = parse_res.sn_max
         dictionary_args['normalizations']=parse_res.normalize
