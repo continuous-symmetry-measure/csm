@@ -31,14 +31,17 @@ def write_results(dictionary_args, result):
 
 
 def run_calculation(dictionary_args):
-    command = dictionary_args["command"]
     #get input:
     if dictionary_args["in_file_name"]:
         dictionary_args['molecule']=read_molecule(dictionary_args)
     else:
         raw_json=read_from_sys_std_in()
         dictionary_args['molecule']=Molecule.from_json(raw_json)
+    calc, result, dictionary_args=_run_calculation(dictionary_args)
+    return _do_output(calc, result, dictionary_args)
 
+def _run_calculation(dictionary_args):
+    command = dictionary_args["command"]
     if command=="exact":
         #get perm if it exists:
         dictionary_args['perm'] = read_perm(**dictionary_args)
@@ -75,7 +78,9 @@ def run_calculation(dictionary_args):
         print("Timed out")
         return
     result=calc.result
+    return calc, result, dictionary_args
 
+def _do_output(calc, result, dictionary_args):
     #statistics for exact:
     try:
         if dictionary_args["print_branches"]:
@@ -123,13 +128,92 @@ def run(args=[]):
         return run_calculation(dictionary_args)
 
 
+def folder_script_runner():
+    import os
+    from csm.input_output.writers import ScriptWriter
+    from csm.molecule.molecule import  get_format
+    in_folder=r"C:\Users\devora\Sources\temp\csm_multi_test\input"
+    out_folder=r"C:\Users\devora\Sources\temp\csm_multi_test\output"
+
+    def get_molecules(in_folder):
+        molecules = []
+        mol_names=[]
+        for directory, subdirectories, files in os.walk(in_folder):
+            for file_name in files:
+                if file_name=="sym.txt":
+                    continue
+                mol_file= os.path.join(in_folder, file_name)
+                mol = MoleculeReader.from_file(mol_file)
+                mol_names.append(file_name)
+                molecules.append(mol)
+
+        return molecules, mol_names
+
+    def get_commands(in_folder):
+        commands = []
+        command_file=os.path.join(in_folder, "sym.txt")
+        with open(command_file, 'r') as file:
+            for line in file:
+                commands.append(line)
+        return commands
+
+    molecules, mol_names=get_molecules(in_folder)
+
+    commands=get_commands(in_folder)
+    dictionary_args_array=[]
+    for command in commands:
+        args=command.split()
+        dictionary_args = get_parsed_args(args)
+        dictionary_args_array.append(dictionary_args)
+
+    results=[]
+    for name, mol in zip(mol_names, molecules):
+        mol_results=[]
+        for args in dictionary_args_array:
+            args['molecule']=mol
+            calc, result, dictionary_args=_run_calculation(args)
+            mol_results.append(result)
+        results.append((name, mol_results))
+    format=get_format(None, filename=mol_names[0])
+    writer=ScriptWriter(results, format, commands, out_folder)
+    writer.write()
+
+
+def molecule_script_runner():
+    import os
+    from csm.molecule.molecule import  get_format
+    from csm.input_output.writers import ScriptWriter
+    in_file=r"C:\Users\devora\Sources\csm\test_cases\inbal\reading fragments\model-endmdl-withIDS.pdb"
+    command_file=r"C:\Users\devora\Sources\temp\csm_multi_test\input\sym.txt"
+    out_folder=r"C:\Users\devora\Sources\temp\csm_multi_test\output"
+
+    commands=[]
+    dictionary_args_array = []
+    with open(command_file, 'r') as file:
+        for command in file:
+            commands.append(command)
+            args = command.split()
+            dictionary_args = get_parsed_args(args)
+            dictionary_args_array.append(dictionary_args)
+
+    mols=MoleculeReader.multiple_from_file(in_file, use_chains=False)
+    results=[]
+    for index, mol in enumerate(mols):
+        mol_results=[]
+        for args in dictionary_args_array:
+            args['molecule']=mol
+            calc, result, dictionary_args=_run_calculation(args)
+            mol_results.append(result)
+        results.append((str(index), mol_results))
+    format=get_format(None, filename=in_file)
+    writer=ScriptWriter(results, format, commands, out_folder)
+    writer.write()
 
 def run_no_return(args=[]):
     run(args)
 
 
 if __name__ == '__main__':
-    #timer = timeit.Timer(lambda: run_many_times())
     timer = timeit.Timer(lambda: run(args=sys.argv[1:]))
     time = timer.timeit(number=1)
     print("Runtime:", time, "seconds")

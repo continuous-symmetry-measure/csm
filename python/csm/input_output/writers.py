@@ -1,4 +1,7 @@
 import json
+
+import os
+
 from csm.input_output.formatters import format_CSM, non_negative_zero
 import io
 from openbabel import OBConversion
@@ -72,12 +75,28 @@ class OBMolWriter:
             f.write("\nMODEL 01")
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
 
+        obmol=self.obm_from_result(result)
+        obmol=self.set_obm_from_original(obmol, result)
+        self.write_ob_molecule(obmol, format, f)
+
+        if format == 'pdb':
+            f.write("\nMODEL 02")
+        f.write("\nRESULTING STRUCTURE COORDINATES\n")
+
+        obmol=self.set_obm_from_symmetric(obmol, result)
+        self.write_ob_molecule(obmol, format, f)
+        if format == 'pdb':
+            f.write("END\n")
+
+    def obm_from_result(self, result):
         obmol = MoleculeReader._obm_from_file(result.molecule._filename,
                                               result.molecule._babel_bond,
                                               result.molecule._format)[0]
         for to_remove in result.molecule._deleted_atom_indices:
             obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
+        return obmol
 
+    def set_obm_from_original(self, obmol, result):
         num_atoms = obmol.NumAtoms()
         # update coordinates
         for i in range(num_atoms):
@@ -88,12 +107,10 @@ class OBMolWriter:
                                non_negative_zero(result.molecule.atoms[i].pos[2]))
             except Exception as e:
                 pass
+        return obmol
 
-        self.write_ob_molecule(obmol, format, f)
-
-        # print resulting structure coordinates
-
-        # update output coordinates to match symmetric structure
+    def set_obm_from_symmetric(self, obmol, result):
+        num_atoms = obmol.NumAtoms()
         for i in range(num_atoms):
             try:
                 a = obmol.GetAtom(i + 1)
@@ -102,18 +119,14 @@ class OBMolWriter:
                             non_negative_zero(result.symmetric_structure[i][2]))
             except Exception as e:
                 pass
+        return obmol
 
-        if format == 'pdb':
-            f.write("\nMODEL 02")
-        f.write("\nRESULTING STRUCTURE COORDINATES\n")
-        self.write_ob_molecule(obmol, format, f)
-        if format == 'pdb':
-            f.write("END\n")
 
-    def write_ob_molecule(self, mol, format, f):
+
+    def write_ob_molecule(self, obmol, format, f):
         """
         Write an Open Babel molecule to file
-        :param mol: The molecule
+        :param obmol: The molecule
         :param format: The output format
         :param f: The file to write output to
         :param f_name: The file's name (for extension-finding purpose)
@@ -125,7 +138,7 @@ class OBMolWriter:
         # write to file
 
         try:
-            s = conv.WriteString(mol)
+            s = conv.WriteString(obmol)
         except (TypeError, ValueError, IOError):
             raise ValueError("Error writing data file using OpenBabel")
         if str.lower(format) == 'pdb':
@@ -342,22 +355,97 @@ class OldFormatFileWriter(ResultWriter):
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
                 self._write_results(f)
 
-class ScriptWriter(ResultWriter):
+class ScriptWriter:
+    def __init__(self, results, format, commands, folder=os.getcwd()):
+        self.results=results
+        self.folder=folder
+        self.commands=commands
+        self.format=format
+
+    def write(self):
+        self.create_CSM_tsv()
+        self.create_dir_tsv()
+        self.create_initial_mols()
+        self.create_output_txt()
+        self.create_perm_tsv()
+        self.create_result_out_folder()
+        self.create_symm_mols()
+        pass
+
     #logsymm1:
-    #creates folder with each result.out for molecule
+    def create_result_out_folder(self):
+    # creates folder with each result.out for molecule
+        pass
+
+    def create_output_txt(self):
     #creates output.txt with all the outputs from screen
+        pass
+
+    def _write_initial_headers(self, f):
+        f.write("\t")
+        for index, command in enumerate(self.commands):
+            f.write("L_"+str(index)+"\t")
+            #args=command.split()
+            #f.write("\t"+args[1])
+        f.write("\n")
+
+    def create_CSM_tsv(self):
     #creates a tsv file with CSM per molecule
+        filename = os.path.join(self.folder, "csm.txt")
+        with open(filename, 'w') as f:
+            self._write_initial_headers(f)
+            for mol_key, mol_results in self.results:
+                f.write(mol_key)
+                for result in mol_results:
+                    f.write("\t"+format_CSM(result.csm))
+                f.write("\n")
 
     #xyzsymm/pdbsymm:
-    #creates a tsv for directions
-    #creates a tsv for permutations (needs to handle extra long permutations somehow)
-    #chained file of initial structures
-    #chained file of symmetric structures
-    pass
+    def create_dir_tsv(self):
+        #creates a tsv for directions
+        filename = os.path.join(self.folder, "dirs.txt")
+        with open(filename, 'w') as f:
+            self._write_initial_headers(f)
+            for mol_key, mol_results in self.results:
+                f.write(mol_key)
+                for result in mol_results:
+                    f.write("\t"+str(result.dir))
+                f.write("\n")
+
+    def create_perm_tsv(self):
+        #creates a tsv for permutations (needs to handle extra long permutations somehow)
+        filename = os.path.join(self.folder, "perms.txt")
+        with open(filename, 'w') as f:
+            self._write_initial_headers(f)
+            for mol_key, mol_results in self.results:
+                f.write(mol_key)
+                for result in mol_results:
+                    f.write("\t"+str(result.perm))
+                f.write("\n")
+
+    def create_initial_mols(self):
+        # chained file of initial structures
+        obmolwriter=OBMolWriter()
+        filename=os.path.join(self.folder, "initial_normalized_coordinates."+self.format)
+        with open(filename, 'w') as f:
+            for mol_key, mol_results in self.results:
+                for result in mol_results:
+                    obmol=obmolwriter.obm_from_result(result)
+                    obmol=obmolwriter.set_obm_from_original(obmol, result)
+                    obmolwriter.write_ob_molecule(obmol, self.format, f)
 
 
-class FolderWriter(ResultWriter):
-    pass
+    def create_symm_mols(self):
+        # chained file of symmetric structures
+        obmolwriter = OBMolWriter()
+        filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format)
+        with open(filename, 'w') as f:
+            for mol_key, mol_results in self.results:
+                for result in mol_results:
+                    obmol = obmolwriter.obm_from_result(result)
+                    obmol = obmolwriter.set_obm_from_symmetric(obmol, result)
+                    obmolwriter.write_ob_molecule(obmol, self.format, f)
+
 
 
 

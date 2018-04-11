@@ -13,6 +13,9 @@ import json
 from csm.input_output.formatters import csm_log as print
 logger = logging.getLogger("csm")
 
+ob_debug=False
+if not ob_debug:
+    obErrorLog.SetOutputLevel(obError)
 
 def get_format(format, filename):
     if not format:
@@ -689,7 +692,6 @@ class MoleculeReader:
                   remove_hy=False, ignore_symm=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
                   keep_structure=False,
-                  ob_debug=False,
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
@@ -710,38 +712,49 @@ class MoleculeReader:
         :return: an instance of class Molecule 
         """
         # suppress warnings from openbabel
-        if not ob_debug:
-            obErrorLog.SetOutputLevel(obError)
-
-        def set_obmol_field(mol):
-            mol._filename=in_file_name
-            mol._babel_bond=babel_bond
 
         format = get_format(in_format, in_file_name)
+        if format == "csm":
+            mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
+        else:
+            obm = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
+            mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass, read_fragments)
+        return MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
+                                            use_chains, babel_bond,
+                                            remove_hy, ignore_symm, use_mass,
+                                            read_fragments, use_sequence,
+                                            keep_structure)
+
+    @staticmethod
+    def _process_single_molecule(mol, in_file_name, format, initialize=True,
+              use_chains=False, babel_bond=False,
+              remove_hy=False, ignore_symm=False, use_mass=False,
+              read_fragments=False, use_sequence=False,
+              keep_structure=False):
+
+        def set_obmol_field(mol):
+            mol._filename = in_file_name
+            mol._babel_bond = babel_bond
+            mol._format = format
+
+        set_obmol_field(mol)
 
         if use_sequence:
             if format.lower() != 'pdb':
                 raise ValueError("--use-sequence only works with PDB files")
 
-            mol = MoleculeReader._create_pdb_with_sequence(in_file_name, format, use_chains=use_chains, babel_bond=babel_bond,
+            mol = MoleculeReader._create_pdb_with_sequence(in_file_name, mol, format, use_chains=use_chains, babel_bond=babel_bond,
                             read_fragments=read_fragments, remove_hy=remove_hy, ignore_symm=ignore_symm, use_mass=use_mass)
             #we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
-            set_obmol_field(mol)
             return mol
 
-        if format == "csm":
-                mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
-
-        else:
-                obm = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
-                mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass, read_fragments)
-                if format=="pdb":
-                    mol=MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
-                if not mol.bondset:
-                    if keep_structure:
-                        raise ValueError("User input --keep-structure but input molecule has no bonds. Did you forget --babel-bond?")
-                    else:
-                        logger.warn("Input molecule has no bond information")
+        if format=="pdb":
+            mol=MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
+        if not mol.bondset:
+            if keep_structure:
+                raise ValueError("User input --keep-structure but input molecule has no bonds. Did you forget --babel-bond?")
+            else:
+                logger.warn("Input molecule has no bond information")
 
         if initialize:
             mol._complete_initialization(use_chains, remove_hy)
@@ -751,9 +764,30 @@ class MoleculeReader:
                             "Fragments are marked by $$$ in mol files or by model/endmdl in pdb files")
                 elif use_chains:
                     logger.warn("You specified --use-chains but molecule only has one chain")
-        set_obmol_field(mol)
-        mol._format=format
         return mol
+
+
+    @staticmethod
+    def multiple_from_file(in_file_name, in_format=None, initialize=True,
+                  use_chains=False, babel_bond=False,
+                  remove_hy=False, ignore_symm=False, use_mass=False,
+                  read_fragments=False, use_sequence=False,
+                  keep_structure=False,
+                  *args, **kwargs):
+        mols=[]
+        format = get_format(in_format, in_file_name)
+        if format not in ["mol", "pdb"]:
+            raise ValueError("reading multiple molecules supported for pdb and mol only right now")
+        obms = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
+        for obm in obms:
+            mol = MoleculeReader._from_obm([obm], ignore_symm, use_mass)
+            mol= MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
+                                            use_chains, babel_bond,
+                                            remove_hy, ignore_symm, use_mass,
+                                            read_fragments, use_sequence,
+                                            keep_structure)
+            mols.append(mol)
+        return mols
 
 
     @staticmethod
@@ -791,7 +825,6 @@ class MoleculeReader:
             obmols.append(obmol)
             obmol = OBMol()
             notatend = conv.Read(obmol)
-
         return obmols
 
     @staticmethod
@@ -968,7 +1001,7 @@ class MoleculeReader:
 
 
     @staticmethod
-    def _create_pdb_with_sequence(in_file_name, format="pdb", initialize=True,
+    def _create_pdb_with_sequence(in_file_name, mol, format="pdb", initialize=True,
                                   use_chains=False, babel_bond=False, read_fragments=False,
                                   ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
         def read_atom(line, likeness_dict, cur_atom):
@@ -996,8 +1029,7 @@ class MoleculeReader:
             except Exception as e:  # TODO: comment why this except is here (I don't actually remember)
                 print(e)
 
-        obm = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
-        mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass)
+
         mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
         if remove_hy or ignore_hy:
             mol.strip_atoms(remove_hy, ignore_hy)
