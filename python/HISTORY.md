@@ -1,13 +1,13 @@
 The Python CSM Package
 ======================
 
-Changes in version 0.19.2
+Changes in version 0.19.1
 -------------------------
 * added parallelization in approx calculation, called with --parallel and optional int argument for number of processes
 * normcsm has received the same treatment as the main CSM program and had its arguments changed. 
 * dircsm (test_directions) has been removed
 * --normalize has been added to main CSM program, to allow calling normcsm from the main CSM program
-* --statistics and --output-perms have default values
+* --statistics and --output-perms have default values for where the files are saved
 * bug fix: reading from sys.stdin no longer causes program to hang
 * various small bug fixes
 

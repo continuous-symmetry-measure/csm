@@ -25,8 +25,6 @@ def _create_parser():
                             help='Use the atomic masses to define center of mass')
         parser.add_argument('--babel-bond', action='store_true', default=False,
                             help='Let OpenBabel compute bonding')
-        parser.add_argument('--ob-debug', action='store_true', default=False,
-                            help='By default OpenBabel warnings are suppressed, --ob-debug will unsuppress them')
         parser.add_argument('--use-sequence', action='store_true', default=False,
                             help='create equivalence class for pdb file using sequence information.')
         parser.add_argument('--use-chains', action='store_true', default=False,
@@ -176,7 +174,6 @@ def _process_arguments(parse_res):
             dictionary_args['use_chains'] = True
             logger.warning(
                 "--read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
-        dictionary_args['ob_debug']=parse_res.ob_debug
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
