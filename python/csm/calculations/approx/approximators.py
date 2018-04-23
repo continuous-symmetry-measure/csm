@@ -13,7 +13,7 @@ from csm.fast import approximate_perm_classic, munkres_wrapper
 from csm.input_output.formatters import format_CSM
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, check_perm_cycles
-from csm.calculations.data_classes import CSMState, Operation
+from csm.calculations.data_classes import CSMState, Operation, CSMResult
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
     ConstraintsSelectedByDistancePermuter
@@ -100,6 +100,27 @@ class _SingleDirectionStatistics:
 
         return self.end_csm < other.end_csm
 
+    def to_dict(self):
+        try:
+            return_dict= {
+            "start dir":list(self.start_dir),
+            "start csm":self.start_csm,
+            "stop reason": self.stop_reason,
+            "end dir": list(self.end_dir),
+            "end csm":self.end_csm,
+            "num iterations":self.num_iterations,
+            "dirs":[list(dir) for dir in self.dirs],
+            "csms":self.csms,
+            "cycle stats":self.cycle_stats,
+            "run time":self.run_time
+                }
+            return return_dict
+        except:
+            return{
+            "start dir":list(self.start_dir),
+            "stop reason": "was never reached"
+            }
+
 class DirectionStatisticsContainer:
     def __init__(self, initial_directions):
         self.directions_dict = OrderedDict()
@@ -120,9 +141,11 @@ class DirectionStatisticsContainer:
     def __str__(self):
         return str(self.directions_dict)
 
+    def to_dict(self):
+        return [{"key":dir, "value":self.directions_dict[dir].to_dict()} for dir in self.directions_dict]
+
 class ApproxStatistics(DirectionStatisticsContainer):
     pass
-
 
 
 class SingleDirApproximator(_OptionalLogger):
@@ -628,17 +651,14 @@ class ApproxCalculation(_OptionalLogger):
             if least_invalid.csm <= best_result.csm:
                 best_result = least_invalid
             else:
-                falsecount = least_invalid.falsecount
                 print("(A result with better preservation of integrity of cycle lengths was found")
                 print("Direction: ", least_invalid.dir, " yields a CSM of", format_CSM(least_invalid.csm),
-                      "\nIt has",
-                      falsecount, "invalid cycles.",
-                      (1 - (least_invalid.num_invalid / len(self._molecule))) * 100,
+                      "\n",(1 - (least_invalid.num_invalid / len(self._molecule))) * 100,
                       "% of the molecule's atoms are in legal cycles)")
                 print("--------")
 
-        self.result = best_result
-        return best_result
+        self.result = CSMResult(best_result, self.operation, self.statistics.to_dict())
+        return self.result
 
     def _calculate_for_directions(self, dirs, max_iterations):
         best = CSMState(molecule=self._molecule, op_type=self.operation.type, op_order=self.operation.order, csm=MAXDOUBLE,
@@ -690,7 +710,8 @@ class ParallelApprox(ApproxCalculation):
                 self.max_iterations = self._max_iterations
                 best_result = self._calculate_for_directions(self._initial_directions)
 
-        return best_result
+        self.result = CSMResult(best_result, self.operation, self.statistics.to_dict())
+        return self.result
 
     def _calculate_for_directions(self, dirs):
         pool = multiprocessing.Pool(processes=self.pool_size)

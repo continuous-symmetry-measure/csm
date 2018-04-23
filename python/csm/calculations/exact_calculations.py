@@ -4,6 +4,8 @@ import itertools
 import math
 
 import numpy as np
+
+from csm.calculations.basic_calculations import check_perm_cycles
 from csm.calculations.data_classes import CSMState, Operation, CSMResult
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE, start_time
 from csm.fast import calc_ref_plane
@@ -42,6 +44,14 @@ class ExactStatistics:
         print("Number of permutations: %s" % format_perm_count(self.perm_count))
         print("Number of branches in permutation tree: %s" % format_perm_count(self.num_branches))
         print("Number of dead ends: %s" % format_perm_count(self.dead_ends))
+
+    def to_dict(self):
+        return {
+            "perm count":self.perm_count,
+            "num branches":self.num_branches,
+            "dead ends":self.dead_ends
+        }
+
 
     @property
     def dead_ends(self):
@@ -104,7 +114,7 @@ class ExactCalculation:
         else:
             best_result = self.csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, timeout)
 
-        self._csm_result = CSMResult(best_result, self.operation)
+        self._csm_result = CSMResult(best_result, self.operation, self.statistics.to_dict())
         return self.result
 
     def csm_operation(self, op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False, timeout=300):
@@ -153,9 +163,24 @@ class ExactCalculation:
 
     @staticmethod
     def exact_calculation_for_approx(operation, molecule, perm):
-        ec = ExactCalculation(operation, molecule, perm=perm)
-        ec.calculate()
-        return ec.result
+        ec = ExactCalculation(operation, molecule)
+        if operation.type == 'CH':  # Chirality
+            best_result = ec.csm_operation('CS', 2, molecule,perm=perm)
+            if best_result.csm > MINDOUBLE:
+                # Try the SN's
+                for op_order in range(2, operation.order + 1, 2):
+                    result = ec.csm_operation('SN', op_order, molecule,perm=perm)
+                    if result.csm < best_result.csm:
+                        best_result = result._replace(op_type='SN', op_order=op_order)
+                    if best_result.csm < MINDOUBLE:
+                        break
+        else:
+            best_result=ec.csm_operation(operation.type, operation.order, molecule, perm=perm)
+
+        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(perm, operation.order,
+                                                                                       operation.type)
+        best_result=best_result._replace(num_invalid=num_invalid)
+        return best_result
 
     @property
     def result(self):

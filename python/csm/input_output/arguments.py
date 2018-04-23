@@ -39,6 +39,10 @@ def _create_parser():
                             help='Print the local CSM (csm for each atom) in the output file')
         parser.add_argument('--print-denorm', action='store_true', default=False,
                             help='when printing the original molecule, print the denormalized coordinates')
+        parser.add_argument("--simple",  action='store_true', default=False,
+                            help='simple print the CSM')
+        parser.add_argument("--legacy",  action='store_true', default=False,
+                            help='print the old csm format')
 
     def shared_calc_utility_func(parser):
         parser.add_argument('type',
@@ -68,12 +72,12 @@ def _create_parser():
 
     def add_input_output_utility_func(parser):
         parser_input_args = parser.add_argument_group("Args for input (requires --input. default is read from stdin)")
-        parser_input_args.add_argument("--input", help="molecule file")
+        parser_input_args.add_argument("--input", help="molecule file or folder")
         parser_input_args.add_argument('--in-format', help='override guessing format from input file ending with provided format',
                                 default=None)
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output (requires --output. default is json to stdout)")
-        parser_output_args.add_argument("--output", help="output file")
+        parser_output_args.add_argument("--output", help="output file or folder")
         parser_output_args.add_argument('--out-format', help='override guessing format from output file ending with provided format',
                                 default=None)
         output_utility_func(parser_output_args)
@@ -82,15 +86,21 @@ def _create_parser():
     parser = OurParser(allow_abbrev=False)
     commands = parser.add_subparsers(title="Available commands", dest="command")
 
+    #command
+    commands_args_=commands.add_parser('command', help='provide a command file for running calculations')
+    command_args=commands_args_.add_argument_group("Command args")
+    command_args.add_argument('comfile', help="the file that contains the commands")
+    add_input_output_utility_func(commands_args_)
+
     #READ
     input_args = commands.add_parser('read', help="Read a molecule file into a json in CSM format", usage="csm read filename [optional args]")
-    input_args.add_argument('input', help='molecule file')
+    input_args.add_argument('input', help='molecule file or folder')
     input_args.add_argument('--format', help='override guessing format from file ending with provided format', default=None)
     input_utility_func(input_args)
 
     #WRITE
     out_args = commands.add_parser('write', help="Output the results of the calculation to a file", usage="csm write filename [optional args]")
-    out_args.add_argument('output', default='output.txt', help='Output file')
+    out_args.add_argument('output', default='output.txt', help='Output file or folder')
     out_args.add_argument('--format', help='override guessing format from file ending with provided format',
                             default=None)
     output_utility_func(out_args)
@@ -180,6 +190,8 @@ def _process_arguments(parse_res):
         dictionary_args['json_output'] = parse_res.json_output
         dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
         dictionary_args['print_denorm'] = parse_res.print_denorm
+        dictionary_args['simple']=parse_res.simple
+        dictionary_args['legacy']=parse_res.legacy
 
     dictionary_args = {}
     dictionary_args["command"]=parse_res.command
@@ -202,77 +214,80 @@ def _process_arguments(parse_res):
         else:
             dictionary_args["out_file_name"]=None
 
-        # get shared arguments:
-        #types=parse_res.type
-        #ops=[]
-        #for type in types:
-        #    op = Operation(type)
-        #    ops.append(op)
-        #dictionary_args['operations'] = ops
-        dictionary_args['operation'] = Operation(parse_res.type)
-        dictionary_args['timeout'] = parse_res.timeout
-        dictionary_args['sn_max'] = parse_res.sn_max
-        dictionary_args['normalizations']=parse_res.normalize
+        if parse_res.command == "command":
+            dictionary_args["command_file"]=parse_res.comfile
+        else:
+            # get shared arguments:
+            #types=parse_res.type
+            #ops=[]
+            #for type in types:
+            #    op = Operation(type)
+            #    ops.append(op)
+            #dictionary_args['operations'] = ops
+            dictionary_args['operation'] = Operation(parse_res.type)
+            dictionary_args['timeout'] = parse_res.timeout
+            dictionary_args['sn_max'] = parse_res.sn_max
+            dictionary_args['normalizations']=parse_res.normalize
 
-        if parse_res.command == 'exact':
-            if parse_res.use_perm:
-                dictionary_args['perm_file_name'] = parse_res.use_perm
-            dictionary_args['keep_structure'] = parse_res.keep_structure
-            #dictionary_args['no_constraint'] = parse_res.no_constraint
-            dictionary_args['print_branches'] = parse_res.output_branches
-            permuters.print_branches = parse_res.output_branches
+            if parse_res.command == 'exact':
+                if parse_res.use_perm:
+                    dictionary_args['perm_file_name'] = parse_res.use_perm
+                dictionary_args['keep_structure'] = parse_res.keep_structure
+                #dictionary_args['no_constraint'] = parse_res.no_constraint
+                dictionary_args['print_branches'] = parse_res.output_branches
+                permuters.print_branches = parse_res.output_branches
 
-            dictionary_args['perms_csv_name'] = parse_res.output_perms
-            if parse_res.output_perms=="DEFAULT":
-                try:
-                    base_path= os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
-                    dictionary_args['perms_csv_name']=os.path.join(base_path, "perms.csv")
-                except:
-                    dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
-        if parse_res.command == 'approx':
-            #choose dir:
-            dictionary_args['detect_outliers'] = parse_res.detect_outliers
-            dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
-            if parse_res.fibonacci is not None:
-                dictionary_args["fibonacci"] = True
-                dictionary_args["num_dirs"] = parse_res.fibonacci
-            dictionary_args['use_best_dir'] = parse_res.use_best_dir
-            dir = parse_res.dir
-            if dir:
-                dictionary_args['dirs'] = [dir]
+                dictionary_args['perms_csv_name'] = parse_res.output_perms
+                if parse_res.output_perms=="DEFAULT":
+                    try:
+                        base_path= os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
+                        dictionary_args['perms_csv_name']=os.path.join(base_path, "perms.csv")
+                    except:
+                        dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
+            if parse_res.command == 'approx':
+                #choose dir:
+                dictionary_args['detect_outliers'] = parse_res.detect_outliers
+                dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
+                if parse_res.fibonacci is not None:
+                    dictionary_args["fibonacci"] = True
+                    dictionary_args["num_dirs"] = parse_res.fibonacci
+                dictionary_args['use_best_dir'] = parse_res.use_best_dir
+                dir = parse_res.dir
+                if dir:
+                    dictionary_args['dirs'] = [dir]
 
-            #algorithm choice:
-            dictionary_args['approx_algorithm'] = 'hungarian'
-            if parse_res.greedy:
-                dictionary_args['approx_algorithm'] = 'greedy'
-            if parse_res.many_chains:
+                #algorithm choice:
+                dictionary_args['approx_algorithm'] = 'hungarian'
                 if parse_res.greedy:
-                    raise ValueError("--many-chains and --greedy are mutually exclusive")
-                dictionary_args['use_chains'] = True
-                dictionary_args['approx_algorithm'] = 'many-chains'
-            if parse_res.keep_structure:
-                dictionary_args['approx_algorithm'] = 'structured'
+                    dictionary_args['approx_algorithm'] = 'greedy'
+                if parse_res.many_chains:
+                    if parse_res.greedy:
+                        raise ValueError("--many-chains and --greedy are mutually exclusive")
+                    dictionary_args['use_chains'] = True
+                    dictionary_args['approx_algorithm'] = 'many-chains'
+                if parse_res.keep_structure:
+                    dictionary_args['approx_algorithm'] = 'structured'
 
-            if parse_res.selective is not None:
-                dictionary_args["selective"] = True
-                dictionary_args["num_selected"] = parse_res.selective
+                if parse_res.selective is not None:
+                    dictionary_args["selective"] = True
+                    dictionary_args["num_selected"] = parse_res.selective
 
-            dictionary_args['parallel'] = parse_res.parallel is not None
-            dictionary_args['pool_size'] = parse_res.parallel
+                dictionary_args['parallel'] = parse_res.parallel is not None
+                dictionary_args['pool_size'] = parse_res.parallel
 
-            #outputs:
-            dictionary_args['print_approx'] = parse_res.print_approx
-            dictionary_args['polar'] = parse_res.polar
-            dictionary_args['stat_file_name'] = parse_res.statistics
-            if parse_res.statistics=="DEFAULT":
-                if dictionary_args["out_file_name"] is not None:
-                    base_path= os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
-                    dictionary_args['stat_file_name']=os.path.join(base_path, "csm_statistics.txt")
-                else:
-                    dictionary_args['stat_file_name'] = os.path.join("csm_statistics.txt")
-        if parse_res.command == 'trivial':
-            if parse_res.permute_chains or parse_res.use_chains:
-                dictionary_args["use_chains"]=True
+                #outputs:
+                dictionary_args['print_approx'] = parse_res.print_approx
+                dictionary_args['polar'] = parse_res.polar
+                dictionary_args['stat_file_name'] = parse_res.statistics
+                if parse_res.statistics=="DEFAULT":
+                    if dictionary_args["out_file_name"] is not None:
+                        base_path= os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
+                        dictionary_args['stat_file_name']=os.path.join(base_path, "csm_statistics.txt")
+                    else:
+                        dictionary_args['stat_file_name'] = os.path.join("csm_statistics.txt")
+            if parse_res.command == 'trivial':
+                if parse_res.permute_chains or parse_res.use_chains:
+                    dictionary_args["use_chains"]=True
 
     return dictionary_args
 

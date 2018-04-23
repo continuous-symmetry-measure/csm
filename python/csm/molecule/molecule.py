@@ -1,7 +1,7 @@
 """
 @author: Devora Witty
 """
-
+import sys
 from collections import OrderedDict
 import copy
 from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
@@ -551,7 +551,7 @@ class Molecule:
     def create_Q(self):
         self._Q= np.array([np.array(atom.pos) for atom in self.atoms])
 
-    def print_equivalence_class_summary(self, display_chains):
+    def print_equivalence_class_summary(self, display_chains, file=sys.stderr):
         """
         Displays information about equivalence classes and chains
         """
@@ -562,21 +562,21 @@ class Molecule:
             except KeyError:
                 lengths[len(group)] = 1
         for key in lengths:
-            print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
+            print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key), file=file)
 
         if display_chains:
             if len(self.chains)>1:
                 for chain in self.chains:
-                    print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
-                print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
+                    print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])), file=file)
+                print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''), file=file)
                 for chaingroup in self.chain_equivalences:
                     chainstring = "Group of length " + str(len(chaingroup)) + ":"
                     for index in chaingroup:
                         chainstring += " "
                         chainstring += str(self.chains._indexes_to_strings[index])
-                    print(str(chainstring))
+                    print(str(chainstring), file=file)
             else:
-                print("Molecule has no chains")
+                print("Molecule has no chains", file=file)
 
     def _complete_initialization(self, use_chains, remove_hy, ignore_hy=False ):
         """
@@ -776,9 +776,26 @@ class MoleculeReader:
                   *args, **kwargs):
         mols=[]
         format = get_format(in_format, in_file_name)
-        if format not in ["mol", "pdb"]:
-            raise ValueError("reading multiple molecules supported for pdb and mol only right now")
+
+        if format == "csm":
+            mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
+            MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
+                                                    use_chains, babel_bond,
+                                                    remove_hy, ignore_symm, use_mass,
+                                                    read_fragments, use_sequence,
+                                                    keep_structure)
+            return [mol]
+
         obms = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
+        if read_fragments:
+            mol = MoleculeReader._from_obm(obms, ignore_symm, use_mass)
+            mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
+                                                          use_chains, babel_bond,
+                                                          remove_hy, ignore_symm, use_mass,
+                                                          read_fragments, use_sequence,
+                                                          keep_structure)
+            return [mol]
+
         for obm in obms:
             mol = MoleculeReader._from_obm([obm], ignore_symm, use_mass)
             mol= MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,

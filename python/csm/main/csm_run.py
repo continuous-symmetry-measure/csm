@@ -3,44 +3,79 @@ import json
 import logging
 import sys
 import timeit
-
+import os
 from csm.calculations.approx.dirs import get_direction_chooser
 from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox, DirectionChooser
 from csm.input_output.readers import read_perm, read_from_sys_std_in
-from csm.input_output.writers import OldFormatFileWriter, ApproxStatisticWriter
+from csm.input_output.writers import OldFormatFileWriter, ApproxStatisticWriter, ScriptWriter
 from csm import __version__
 from csm.molecule.molecule import MoleculeReader, Molecule
 from csm.input_output.formatters import csm_log as print
 from csm.main.normcsm import norm_calc
 sys.setrecursionlimit(10000)
 
-def read_molecule(dictionary_args):
-    mol = MoleculeReader.from_file(**dictionary_args)
-    mol.print_equivalence_class_summary(dictionary_args['use_chains'])
-    return mol
+def read_molecules(**kwargs):
+    input_name=kwargs["in_file_name"]
+    if os.path.isdir(input_name):
+        x = kwargs.pop('in_file_name')
+        mols=[]
+        for directory, subdirectories, files in os.walk(input_name):
+            for file_name in files:
+                if file_name=="sym.txt":
+                    continue
+                mol_file= os.path.join(input_name, file_name)
+                try:
+                    mol = MoleculeReader.from_file(mol_file, **kwargs)
+                    mols.append(mol)
+                except Exception as e:
+                    print("failed to create a molecule from", file_name, e)
+    elif not os.path.isfile(input_name):
+        raise ValueError("invalid file/folder name for molecule")
+    else: #file
+        mols=MoleculeReader.multiple_from_file(**kwargs)
+    return mols
 
-def write_results(dictionary_args, result):
-    # step six: print the results
-    if dictionary_args['calc_local']:
-        result.compute_local_csm()
-    fw = OldFormatFileWriter(result, **dictionary_args)
-    fw.write()
+def write_results(results_arr, **kwargs):
+    if kwargs['simple']:
+        for mol_result in results_arr:
+            for line_result in mol_result:
+                print(line_result.csm)
+        return
 
+    if kwargs['legacy']:
+        if len(results_arr)>1 or len(results_arr[0])>1:
+            raise ValueError("Legacy result writing only works for a single molecule and single command")
+        result=results_arr[0][0]
+        writer=OldFormatFileWriter(result, **kwargs)
+        writer.write()
+        return
 
-def run_calculation(dictionary_args):
-    #get input:
-    if dictionary_args["in_file_name"]:
-        dictionary_args['molecule']=read_molecule(dictionary_args)
+    if kwargs['out_file_name']:
+        if not os.path.isdir(kwargs['out_file_name']):
+            if len(results_arr) == 1 and len(results_arr[0]) == 1:
+                print("You are running a single file and command. Did you want to print to the old format, --legacy?")
+            kwargs['out_file_name']=os.path.dirname(kwargs['out_file_name'])
+
+        if 'out_format' in kwargs and kwargs['out_format']:
+            format=kwargs['out_format']
+        elif 'in_format' in kwargs and kwargs['in_format']:
+            format=kwargs['in_format']
+        else:
+            format=results_arr[0][0].molecule._format
+        writer = ScriptWriter(results_arr, format, **kwargs)
+        writer.write()
+
     else:
-        raw_json=read_from_sys_std_in()
-        dictionary_args['molecule']=Molecule.from_json(raw_json)
-    calc, result, dictionary_args=_run_calculation(dictionary_args)
-    return _do_output(calc, result, dictionary_args)
+        sys.stdout.write(json.dumps([[result.to_dict() for result in mol_results_arr] for mol_results_arr in results_arr], indent=4))
+        return
 
-def _run_calculation(dictionary_args):
+
+
+
+def do_calculation(dictionary_args):
     command = dictionary_args["command"]
     if command=="exact":
         #get perm if it exists:
@@ -77,137 +112,61 @@ def _run_calculation(dictionary_args):
     except CalculationTimeoutError as e:
         print("Timed out")
         return
-    result=calc.result
-    return calc, result, dictionary_args
+    return calc.result
 
-def _do_output(calc, result, dictionary_args):
-    #statistics for exact:
-    try:
-        if dictionary_args["print_branches"]:
-            calc.statistics.write_to_screen()
-    except KeyError:
-        pass
-
-    #statistics for approx
-    try:
-        if dictionary_args["stat_file_name"] is not None:
-            sw=ApproxStatisticWriter(calc.statistics, dictionary_args["stat_file_name"], dictionary_args["polar"])
-            sw.write()
-    except KeyError:
-        pass
-
-    #do output:
-    if dictionary_args["out_file_name"]:
-        write_results(dictionary_args, result)
-    else:
-        sys.stdout.write(json.dumps(result.to_dict(), indent=4))
-
-
-    if len(dictionary_args['normalizations'])>0:
-        norm_calc(result, dictionary_args['normalizations'])
-
-    return result
 
 def run(args=[]):
     print("CSM version %s" % __version__)
+    #get command
     if not args:
         args = sys.argv[1:]
     dictionary_args=get_parsed_args(args)
-
     command= dictionary_args["command"]
 
+    #call command funcs:
     if command=="read":
-        mol=read_molecule(dictionary_args)
-        sys.stdout.write(json.dumps(mol.to_dict(), indent=4))
-    elif command == "write":
+        mols= read_molecules(**dictionary_args)
+        sys.stdout.write(json.dumps([mol.to_dict() for mol in mols], indent=4))
+        return mols
+
+    elif command=="write":
         raw_json = read_from_sys_std_in()
-        result_dict=json.loads(raw_json)
-        result=CSMResult.from_dict(result_dict)
-        write_results(dictionary_args, result)
+        less_raw_json = json.loads(raw_json)
+        results=[[CSMResult.from_dict(result_dict) for result_dict in mol_arr] for mol_arr in less_raw_json]
+        write_results(results, **dictionary_args)
+
     else:
-        return run_calculation(dictionary_args)
+        if dictionary_args["in_file_name"]:
+            molecules = read_molecules(**dictionary_args)
+        else:
+            raw_json = read_from_sys_std_in()
+            less_raw_json=json.loads(raw_json)
+            molecules=[Molecule.from_dict(json_dict) for json_dict in less_raw_json]
 
+        if command == "command":
+            args_array = []
+            command_file = dictionary_args["command_file"]
+            with open(command_file, 'r') as file:
+                for line in file:
+                    try:
+                        cmd_arg = get_parsed_args(line.split())
+                        args_array.append(cmd_arg)
+                    except: #want to be able to run even if some lines are invalid
+                        print("failed to read args from line", line)
+        else:
+            args_array=[dictionary_args]
 
-def folder_script_runner():
-    import os
-    from csm.input_output.writers import ScriptWriter
-    from csm.molecule.molecule import  get_format
-    in_folder=r"C:\Users\devora\Sources\temp\csm_multi_test\input"
-    out_folder=r"C:\Users\devora\Sources\temp\csm_multi_test\output"
+        total_results=[]
 
-    def get_molecules(in_folder):
-        molecules = []
-        mol_names=[]
-        for directory, subdirectories, files in os.walk(in_folder):
-            for file_name in files:
-                if file_name=="sym.txt":
-                    continue
-                mol_file= os.path.join(in_folder, file_name)
-                mol = MoleculeReader.from_file(mol_file)
-                mol_names.append(file_name)
-                molecules.append(mol)
-
-        return molecules, mol_names
-
-    def get_commands(in_folder):
-        commands = []
-        command_file=os.path.join(in_folder, "sym.txt")
-        with open(command_file, 'r') as file:
-            for line in file:
-                commands.append(line)
-        return commands
-
-    molecules, mol_names=get_molecules(in_folder)
-
-    commands=get_commands(in_folder)
-    dictionary_args_array=[]
-    for command in commands:
-        args=command.split()
-        dictionary_args = get_parsed_args(args)
-        dictionary_args_array.append(dictionary_args)
-
-    results=[]
-    for name, mol in zip(mol_names, molecules):
-        mol_results=[]
-        for args in dictionary_args_array:
-            args['molecule']=mol
-            calc, result, dictionary_args=_run_calculation(args)
-            mol_results.append(result)
-        results.append((name, mol_results))
-    format=get_format(None, filename=mol_names[0])
-    writer=ScriptWriter(results, format, commands, out_folder)
-    writer.write()
-
-
-def molecule_script_runner():
-    import os
-    from csm.molecule.molecule import  get_format
-    from csm.input_output.writers import ScriptWriter
-    in_file=r"C:\Users\devora\Sources\csm\test_cases\inbal\reading fragments\model-endmdl-withIDS.pdb"
-    command_file=r"C:\Users\devora\Sources\temp\csm_multi_test\input\sym.txt"
-    out_folder=r"C:\Users\devora\Sources\temp\csm_multi_test\output"
-
-    commands=[]
-    dictionary_args_array = []
-    with open(command_file, 'r') as file:
-        for command in file:
-            commands.append(command)
-            args = command.split()
-            dictionary_args = get_parsed_args(args)
-            dictionary_args_array.append(dictionary_args)
-
-    mols=MoleculeReader.multiple_from_file(in_file, use_chains=False)
-    results=[]
-    for index, mol in enumerate(mols):
-        mol_results=[]
-        for args in dictionary_args_array:
-            args['molecule']=mol
-            calc, result, dictionary_args=_run_calculation(args)
-            mol_results.append(result)
-        results.append((str(index), mol_results))
-    format=get_format(None, filename=in_file)
-    writer=ScriptWriter(results, format, commands, out_folder)
-    writer.write()
+        for molecule in molecules:
+            mol_results=[]
+            for line_args in args_array:
+                line_args['molecule'] = molecule
+                result = do_calculation(line_args)
+                mol_results.append(result)
+            total_results.append(mol_results)
+        write_results(total_results, **dictionary_args)
+        return total_results
 
 def run_no_return(args=[]):
     run(args)

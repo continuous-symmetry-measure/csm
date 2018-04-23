@@ -1,5 +1,5 @@
 from csm.fast import CythonPermuter
-from csm.calculations.data_classes import CSMState, Operation
+from csm.calculations.data_classes import CSMState, Operation, CSMResult
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.permuters import ConstraintPermuter
@@ -44,19 +44,15 @@ class TrivialCalculation:
                     for i in range(len(f_chain)):
                         perm[f_chain[i]] = t_chain[i]
 
-                ec = ExactCalculation(self.operation, molecule, keep_structure=False, perm=perm)
-                ec.calculate()
-                result=ec.result
+                result= ExactCalculation.exact_calculation_for_approx(self.operation, molecule, perm=perm)
                 if result.csm < best.csm:
                     best = result
 
         else:
             perm = [i for i in range(len(molecule))]
-            ec= ExactCalculation(self.operation, molecule, keep_structure=False, perm=perm)
-            ec.calculate()
-            best= ec.result
+            best= ExactCalculation.exact_calculation_for_approx(self.operation, molecule, perm=perm)
 
-        self._csm_result = best
+        self._csm_result = CSMResult(best, self.operation)
         return self.result
 
     @property

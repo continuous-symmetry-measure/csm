@@ -339,9 +339,9 @@ class OldFormatFileWriter(ResultWriter):
         self.json_output = json_output
         if not out_format:
             try:
-                out_format=get_format(None, out_file_name)
+                out_format = get_format(None, result.molecule._filename)
             except ValueError:
-                out_format=get_format(None, result.molecule._filename)
+                out_format = get_format(None, out_file_name)
         super().__init__(result, out_format, print_local)
 
     def write(self):
@@ -356,11 +356,18 @@ class OldFormatFileWriter(ResultWriter):
                 self._write_results(f)
 
 class ScriptWriter:
-    def __init__(self, results, format, commands, folder=os.getcwd()):
+    def __init__(self, results, format, out_file_name=None, **kwargs):
+        '''
+        :param results: an array of arrays of CSMResults
+        :param format: molecule format to output to
+        :param out_file_name: if none is provided, the current working directory/csm_results will be used
+        '''
         self.results=results
-        self.folder=folder
-        self.commands=commands
         self.format=format
+        if not out_file_name:
+            out_file_name=os.path.join(os.getcwd(), 'csm_results')
+        self.folder=out_file_name
+
 
     def write(self):
         self.create_CSM_tsv()
@@ -370,7 +377,7 @@ class ScriptWriter:
         self.create_perm_tsv()
         self.create_result_out_folder()
         self.create_symm_mols()
-        pass
+        self.create_statistics_txt()
 
     #logsymm1:
     def create_result_out_folder(self):
@@ -381,54 +388,58 @@ class ScriptWriter:
     #creates output.txt with all the outputs from screen
         pass
 
-    def _write_initial_headers(self, f):
+    def _write_command_column_headers(self, f):
         f.write("\t")
-        for index, command in enumerate(self.commands):
+        for index in range(len(self.results[0])):
             f.write("L_"+str(index)+"\t")
-            #args=command.split()
-            #f.write("\t"+args[1])
         f.write("\n")
 
     def create_CSM_tsv(self):
     #creates a tsv file with CSM per molecule
         filename = os.path.join(self.folder, "csm.txt")
         with open(filename, 'w') as f:
-            self._write_initial_headers(f)
-            for mol_key, mol_results in self.results:
-                f.write(mol_key)
+            self._write_command_column_headers(f)
+            for index, mol_results in enumerate(self.results):
+                f.write(str(index))
                 for result in mol_results:
                     f.write("\t"+format_CSM(result.csm))
                 f.write("\n")
+
+    def _file_write_arr(self, f, arr, add_one=False, separator=" "):
+        for item in arr:
+            if add_one:
+                item=item+1
+            f.write(str(item)+separator)
 
     #xyzsymm/pdbsymm:
     def create_dir_tsv(self):
         #creates a tsv for directions
         filename = os.path.join(self.folder, "dirs.txt")
         with open(filename, 'w') as f:
-            self._write_initial_headers(f)
-            for mol_key, mol_results in self.results:
-                f.write(mol_key)
-                for result in mol_results:
-                    f.write("\t"+str(result.dir))
-                f.write("\n")
+            for mol_index, mol_results in enumerate(self.results):
+                for line_index, command_result in enumerate(mol_results):
+                    f.write(str(mol_index)+"\tL_"+str(line_index)+"\t")
+                    f.write("\t")
+                    self._file_write_arr(f, command_result.dir, separator="\t")
+                    f.write("\n")
 
     def create_perm_tsv(self):
         #creates a tsv for permutations (needs to handle extra long permutations somehow)
         filename = os.path.join(self.folder, "perms.txt")
         with open(filename, 'w') as f:
-            self._write_initial_headers(f)
-            for mol_key, mol_results in self.results:
-                f.write(mol_key)
-                for result in mol_results:
-                    f.write("\t"+str(result.perm))
-                f.write("\n")
+            for mol_index, mol_results in enumerate(self.results):
+                for line_index, command_result in enumerate(mol_results):
+                    f.write(str(mol_index)+"\tL_"+str(line_index)+"\t")
+                    f.write("\t")
+                    self._file_write_arr(f, command_result.perm, True)
+                    f.write("\n")
 
     def create_initial_mols(self):
         # chained file of initial structures
         obmolwriter=OBMolWriter()
         filename=os.path.join(self.folder, "initial_normalized_coordinates."+self.format)
         with open(filename, 'w') as f:
-            for mol_key, mol_results in self.results:
+            for mol_results in self.results:
                 for result in mol_results:
                     obmol=obmolwriter.obm_from_result(result)
                     obmol=obmolwriter.set_obm_from_original(obmol, result)
@@ -440,11 +451,83 @@ class ScriptWriter:
         obmolwriter = OBMolWriter()
         filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format)
         with open(filename, 'w') as f:
-            for mol_key, mol_results in self.results:
+            for mol_results in self.results:
                 for result in mol_results:
                     obmol = obmolwriter.obm_from_result(result)
                     obmol = obmolwriter.set_obm_from_symmetric(obmol, result)
                     obmolwriter.write_ob_molecule(obmol, self.format, f)
+
+
+    def _write_statistics(self, f, result):
+        stats=result.statistics
+        if not stats: #empty dict
+            f.write("no statistics to write\n")
+        elif 'perm count' in stats: #exact stats
+            result.molecule.print_equivalence_class_summary(True, f)
+        else:
+            self._write_approx_statistics(f, stats)
+
+    def _write_approx_statistics(self, f, stats):
+        self.polar=False
+
+        if self.polar:
+            f.write("\t\tDir Index"
+                    "\tr_i\tth_i\tph_i"
+                   "\tCSM_i"
+                   "\tr_f\tth_f\tph_f"
+                   "\tCSM_f"
+                    "\tRuntime"
+                    "\t # Iter"
+                    "\t Stop Reason"
+                    "\n")
+        else:
+            f.write("\t\tDir Index"
+                    "\tx_i\ty_i\tz_i"
+                   "\tCSM_i"
+                   "\tx_f\ty_f\tz_f"
+                   "\tCSM_f"
+                    "\tRuntime"
+                    "\t # Iter"
+                    "\tStop Reason"
+                    "\n")
+
+        for index, direction_dict in enumerate(stats):
+            dir=direction_dict['key']
+            stat=direction_dict['value']
+            start_str="\t\t"+str(index) +"\t"
+            try:
+                x,y,z=stat['start dir']
+                start_str =start_str + format_CSM(x)+ "\t"+format_CSM(y)+ "\t"+format_CSM(z)+ "\t"
+                xf,yf,zf=stat['end dir']
+                if self.polar:
+                    x,y,z=cart2sph(x,y,z)
+                    xf,yf,zf=cart2sph(xf,yf,zf)
+
+                f.write(start_str
+                           + format_CSM(stat['start csm'])+"\t"
+                           + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
+                           + format_CSM(stat['end csm']) + "\t"
+                           + format_CSM(stat['run time']) + "\t"
+                           + str(stat['num iterations']) + "\t"
+                           + stat['stop reason']+"\t"
+                           "\n")
+            except Exception as e:
+                try:
+                    start_str=start_str+stat['stop reason']+"\t"
+                finally:
+                    f.write(start_str + "failed to read statistics\n")
+
+
+    def create_statistics_txt(self):
+        filename = os.path.join(self.folder, "statistics.txt")
+        with open(filename, 'w') as f:
+            f.write("mol\tcommand\n")
+            for mol_index, mol_results in enumerate(self.results):
+                for line_index, line_result in enumerate(mol_results):
+                    f.write(str(mol_index)+ "\t"+ str(line_index)+ "\t\n")
+                    self._write_statistics(f, line_result)
+
+
 
 
 

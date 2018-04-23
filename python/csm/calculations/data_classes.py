@@ -130,7 +130,7 @@ class CSMResult:
                     to algorithm result
     chain_perm: the chain permutation (by index-- names can be accessed with chain_perm_string)
     """
-    def __init__(self, state, operation):
+    def __init__(self, state, operation, statistics_dict={}):
         self.__CSMState=state
         self.molecule=state.molecule.copy()
         self.operation=operation
@@ -139,6 +139,7 @@ class CSMResult:
         self.dir=state.dir
         self.perm_count=state.perm_count
         self.local_csm=""
+        self.statistics=statistics_dict
         self._process_results()
 
     @property
@@ -287,6 +288,7 @@ class CSMResult:
                 "formula_csm": self.formula_csm,
                 "normalized_molecule_coords": [list(i) for i in self.normalized_molecule_coords],
                 "normalized_symmetric_structure": [list(i) for i in self.normalized_symmetric_structure],
+                "statistics":self.statistics
             }
         }
         return json_dict
@@ -296,8 +298,9 @@ class CSMResult:
         result=input["Result"]
         molecule=Molecule.from_dict(result["molecule"])
         operation=Operation.from_dict(result["operation"])
+        statistics=result["statistics"]
         state=CSMState(molecule, operation.order, operation.type, result["csm"], result["perm"], result["dir"], result["perm_count"])
-        result=CSMResult(state, operation)
+        result=CSMResult(state, operation, statistics)
         return result
 
 

@@ -16,5 +16,5 @@ def non_negative_zero(number):
         return number
 
 
-def csm_log(*strings, **kwargs):
-    print(*strings, **kwargs, file=sys.stderr)
+def csm_log(*strings, file=sys.stderr, **kwargs):
+    print(*strings, **kwargs, file=file)
