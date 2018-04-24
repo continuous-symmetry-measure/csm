@@ -10,7 +10,8 @@ from csm.main.csm_run import run
 class Runner:
     def run_args(self, args_str):
         args=args_str.split()
-        result=run(args)
+        results_arr=run(args)
+        result=results_arr[0][0]
         assert result.csm is not None
 
 class TestExact(Runner):
