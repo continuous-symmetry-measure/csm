@@ -642,6 +642,82 @@ class MoleculeFactory:
         mol.normalize()
         return mol
 
+
+class PDBLine:
+    def __init__(self, pdb_line):
+        self.pdb_line=pdb_line
+        self.record_name=pdb_line[0:6]
+        self._atom_serial_number=pdb_line[6:11] #used in read pdb connectivity
+
+        if self.record_name.strip() in ["ATOM", "HETATM"]:
+            self._init_atom_record(pdb_line)
+
+        if self.record_name=="CONECT":
+            self._init_conect_record(pdb_line)
+
+    def _init_atom_record(self, pdb_line):
+        self.full_atom_name=pdb_line[12:16]
+        self.alternate_location_indicator=pdb_line[16]
+        self.residue_name=pdb_line[17:20]
+
+        # handle chains
+        # ATOMxxxxxx1xxNxxxLYSxA
+        # HETATMxxxx3xxHxxxHOHxxxxx1
+        if self.record_name == 'ATOM  ':
+            chain_designation = self.pdb_line[21]
+        if self.record_name == 'HETATM':
+            if self.pdb_line[21] != " ":
+                chain_designation = self.pdb_line[21]
+            else:
+                chain_designation = self.pdb_line[25]
+        self.chain_id= chain_designation
+
+        self.sequence_number=pdb_line[22:26], #also known as serial number- used in use sequence
+        self.iCode=pdb_line[26]
+        self.x=pdb_line[30:38]
+        self.y=pdb_line[38:46]
+        self.z=pdb_line[46:54]
+        self.occ= pdb_line[54:60]
+        self.temp_factor= pdb_line[60:66]
+        self.element= pdb_line[76:78]
+        self.charge= pdb_line[78:80]
+
+
+        atom_name=pdb_line[12:16]
+        atom_name=atom_name.strip()
+        self.same_atom_number=""
+        if len(atom_name)==1:
+            self.remoteness=""
+        else:
+            try:
+                not_remoteness=int(atom_name[-1])
+                self.same_atom_number=str(not_remoteness)
+                if len(atom_name)>2:
+                    self.remoteness=atom_name[-2]
+            except ValueError:
+                self.remoteness=atom_name[-1]
+        self.atom_name=atom_name[:1]
+
+    def _init_conect_record(self, pdb_line):
+        adjacent_atoms = []
+        stripped_pdb_line=pdb_line.strip()
+        for i in range(11, len(stripped_pdb_line), 5):
+            adjacent_atom_index = int(line[i:i + 5])
+            adjacent_atoms.append(adjacent_atom_index)
+        self.adjacent_atoms=adjacent_atoms
+
+    @property
+    def atom_serial_number(self):
+        try:
+            return int(self._atom_serial_number)
+        except (ValueError, IndexError):
+            return None
+
+    @staticmethod
+    def _pdb_line_to_dict(pdb_line):
+        return PDBLine(pdb_line)
+
+
 class MoleculeReader:
     """
     A static class that creates instances of Molecule from files or strings.
@@ -950,7 +1026,6 @@ class MoleculeReader:
                 pass #assume there are no chains
         return Molecule(atoms)
 
-
     @staticmethod
     def _read_pdb_connectivity_and_chains(filename, mol, read_fragments, babel_bond):
         with open(filename, 'r') as file:
@@ -963,40 +1038,29 @@ class MoleculeReader:
             #chains = Chains()
 
             for line in file:
-                try:
-                    index = int(line[6:11])
-                except (ValueError, IndexError):
-                    index = None
+                pdb_dict = PDBLine._pdb_line_to_dict(line)
+                index = pdb_dict.atom_serial_number
 
-                if line[0:6] in ['ATOM  ','HETATM'] and cur_atom<len(mol):
-                    if line[0:6]=='HETATM':
+                record_name=pdb_dict.record_name
+                if record_name in ['ATOM  ','HETATM'] and cur_atom<len(mol):
+                    if record_name=='HETATM':
                         breakpt=1
                     atom_map[index] = cur_atom
 
-                    #handle chains
-                    #ATOMxxxxxx1xxNxxxLYSxA
-                    #HETATMxxxx3xxHxxxHOHxxxxx1
-                    if line[0:6]=='ATOM  ':
-                        chain_designation=line[21]
-                    if line[0:6]=='HETATM':
-                        if line[21]!=" ":
-                            chain_designation = line[21]
-                        else:
-                            chain_designation = line[25]
+                    chain_designation=pdb_dict.chain_id
                     if chain_designation!=" ":
                         mol._atoms[cur_atom]._chain = str(chain_designation)
 
                     cur_atom += 1
 
                 if not babel_bond:
-                    if line[0:6] == "CONECT":
+                    if record_name == "CONECT":
                         # CONECT records are described here: http://www.bmsc.washington.edu/CrystaLinks/man/pdb/part_69.html
                         # After CONECT appears a series of 5 character atom numbers. There are no separating spaces in case
                         # the atom numbers have five digits, so we need to split the atom numbers differently
 
                         try:
-                            line = line.strip()  # Remove trailing whitespace
-                            fake_atom_index = int(line[6:11])
+                            fake_atom_index = pdb_dict.atom_serial_number
                             try:
                                 atom_index = atom_map[fake_atom_index]
                             except KeyError:
@@ -1004,11 +1068,9 @@ class MoleculeReader:
                                     continue
                             atom = mol._atoms[atom_index]
 
-
                             #add adjacency
                             adjacent = []
-                            for i in range(11, len(line), 5):
-                                adjacent_atom_index = int(line[i:i + 5])
+                            for atom_index in pdb_dict.adjacent_atoms:
                                 adjacent.append(atom_map[adjacent_atom_index])
                             atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                         except Exception as e:
@@ -1022,10 +1084,12 @@ class MoleculeReader:
                                   use_chains=False, babel_bond=False, read_fragments=False,
                                   ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
         def read_atom(line, likeness_dict, cur_atom):
-            atom_type = line[12:14]
-            remoteness = line[14]
-            serial_number = line[22:26]
+            pdb_dict=PDBLine._pdb_line_to_dict(line)
+            atom_type = pdb_dict.atom_name
+            remoteness = pdb_dict.remoteness
+            serial_number = pdb_dict.sequence_number
             key = tuple([atom_type, remoteness, serial_number])
+            print(key)
             if key not in likeness_dict:
                 likeness_dict[key] = [cur_atom]
             else:
@@ -1056,9 +1120,10 @@ class MoleculeReader:
 
         with open(in_file_name, 'r') as file:
             for line in file:
-                if line[0:6] in ['ATOM  ','HETATM'] and cur_atom<len(mol):
+                pdb_dict=PDBLine(line)
+                if pdb_dict.record_name in ['ATOM  ','HETATM'] and cur_atom<len(mol):
                     if remove_hy or ignore_hy:
-                        if line[12:14] in ['H', ' H', 'H ']:
+                        if pdb_dict.atom_name in ['H', ' H', 'H ']:
                             continue
                     read_atom(line, likeness_dict, cur_atom)
                     cur_atom+=1
