@@ -644,12 +644,16 @@ class MoleculeFactory:
 
 
 class PDBLine:
+    '''
+    Currently only supports ATOM, HETATM, and CONECT records-- if any others are needed in the future they can be added then
+    '''
     def __init__(self, pdb_line):
         self.pdb_line=pdb_line
-        self.record_name=pdb_line[0:6]
-        self._atom_serial_number=pdb_line[6:11] #used in read pdb connectivity
+        self._record_name=pdb_line[0:6]
+        self.record_name=self._record_name.strip()
 
-        if self.record_name.strip() in ["ATOM", "HETATM"]:
+        self._atom_serial_number=pdb_line[6:11] #used in read pdb connectivity
+        if self.record_name in ["ATOM", "HETATM"]:
             self._init_atom_record(pdb_line)
 
         if self.record_name=="CONECT":
@@ -663,7 +667,7 @@ class PDBLine:
         # handle chains
         # ATOMxxxxxx1xxNxxxLYSxA
         # HETATMxxxx3xxHxxxHOHxxxxx1
-        if self.record_name == 'ATOM  ':
+        if self.record_name == 'ATOM':
             chain_designation = self.pdb_line[21]
         if self.record_name == 'HETATM':
             if self.pdb_line[21] != " ":
@@ -672,7 +676,7 @@ class PDBLine:
                 chain_designation = self.pdb_line[25]
         self.chain_id= chain_designation
 
-        self.sequence_number=pdb_line[22:26], #also known as serial number- used in use sequence
+        self.sequence_number=pdb_line[22:26], #used in use sequence
         self.iCode=pdb_line[26]
         self.x=pdb_line[30:38]
         self.y=pdb_line[38:46]
@@ -682,27 +686,43 @@ class PDBLine:
         self.element= pdb_line[76:78]
         self.charge= pdb_line[78:80]
 
+        self._parse_atom_name(pdb_line)
+
+    def _parse_atom_name(self, pdb_line):
+        # https://www.cgl.ucsf.edu/chimera/docs/UsersGuide/tutorials/pdbintro.html
+        # Columns 13-16 - the atom name. Columns 13-14 contain the atom symbol, right aligned (except when the atom is for H).
+        # Column 15 contains the remoteness indicator that represents the distance of the atom from the backbone of the protein. Greek letter remoteness codes are transliterated as follows:
+        # alpha=A, beta=B, gamma = G, delta = D, epsilon=E, zeta= Z, eta=H].
+        # Column 16 – is the branch designator
+        # Column 17 - Alternate location.
+        # *Atom names start with element symbols right-justified in columns 13-14 as permitted by the length of the name.
+        # For example, the symbol FE for iron appears in columns 13-14, whereas the symbol C for carbon appears in column 14 (see Misaligned Atom Names).
+        # If an atom name has four characters, however, it must start in column 13 even if the element symbol is a single character (for example, see Hydrogen Atoms).
+        # Hydrogen atom records follow the records of all other atoms of a particular residue.
+        # A hydrogen atom name starts with H. The next part of the name is based on the name of the connected nonhydrogen atom.
+        # For example, in amino acid residues, H is followed by the remoteness indicator (if any) of the connected atom, followed by the branch indicator (if any) of the connected atom;
+        # if more than one hydrogen is connected to the same atom, an additional digit is appended so that each hydrogen atom will have a unique name.
+        # Hydrogen atoms in standard nucleotides and amino acids (other than the rarely seen HXT) are named according to the IUPAC recommendations (Pure Appl Chem 70:117 (1998) [abstract] [PDF]).
+        # Names of hydrogen atoms in HETATM residues are determined in a similar fashion.
+        # If the name of a hydrogen has four characters, it is left-justified starting in column 13; if it has fewer than four characters, it is left-justified starting in column 14.
+
 
         atom_name=pdb_line[12:16]
-        atom_name=atom_name.strip()
-        self.same_atom_number=""
-        if len(atom_name)==1:
-            self.remoteness=""
+        self.atom_symbol=pdb_line[12:14].strip()
+        if self.atom_symbol[0]=="H":
+            self.atom_symbol="H"
+            pass
         else:
-            try:
-                not_remoteness=int(atom_name[-1])
-                self.same_atom_number=str(not_remoteness)
-                if len(atom_name)>2:
-                    self.remoteness=atom_name[-2]
-            except ValueError:
-                self.remoteness=atom_name[-1]
-        self.atom_name=atom_name[:1]
+            self.remoteness=pdb_line[14]
+            self.branch_designation=pdb_line[15]
+            self.alternate_location=pdb_line[16]
+
 
     def _init_conect_record(self, pdb_line):
         adjacent_atoms = []
         stripped_pdb_line=pdb_line.strip()
         for i in range(11, len(stripped_pdb_line), 5):
-            adjacent_atom_index = int(line[i:i + 5])
+            adjacent_atom_index = int(stripped_pdb_line[i:i + 5])
             adjacent_atoms.append(adjacent_atom_index)
         self.adjacent_atoms=adjacent_atoms
 
@@ -1042,7 +1062,7 @@ class MoleculeReader:
                 index = pdb_dict.atom_serial_number
 
                 record_name=pdb_dict.record_name
-                if record_name in ['ATOM  ','HETATM'] and cur_atom<len(mol):
+                if record_name in ['ATOM','HETATM'] and cur_atom<len(mol):
                     if record_name=='HETATM':
                         breakpt=1
                     atom_map[index] = cur_atom
@@ -1070,7 +1090,7 @@ class MoleculeReader:
 
                             #add adjacency
                             adjacent = []
-                            for atom_index in pdb_dict.adjacent_atoms:
+                            for adjacent_atom_index in pdb_dict.adjacent_atoms:
                                 adjacent.append(atom_map[adjacent_atom_index])
                             atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                         except Exception as e:
@@ -1085,7 +1105,7 @@ class MoleculeReader:
                                   ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
         def read_atom(line, likeness_dict, cur_atom):
             pdb_dict=PDBLine._pdb_line_to_dict(line)
-            atom_type = pdb_dict.atom_name
+            atom_type = pdb_dict.atom_symbol
             remoteness = pdb_dict.remoteness
             serial_number = pdb_dict.sequence_number
             key = tuple([atom_type, remoteness, serial_number])
@@ -1121,7 +1141,7 @@ class MoleculeReader:
         with open(in_file_name, 'r') as file:
             for line in file:
                 pdb_dict=PDBLine(line)
-                if pdb_dict.record_name in ['ATOM  ','HETATM'] and cur_atom<len(mol):
+                if pdb_dict.record_name in ['ATOM','HETATM'] and cur_atom<len(mol):
                     if remove_hy or ignore_hy:
                         if pdb_dict.atom_name in ['H', ' H', 'H ']:
                             continue
