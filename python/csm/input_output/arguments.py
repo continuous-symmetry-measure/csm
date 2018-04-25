@@ -31,6 +31,8 @@ def _create_parser():
                             help='When a molecule has chains, use them (affects trivial, approx)')
         parser.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
+        parser.add_argument('--select-mols', nargs='+', default=[],
+                            help='Select only some molecules')
 
     def output_utility_func(parser):
         parser.add_argument('--json-output', action='store_true', default=False,
@@ -180,10 +182,13 @@ def _process_arguments(parse_res):
         dictionary_args['use_sequence'] = parse_res.use_sequence
         dictionary_args['use_chains'] = parse_res.use_chains
         dictionary_args['read_fragments'] = parse_res.read_fragments
+        dictionary_args['selected_molecule_indices']=[int(i)-1 for i in parse_res.select_mols]
         if not dictionary_args['use_chains'] and parse_res.read_fragments:
             dictionary_args['use_chains'] = True
             logger.warning(
                 "--read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
+
+
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output

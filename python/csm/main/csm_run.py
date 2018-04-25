@@ -36,6 +36,12 @@ def read_molecules(**kwargs):
         raise ValueError("invalid file/folder name for molecule")
     else: #file
         mols=MoleculeReader.multiple_from_file(**kwargs)
+    sys.stderr.flush()
+
+    if kwargs['selected_molecule_indices']:
+        mols=[mols[i] for i in kwargs['selected_molecule_indices']]
+    for mol in mols:
+        mol.print_equivalence_class_summary(True)
     return mols
 
 def write_results(results_arr, **kwargs):
