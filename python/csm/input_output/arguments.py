@@ -31,8 +31,10 @@ def _create_parser():
                             help='When a molecule has chains, use them (affects trivial, approx)')
         parser.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
-        parser.add_argument('--select-mols', nargs='+', default=[],
-                            help='Select only some molecules')
+        parser.add_argument('--select-mols', default="",
+                            help='Select only some molecules, eg 1-20,15,17,19-21')
+        parser.add_argument('--select-atoms',default="",
+                            help='Select only some atoms, eg 1-20,15,17,19-21')
 
     def output_utility_func(parser):
         parser.add_argument('--json-output', action='store_true', default=False,
@@ -41,8 +43,6 @@ def _create_parser():
                             help='Print the local CSM (csm for each atom) in the output file')
         parser.add_argument('--print-denorm', action='store_true', default=False,
                             help='when printing the original molecule, print the denormalized coordinates')
-        parser.add_argument("--simple",  action='store_true', default=False,
-                            help='simple print the CSM')
         parser.add_argument("--legacy",  action='store_true', default=False,
                             help='print the old csm format')
 
@@ -55,6 +55,8 @@ def _create_parser():
                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
         parser.add_argument('--sn-max', type=int, default=8,
                             help='The maximal sn to try, relevant only for chirality')
+        parser.add_argument("--simple",  action='store_true', default=False,
+                            help='only output is CSM to screen')
 
     def shared_normalization_utility_func(parser): #I made this because having normalization stuck in the calc utility func was ugly
         parser.add_argument('--normalize', default=[],
@@ -173,6 +175,19 @@ def _create_parser():
     return parser
 
 def _process_arguments(parse_res):
+    def _parse_ranges_and_numbers(input):
+        selected=[]
+        if input:
+            items=input.split(',')
+            for item in items:
+                if "-" in item:
+                    range_limits = item.split("-")
+                    for i in range(int(range_limits[0]), int(range_limits[1])):
+                        selected.append(i - 1)
+                else:
+                    selected.append(int(item) - 1)
+        return selected
+
     def parse_input(dictionary_args):
         dictionary_args['in_file_name'] = parse_res.input
         dictionary_args['remove_hy'] = parse_res.remove_hy
@@ -182,12 +197,15 @@ def _process_arguments(parse_res):
         dictionary_args['use_sequence'] = parse_res.use_sequence
         dictionary_args['use_chains'] = parse_res.use_chains
         dictionary_args['read_fragments'] = parse_res.read_fragments
-        dictionary_args['selected_molecule_indices']=[int(i)-1 for i in parse_res.select_mols]
+
         if not dictionary_args['use_chains'] and parse_res.read_fragments:
             dictionary_args['use_chains'] = True
             logger.warning(
                 "--read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
+        dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
+
+        dictionary_args['select_atoms']  = _parse_ranges_and_numbers(parse_res.select_mols)
 
 
     def parse_output(dictionary_args):
@@ -195,7 +213,6 @@ def _process_arguments(parse_res):
         dictionary_args['json_output'] = parse_res.json_output
         dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
         dictionary_args['print_denorm'] = parse_res.print_denorm
-        dictionary_args['simple']=parse_res.simple
         dictionary_args['legacy']=parse_res.legacy
 
     dictionary_args = {}
@@ -218,6 +235,8 @@ def _process_arguments(parse_res):
             dictionary_args["out_format"] = parse_res.out_format
         else:
             dictionary_args["out_file_name"]=None
+
+        dictionary_args['simple'] = parse_res.simple
 
         if parse_res.command == "command":
             dictionary_args["command_file"]=parse_res.comfile

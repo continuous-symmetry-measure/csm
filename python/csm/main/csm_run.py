@@ -38,8 +38,11 @@ def read_molecules(**kwargs):
         mols=MoleculeReader.multiple_from_file(**kwargs)
     sys.stderr.flush()
 
-    if kwargs['selected_molecule_indices']:
-        mols=[mols[i] for i in kwargs['selected_molecule_indices']]
+    if kwargs['select_mols']:
+        try:
+            mols=[mols[i] for i in kwargs['select_mols']]
+        except IndexError:
+            raise IndexError("You have selected more molecules than you have input")
     for mol in mols:
         mol.print_equivalence_class_summary(True)
     return mols
@@ -51,15 +54,16 @@ def write_results(results_arr, **kwargs):
                 print(line_result.csm)
         return
 
-    if kwargs['legacy']:
-        if len(results_arr)>1 or len(results_arr[0])>1:
-            raise ValueError("Legacy result writing only works for a single molecule and single command")
-        result=results_arr[0][0]
-        writer=OldFormatFileWriter(result, **kwargs)
-        writer.write()
-        return
-
     if kwargs['out_file_name']:
+        if kwargs['legacy']:
+            if len(results_arr)>1 or len(results_arr[0])>1:
+                raise ValueError("Legacy result writing only works for a single molecule and single command")
+            result=results_arr[0][0]
+            writer=OldFormatFileWriter(result, **kwargs)
+            writer.write()
+            return
+
+
         if not os.path.isdir(kwargs['out_file_name']):
             if len(results_arr) == 1 and len(results_arr[0]) == 1:
                 print("You are running a single file and command. Did you want to print to the old format, --legacy?")
@@ -73,10 +77,11 @@ def write_results(results_arr, **kwargs):
             format=results_arr[0][0].molecule._format
         writer = ScriptWriter(results_arr, format, **kwargs)
         writer.write()
-
-    else:
-        sys.stdout.write(json.dumps([[result.to_dict() for result in mol_results_arr] for mol_results_arr in results_arr], indent=4))
         return
+
+    #default option
+    sys.stdout.write(json.dumps([[result.to_dict() for result in mol_results_arr] for mol_results_arr in results_arr], indent=4))
+
 
 
 
