@@ -176,13 +176,19 @@ def _create_parser():
 
 def _process_arguments(parse_res):
     def _parse_ranges_and_numbers(input):
+        '''
+        given a string such as '1-5,8,12-13', where 1 is the first index, returns an array of indices that matches
+        (but where 0 is the first index) (1-5 includes 5)
+        :param input: a string with number ranges and individual numbers, separated by commas
+        :return: [int, int, int..]
+        '''
         selected=[]
         if input:
             items=input.split(',')
             for item in items:
                 if "-" in item:
                     range_limits = item.split("-")
-                    for i in range(int(range_limits[0]), int(range_limits[1])):
+                    for i in range(int(range_limits[0]), int(range_limits[1])+1):
                         selected.append(i - 1)
                 else:
                     selected.append(int(item) - 1)
