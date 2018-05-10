@@ -6,7 +6,7 @@ from csm.input_output.formatters import format_CSM, non_negative_zero
 import io
 from openbabel import OBConversion
 from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_cycles, cart2sph
-from csm.molecule.molecule import MoleculeReader, get_format
+from csm.molecule.molecule import MoleculeReader, get_format, mol_string_from_obm
 from csm.input_output.formatters import csm_log as print
 
 # molwriters
@@ -57,11 +57,36 @@ class CSMMolWriter:
             f.write("\n")
 
 
+def write_ob_molecule(self, obmol, format, f, legacy=False):
+        """
+        Write an Open Babel molecule to file
+        :param obmol: The molecule
+        :param format: The output format
+        :param f: The file to write output to
+        :param f_name: The file's name (for extension-finding purpose)
+        """
+        conv = OBConversion()
+        if not conv.SetOutFormat(format):
+            raise ValueError("Error setting output format to " + format)
+
+        # write to file
+
+        try:
+            s = conv.WriteString(obmol)
+        except (TypeError, ValueError, IOError):
+            raise ValueError("Error writing data file using OpenBabel")
+
+        if legacy:
+            if str.lower(format) == 'pdb':
+                s = s.replace("END", "ENDMDL")
+        f.write(s)
+
+
 class OBMolWriter:
     def write(self, f, result, op_name, format):
-        self.print_output_ob(f, result, format, op_name)
+        self.legacy_print_output_ob(f, result, format, op_name)
 
-    def print_output_ob(self, f, result, format, op_name):
+    def legacy_print_output_ob(self, f, result, format, op_name):
         """
         Prints output using Open Babel
         :param f: File to write to
@@ -75,26 +100,31 @@ class OBMolWriter:
             f.write("\nMODEL 01")
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
 
-        obmol=self.obm_from_result(result)
-        obmol=self.set_obm_from_original(obmol, result)
-        self.write_ob_molecule(obmol, format, f)
+        obmols=self.obm_from_result(result)
+        obmol=obmols[0]
+        self.set_obm_from_original(obmol, result)
+        write_ob_molecule(obmol, format, f, legacy=True)
 
         if format == 'pdb':
             f.write("\nMODEL 02")
         f.write("\nRESULTING STRUCTURE COORDINATES\n")
 
-        obmol=self.set_obm_from_symmetric(obmol, result)
-        self.write_ob_molecule(obmol, format, f)
+        self.set_obm_from_symmetric(obmol, result)
+        write_ob_molecule(obmol, format, f, legacy=True)
         if format == 'pdb':
             f.write("END\n")
 
     def obm_from_result(self, result):
-        obmol = MoleculeReader._obm_from_file(result.molecule._filename,
-                                              result.molecule._babel_bond,
-                                              result.molecule._format)[0]
+        obmols = MoleculeReader._obm_from_strings(result.molecule._file_content,
+                                                  result.molecule._format,
+                                                  result.molecule._babel_bond)
+
         for to_remove in result.molecule._deleted_atom_indices:
-            obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
-        return obmol
+            mol_index, atom_index = self._atom_indices[to_remove]
+            obmol=obmols[mol_index]
+            obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
+
+        return obmols
 
     def set_obm_from_original(self, obmol, result):
         num_atoms = obmol.NumAtoms()
@@ -122,28 +152,6 @@ class OBMolWriter:
         return obmol
 
 
-
-    def write_ob_molecule(self, obmol, format, f):
-        """
-        Write an Open Babel molecule to file
-        :param obmol: The molecule
-        :param format: The output format
-        :param f: The file to write output to
-        :param f_name: The file's name (for extension-finding purpose)
-        """
-        conv = OBConversion()
-        if not conv.SetOutFormat(format):
-            raise ValueError("Error setting output format to " + format)
-
-        # write to file
-
-        try:
-            s = conv.WriteString(obmol)
-        except (TypeError, ValueError, IOError):
-            raise ValueError("Error writing data file using OpenBabel")
-        if str.lower(format) == 'pdb':
-            s = s.replace("END", "ENDMDL")
-        f.write(s)
 
 
 # resultwriters
@@ -339,7 +347,7 @@ class OldFormatFileWriter(ResultWriter):
         self.json_output = json_output
         if not out_format:
             try:
-                out_format = get_format(None, result.molecule._filename)
+                out_format = get_format(None, result.molecule._format)
             except ValueError:
                 out_format = get_format(None, out_file_name)
         super().__init__(result, out_format, print_local)
@@ -366,6 +374,8 @@ class ScriptWriter:
         self.format=format
         if not out_file_name:
             out_file_name=os.path.join(os.getcwd(), 'csm_results')
+        if not os.path.isdir(out_file_name):
+            os.mkdir(out_file_name)
         self.folder=out_file_name
 
 
@@ -434,28 +444,62 @@ class ScriptWriter:
                     self._file_write_arr(f, command_result.perm, True)
                     f.write("\n")
 
+    def mult_mol_writer(self, filename, obmols):
+        '''
+        :param filename:
+        :param obmols:
+        :return:
+        '''
+
+        if len(obmols)>1:
+            if self.format=="mol":
+                string=""
+                for mol in obmols:
+                    string+=mol_string_from_obm(mol, self.format)
+                    string+="\n$$$$\n"
+                with open(filename, 'w') as file:
+                    file.write(string)
+                return
+
+            elif self.format=="pdb":
+                string=""
+                for mol in obmols:
+                    string+=mol_string_from_obm(mol, self.format)
+                string.replace("END", "ENDMDL")
+                string+="\nEND"
+                with open(filename, 'w') as file:
+                    file.write(string)
+                return
+
+        #default, including for multiple obmols that aren't special case formats above
+        with open(filename, 'w') as file:
+            for mol in obmols:
+                write_ob_molecule(mol, self.format, file)
+
+
     def create_initial_mols(self):
         # chained file of initial structures
-        obmolwriter=OBMolWriter()
-        filename=os.path.join(self.folder, "initial_normalized_coordinates."+self.format)
-        with open(filename, 'w') as f:
-            for mol_results in self.results:
-                for result in mol_results:
-                    obmol=obmolwriter.obm_from_result(result)
-                    obmol=obmolwriter.set_obm_from_original(obmol, result)
-                    obmolwriter.write_ob_molecule(obmol, self.format, f)
+        filename = os.path.join(self.folder, "initial_normalized_coordinates." + self.format)
+        for mol_results in self.results:
+            for result in mol_results:
+                obmolwriter = OBMolWriter()
+                obmols = obmolwriter.obm_from_result(result)
+                for obmol in obmols:
+                    obmolwriter.set_obm_from_original(obmol, result)
+                self.mult_mol_writer(filename, obmols)
+
 
 
     def create_symm_mols(self):
         # chained file of symmetric structures
-        obmolwriter = OBMolWriter()
         filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format)
-        with open(filename, 'w') as f:
-            for mol_results in self.results:
-                for result in mol_results:
-                    obmol = obmolwriter.obm_from_result(result)
-                    obmol = obmolwriter.set_obm_from_symmetric(obmol, result)
-                    obmolwriter.write_ob_molecule(obmol, self.format, f)
+        for mol_results in self.results:
+            for result in mol_results:
+                obmolwriter = OBMolWriter()
+                obmols = obmolwriter.obm_from_result(result)
+                for obmol in obmols:
+                    obmolwriter.set_obm_from_original(obmol, result)
+                self.mult_mol_writer(filename, obmols)
 
 
     def _write_statistics(self, f, result):

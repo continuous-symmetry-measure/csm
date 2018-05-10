@@ -112,7 +112,7 @@ class Molecule:
 
             # getting rid of obmol:
             # self._obmol = obmol
-            self._filename = None
+            self._file_content = []
             self._format = None
             self._deleted_atom_indices = []
             self._babel_bond = False
@@ -127,7 +127,7 @@ class Molecule:
         m._norm_factor = self.norm_factor
 
         # m._obmol=self.obmol
-        m._filename = self._filename
+        m._file_content = self._file_content
         m._format = self._format
         m._deleted_atom_indices = self._deleted_atom_indices
         m._babel_bond = self._babel_bond
@@ -161,7 +161,7 @@ class Molecule:
             # Classes:
             # obmol: needed for printing:
             "deleted indices": self._deleted_atom_indices,
-            "filename": self._filename,
+            "file_content": self._file_content,
             "format": self._format,
             "babel_bond": self._babel_bond,
             # chains
@@ -188,7 +188,7 @@ class Molecule:
         c.from_array(in_dict["chains"])
         m._chains = c
 
-        m._filename = in_dict["filename"]
+        m._file_content = in_dict["file_content"]
         m._format = in_dict["format"]
         m._deleted_atom_indices = in_dict["deleted indices"]
         # m._format=in_dict["format"]
@@ -789,13 +789,10 @@ class MoleculeReader:
         """
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
         # step one: get the molecule object
-        obm = MoleculeReader._obm_from_string(string, format, babel_bond)
-        mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass)
-        mol._format = format
-
+        obm = MoleculeReader._obm_from_strings([string], format, babel_bond)
+        mol = MoleculeReader.mol_from_obm(obm, format, ignore_symm, use_mass)
         if initialize:
             mol._complete_initialization(use_chains, remove_hy)
-
         return mol
 
     @staticmethod
@@ -829,8 +826,8 @@ class MoleculeReader:
         if format == "csm":
             mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
         else:
-            obm = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
-            mol = MoleculeReader._from_obm(obm, ignore_symm, use_mass, read_fragments)
+            obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
+            mol = MoleculeReader.mol_from_obm(obm, format, ignore_symm, use_mass, read_fragments)
         return MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                        use_chains, babel_bond,
                                                        remove_hy, ignore_symm, use_mass,
@@ -844,18 +841,11 @@ class MoleculeReader:
                                  read_fragments=False, use_sequence=False,
                                  keep_structure=False):
 
-        def set_obmol_field(mol):
-            mol._filename = in_file_name
-            mol._babel_bond = babel_bond
-            mol._format = format
-
-        set_obmol_field(mol)
-
         if use_sequence:
             if format.lower() != 'pdb':
                 raise ValueError("--use-sequence only works with PDB files")
 
-            mol = MoleculeReader._create_pdb_with_sequence(in_file_name, mol, format, use_chains=use_chains,
+            mol = MoleculeReader._create_pdb_with_sequence (mol, in_file_name, use_chains=use_chains,
                                                            babel_bond=babel_bond,
                                                            read_fragments=read_fragments, remove_hy=remove_hy,
                                                            ignore_symm=ignore_symm, use_mass=use_mass)
@@ -900,9 +890,9 @@ class MoleculeReader:
                                                     keep_structure)
             return [mol]
 
-        obms = MoleculeReader._obm_from_file(in_file_name, babel_bond, format)
+        obms = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
         if read_fragments:
-            mol = MoleculeReader._from_obm(obms, ignore_symm, use_mass)
+            mol = MoleculeReader.mol_from_obm(obms, format, babel_bond=babel_bond, ignore_symm=ignore_symm, use_mass=use_mass, read_fragments=read_fragments)
             mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                           use_chains, babel_bond,
                                                           remove_hy, ignore_symm, use_mass,
@@ -911,7 +901,7 @@ class MoleculeReader:
             return [mol]
 
         for obm in obms:
-            mol = MoleculeReader._from_obm([obm], ignore_symm, use_mass)
+            mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_symm=ignore_symm, use_mass=use_mass)
             mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                           use_chains, babel_bond,
                                                           remove_hy, ignore_symm, use_mass,
@@ -920,19 +910,30 @@ class MoleculeReader:
             mols.append(mol)
         return mols
 
+
     @staticmethod
-    def _obm_from_string(string, format, babel_bond=None):
+    def _obm_from_strings(strings, format, babel_bond=False):
+        '''
+        :param strings: an array of molecule strings
+        :param format:
+        :param babel_bond:
+        :return:
+        '''
         conv = OBConversion()
         obmol = OBMol()
         if not conv.SetInFormat(format):
             raise ValueError("Error setting openbabel format to" + format)
         if not babel_bond:
             conv.SetOptions("b", conv.INOPTIONS)
-        conv.ReadString(obmol, string)
-        return [obmol]
+        obmols=[]
+        for string in strings:
+            conv.ReadString(obmol, string)
+            obmols.append(obmol)
+            obmol = OBMol()
+        return obmols
 
     @staticmethod
-    def _obm_from_file(filename, babel_bond=None, format=None, ):
+    def _obm_from_file(filename, format=None, babel_bond=False):
         """
         :param filename: name of file to open
         :param format: molecule format of file (eg xyz, pdb)
@@ -949,7 +950,7 @@ class MoleculeReader:
             conv.SetOptions("b", conv.INOPTIONS)
         notatend = conv.ReadFile(obmol, filename)
         if not notatend:
-            raise ValueError("Error reading file " + filename + " using OpenBabel")
+            raise ValueError("Error reading file " + filename + " using OpenBabel, with format:", format)
         obmols = []
         while notatend:
             obmols.append(obmol)
@@ -958,7 +959,7 @@ class MoleculeReader:
         return obmols
 
     @staticmethod
-    def _from_obm(obmols, ignore_symm=False, use_mass=False, read_fragments=False):
+    def mol_from_obm(obmols, format, babel_bond=False, ignore_symm=False, use_mass=False, read_fragments=False):
         """
         :param obmol: OBmol molecule
         :param args_dict: dictionary of processed command line arguments
@@ -967,7 +968,9 @@ class MoleculeReader:
         if not read_fragments:
             obmols = obmols[:1]
         atoms = []
+        mol_contents=[]
         for obmol_id, obmol in enumerate(obmols):
+            mol_contents.append(mol_string_from_obm(obmol, format))
             for i, obatom in enumerate(OBMolAtomIter(obmol)):
                 position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
                 if ignore_symm:
@@ -990,7 +993,11 @@ class MoleculeReader:
                 atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                 atoms.append(atom)
 
+
         mol = Molecule(atoms)
+        mol._file_content = mol_contents
+        mol._babel_bond = babel_bond
+        mol._format = format
         return mol
 
     @staticmethod
@@ -1116,7 +1123,7 @@ class MoleculeReader:
         return mol
 
     @staticmethod
-    def _create_pdb_with_sequence(in_file_name, mol, format="pdb", initialize=True,
+    def _create_pdb_with_sequence(mol, in_file_name, initialize=True,
                                   use_chains=False, babel_bond=False, read_fragments=False,
                                   ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
         def read_atom(line, likeness_dict, cur_atom):
@@ -1171,3 +1178,12 @@ class MoleculeReader:
         mol.normalize()
 
         return mol
+
+
+def mol_string_from_obm(obmol, format):
+    obconversion = OBConversion()
+    formatok = obconversion.SetOutFormat(format)
+    if not formatok:
+        raise ValueError("%s is not a recognised Open Babel format" %
+                         format)
+    return obconversion.WriteString(obmol)
