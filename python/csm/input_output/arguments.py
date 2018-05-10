@@ -45,6 +45,8 @@ def _create_parser():
                             help='when printing the original molecule, print the denormalized coordinates')
         parser.add_argument("--legacy",  action='store_true', default=False,
                             help='print the old csm format')
+        parser.add_argument("--simple",  action='store_true', default=False,
+                            help='only output is CSM to screen')
 
     def shared_calc_utility_func(parser):
         parser.add_argument('type',
@@ -55,8 +57,6 @@ def _create_parser():
                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
         parser.add_argument('--sn-max', type=int, default=8,
                             help='The maximal sn to try, relevant only for chirality')
-        parser.add_argument("--simple",  action='store_true', default=False,
-                            help='only output is CSM to screen')
 
     def shared_normalization_utility_func(parser): #I made this because having normalization stuck in the calc utility func was ugly
         parser.add_argument('--normalize', default=[],
@@ -229,8 +229,10 @@ def _process_arguments(parse_res):
     elif parse_res.command == "write":
         dictionary_args["out_format"] = parse_res.format
         parse_output(dictionary_args)
+        dictionary_args['simple'] = parse_res.simple
     else:
         # get input/output if relevant
+        dictionary_args['simple'] = parse_res.simple
         if parse_res.input != None:
             parse_input(dictionary_args)
             dictionary_args["in_format"] = parse_res.in_format
@@ -241,8 +243,6 @@ def _process_arguments(parse_res):
             dictionary_args["out_format"] = parse_res.out_format
         else:
             dictionary_args["out_file_name"]=None
-
-        dictionary_args['simple'] = parse_res.simple
 
         if parse_res.command == "command":
             dictionary_args["command_file"]=parse_res.comfile
