@@ -39,7 +39,7 @@ class Atom:
         :param chain: string, name of the chain the atom belongs to
         """
         self.index=index
-        self._symbol = symbol
+        self._symbol=symbol.strip() #make sure no white space in symbol
         self.adjacent = []
         self.pos = pos
         if useMass and symbol != 'XX':

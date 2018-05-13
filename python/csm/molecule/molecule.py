@@ -364,7 +364,7 @@ class Molecule:
             chain_equivalences.append(equiv)
         self._chain_equivalences = chain_equivalences
 
-    def _calculate_equivalency(self, remove_hy, ignore_hy):
+    def _calculate_equivalency(self):
         """
         Preprocess a molecule based on the arguments passed to CSM
         :param remove_hy: True if hydrogen atoms should be removed
@@ -372,9 +372,6 @@ class Molecule:
         :param kwargs: Place holder for all other csm_args.
         You can call it by passing **csm_args
         """
-        if ignore_hy or remove_hy:
-            self.strip_atoms(remove_hy, ignore_hy)
-
         def is_similar(atoms_group_num, a, b):
             found = True
             mark = set()
@@ -472,21 +469,25 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-    def strip_atoms(self, remove_hy, ignore_hy):
+    def strip_atoms(self, remove_hy=False, select_atoms=[]):
         """
             Creates a new Molecule from m by removing atoms who's symbol is in the remove list
             :param csm_args:
             :param removeList: atomic symbols to remove
         """
 
-        remove_list = ["H", " H"]
         removed_atoms = []
         fixed_indexes = [i for i in range(len(self))]
 
         for i in range(len(self._atoms)):
-            if self._atoms[i].symbol in remove_list:
-                removed_atoms.append(i)
-                fixed_indexes[i] = None
+            if remove_hy:
+                if self._atoms[i].symbol =="H":
+                    removed_atoms.append(i)
+                    fixed_indexes[i] = None
+            if select_atoms:
+                if i not in select_atoms:
+                    removed_atoms.append(i)
+                    fixed_indexes[i] = None
             else:
                 # however many atoms have been removed up to this index is the amount its index needs adjusting by
                 fixed_indexes[i] -= len(removed_atoms)
@@ -505,7 +506,7 @@ class Molecule:
             # if remove_hy: #this is meant to affect print at end
             # self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
 
-        logger.debug(len(removed_atoms), "molecules of hydrogen removed or ignored")
+        logger.debug(len(removed_atoms), "atoms removed")
 
     def _calculate_center_of_mass(self):
         coords = [atom.pos for atom in self._atoms]
@@ -581,11 +582,12 @@ class Molecule:
             else:
                 print("Molecule has no chains", file=file)
 
-    def _complete_initialization(self, use_chains, remove_hy, ignore_hy=False):
+    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[]):
         """
         Finish creating the molecule after reading the raw data
         """
-        self._calculate_equivalency(remove_hy, ignore_hy)
+        self.strip_atoms(remove_hy, select_atoms)
+        self._calculate_equivalency()
         self._initialize_chains(use_chains)
         self.normalize()
 
@@ -800,7 +802,7 @@ class MoleculeReader:
                   use_chains=False, babel_bond=False,
                   remove_hy=False, ignore_symm=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
-                  keep_structure=False,
+                  keep_structure=False, select_atoms=[],
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
@@ -832,14 +834,14 @@ class MoleculeReader:
                                                        use_chains, babel_bond,
                                                        remove_hy, ignore_symm, use_mass,
                                                        read_fragments, use_sequence,
-                                                       keep_structure)
+                                                       keep_structure, select_atoms)
 
     @staticmethod
     def _process_single_molecule(mol, in_file_name, format, initialize=True,
                                  use_chains=False, babel_bond=False,
                                  remove_hy=False, ignore_symm=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
-                                 keep_structure=False):
+                                 keep_structure=False, select_atoms=[]):
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -862,7 +864,7 @@ class MoleculeReader:
                 logger.warn("Input molecule has no bond information")
 
         if initialize:
-            mol._complete_initialization(use_chains, remove_hy)
+            mol._complete_initialization(use_chains, remove_hy, select_atoms)
             if len(mol.chains) < 2:
                 if read_fragments:
                     logger.warn("Although you input --read-fragments, no fragments were found in file. "
@@ -876,7 +878,7 @@ class MoleculeReader:
                            use_chains=False, babel_bond=False,
                            remove_hy=False, ignore_symm=False, use_mass=False,
                            read_fragments=False, use_sequence=False,
-                           keep_structure=False,
+                           keep_structure=False, select_atoms=[],
                            *args, **kwargs):
         mols = []
         format = get_format(in_format, in_file_name)
@@ -897,7 +899,7 @@ class MoleculeReader:
                                                           use_chains, babel_bond,
                                                           remove_hy, ignore_symm, use_mass,
                                                           read_fragments, use_sequence,
-                                                          keep_structure)
+                                                          keep_structure, select_atoms)
             return [mol]
 
         for obm in obms:
@@ -906,7 +908,7 @@ class MoleculeReader:
                                                           use_chains, babel_bond,
                                                           remove_hy, ignore_symm, use_mass,
                                                           read_fragments, use_sequence,
-                                                          keep_structure)
+                                                          keep_structure, select_atoms)
             mols.append(mol)
         return mols
 
