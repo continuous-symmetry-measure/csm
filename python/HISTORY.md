@@ -1,6 +1,31 @@
 The Python CSM Package
 ======================
 
+
+Changes in version 0.20.1 (beta)
+-------------------------
+* --select-mols added
+* --select-atoms added
+* warn for invalid PDBs
+* change to molecule json (and to result json, which contains a molecule json):
+molecule no longer saves original file name, but rather saves original file content
+* bug fixes
+
+
+Changes in version 0.20.0 (beta)
+-------------------------
+
+**This update is partially backwards compatible**
+
+* complete overhaul to output, and a milder overhaul to input. 
+* --legacy preserves old output
+* --simple prints only CSM
+* for everything else, tables and files are created in a specified folder 
+(if a file is provided, the folder will be extracted and used)
+* bug fix to use-sequence
+* suppress openbabel warnings
+
+
 Changes in version 0.19.1
 -------------------------
 * added parallelization in approx calculation, called with --parallel and optional int argument for number of processes
