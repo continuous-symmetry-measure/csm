@@ -219,16 +219,21 @@ normalization_dict={
 }
 
 
-def run(args=[], result=None):
+def run(args=[], results=None):
     print("entered normcsm")
     if not args:
         args = sys.argv[1:]
     norm_types, norm_file= process_args(args)
-    if result is None:
+    if results is None:
         raw_json = read_from_sys_std_in()
-        result_dict = json.loads(raw_json)
-        result = CSMResult.from_dict(result_dict)
-    return norm_calc(result, norm_types, norm_file)
+        less_raw_json = json.loads(raw_json)
+        results=[[CSMResult.from_dict(result_dict) for result_dict in mol_arr] for mol_arr in less_raw_json]
+    norm_results=[]
+    for mol_result in results:
+        for result in mol_result:
+            norm_results.append(norm_calc(result, norm_types, norm_file))
+    return norm_results
+
 
 def norm_calc(result, norm_types, norm_file=None):
     if not set(norm_types).isdisjoint(('1','2','3','4')):

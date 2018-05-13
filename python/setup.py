@@ -56,7 +56,7 @@ setup(
     version=csm_version,
     packages=['csm.calculations', 'csm.calculations.approx', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
-    install_requires=['numpy>=1.10', 'openbabel>=2.4.1'],
+    install_requires=['numpy>=1.10', 'openbabel_python>=2.4.1'],
     include_package_data=True,
     license='Chelem',  # example license
     description='The Continuous Symmetry Measure',
@@ -92,8 +92,7 @@ setup(
     entry_points={
         'console_scripts': [
             'csm = csm.main.csm_run:run_no_return',
-            'norm_csm = csm.main.normcsm:run_norm_no_return',
-            'test_direction = csm.main.dircsm:run_no_return_dirs',
+            'norm_csm = csm.main.normcsm:run_norm_no_return'
         ]
     },
 
