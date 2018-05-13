@@ -57,7 +57,7 @@ class CSMMolWriter:
             f.write("\n")
 
 
-def write_ob_molecule(self, obmol, format, f, legacy=False):
+def write_ob_molecule(obmol, format, f, legacy=False):
         """
         Write an Open Babel molecule to file
         :param obmol: The molecule
@@ -118,6 +118,12 @@ class OBMolWriter:
         obmols = MoleculeReader._obm_from_strings(result.molecule._file_content,
                                                   result.molecule._format,
                                                   result.molecule._babel_bond)
+        self._atom_indices=[]
+
+        for mol_index, obmol in enumerate(obmols):
+            num_atoms=obmol.NumAtoms()
+            for atom_index in range(num_atoms):
+                self._atom_indices.append((mol_index, atom_index))
 
         for to_remove in result.molecule._deleted_atom_indices:
             mol_index, atom_index = self._atom_indices[to_remove]
