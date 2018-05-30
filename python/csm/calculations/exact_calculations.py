@@ -4,8 +4,9 @@ import itertools
 import math
 
 import numpy as np
+import sys
 
-from csm.calculations.basic_calculations import check_perm_cycles
+from csm.calculations.basic_calculations import check_perm_cycles, now, run_time
 from csm.calculations.data_classes import CSMState, Operation, CSMResult
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE, start_time
 from csm.fast import calc_ref_plane
@@ -40,18 +41,17 @@ class ExactStatistics:
         self._truecount=permuter.truecount
         self._falsecount=permuter.falsecount
 
-    def write_to_screen(self):
-        print("Number of permutations: %s" % format_perm_count(self.perm_count))
-        print("Number of branches in permutation tree: %s" % format_perm_count(self.num_branches))
-        print("Number of dead ends: %s" % format_perm_count(self.dead_ends))
+    def write(self, f=sys.stderr):
+        f.write("Number of permutations: %s" % format_perm_count(self.perm_count))
+        f.write("Number of branches in permutation tree: %s" % format_perm_count(self.num_branches))
+        f.write("Number of dead ends: %s" % format_perm_count(self.dead_ends))
 
     def to_dict(self):
         return {
             "perm count":self.perm_count,
-            "num branches":self.num_branches,
+            "number branches":self.num_branches,
             "dead ends":self.dead_ends
         }
-
 
     @property
     def dead_ends(self):
@@ -87,6 +87,7 @@ class ExactCalculation:
         self.no_constraint=no_constraint
         self.timeout=timeout
         self.callback_func=callback_func
+        self.start_time=now()
 
     def calculate(self):
         op_type=self.operation.type
@@ -114,7 +115,9 @@ class ExactCalculation:
         else:
             best_result = self.csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, timeout)
 
-        self._csm_result = CSMResult(best_result, self.operation, self.statistics.to_dict())
+        overall_stats = self.statistics.to_dict()
+        overall_stats["runtime"]=run_time(self.start_time)
+        self._csm_result = CSMResult(best_result, self.operation, overall_stats=overall_stats)
         return self.result
 
     def csm_operation(self, op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False, timeout=300):

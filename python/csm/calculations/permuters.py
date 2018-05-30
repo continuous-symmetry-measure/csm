@@ -3,7 +3,7 @@ import sys
 import datetime
 import numpy as np
 from csm.fast import PreCalcPIP, PermInProgress
-
+from csm.calculations.basic_calculations import now, run_time
 from csm.calculations.constants import start_time, CalculationTimeoutError
 from csm.input_output.formatters import csm_log as print
 __author__ = 'Devora'
@@ -581,15 +581,13 @@ class ConstraintsOrderedByDistancePermuter(ConstraintPermuter):
             sys.setrecursionlimit(len(molecule))
         self.constraints=DistanceConstraints(molecule, distances_dict)
         #self.print_branches = True
-        self._permute_start = datetime.datetime.now()
+        self._permute_start = now()
         self._permute_timeout = perm_timeout
         #print("start time", start_time)
 
     @property
     def run_time(self):
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        return time_d.total_seconds()
+        return run_time(self._permute_start)
 
     def check_timeout(self):
         # step zero: check if time out

@@ -20,6 +20,7 @@ from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermute
 from csm.molecule.molecule import MoleculeFactory
 from csm.fast import CythonPermuter
 from csm.input_output.formatters import csm_log as print
+from csm.calculations.basic_calculations import now, run_time
 
 
 class _OptionalLogger:
@@ -124,7 +125,7 @@ class _SingleDirectionStatistics:
 class DirectionStatisticsContainer:
     def __init__(self, initial_directions):
         self.directions_dict = OrderedDict()
-        self.directions_arr = []
+        self.directions_arr=[]
         for index, dir in enumerate(initial_directions):
             self.directions_dict[tuple(dir)] = _SingleDirectionStatistics(dir)
             self.directions_arr.append(self.directions_dict[tuple(dir)])
@@ -142,7 +143,7 @@ class DirectionStatisticsContainer:
         return str(self.directions_dict)
 
     def to_dict(self):
-        return [{"key":dir, "value":self.directions_dict[dir].to_dict()} for dir in self.directions_dict]
+        return [{"dir":dir, "stats":self.directions_dict[dir].to_dict()} for dir in self.directions_dict]
 
 class ApproxStatistics(DirectionStatisticsContainer):
     pass
@@ -623,8 +624,14 @@ class ApproxCalculation(_OptionalLogger):
         self.num_selected = num_selected
         self.statistics = ApproxStatistics(self._initial_directions)
         self._max_iterations = 30
+        self.start_time=now()
 
     def calculate(self):
+        result=self._calculate()
+        self.result = CSMResult(result, self.operation, overall_stats={"runtime":run_time(self.start_time)}, ongoing_stats={"approx":self.statistics.to_dict()})
+        return self.result
+
+    def _calculate(self):
         if self.operation.type == 'CI' or (self.operation.type == 'SN' and self.operation.order == 2):
             dir = [1.0, 0.0, 0.0]
             if self.operation.type == 'SN':
@@ -656,9 +663,8 @@ class ApproxCalculation(_OptionalLogger):
                       "\n",(1 - (least_invalid.num_invalid / len(self._molecule))) * 100,
                       "% of the molecule's atoms are in legal cycles)")
                 print("--------")
+        return best_result
 
-        self.result = CSMResult(best_result, self.operation, self.statistics.to_dict())
-        return self.result
 
     def _calculate_for_directions(self, dirs, max_iterations):
         best = CSMState(molecule=self._molecule, op_type=self.operation.type, op_order=self.operation.order, csm=MAXDOUBLE,
@@ -692,7 +698,7 @@ class ParallelApprox(ApproxCalculation):
         super().__init__(operation, molecule, direction_chooser, approx_algorithm,
                          log_func, timeout, selective, num_selected)
 
-    def calculate(self):
+    def _calculate(self):
         if self.operation.type == 'CI' or (self.operation.type == 'SN' and self.operation.order == 2):
             raise ValueError("Please don't use parallel calculation for inversion")
         else:
@@ -710,8 +716,7 @@ class ParallelApprox(ApproxCalculation):
                 self.max_iterations = self._max_iterations
                 best_result = self._calculate_for_directions(self._initial_directions)
 
-        self.result = CSMResult(best_result, self.operation, self.statistics.to_dict())
-        return self.result
+        return best_result
 
     def _calculate_for_directions(self, dirs):
         pool = multiprocessing.Pool(processes=self.pool_size)

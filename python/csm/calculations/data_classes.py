@@ -1,6 +1,7 @@
 import numpy as np
 
-from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles
+from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
+    check_perm_structure_preservation
 from csm.calculations.constants import MINDOUBLE
 from csm.molecule.molecule import Molecule
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
@@ -108,94 +109,76 @@ class Operation:
         o.order=in_dict["order"]
         return o
 
+
 class CSMResult:
-    """
-    Holds the results of a CSM calculation.
-    When initialized, it handles some final processing of the result like denormalization and calculating local CSM.
-    It is not intended to be initialized by an external user, but by the calculation.
-    Properties:
-    molecule: the original Molecule on which the calculation was called (denormalized)
-    op_order: the order of the symmetry operation the calculation used
-    op_type: the type of symmetry option (cs, cn, sn, ci, ch)
-    csm: The final result CSM value
-    perm: The final permutation that gave the result CSM value (a list of ints)
-    dir: The final axis of symmetry
-    perm_count: The number of permutations of the molecule
-    local_csm:
-    d_min:
-    symmetric_structure: the most symmetric structure when molecule permuted
-    normalized_symmetric_structure: the normalized symmetric structure
-    normalized_molecule_coords: the normalized molecule coordinates
-    formula_csm: a recalculation of the symmetry value using a formula to measure symmetry. Should be close to identical
-                    to algorithm result
-    chain_perm: the chain permutation (by index-- names can be accessed with chain_perm_string)
-    """
-    def __init__(self, state, operation, statistics_dict={}):
-        self.__CSMState=state
-        self.molecule=state.molecule.copy()
-        self.operation=operation
-        self.csm=state.csm
-        self.perm=state.perm
-        self.dir=state.dir
-        self.perm_count=state.perm_count
-        self.local_csm=""
-        self.statistics=statistics_dict
-        self._process_results()
-
-    @property
-    def op_type(self):
-        return self.operation.type
-
-    @property
-    def op_order(self):
-        return self.operation.order
-
-    def _process_results(self):
-        self.d_min = 1.0 - (self.csm / 100 * self.operation.order / (self.operation.order - 1))  # this is the scaling factor
-
-
-        # save the normalized coords before we denormalize
-        self.normalized_symmetric_structure = self.create_symmetric_structure(self.molecule, self.perm, self.dir, self.operation.type,
-                                                         self.operation.order)
-        self.normalized_molecule_coords=np.array(self.molecule.Q)
-
-        #denormalize
-        self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure), self.molecule.norm_factor)
+    def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
+        #input
+        self.molecule=state.molecule #not yet denormalized
+        self.normalized_molecule_coords = np.array(self.molecule.Q)
         self.molecule.de_normalize()
+        self.operation=operation
 
-        # run and save the formula test
-        self.formula_csm = self._formula_test()
+        #result
+        self.csm=state.csm
+        self.dir=state.dir
+        self.perm=state.perm
+        self.normalized_symmetric_structure = self.create_symmetric_structure(self.normalized_molecule_coords, self.perm, self.dir, self.operation.type,
+                                                         self.operation.order)
+        self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure), self.molecule.norm_factor)
+        self.formula_csm = self.get_CSM_by_formula(self.molecule, self.symmetric_structure)
 
-        #get the chain perm
-        self.get_chain_perm()
+        #stats
+        self.overall_statistics=overall_stats
+        self.ongoing_statistics=ongoing_stats
 
-        self.falsecount, self.num_invalid, self.cycle_counts, self.bad_indices=check_perm_cycles(self.perm, self.operation.order, self.operation.type)
+        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, operation.order,
+                                                                                       operation.type)
+        self.overall_statistics["# of illegal cycles"]=falsecount
+        self.overall_statistics["% molecules in illegal cycles"]= num_invalid / len(self.molecule)
+        try:
+            self.overall_statistics["% structure preservation"]=check_perm_structure_preservation(self.molecule, self.perm)
+        except ValueError:
+            self.overall_statistics["% structure preservation"]= "n/a"
+        self.overall_statistics["csm by formula"]=self.formula_csm
 
-    def _formula_test(self):
-        Q=self.molecule.Q
-        # step one: get average of all atoms
-        init_avg = np.mean(Q, axis=0)
-        # step two: distance between intial and actual: initial - actual, squared
-        # step three: normal: distance between initial and initial average, (x-x0)^2 + (y-y0)^2 + (z-z0)^2
-        # step four: sum of distances between initial and actual, and then sum of x-y-z
-        # step five: sum of normal
-        distance = np.array([0.0, 0.0, 0.0])
-        normal = 0.0
-        for i in range(len(Q)):
-            distance += (np.square(Q[i] - self.symmetric_structure[i]))  # square of difference
-            normal += (np.sum(np.square(Q[i] - init_avg)))
-        distance = np.sum(distance)
-        # print("yaffa normal =", normal)
-        # step six: 100 * step four / step five
-        result = 100 * distance / normal
-        return result
+    @property
+    def d_min(self):
+        return 1.0 - (self.csm / 100 * self.operation.order / (self.operation.order - 1))
 
-    def create_symmetric_structure(self, molecule, perm, dir, op_type, op_order):
+    @property
+    def local_csm(self):
+        return self.compute_local_csm(self.molecule.Q, self.operation, self.dir)
+
+    @property
+    def chain_perm_string(self):
+        molecule=self.molecule
+        perm=self.perm
+        chain_perm_dict = {}
+        for chain in molecule.chains:
+            index = molecule.chains[chain][0]
+            permuted_index = perm[index]
+            for chain2 in molecule.chains:
+                if permuted_index in molecule.chains[chain2]:
+                    chain_perm_dict[chain] = chain2
+                    break
+        chain_perm = []
+        for chain in molecule.chains:
+            permuted_index = chain_perm_dict[chain]
+            chain_perm.append(permuted_index)
+        chain_str=""
+        for from_index, to_index in enumerate(chain_perm):
+            from_chain=self.molecule.chains.index_to_string(from_index)
+            to_chain=self.molecule.chains.index_to_string(to_index)
+            chain_str+=from_chain + "->" + to_chain + ", "
+        chain_str=chain_str[:-2] #remove final comma and space
+        return chain_str
+
+    def create_symmetric_structure(self, molecule_coords, perm, dir, op_type, op_order):
         # print('create_symmetric_structure called')
 
         cur_perm = np.arange(len(perm))  # array of ints...
         size = len(perm)
-        m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
+        m_pos = molecule_coords
         symmetric = np.copy(m_pos)
 
         normalization = 1 / op_order
@@ -222,14 +205,33 @@ class CSMResult:
 
         return symmetric
 
-    def compute_local_csm(self):
-        size = len(self.molecule)
+    def get_CSM_by_formula(self, molecule, symmetric_structure):
+        Q=molecule.Q
+        # step one: get average of all atoms
+        init_avg = np.mean(Q, axis=0)
+        # step two: distance between intial and actual: initial - actual, squared
+        # step three: normal: distance between initial and initial average, (x-x0)^2 + (y-y0)^2 + (z-z0)^2
+        # step four: sum of distances between initial and actual, and then sum of x-y-z
+        # step five: sum of normal
+        distance = np.array([0.0, 0.0, 0.0])
+        normal = 0.0
+        for i in range(len(Q)):
+            distance += (np.square(Q[i] - symmetric_structure[i]))  # square of difference
+            normal += (np.sum(np.square(Q[i] - init_avg)))
+        distance = np.sum(distance)
+        # print("yaffa normal =", normal)
+        # step six: 100 * step four / step five
+        result = 100 * distance / normal
+        return result
+
+    def compute_local_csm(self, molecule_coords, operation, dir):
+        size = len(molecule_coords)
         cur_perm = [i for i in range(size)]
         local_csm = np.zeros(size)
-        m_pos = np.asarray([np.asarray(atom.pos) for atom in self.molecule.atoms])
+        m_pos = molecule_coords
 
-        for i in range(self.operation.order):
-            rot = create_rotation_matrix(i, self.operation.type, self.operation.order, self.dir)
+        for i in range(operation.order):
+            rot = create_rotation_matrix(i, operation.type, operation.order, dir)
 
             # set permutation
             cur_perm = [self.perm[cur_perm[j]] for j in range(size)]
@@ -239,68 +241,37 @@ class CSMResult:
             difference = rotated - m_pos[i]
             square = np.square(difference)
             sum = np.sum(square)
-            local_csm[i] = sum * (100.0 / (2 * self.operation.order))
-        self.local_csm=local_csm
+            local_csm[i] = sum * (100.0 / (2 * operation.order))
         return local_csm
 
-    def get_chain_perm(self):
-        '''
-        finds the existing permutation between chains, in the result
-        :return:
-        '''
-        molecule=self.molecule
-        perm=self.perm
-        chain_perm_dict = {}
-        for chain in molecule.chains:
-            index = molecule.chains[chain][0]
-            permuted_index = perm[index]
-            for chain2 in molecule.chains:
-                if permuted_index in molecule.chains[chain2]:
-                    chain_perm_dict[chain] = chain2
-                    break
-        chain_perm = []
-        for chain in molecule.chains:
-            permuted_index = chain_perm_dict[chain]
-            chain_perm.append(permuted_index)
-        self.chain_perm=chain_perm
-
-    def chain_perm_string(self):
-        chain_str=""
-        for from_index, to_index in enumerate(self.chain_perm):
-            from_chain=self.molecule.chains.index_to_string(from_index)
-            to_chain=self.molecule.chains.index_to_string(to_index)
-            chain_str+=from_chain + "->" + to_chain + ", "
-        chain_str=chain_str[:-2] #remove final comma and space
-        return chain_str
-    
     def to_dict(self):
-        json_dict = {"Result":
+        return {"Result":
             {
                 "molecule": self.molecule.to_dict(),
+                "normalized_molecule_coords": [list(i) for i in self.normalized_molecule_coords],
                 "operation": self.operation.to_dict(),
+
                 "csm": self.csm,
                 "perm": self.perm,
                 "dir": list(self.dir),
-                "d_min": self.d_min,
-                "symmetric_structure": [list(i) for i in self.symmetric_structure],
-                "local_csm": self.local_csm,
-                "perm_count": self.perm_count,
-                "formula_csm": self.formula_csm,
-                "normalized_molecule_coords": [list(i) for i in self.normalized_molecule_coords],
+
                 "normalized_symmetric_structure": [list(i) for i in self.normalized_symmetric_structure],
-                "statistics":self.statistics
+                "symmetric_structure": [list(i) for i in self.symmetric_structure],
+                "formula_csm": self.formula_csm,
+
+                "overall stats":self.overall_statistics,
+                "ongoing stats":self.ongoing_statistics
             }
         }
-        return json_dict
+
+
 
     @staticmethod
-    def from_dict(input):
-        result=input["Result"]
-        molecule=Molecule.from_dict(result["molecule"])
-        operation=Operation.from_dict(result["operation"])
-        statistics=result["statistics"]
-        state=CSMState(molecule, operation.order, operation.type, result["csm"], result["perm"], result["dir"], result["perm_count"])
-        result=CSMResult(state, operation, statistics)
+    def from_dict():
+        result_dict=input["Result"]
+        molecule=Molecule.from_dict(result_dict["molecule"])
+        molecule.normalize()
+        operation=Operation.from_dict(result_dict["operation"])
+        state=CSMState(molecule, operation.order, operation.type, result_dict["csm"], result_dict["perm"], result_dict["dir"])
+        result=CSMResult(state, operation, result_dict["overall stats"], result_dict["ongoing stats"])
         return result
-
-

@@ -10,7 +10,7 @@ from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox, DirectionChooser
 from csm.input_output.readers import read_perm, read_from_sys_std_in
-from csm.input_output.writers import OldFormatFileWriter, ApproxStatisticWriter, ScriptWriter
+from csm.input_output.writers import OldFormatFileWriter, ScriptWriter
 from csm import __version__
 from csm.molecule.molecule import MoleculeReader, Molecule
 from csm.input_output.formatters import csm_log as print

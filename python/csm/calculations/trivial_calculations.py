@@ -1,9 +1,11 @@
+import datetime
 from csm.fast import CythonPermuter
 from csm.calculations.data_classes import CSMState, Operation, CSMResult
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.permuters import ConstraintPermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
+from csm.calculations.basic_calculations import now, run_time
 
 '''
 contains the trivial calculation (identity perm on a chain permutation)
@@ -26,6 +28,7 @@ class TrivialCalculation:
         self.molecule=molecule
         self.use_chains=use_chains
         self.statistics={}
+        self.start_time=datetime.datetime.now()
 
     def calculate(self):
         molecule=self.molecule
@@ -52,7 +55,7 @@ class TrivialCalculation:
             perm = [i for i in range(len(molecule))]
             best= ExactCalculation.exact_calculation_for_approx(self.operation, molecule, perm=perm)
 
-        self._csm_result = CSMResult(best, self.operation)
+        self._csm_result = CSMResult(best, self.operation, overall_stats={"runtime":run_time(self.start_time)})
         return self.result
 
     @property

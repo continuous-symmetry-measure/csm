@@ -117,6 +117,8 @@ class Molecule:
             self._deleted_atom_indices = []
             self._babel_bond = False
 
+            self.has_been_normalized=None
+
     def copy(self):
         # deepcopy is used only for atoms,
         # because atoms are the only property changed between runs of Directions that necessitated copying
@@ -151,6 +153,7 @@ class Molecule:
             # trivial to include
             "norm factor": self.norm_factor,
             "center of mass": self.center_of_mass,
+            "normalized": self.has_been_normalized,
 
             # expensive to recalculate
             "equivalence classes": self.equivalence_classes,  # the most expensive part of loading large molecule
@@ -183,6 +186,7 @@ class Molecule:
         m = Molecule(atoms)
 
         m.norm_factor = in_dict["norm factor"]
+        m.has_been_normalized=in_dict["normalized"]
 
         c = Chains()
         c.from_array(in_dict["chains"])
@@ -539,6 +543,7 @@ class Molecule:
         for i in range(size):
             self._atoms[i].pos = norm_coords[i]
         self.create_Q()
+        self.has_been_normalized=True
 
     def de_normalize(self):
         coords = [atom.pos for atom in self._atoms]
@@ -548,6 +553,7 @@ class Molecule:
         for i in range(size):
             self._atoms[i].pos = denorm_coords[i]
         self.create_Q()
+        self.has_been_normalized=False
 
     def create_Q(self):
         self._Q = np.array([np.array(atom.pos) for atom in self.atoms])
