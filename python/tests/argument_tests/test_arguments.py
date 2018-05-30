@@ -35,11 +35,12 @@ class TestExact(Runner):
 
     @pytest.mark.parametrize("run_str",
                              [
-        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --print-denorm",
-        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --output-branches",
-        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --output-perms perms.csv",
-        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --print-local",
-        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --json-output",
+        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --print-denorm --legacy",
+        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --output-branches --legacy",
+        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --output-perms perms.csv --legacy",
+        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --print-local --legacy",
+        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --json-output --legacy",
+        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --simple",
     ])
     def test_output_args(self, run_str):
         self.run_args(run_str)
@@ -84,7 +85,7 @@ class TestApprox(Runner):
         self.run_args(run_str)
         
     def test_output_args(self):
-        self.run_args(r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --json-output")
+        self.run_args(r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --json-output --legacy")
 
 class TestTrivial(Runner):
     def test_plain(self):

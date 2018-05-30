@@ -49,9 +49,9 @@ def read_molecules(**kwargs):
 
 def write_results(results_arr, **kwargs):
     if kwargs['simple']:
-        for mol_result in results_arr:
-            for line_result in mol_result:
-                print(line_result.csm)
+        for mol_index, mol_result in enumerate(results_arr):
+            for lin_index, line_result in enumerate(mol_result):
+                print("mol", mol_index, "cmd", lin_index, " CSM: ", line_result.csm)
         return
 
     if kwargs['out_file_name']:

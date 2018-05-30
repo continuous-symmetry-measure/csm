@@ -23,6 +23,33 @@ def write_array_to_file(f, arr, add_one=False, separator=" "):
             item = item + 1
         f.write(str(item) + separator)
 
+def print_structure(f, result):
+            # print CSM, initial molecule, resulting structure and direction according to format specified
+            try:
+                percent_structure = check_perm_structure_preservation(result.molecule, result.perm)
+                f.write("The permutation found maintains"+
+                      str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
+
+            except ValueError:
+                f.write(
+                    "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
+
+            if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
+                falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(result.perm, result.operation.order,
+                                                                                       result.operation.type)
+                f.write(
+                    "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
+                        falsecount, "cycle" if falsecount == 1 else "cycles",
+                        100 * (len(result.molecule) - num_invalid) / len(result.molecule)))
+
+                for cycle_len in sorted(cycle_counts):
+                    valid = cycle_len == 1 or cycle_len == result.operation.order or (
+                            cycle_len == 2 and result.operation.type == 'SN')
+                    count = cycle_counts[cycle_len]
+                    f.write("\nThere %s %d %s %s of length %d" % (
+                        "is" if count == 1 else "are", count, "invalid" if not valid else "",
+                        "cycle" if count == 1 else "cycles",
+                        cycle_len))
 
 # molwriters
 class CSMMolWriter:
@@ -206,15 +233,14 @@ class ResultWriter:
             {
                 "result_string": self.result_string,
                 "molecule": self.result.molecule.to_dict(),
-                "op_order": self.result.op_order,
-                "op_type": self.result.op_type,
+                "op_order": self.result.operation.order,
+                "op_type": self.result.operation.type,
                 "csm": self.result.csm,
                 "perm": self.result.perm,
                 "dir": list(self.result.dir),
                 "d_min": self.result.d_min,
                 "symmetric_structure": [list(i) for i in self.result.symmetric_structure],
-                "local_csm": self.result.local_csm,
-                "perm_count": self.result.perm_count,
+                "local_csm": list(self.result.local_csm),
                 "formula_csm": self.result.formula_csm,
                 "normalized_molecule_coords": [list(i) for i in self.result.normalized_molecule_coords],
                 "normalized_symmetric_structure": [list(i) for i in self.result.normalized_symmetric_structure],
@@ -275,29 +301,8 @@ class ResultWriter:
         f.write("\n")
 
     def print_structure(self):
-        # print CSM, initial molecule, resulting structure and direction according to format specified
-        try:
-            percent_structure = check_perm_structure_preservation(self.result.molecule, self.result.perm)
-            print("The permutation found maintains",
-                  str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
-
-        except ValueError:
-            print(
-                "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
-
-        if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
-            print(
-                "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
-                    self.result.falsecount, "cycle" if self.result.falsecount == 1 else "cycles",
-                    100 * (len(self.result.molecule) - self.result.num_invalid) / len(self.result.molecule)))
-            for cycle_len in sorted(self.result.cycle_counts):
-                valid = cycle_len == 1 or cycle_len == self.result.op_order or (
-                    cycle_len == 2 and self.result.op_type == 'SN')
-                count = self.result.cycle_counts[cycle_len]
-                print("There %s %d %s %s of length %d" % (
-                    "is" if count == 1 else "are", count, "invalid" if not valid else "",
-                    "cycle" if count == 1 else "cycles",
-                    cycle_len))
+        import sys
+        print_structure(f=sys.stderr, result=self.result)
 
     def print_result(self):
         print("%s: %s" % (self.op_name, format_CSM(self.result.csm)))
@@ -543,34 +548,6 @@ class ScriptWriter:
                         f.write(start_str + "failed to read statistics\n")
 
     def create_extra_txt(self):
-        def print_structure(f, result):
-            # print CSM, initial molecule, resulting structure and direction according to format specified
-            try:
-                percent_structure = check_perm_structure_preservation(result.molecule, result.perm)
-                f.write("The permutation found maintains"+
-                      str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
-
-            except ValueError:
-                f.write(
-                    "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
-
-            if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
-                falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(result.perm, result.operation.order,
-                                                                                       result.operation.type)
-                f.write(
-                    "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
-                        falsecount, "cycle" if falsecount == 1 else "cycles",
-                        100 * (len(result.molecule) - num_invalid) / len(result.molecule)))
-
-                for cycle_len in sorted(cycle_counts):
-                    valid = cycle_len == 1 or cycle_len == result.operation.order or (
-                            cycle_len == 2 and result.operation.type == 'SN')
-                    count = cycle_counts[cycle_len]
-                    f.write("\nThere %s %d %s %s of length %d" % (
-                        "is" if count == 1 else "are", count, "invalid" if not valid else "",
-                        "cycle" if count == 1 else "cycles",
-                        cycle_len))
-
         #2. the equivalence class and chain information (number and length)
         #4. Cycle numbers and lengths
         filename = os.path.join(self.folder, "extra.txt")
