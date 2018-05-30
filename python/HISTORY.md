@@ -17,11 +17,15 @@ Changes in version 0.20.0 (beta)
 
 **This update is partially backwards compatible**
 
-* complete overhaul to output, and a milder overhaul to input. 
+* complete overhaul to output
+* added reading multiple molecules from folder
+* added command as an option (alongside exact, approx, trivial) which receives cmd.txt and 
+runs and cms commands within, each command on its own line (eg "exact c2")
 * --legacy preserves old output
 * --simple prints only CSM
 * for everything else, tables and files are created in a specified folder 
-(if a file is provided, the folder will be extracted and used)
+(if a file is provided, the folder will be extracted and used). inside specified folder,
+legacy files and approx staitstics files are saved in their own folders
 * bug fix to use-sequence
 * suppress openbabel warnings
 
