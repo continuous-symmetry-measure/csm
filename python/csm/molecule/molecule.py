@@ -488,13 +488,18 @@ class Molecule:
                 if self._atoms[i].symbol =="H":
                     removed_atoms.append(i)
                     fixed_indexes[i] = None
+                else:
+                    # however many atoms have been removed up to this index is the amount its index needs adjusting by
+                    fixed_indexes[i] -= len(removed_atoms)
+
             if select_atoms:
                 if i not in select_atoms:
                     removed_atoms.append(i)
                     fixed_indexes[i] = None
-            else:
-                # however many atoms have been removed up to this index is the amount its index needs adjusting by
-                fixed_indexes[i] -= len(removed_atoms)
+                else:
+                    # however many atoms have been removed up to this index is the amount its index needs adjusting by
+                    fixed_indexes[i] -= len(removed_atoms)
+
 
         # adjust the indices before we do any popping whatsoever
         for i, atom in enumerate(self._atoms):

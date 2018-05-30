@@ -212,6 +212,8 @@ def _process_arguments(parse_res):
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
 
         dictionary_args['select_atoms']  = _parse_ranges_and_numbers(parse_res.select_atoms)
+        if parse_res.select_atoms and parse_res.remove_hy:
+            raise ValueError("Remove-hy and select-atoms cannot be used together")
 
 
     def parse_output(dictionary_args):

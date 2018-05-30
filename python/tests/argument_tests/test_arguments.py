@@ -109,6 +109,9 @@ class TestTrivial(Runner):
         r"trivial ci --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --use-chains",
         r"trivial s2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --use-sequence",
         r"trivial s6 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --read-fragments",
+        r"trivial c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --select-atoms 1,3,4-6",
+        r"trivial c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --select-mols 1,2",
+
     ])
     def test_multiple_mols(self, run_str):
         self.run_args(run_str)
