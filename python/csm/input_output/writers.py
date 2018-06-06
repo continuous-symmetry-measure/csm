@@ -576,6 +576,14 @@ class ScriptWriter:
                 with open(out_file_name, 'w', encoding='utf-8') as f:
                     of._write_results(f)
 
+    def create_legacy_file(self):
+        out_file_name=os.path.join(self.folder, 'legacy.txt')
+        with open(out_file_name, 'a', encoding='utf-8') as f:
+            for mol_index, mol_results in enumerate(self.results):
+                for line_index, command_result in enumerate(mol_results):
+                    of=OldFormatFileWriter(command_result, out_file_name, out_format=self.format)
+                    of._write_results(f)
+
     def mult_mol_writer(self, filename, obmols):
         '''
         :param filename:
@@ -604,7 +612,7 @@ class ScriptWriter:
                 return
 
         #default, including for multiple obmols that aren't special case formats above
-        with open(filename, 'w') as file:
+        with open(filename, 'a') as file:
             for mol in obmols:
                 write_ob_molecule(mol, self.format, file)
 
@@ -612,6 +620,8 @@ class ScriptWriter:
     def create_initial_mols(self):
         # chained file of initial structures
         filename = os.path.join(self.folder, "initial_normalized_coordinates." + self.format)
+        with open(filename, 'w') as file:
+            file.write('')
         for mol_results in self.results:
             for result in mol_results:
                 obmolwriter = OBMolWriter()
@@ -623,12 +633,14 @@ class ScriptWriter:
     def create_symm_mols(self):
         # chained file of symmetric structures
         filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format)
+        with open(filename, 'w') as file:
+            file.write('')
         for mol_results in self.results:
             for result in mol_results:
                 obmolwriter = OBMolWriter()
                 obmols = obmolwriter.obm_from_result(result)
                 for obmol in obmols:
-                    obmolwriter.set_obm_from_original(obmol, result)
+                    obmolwriter.set_obm_from_symmetric(obmol, result)
                 self.mult_mol_writer(filename, obmols)
 
 

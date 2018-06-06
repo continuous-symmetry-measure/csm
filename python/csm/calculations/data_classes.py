@@ -113,7 +113,7 @@ class Operation:
 class CSMResult:
     def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
         #input
-        self.molecule=state.molecule #not yet denormalized
+        self.molecule=state.molecule.copy() #not yet denormalized
         self.normalized_molecule_coords = np.array(self.molecule.Q)
         self.molecule.de_normalize()
         self.operation=operation

@@ -175,8 +175,11 @@ def run(args=[]):
                 line_args['molecule'] = molecule
                 result = do_calculation(line_args)
                 mol_results.append(result)
-                if len(dictionary_args['normalizations']) > 0:
-                    norm_calc(result, dictionary_args['normalizations'])
+                try:
+                    if len(dictionary_args['normalizations']) > 0:
+                        norm_calc(result, dictionary_args['normalizations'])
+                except KeyError:
+                    pass
             total_results.append(mol_results)
         write_results(total_results, **dictionary_args)
         return total_results
