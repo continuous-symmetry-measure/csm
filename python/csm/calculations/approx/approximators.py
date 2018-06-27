@@ -597,7 +597,7 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
 
 class ApproxCalculation(_OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
-                 log_func=lambda *args: None, timeout=100, selective=False, num_selected=10, *args, **kwargs):
+                 log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
         self.operation=operation
         self._molecule = molecule
 
@@ -619,14 +619,16 @@ class ApproxCalculation(_OptionalLogger):
             self._log("There are", len(self._initial_directions),
                       "initial directions to search for the best permutation")
 
-        self.timeout = timeout
+
         self.selective = selective
         self.num_selected = num_selected
         self.statistics = ApproxStatistics(self._initial_directions)
         self._max_iterations = 30
-        self.start_time=now()
 
-    def calculate(self):
+
+    def calculate(self, timeout=100, *args, **kwargs):
+        self.start_time = now()
+        self.timeout = timeout
         result=self._calculate()
         self.result = CSMResult(result, self.operation, overall_stats={"runtime":run_time(self.start_time)}, ongoing_stats={"approx":self.statistics.to_dict()})
         return self.result
@@ -689,14 +691,14 @@ class ApproxCalculation(_OptionalLogger):
 
 class ParallelApprox(ApproxCalculation):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
-                 log_func=None, timeout=100, selective=False, num_selected=10, pool_size=0, *args, **kwargs):
+                 log_func=None, selective=False, num_selected=10, pool_size=0, *args, **kwargs):
         if log_func is not None:
             raise ValueError("Cannot run logging on approx in parallel calculation")
         self.pool_size=pool_size
         if pool_size==0:
             self.pool_size= multiprocessing.cpu_count() - 1
         super().__init__(operation, molecule, direction_chooser, approx_algorithm,
-                         log_func, timeout, selective, num_selected)
+                         log_func=log_func, selective=selective, num_selected=num_selected)
 
     def _calculate(self):
         if self.operation.type == 'CI' or (self.operation.type == 'SN' and self.operation.order == 2):

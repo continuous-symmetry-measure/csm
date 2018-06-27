@@ -66,7 +66,7 @@ class ExactStatistics:
         return self._truecount
 
 class ExactCalculation:
-    def __init__(self, operation, molecule, keep_structure=False, perm=None, no_constraint=False, timeout=300, callback_func=None, *args, **kwargs):
+    def __init__(self, operation, molecule, keep_structure=False, perm=None, no_constraint=False, callback_func=None, *args, **kwargs):
         """
         A class for running the exact CSM Algorithm
         :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry
@@ -85,35 +85,35 @@ class ExactCalculation:
         self.keep_structure=keep_structure
         self.perm=perm
         self.no_constraint=no_constraint
-        self.timeout=timeout
-        self.callback_func=callback_func
-        self.start_time=now()
+        self.callback_func = callback_func
 
-    def calculate(self):
+
+    def calculate(self, timeout=300, *args, **kwargs):
+        self.start_time = now()
         op_type=self.operation.type
         op_order=self.operation.order
         molecule=self.molecule
         keep_structure=self.keep_structure
         perm=self.perm
         no_constraint=self.no_constraint
-        timeout=self.timeout
+
 
         if op_type == 'CH':  # Chirality
             # sn_max = op_order
             # First CS
-            best_result = self.csm_operation('CS', 2, molecule, keep_structure, perm, no_constraint, timeout)
+            best_result = self.csm_operation('CS', 2, molecule, keep_structure, perm, no_constraint, timeout=timeout)
             best_result = best_result._replace(op_type='CS')  # unclear why this line isn't redundant
             if best_result.csm > MINDOUBLE:
                 # Try the SN's
                 for op_order in range(2, self.operation.order + 1, 2):
-                    result = self.csm_operation('SN', op_order, molecule, keep_structure, perm, no_constraint, timeout)
+                    result = self.csm_operation('SN', op_order, molecule, keep_structure, perm, no_constraint, timeout=timeout)
                     if result.csm < best_result.csm:
                         best_result = result._replace(op_type='SN', op_order=op_order)
                     if best_result.csm < MINDOUBLE:
                         break
 
         else:
-            best_result = self.csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, timeout)
+            best_result = self.csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint, timeout=timeout)
 
         overall_stats = self.statistics.to_dict()
         overall_stats["runtime"]=run_time(self.start_time)

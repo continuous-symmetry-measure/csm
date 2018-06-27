@@ -9,8 +9,8 @@ from csm.molecule.molecule import Molecule, MoleculeFactory
 from csm.input_output.formatters import csm_log as print
 
 def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
-    ec= ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm, no_constraint, timeout)
-    ec.calculate()
+    ec= ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm, no_constraint)
+    ec.calculate(timeout)
     return ec.result
 
 

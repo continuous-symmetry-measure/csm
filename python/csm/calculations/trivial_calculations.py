@@ -30,7 +30,7 @@ class TrivialCalculation:
         self.statistics={}
         self.start_time=datetime.datetime.now()
 
-    def calculate(self):
+    def calculate(self, *args, **kwargs):
         molecule=self.molecule
         if molecule.chains and self.use_chains:
             best = CSMState(molecule=molecule, op_type=self.operation.type, op_order=self.operation.order, csm=MAXDOUBLE)
