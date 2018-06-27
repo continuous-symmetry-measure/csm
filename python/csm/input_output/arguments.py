@@ -94,6 +94,7 @@ def _create_parser():
     commands_args_=commands.add_parser('command', help='provide a command file for running calculations')
     command_args=commands_args_.add_argument_group("Command args")
     command_args.add_argument('comfile', help="the file that contains the commands")
+    command_args.add_argument('--old-cmd', help="the old format with csm sym __INPUT__ __OUTPUT__ --approx etc")
     add_input_output_utility_func(commands_args_)
 
     #READ
@@ -248,6 +249,7 @@ def _process_arguments(parse_res):
 
         if parse_res.command == "command":
             dictionary_args["command_file"]=parse_res.comfile
+            dictionary_args["old_command"]=parse_res.old_cmd
         else:
             # get shared arguments:
             #types=parse_res.type
@@ -330,3 +332,42 @@ def get_parsed_args(args):
         parser.error("You must select a command from: read, exact, approx, trivial, write")
     processed_args = _process_arguments(parsed_args)
     return processed_args
+
+
+def old_cmd_converter(cmd):
+    '''
+    receives a command string. returns a valid (in the new args format) set of args.
+    used by --command to read lines from a file
+    :param cmd:
+    :return:
+    '''
+    parser = _create_parser()
+    commands = parser._subparsers._group_actions[0]._name_parser_map
+
+    if cmd[:3]=="csm":
+        cmd=cmd[3:]
+    args = cmd.split()
+    symm = args[0]
+    input = args[1]
+    output = args[2]
+    command = "exact"
+    if "--trivial" in args:
+        command = "trivial"
+    if "--approx" in args:
+        command = "approx"
+
+    final_args = [command, symm]
+    allowed_args = commands[command]._option_string_actions
+
+    prev_arg_fine = False
+    for arg in args[3:]:
+        if arg[:2] != "--":
+            if prev_arg_fine:
+                final_args.append(arg)
+        if arg in allowed_args:
+            final_args.append(arg)
+            prev_arg_fine = True
+        else:
+            prev_arg_fine = False
+
+    return final_args

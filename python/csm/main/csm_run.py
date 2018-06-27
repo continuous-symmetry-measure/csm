@@ -7,7 +7,7 @@ import os
 from csm.calculations.approx.dirs import get_direction_chooser
 from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import CSMResult, Operation
-from csm.input_output.arguments import get_parsed_args
+from csm.input_output.arguments import get_parsed_args, old_cmd_converter
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox, DirectionChooser
 from csm.input_output.readers import read_perm, read_from_sys_std_in
 from csm.input_output.writers import OldFormatFileWriter, ScriptWriter
@@ -119,12 +119,29 @@ def do_calculation(dictionary_args):
 
     #run the calculation
     try:
-        calc.calculate()
+        calc.calculate(**dictionary_args)
     except CalculationTimeoutError as e:
         print("Timed out")
         return
     return calc.result
 
+
+def get_command_args(dictionary_args):
+    args_array = []
+    command_file = dictionary_args["command_file"]
+    with open(command_file, 'r') as file:
+        for line in file:
+            if dictionary_args["old_command"]:
+                fixed_args = old_cmd_converter(line)
+            else:
+                fixed_args = line.split()
+
+            try:
+                cmd_arg = get_parsed_args(fixed_args)
+                args_array.append(cmd_arg)
+            except:  # want to be able to run even if some lines are invalid
+                print("failed to read args from line", line)
+    return args_array
 
 def run(args=[]):
     print("CSM version %s" % __version__)
@@ -147,6 +164,11 @@ def run(args=[]):
         write_results(results, **dictionary_args)
 
     else:
+        if command == "command":
+            args_array=get_command_args(dictionary_args)
+        else:
+            args_array=[dictionary_args]
+
         if dictionary_args["in_file_name"]:
             molecules = read_molecules(**dictionary_args)
         else:
@@ -154,18 +176,7 @@ def run(args=[]):
             less_raw_json=json.loads(raw_json)
             molecules=[Molecule.from_dict(json_dict) for json_dict in less_raw_json]
 
-        if command == "command":
-            args_array = []
-            command_file = dictionary_args["command_file"]
-            with open(command_file, 'r') as file:
-                for line in file:
-                    try:
-                        cmd_arg = get_parsed_args(line.split())
-                        args_array.append(cmd_arg)
-                    except: #want to be able to run even if some lines are invalid
-                        print("failed to read args from line", line)
-        else:
-            args_array=[dictionary_args]
+
 
         total_results=[]
 
