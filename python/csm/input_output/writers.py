@@ -212,6 +212,7 @@ class ResultWriter:
     """
 
     def __init__(self, result, format, print_local=False, *args, **kwargs):
+        #make result an array of arrays if it not already so
         self.result = result
         self.op_name = result.operation.name
         self.format = str.lower(format)
@@ -392,10 +393,16 @@ class OldFormatFileWriter(ResultWriter):
 class ScriptWriter:
     def __init__(self, results, format, out_file_name=None, **kwargs):
         '''
-        :param results: an array of arrays of CSMResults
+        :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
+        by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
+        a single array of results will be treated as multiple commands on one molecule (ie, as an internal array of commands wrapped in single molecule array)
         :param format: molecule format to output to
         :param out_file_name: if none is provided, the current working directory/csm_results will be used
         '''
+        if not isinstance(results, list):
+            results = [results]
+        if not isinstance(results[0], list):
+            results = [results]
         self.results=results
         self.format=format
         if not out_file_name:
