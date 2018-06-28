@@ -959,6 +959,8 @@ class MoleculeReader:
             format = get_format(format, filename)
         if not conv.SetInFormat(format):
             raise ValueError("Error setting openbabel format to" + format)
+        if format=="txt":
+            raise ValueError("CSM does not support .txt format openbabel conversions")
         if not babel_bond:
             conv.SetOptions("b", conv.INOPTIONS)
         notatend = conv.ReadFile(obmol, filename)
@@ -1191,6 +1193,8 @@ class MoleculeReader:
         mol.normalize()
 
         return mol
+
+
 
 
 def mol_string_from_obm(obmol, format):
