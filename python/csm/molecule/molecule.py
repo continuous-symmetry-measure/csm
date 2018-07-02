@@ -852,7 +852,7 @@ class MoleculeReader:
                                  use_chains=False, babel_bond=False,
                                  remove_hy=False, ignore_symm=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
-                                 keep_structure=False, select_atoms=[]):
+                                 keep_structure=False, select_atoms=[], **kwargs):
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -974,7 +974,7 @@ class MoleculeReader:
         return obmols
 
     @staticmethod
-    def mol_from_obm(obmols, format, babel_bond=False, ignore_symm=False, use_mass=False, read_fragments=False):
+    def mol_from_obm(obmols, format, babel_bond=False, ignore_symm=False, use_mass=False, read_fragments=False, **kwargs):
         """
         :param obmol: OBmol molecule
         :param args_dict: dictionary of processed command line arguments
@@ -1202,21 +1202,31 @@ class MoleculeReader:
             babel_bond=in_mol._babel_bond
             kwargs["babel_bond"]=babel_bond
 
+        format=in_mol._format
+        try:
+            if kwargs["in_format"]:
+                format=kwargs["in_format"]
+        except KeyError:
+            pass
+
+
+
         obms=MoleculeReader._obm_from_strings(in_mol._file_content,
-                                        in_mol._format,
+                                        format,
                                         babel_bond)
 
         try:
             if kwargs["read_fragments"]:
-                out_mol = MoleculeReader.mol_from_obm(obms, in_mol._format, **kwargs)
-                out_mol = MoleculeReader._process_single_molecule(out_mol, **kwargs)
+                out_mol = MoleculeReader.mol_from_obm(obms, format, **kwargs)
+                out_mol = MoleculeReader._process_single_molecule(out_mol, format, **kwargs)
                 return out_mol
         except KeyError:
             pass
 
         obm=obms[0]
         out_mol = MoleculeReader.mol_from_obm([obm], format, **kwargs)
-        out_mol = MoleculeReader._process_single_molecule(out_mol, **kwargs)
+        kwargs.pop("in_file_name")
+        out_mol = MoleculeReader._process_single_molecule(out_mol, None, format,  **kwargs)
         return out_mol
 
 
