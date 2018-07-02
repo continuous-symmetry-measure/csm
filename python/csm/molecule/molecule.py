@@ -1194,6 +1194,30 @@ class MoleculeReader:
 
         return mol
 
+    @staticmethod
+    def redo_molecule(in_mol, **kwargs):
+        if "babel_bond" in kwargs:
+            babel_bond=kwargs["babel_bond"]
+        else:
+            babel_bond=in_mol._babel_bond
+            kwargs["babel_bond"]=babel_bond
+
+        obms=MoleculeReader._obm_from_strings(in_mol._file_content,
+                                        in_mol._format,
+                                        babel_bond)
+
+        try:
+            if kwargs["read_fragments"]:
+                out_mol = MoleculeReader.mol_from_obm(obms, in_mol._format, **kwargs)
+                out_mol = MoleculeReader._process_single_molecule(out_mol, **kwargs)
+                return out_mol
+        except KeyError:
+            pass
+
+        obm=obms[0]
+        out_mol = MoleculeReader.mol_from_obm([obm], format, **kwargs)
+        out_mol = MoleculeReader._process_single_molecule(out_mol, **kwargs)
+        return out_mol
 
 
 
