@@ -9,6 +9,9 @@ def format_perm_count(num):
 def format_CSM(num):
     return "%.4lf" % (abs(num))
 
+def line_format(line):
+    return "%02d" % line
+
 def non_negative_zero(number):
     if math.fabs(number)<0.00001:
         return 0.0000

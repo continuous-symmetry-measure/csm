@@ -180,8 +180,7 @@ class ExactCalculation:
         else:
             best_result=ec.csm_operation(operation.type, operation.order, molecule, perm=perm)
 
-        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(perm, operation.order,
-                                                                                       operation.type)
+        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(perm, operation)
         best_result=best_result._replace(num_invalid=num_invalid)
         return best_result
 

@@ -242,6 +242,7 @@ class _PermFromDirBuilder(_OptionalLogger):
     def __init__(self, operation, molecule, log_func, timeout):
         self._log_func = log_func
         self._molecule = molecule
+        self.operation=operation
         self._op_type = operation.type
         self._op_order = operation.order
         self.timeout = timeout
@@ -464,8 +465,7 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
         return perm
 
     def cookie_dough(self, perm):
-        falsecount, num_invalid, cycle_counts, indices_in_bad_cycles = check_perm_cycles(perm, self._op_order,
-                                                                                         self._op_type)
+        falsecount, num_invalid, cycle_counts, indices_in_bad_cycles = check_perm_cycles(perm, self.operation)
         return perm
 
 

@@ -2,7 +2,7 @@ import json
 
 import os
 
-from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count
+from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count, line_format
 import io
 from openbabel import OBConversion
 from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_cycles, cart2sph
@@ -35,8 +35,7 @@ def print_structure(f, result):
                     "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
             if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
-                falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(result.perm, result.operation.order,
-                                                                                       result.operation.type)
+                falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(result.perm, result.operation)
                 f.write(
                     "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
                         falsecount, "cycle" if falsecount == 1 else "cycles",
@@ -203,7 +202,7 @@ class OBMolWriter:
 
 
 # resultwriters
-class ResultWriter:
+class _ResultWriter:
     """
     A class for writing results. It can write molecules to various openbabel and CSM formats, 
     can write headers, local csm, permutation, etc. Most functions prefixed write_ expect a filestream. 
@@ -311,7 +310,7 @@ class ResultWriter:
 
     def print_chain_perm(self):
         if len(self.result.molecule.chains)>1:
-            print("Chain perm: ", self.result.chain_perm_string())
+            print("Chain perm: ", self.result.chain_perm_string)
 
 class ApproxStatisticWriter:
     def __init__(self, statistics, stat_file_name, polar):
@@ -364,9 +363,9 @@ class ApproxStatisticWriter:
                 except:
                     file.write(start_str + "failed to read statistics\n")
 
-class OldFormatFileWriter(ResultWriter):
+class OldFormatFileWriter(_ResultWriter):
     """
-    A ResultWriter class that writes to a file 
+    A _ResultWriter class that writes to a file
     """
 
     def __init__(self, result, out_file_name, print_local=False, json_output=False, out_format=None, *args, **kwargs):
@@ -395,14 +394,15 @@ class ScriptWriter:
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
-        a single array of results will be treated as multiple commands on one molecule (ie, as an internal array of commands wrapped in single molecule array)
+        a single array of results will be treated as multiple molecules and one command
         :param format: molecule format to output to
         :param out_file_name: if none is provided, the current working directory/csm_results will be used
         '''
-        if not isinstance(results, list):
-            results = [results]
-        if not isinstance(results[0], list):
-            results = [results]
+        try:
+            if not isinstance(results[0], list): #results is a single array
+                results = [results]
+        except TypeError: #results isn't an array at all
+            results=[[results]]
         self.results=results
         self.format=format
         if not out_file_name:
@@ -422,13 +422,17 @@ class ScriptWriter:
         self.create_symm_mols()
         self.create_initial_mols()
 
+    def _get_line_header(self, index, result):
+        return line_format(index) + "_" + result.operation.name
+
     def create_CSM_tsv(self):
     #creates a tsv file with CSM per molecule
         filename = os.path.join(self.folder, "csm.txt")
         with open(filename, 'w') as f:
             f.write("\t")
-            for index in range(len(self.results[0])):
-                f.write("cmd" + str(index) + "\t")
+            for index, res in enumerate(self.results[0]):
+                f.write(self._get_line_header(index, res))
+                f.write("\t")
             f.write("\n")
             for index, mol_results in enumerate(self.results):
                 f.write("Molecule "+str(index))
@@ -438,21 +442,25 @@ class ScriptWriter:
 
     def create_perm_tsv(self):
         #creates a tsv for permutations (needs to handle extra long permutations somehow)
-        filename = os.path.join(self.folder, "perms.tsv")
+        filename = os.path.join(self.folder, "permutation.txt")
         with open(filename, 'w') as f:
+            f.write("#Molecule\t#Command\tPermutation")
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write(str(mol_index)+"\tL_"+str(line_index)+"\t")
+                    f.write(str(mol_index)+"\t")
+                    f.write(self._get_line_header(line_index, command_result))
                     f.write("\t")
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")
 
     def create_dir_tsv(self):
-        filename = os.path.join(self.folder, "dirs.tsv")
+        filename = os.path.join(self.folder, "directional.txt")
         with open(filename, 'w') as f:
+            f.write("#Molecule\t#Command\tX\tY\tZ")
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write(str(mol_index)+"\tL_"+str(line_index)+"\t")
+                    f.write(str(mol_index))
+                    f.write(self._get_line_header(line_index, command_result))
                     f.write("\t")
                     write_array_to_file(f, command_result.dir, separator="\t")
                     f.write("\n")
@@ -464,10 +472,10 @@ class ScriptWriter:
         header_lines_2="\n\t"
         for line_index, command_result in enumerate(self.results[0]):
                 for key in sorted(command_result.overall_statistics):
-                    header_lines_1+="cmd"+str(line_index)+"\t"
+                    header_lines_1+= self._get_line_header(line_index, command_result)
                     header_lines_2 += key + "\t"
 
-        filename = os.path.join(self.folder, "extra.tsv")
+        filename = os.path.join(self.folder, "extra.tab")
         with open(filename, 'w') as f:
             f.write(header_lines_1+header_lines_2+"\n")
             for mol_index, mol_results in enumerate(self.results):
@@ -564,7 +572,7 @@ class ScriptWriter:
                 mol_results[0].molecule.print_equivalence_class_summary(True, f)
                 f.write("\n")
                 for line_index, command_result in enumerate(mol_results):
-                    f.write("cmd"+str(line_index)+"\n")
+                    f.write(self._get_line_header(line_index, command_result))
                     if len(command_result.molecule.chains) > 1:
                         f.write("\nChain perm: "+ command_result.chain_perm_string)
                     print_structure(f, command_result)

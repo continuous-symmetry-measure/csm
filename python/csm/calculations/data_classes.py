@@ -131,8 +131,7 @@ class CSMResult:
         self.overall_statistics=overall_stats
         self.ongoing_statistics=ongoing_stats
 
-        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, operation.order,
-                                                                                       operation.type)
+        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, operation)
         self.overall_statistics["# of illegal cycles"]=falsecount
         self.overall_statistics["% molecules in illegal cycles"]= num_invalid / len(self.molecule)
         try:

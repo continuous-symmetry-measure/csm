@@ -51,7 +51,7 @@ def create_rotation_matrix(iOp, op_type, op_order, dir):
 
 
 
-def check_perm_cycles(perm, op_order, op_type):
+def check_perm_cycles(perm, operation):
     '''
     This function checks the cycles in a given permutation according to the provided operation order and type.
     It counts the legal and illegal cycles in the permutation
@@ -61,6 +61,8 @@ def check_perm_cycles(perm, op_order, op_type):
     :return: the number of illegal cycles, the number of molecules in illegal cycles, a dictionary of cycle lengths-
     with key =length cycle, val= mnumber of cycles of that length, and an array of the indices in bad cycles
     '''
+    op_order=operation.order
+    op_type=operation.type
     checked=[False]*len(perm)
     num_molecules_in_bad_cycles=0
     num_good_cycles=0

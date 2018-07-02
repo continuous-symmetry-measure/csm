@@ -14,7 +14,7 @@ def check_perm_validity(mol, perm, **kwargs):
     :param mol: the molecule being permuted
     :param perm: the permutation
     '''
-    falsecount, num_invalid, cycle_counts, bad_indices= check_perm_cycles(perm, kwargs['op_order'], kwargs['op_type'])
+    falsecount, num_invalid, cycle_counts, bad_indices= check_perm_cycles(perm, kwargs['operation'])
     if falsecount>0:
         logger.warning("Permutation does not maintain cycle structure")
     if not check_perm_equivalence(mol, perm):
