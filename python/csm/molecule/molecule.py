@@ -1083,7 +1083,12 @@ class MoleculeReader:
 
             except:
                 pass  # assume there are no chains
-        return Molecule(atoms)
+        mol=Molecule(atoms)
+        with open(filename, 'r') as file:
+            mol._file_content = file.read()
+        mol._babel_bond = False
+        mol.format = "csm"
+        return mol
 
     @staticmethod
     def _read_pdb_connectivity_and_chains(filename, mol, read_fragments, babel_bond):
