@@ -1087,7 +1087,7 @@ class MoleculeReader:
         with open(filename, 'r') as file:
             mol._file_content = file.read()
         mol._babel_bond = False
-        mol.format = "csm"
+        mol._format = "csm"
         return mol
 
     @staticmethod
