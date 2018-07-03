@@ -20,8 +20,10 @@ def read_molecules(**kwargs):
                     mol = MoleculeReader.from_file(mol_file, **kwargs)
                     mols.append(mol)
                 except Exception as e:
-                    if mol_file[:-3] in ["mol", "pdb", "sdf", "xyz", "csm", "cif"]:
+                    if mol_file[-3:] in ["mol", "pdb", "sdf", "xyz", "csm", "cif"]:
                         print("failed to create a molecule from", file_name, e)
+                    #else:
+                    #    print(file_name, "was not read")
             break
     elif not os.path.isfile(input_name):
         raise ValueError("invalid file/folder name for molecule")
