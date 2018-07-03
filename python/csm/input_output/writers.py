@@ -424,7 +424,7 @@ class ScriptWriter:
         self.create_initial_mols()
 
     def _get_line_header(self, index, result):
-        return line_format(index) + "_" + result.operation.name
+        return line_format(index) + "_" + result.operation.op_code
 
     def create_CSM_tsv(self):
     #creates a tsv file with CSM per molecule

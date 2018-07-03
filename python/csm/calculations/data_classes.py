@@ -20,6 +20,7 @@ CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 class Operation:
     def __init__(self, op, sn_max=8, init=True):
+        self.op_code=op
         if init:
             op=self._get_operation_data(op)
             self.type= op.type
@@ -27,6 +28,7 @@ class Operation:
             if op.type=="CH":
                 self.order=sn_max
             self.name = op.name
+
 
     def _get_operation_data(self, opcode):
         """
