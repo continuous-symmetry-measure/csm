@@ -390,7 +390,7 @@ class OldFormatFileWriter(_ResultWriter):
                 self._write_results(f)
 
 class ScriptWriter:
-    def __init__(self, results, format, out_file_name=None, **kwargs):
+    def __init__(self, results, format, out_file_name=None, polar=False, **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
@@ -410,6 +410,7 @@ class ScriptWriter:
         if not os.path.isdir(out_file_name):
             os.mkdir(out_file_name)
         self.folder=out_file_name
+        self.polar=polar
 
     def write(self):
         self.create_CSM_tsv()
@@ -514,7 +515,6 @@ class ScriptWriter:
 
     def _write_approx_statistics(self, filename, stats):
         with open (filename, 'w') as f:
-            self.polar = False
             if self.polar:
                 f.write("Dir Index"
                         "\tr_i\tth_i\tph_i"
@@ -587,9 +587,12 @@ class ScriptWriter:
             for line_index, command_result in enumerate(mol_results):
                 file_name="mol"+str(mol_index)+"_cmd"+str(line_index)+".txt"
                 out_file_name= os.path.join(out_folder, file_name)
-                of=OldFormatFileWriter(command_result, out_file_name, out_format=self.format)
-                with open(out_file_name, 'w', encoding='utf-8') as f:
-                    of._write_results(f)
+                try:
+                    of=OldFormatFileWriter(command_result, out_file_name, out_format=command_result.molecule._format)
+                    with open(out_file_name, 'w', encoding='utf-8') as f:
+                        of._write_results(f)
+                except Exception as e:
+                    print("failed to write legacy file for"+file_name+": "+str(e))
 
     def create_legacy_file(self):
         out_file_name=os.path.join(self.folder, 'legacy.txt')
