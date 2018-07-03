@@ -2,7 +2,7 @@ import json
 
 import os
 
-from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count, line_format
+from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count
 import io
 from openbabel import OBConversion
 from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_cycles, cart2sph
@@ -424,19 +424,28 @@ class ScriptWriter:
         self.create_initial_mols()
 
     def _get_line_header(self, index, result):
-        return line_format(index) + "_" + result.operation.op_code
+        index_str = "%02d" % index
+        return "L"+index_str + "_" + result.operation.op_code
+
+    def _get_mol_header(self, mol_index, result):
+        try:
+            mol_index=result.molecule.code
+        except:
+            pass
+        mol_str="%04d" % mol_index
+        return mol_str
 
     def create_CSM_tsv(self):
     #creates a tsv file with CSM per molecule
         filename = os.path.join(self.folder, "csm.txt")
         with open(filename, 'w') as f:
-            f.write("\t")
+            f.write("#Molecule\t")
             for index, res in enumerate(self.results[0]):
                 f.write(self._get_line_header(index, res))
                 f.write("\t")
             f.write("\n")
             for index, mol_results in enumerate(self.results):
-                f.write("Molecule "+str(index))
+                f.write(self._get_mol_header(index, mol_results[0]))
                 for result in mol_results:
                     f.write("\t"+format_CSM(result.csm))
                 f.write("\n")
@@ -448,7 +457,7 @@ class ScriptWriter:
             f.write("#Molecule\t#Command\tPermutation")
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write(str(mol_index)+"\t")
+                    f.write(self._get_mol_header(mol_index, command_result)+"\t")
                     f.write(self._get_line_header(line_index, command_result))
                     f.write("\t")
                     write_array_to_file(f, command_result.perm, True)
@@ -460,7 +469,7 @@ class ScriptWriter:
             f.write("#Molecule\t#Command\tX\tY\tZ")
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write(str(mol_index))
+                    f.write(self._get_mol_header(mol_index, command_result)+"\t")
                     f.write(self._get_line_header(line_index, command_result))
                     f.write("\t")
                     write_array_to_file(f, command_result.dir, separator="\t")
@@ -480,7 +489,7 @@ class ScriptWriter:
         with open(filename, 'w') as f:
             f.write(header_lines_1+header_lines_2+"\n")
             for mol_index, mol_results in enumerate(self.results):
-                f.write("mol"+str(mol_index)+"\t")
+                f.write(self._get_mol_header(mol_index, command_result) + "\t")
                 for line_index, command_result in enumerate(mol_results):
                     for key in sorted(command_result.overall_statistics):
                         f.write(str(command_result.overall_statistics[key]))
@@ -508,7 +517,7 @@ class ScriptWriter:
 
         for mol_index, mol_results in enumerate(self.results):
             for line_index, command_result in enumerate(mol_results):
-                name="mol"+str(mol_index)+"_cmd"+str(line_index)
+                name="mol"+self._get_mol_header(mol_index, command_result)+"_"+self._get_line_header(line_index, command_result)
                 filename=os.path.join(out_folder, name+".tsv")
                 if command_result.ongoing_statistics:
                     self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
@@ -568,7 +577,7 @@ class ScriptWriter:
         filename = os.path.join(self.folder, "extra.txt")
         with open(filename, 'w') as f:
             for mol_index, mol_results in enumerate(self.results):
-                f.write("mol"+str(mol_index)+"\n")
+                f.write(self._get_mol_header(mol_index, mol_results[0]) + "\n")
                 mol_results[0].molecule.print_equivalence_class_summary(True, f)
                 f.write("\n")
                 for line_index, command_result in enumerate(mol_results):
@@ -580,12 +589,13 @@ class ScriptWriter:
 
 
     def create_legacy_files(self):
-        out_folder=os.path.join(self.folder, 'legacy')
+        out_folder=os.path.join(self.folder, 'old-csm-output')
         if not os.path.isdir(out_folder):
             os.mkdir(out_folder)
         for mol_index, mol_results in enumerate(self.results):
             for line_index, command_result in enumerate(mol_results):
-                file_name="mol"+str(mol_index)+"_cmd"+str(line_index)+".txt"
+                name="mol"+self._get_mol_header(mol_index, command_result)+"_"+self._get_line_header(line_index, command_result)
+                file_name=name+".txt"
                 out_file_name= os.path.join(out_folder, file_name)
                 try:
                     of=OldFormatFileWriter(command_result, out_file_name, out_format=command_result.molecule._format)
@@ -594,7 +604,8 @@ class ScriptWriter:
                 except Exception as e:
                     print("failed to write legacy file for"+file_name+": "+str(e))
 
-    def create_legacy_file(self):
+    def ___create_legacy_file(self):
+        #function for Devora to convert tests, not for lab
         out_file_name=os.path.join(self.folder, 'legacy.txt')
         with open(out_file_name, 'a', encoding='utf-8') as f:
             for mol_index, mol_results in enumerate(self.results):
