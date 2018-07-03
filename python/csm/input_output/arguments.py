@@ -94,7 +94,8 @@ def _create_parser():
     commands_args_=commands.add_parser('command', help='provide a command file for running calculations')
     command_args=commands_args_.add_argument_group("Command args")
     command_args.add_argument('comfile', help="the file that contains the commands")
-    command_args.add_argument('--old-cmd', help="the old format with csm sym __INPUT__ __OUTPUT__ --approx etc")
+    command_args.add_argument('--old-cmd', action='store_true', default=False,
+                              help="the old format with csm sym __INPUT__ __OUTPUT__ --approx etc")
     add_input_output_utility_func(commands_args_)
 
     #READ
@@ -236,16 +237,12 @@ def _process_arguments(parse_res):
     else:
         # get input/output if relevant
         dictionary_args['simple'] = parse_res.simple
-        if parse_res.input != None:
-            parse_input(dictionary_args)
-            dictionary_args["in_format"] = parse_res.in_format
-        else:
-            dictionary_args["in_file_name"]=None
-        if parse_res.output != None:
-            parse_output(dictionary_args)
-            dictionary_args["out_format"] = parse_res.out_format
-        else:
-            dictionary_args["out_file_name"]=None
+
+        parse_input(dictionary_args)
+        dictionary_args["in_format"] = parse_res.in_format
+        parse_output(dictionary_args)
+        dictionary_args["out_format"] = parse_res.out_format
+
 
         if parse_res.command == "command":
             dictionary_args["command_file"]=parse_res.comfile
@@ -334,6 +331,14 @@ def get_parsed_args(args):
     return processed_args
 
 
+
+def get_allowed_args_for_command(command):
+    parser = _create_parser()
+    commands = parser._subparsers._group_actions[0]._name_parser_map
+    allowed_args = commands[command]._option_string_actions
+    return allowed_args
+
+
 def old_cmd_converter(cmd):
     '''
     receives a command string. returns a valid (in the new args format) set of args.
@@ -341,8 +346,6 @@ def old_cmd_converter(cmd):
     :param cmd:
     :return:
     '''
-    parser = _create_parser()
-    commands = parser._subparsers._group_actions[0]._name_parser_map
 
     if cmd[:3]=="csm":
         cmd=cmd[3:]
@@ -356,8 +359,10 @@ def old_cmd_converter(cmd):
     if "--approx" in args:
         command = "approx"
 
+    modifies_molecule=False
     final_args = [command, symm]
-    allowed_args = commands[command]._option_string_actions
+    allowed_args=get_allowed_args_for_command(command)
+    allowed_mol_args=get_allowed_args_for_command('read')
 
     prev_arg_fine = False
     for arg in args[3:]:
@@ -367,7 +372,10 @@ def old_cmd_converter(cmd):
         if arg in allowed_args:
             final_args.append(arg)
             prev_arg_fine = True
+        if arg in allowed_mol_args:
+            modifies_molecule=True
+
         else:
             prev_arg_fine = False
 
-    return final_args
+    return final_args, modifies_molecule
