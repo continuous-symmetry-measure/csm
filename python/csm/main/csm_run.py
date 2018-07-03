@@ -3,6 +3,9 @@ import logging
 import sys
 import timeit
 
+from shutil import copyfile
+
+import os
 
 from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import CSMResult, Operation
@@ -46,6 +49,11 @@ def get_command_args(command_file, old_command=True):
     return args_array
 
 def do_commands(molecules, **dictionary_args):
+    if not os.path.isdir(dictionary_args["out_file_name"]):
+        os.mkdir(dictionary_args["out_file_name"])
+    copyfile(dictionary_args["command_file"], os.path.join(dictionary_args["out_file_name"], "command.txt"))
+
+
     args_array=get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
     total_results=[[] for mol in molecules]
     for args_dict, modifies_molecule in args_array:
