@@ -642,6 +642,12 @@ class ScriptWriter:
             file.write('')
         for mol_results in self.results:
             for result in mol_results:
+                if result.molecule._format=="csm":
+                    writer=CSMMolWriter()
+                    with open(filename, 'a') as f:
+                        writer.write(f, result, result.operation.name)
+                    continue
+
                 obmolwriter = OBMolWriter()
                 obmols = obmolwriter.obm_from_result(result)
                 for obmol in obmols:
@@ -655,6 +661,12 @@ class ScriptWriter:
             file.write('')
         for mol_results in self.results:
             for result in mol_results:
+                if result.molecule._format=="csm":
+                    writer=CSMMolWriter()
+                    with open(filename, 'a') as f:
+                        writer.write(f, result, result.operation.name)
+                    continue
+
                 obmolwriter = OBMolWriter()
                 obmols = obmolwriter.obm_from_result(result)
                 for obmol in obmols:
