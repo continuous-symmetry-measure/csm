@@ -6,7 +6,7 @@ import timeit
 
 from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import CSMResult, Operation
-from csm.input_output.arguments import get_parsed_args, old_cmd_converter
+from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
 from csm import __version__
 from csm.input_output.readers import read_from_sys_std_in
 from csm.main.calculate import do_calculation
@@ -32,11 +32,11 @@ def get_command_args(command_file, old_command=True):
     args_array=[]
     with open(command_file, 'r') as file:
         for line in file:
+            modifies_molecule=check_modifies_molecule(line)
             if old_command:
-                fixed_args, modifies_molecule = old_cmd_converter(line)
+                fixed_args = old_cmd_converter(line)
             else:
                 fixed_args = line.split()
-                modifies_molecule=False
             try:
                 args_dict = get_parsed_args(fixed_args)
             except:  # want to be able to run even if some lines are invalid

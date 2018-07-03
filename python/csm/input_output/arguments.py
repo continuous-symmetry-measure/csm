@@ -3,6 +3,8 @@ import logging
 
 import os
 
+from datetime import datetime
+
 from csm.calculations import permuters
 from csm.calculations.data_classes import Operation
 
@@ -16,6 +18,7 @@ class OurParser(ArgumentParser):
         sys.exit(2)
 
 def _create_parser():
+    timestamp=str(datetime.now().timestamp())
     def input_utility_func(parser):
         parser.add_argument('--remove-hy', action='store_true', default=False,
                             help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
@@ -38,7 +41,7 @@ def _create_parser():
 
     def output_utility_func(parser):
         parser.add_argument('--json-output', action='store_true', default=False,
-                            help='Print output in json format to a file')
+                            help='Print output in json format to a file. Only relevant with --legacy')
         parser.add_argument('--print-local', action='store_true', default=False,
                             help='Print the local CSM (csm for each atom) in the output file')
         parser.add_argument('--print-denorm', action='store_true', default=False,
@@ -75,13 +78,14 @@ def _create_parser():
                             )
 
     def add_input_output_utility_func(parser):
-        parser_input_args = parser.add_argument_group("Args for input (requires --input. default is read from stdin)")
-        parser_input_args.add_argument("--input", help="molecule file or folder")
+        parser_input_args = parser.add_argument_group("Args for input (requires --input)")
+        parser_input_args.add_argument("--input", help="molecule file or folder, default is current working directory", const=os.getcwd(), nargs='?')
         parser_input_args.add_argument('--in-format', help='override guessing format from input file ending with provided format',
                                 default=None)
         input_utility_func(parser_input_args)
-        parser_output_args = parser.add_argument_group("Args for output (requires --output. default is json to stdout)")
-        parser_output_args.add_argument("--output", help="output file or folder")
+        parser_output_args = parser.add_argument_group("Args for output (requires --output)")
+        parser_output_args.add_argument("--output", const=os.path.join(os.getcwd(), 'csm_results', timestamp), nargs='?',
+                                        help="output file or folder, default is 'csm_results\timestamp' folder in current working directory",)
         parser_output_args.add_argument('--out-format', help='override guessing format from output file ending with provided format',
                                 default=None)
         output_utility_func(parser_output_args)
@@ -93,20 +97,22 @@ def _create_parser():
     #command
     commands_args_=commands.add_parser('command', help='provide a command file for running calculations')
     command_args=commands_args_.add_argument_group("Command args")
-    command_args.add_argument('comfile', help="the file that contains the commands")
+    command_args.add_argument('comfile', default=os.path.join(os.getcwd(), "cmd.txt"), nargs='?',
+                              help="the file that contains the commands, default is cmd.txt in current working directory")
     command_args.add_argument('--old-cmd', action='store_true', default=False,
                               help="the old format with csm sym __INPUT__ __OUTPUT__ --approx etc")
     add_input_output_utility_func(commands_args_)
 
     #READ
     input_args = commands.add_parser('read', help="Read a molecule file into a json in CSM format", usage="csm read filename [optional args]")
-    input_args.add_argument('input', help='molecule file or folder')
+    input_args.add_argument('input', help='molecule file or folder, default is current working directory', default=os.getcwd(), nargs='?')
     input_args.add_argument('--format', help='override guessing format from file ending with provided format', default=None)
     input_utility_func(input_args)
 
     #WRITE
     out_args = commands.add_parser('write', help="Output the results of the calculation to a file", usage="csm write filename [optional args]")
-    out_args.add_argument('output', default='output.txt', help='Output file or folder')
+    out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results', timestamp), nargs='?',
+                          help="output file or folder, default is 'csm_results\timestamp' folder in current working directory")
     out_args.add_argument('--format', help='override guessing format from file ending with provided format',
                             default=None)
     output_utility_func(out_args)
@@ -122,7 +128,7 @@ def _create_parser():
     exact_args.add_argument('--output-branches', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-perms', const="DEFAULT", nargs='?',
-                            help='Writes all enumerated permutations to file. Default is current_directory/perms.csv, if --output is provided than the directory_from_that/perms.csv')
+                            help='Writes all enumerated permutations to file. Default is OUTPUT_DIR/perms.csv, or working directory/perms.csv is --output not selected')
     shared_normalization_utility_func(exact_args)
     add_input_output_utility_func(exact_args_)
 
@@ -154,8 +160,6 @@ def _create_parser():
     approx_args.add_argument('--parallel', type=int, const=0, nargs='?',
                              help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used')
     #outputs
-    approx_args.add_argument('--statistics', const="DEFAULT", nargs='?',
-                             help='Print statistics about each direction to a file. Default is current_directory/csm_statistics.txt, if --output is provided than the directory_from_that/csm_statistics.txt')
     approx_args.add_argument('--polar', action='store_true', default=False,
                              help="Print polar coordinates instead of cartesian coordinates in statistics")
     approx_args.add_argument('--print-approx', action='store_true', default=False,
@@ -205,6 +209,7 @@ def _process_arguments(parse_res):
         dictionary_args['use_sequence'] = parse_res.use_sequence
         dictionary_args['use_chains'] = parse_res.use_chains
         dictionary_args['read_fragments'] = parse_res.read_fragments
+        #dictionary_args["conn_file"]=parse_res.connect
 
         if not dictionary_args['use_chains'] and parse_res.read_fragments:
             dictionary_args['use_chains'] = True
@@ -272,7 +277,7 @@ def _process_arguments(parse_res):
                 if parse_res.output_perms=="DEFAULT":
                     try:
                         base_path= os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
-                        dictionary_args['perms_csv_name']=os.path.join(base_path, "perms.csv")
+                        dictionary_args['perms_csv_name']=os.path.join(base_path,  "perms.csv")
                     except:
                         dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
             if parse_res.command == 'approx':
@@ -309,13 +314,6 @@ def _process_arguments(parse_res):
                 #outputs:
                 dictionary_args['print_approx'] = parse_res.print_approx
                 dictionary_args['polar'] = parse_res.polar
-                dictionary_args['stat_file_name'] = parse_res.statistics
-                if parse_res.statistics=="DEFAULT":
-                    if dictionary_args["out_file_name"] is not None:
-                        base_path= os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
-                        dictionary_args['stat_file_name']=os.path.join(base_path, "csm_statistics.txt")
-                    else:
-                        dictionary_args['stat_file_name'] = os.path.join("csm_statistics.txt")
             if parse_res.command == 'trivial':
                 if parse_res.permute_chains or parse_res.use_chains:
                     dictionary_args["use_chains"]=True
@@ -338,6 +336,14 @@ def get_allowed_args_for_command(command):
     allowed_args = commands[command]._option_string_actions
     return allowed_args
 
+def check_modifies_molecule(cmd):
+    modifies_molecule=False
+    allowed_mol_args=get_allowed_args_for_command('read')
+    for arg in cmd.split():
+        if arg in allowed_mol_args:
+            modifies_molecule = True
+            break
+    return modifies_molecule
 
 def old_cmd_converter(cmd):
     '''
@@ -359,10 +365,8 @@ def old_cmd_converter(cmd):
     if "--approx" in args:
         command = "approx"
 
-    modifies_molecule=False
     final_args = [command, symm]
     allowed_args=get_allowed_args_for_command(command)
-    allowed_mol_args=get_allowed_args_for_command('read')
 
     prev_arg_fine = False
     for arg in args[3:]:
@@ -372,10 +376,9 @@ def old_cmd_converter(cmd):
         if arg in allowed_args:
             final_args.append(arg)
             prev_arg_fine = True
-        if arg in allowed_mol_args:
-            modifies_molecule=True
+
 
         else:
             prev_arg_fine = False
 
-    return final_args, modifies_molecule
+    return final_args

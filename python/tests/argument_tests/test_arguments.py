@@ -70,8 +70,7 @@ class TestApprox(Runner):
                                  r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --many-chains",
                                  r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --greedy",
                                  r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --fibonacci 20 --selective 3",
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --statistics C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutputstats.txt",
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --statistics C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutputstats.txt --polar",
+                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --polar",
                              ])
     def test_approx_args(self, run_str):
         self.run_args(run_str)
