@@ -5,13 +5,13 @@ that the code runs successfully and returns A result.
 
 
 import pytest
-from csm.main.csm_run import run
+from csm.main.csm_run import csm_run
 
 class Runner:
     def run_args(self, args_str):
         args=args_str.split()
-        results_arr=run(args)
-        result=results_arr[0][0]
+        results_arr=csm_run(args)
+        result=results_arr[0]
         assert result.csm is not None
 
 class TestExact(Runner):

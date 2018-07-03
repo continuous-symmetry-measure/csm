@@ -93,6 +93,7 @@ setup(
         'console_scripts': [
             'csm = csm.main.csm_run:run_no_return',
             'norm_csm = csm.main.normcsm:run_norm_no_return'
+            'csmsymm = csm.main.csmsymm:run_no_return'
         ]
     },
 
