@@ -1,6 +1,9 @@
 import json
 
 import os
+
+from datetime import datetime
+
 from csm import __version__
 from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count, format_unknown_str
 import io
@@ -405,10 +408,14 @@ class ScriptWriter:
             results=[[results]]
         self.results=results
         self.format=format
+
         if not out_file_name:
             out_file_name=os.path.join(os.getcwd(), 'csm_results')
-        if not os.path.isdir(out_file_name):
-            os.mkdir(out_file_name)
+
+        if os.path.isdir(out_file_name):
+            head, tail=os.path.split(out_file_name)
+            out_file_name=os.path.join(head, tail+str(datetime.now().timestamp()))
+        os.mkdir(out_file_name)
         self.folder=out_file_name
         self.polar=polar
 
