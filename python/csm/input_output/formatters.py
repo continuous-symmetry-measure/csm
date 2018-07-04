@@ -7,7 +7,7 @@ def format_perm_count(num):
     return '%.5g' % num
 
 def format_CSM(num):
-    return "%.4lf" % (abs(num))
+    return "%.6lf" % (abs(num))
 
 def non_negative_zero(number):
     if math.fabs(number)<0.00001:
