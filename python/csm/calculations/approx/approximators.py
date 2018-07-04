@@ -14,7 +14,7 @@ from csm.input_output.formatters import format_CSM
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, check_perm_cycles
 from csm.calculations.data_classes import CSMState, Operation, CSMResult
-from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError
+from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError, MINDOUBLE
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
     ConstraintsSelectedByDistancePermuter
 from csm.molecule.molecule import MoleculeFactory
@@ -625,35 +625,58 @@ class ApproxCalculation(_OptionalLogger):
         self.statistics = ApproxStatistics(self._initial_directions)
         self._max_iterations = 30
 
+    def handle_chirality(self):
+        pass
 
     def calculate(self, timeout=100, *args, **kwargs):
         self.start_time = now()
         self.timeout = timeout
-        result=self._calculate()
-        self.result = CSMResult(result, self.operation, overall_stats={"runtime":run_time(self.start_time)}, ongoing_stats={"approx":self.statistics.to_dict()})
+        overall_stats={}
+        if self.operation.type=="CH": # Chirality
+                # First CS
+                best_op=Operation('cs')
+                best_result = self._calculate(best_op)
+                if best_result.csm > MINDOUBLE:
+                    # Try the SN's
+                    for op_order in range(2, self.operation.order + 1, 2):
+                        op=Operation("S"+str(op_order))
+                        result = self._calculate(self.operation)
+                        if result.csm < best_result.csm:
+                            best_result = result
+                            best_op=op
+                        if best_result.csm < MINDOUBLE:
+                            break
+                self.operation.order=best_op.order
+                self.operation.type=best_op.type
+                overall_stats["chirality"]=best_op.op_code
+        else:
+            best_result=self._calculate(self.operation)
+        overall_stats["runtime"]=run_time(self.start_time)
+        self.result = CSMResult(best_result, self.operation, overall_stats=overall_stats,
+                                    ongoing_stats={"approx":self.statistics.to_dict()})
         return self.result
 
-    def _calculate(self):
-        if self.operation.type == 'CI' or (self.operation.type == 'SN' and self.operation.order == 2):
+    def _calculate(self, operation):
+        if operation.type == 'CI' or (operation.type == 'SN' and operation.order == 2):
             dir = [1.0, 0.0, 0.0]
-            if self.operation.type == 'SN':
+            if operation.type == 'SN':
                 op_msg = 'S2'
             else:
                 op_msg = 'CI'
             self._log("Operation %s - using just one direction: %s" % (op_msg, dir))
-            best_results = self._calculate_for_directions([dir], 1)
+            best_results = self._calculate_for_directions(operation, [dir], 1)
         else:
             if self.selective:
-                self._calculate_for_directions(self._initial_directions, 1)
+                self._calculate_for_directions(operation, self._initial_directions, 1)
                 best_dirs = []
                 sorted_csms = sorted(self.statistics.directions_arr)
                 for item in sorted_csms[:self.num_selected]:
                     best_dirs.append(item.start_dir)
                     self._log("Running again on the", self.num_selected, "best directions")
-                best_results = self._calculate_for_directions(best_dirs, self._max_iterations)
+                best_results = self._calculate_for_directions(operation, best_dirs, self._max_iterations)
 
             else:
-                best_results = self._calculate_for_directions(self._initial_directions, self._max_iterations)
+                best_results = self._calculate_for_directions(operation, self._initial_directions, self._max_iterations)
 
         best_result, least_invalid = best_results
         if least_invalid.num_invalid < best_result.num_invalid:
@@ -668,12 +691,12 @@ class ApproxCalculation(_OptionalLogger):
         return best_result
 
 
-    def _calculate_for_directions(self, dirs, max_iterations):
-        best = CSMState(molecule=self._molecule, op_type=self.operation.type, op_order=self.operation.order, csm=MAXDOUBLE,
+    def _calculate_for_directions(self, operation, dirs, max_iterations):
+        best = CSMState(molecule=self._molecule, op_type=operation.type, op_order=operation.order, csm=MAXDOUBLE,
                         num_invalid=MAXDOUBLE)
-        least_invalid = CSMState(molecule=self._molecule,  op_type=self.operation.type, op_order=self.operation.order,
+        least_invalid = CSMState(molecule=self._molecule,  op_type=operation.type, op_order=operation.order,
                                  csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
-        single_dir_approximator = SingleDirApproximator(self.operation, self._molecule,
+        single_dir_approximator = SingleDirApproximator(operation, self._molecule,
                                                         self.perm_builder, self._log,
                                                         self.timeout, max_iterations=max_iterations)
         for dir in dirs:
@@ -700,19 +723,19 @@ class ParallelApprox(ApproxCalculation):
         super().__init__(operation, molecule, direction_chooser, approx_algorithm,
                          log_func=log_func, selective=selective, num_selected=num_selected)
 
-    def _calculate(self):
-        if self.operation.type == 'CI' or (self.operation.type == 'SN' and self.operation.order == 2):
+    def _calculate(self, operation):
+        if operation.type == 'CI' or (operation.type == 'SN' and operation.order == 2):
             raise ValueError("Please don't use parallel calculation for inversion")
         else:
             if self.selective:
                 self.max_iterations = 1
-                self._calculate_for_directions(self._initial_directions)
+                self._calculate_for_directions(operation, self._initial_directions)
                 best_dirs = []
                 sorted_csms = sorted(self.statistics.directions_arr)
                 for item in sorted_csms[:self.num_selected]:
                     best_dirs.append(item.start_dir)
                 self.max_iterations = self._max_iterations
-                best_result = self._calculate_for_directions(best_dirs)
+                best_result = self._calculate_for_directions(operation, best_dirs)
 
             else:
                 self.max_iterations = self._max_iterations
@@ -720,10 +743,10 @@ class ParallelApprox(ApproxCalculation):
 
         return best_result
 
-    def _calculate_for_directions(self, dirs):
+    def _calculate_for_directions(self, operation, dirs):
         pool = multiprocessing.Pool(processes=self.pool_size)
         print("Approximating across {} processes".format(self.pool_size))
-        single_dir_approximator = SingleDirApproximator(self.operation, self._molecule,
+        single_dir_approximator = SingleDirApproximator(operation, self._molecule,
                                                         self.perm_builder, self._log,
                                                         self.timeout, max_iterations=self.max_iterations)
         pool_outputs = pool.map(single_dir_approximator.calculate, dirs)
