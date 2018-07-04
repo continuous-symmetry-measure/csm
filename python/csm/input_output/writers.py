@@ -601,7 +601,7 @@ class ScriptWriter:
         for mol_index, mol_results in enumerate(self.results):
             for line_index, command_result in enumerate(mol_results):
                 name="mol"+self._get_mol_header(mol_index, command_result)+"_"+self._get_line_header(line_index, command_result)
-                file_name=name+".txt"
+                file_name=name+"."+command_result.molecule._format
                 out_file_name= os.path.join(out_folder, file_name)
                 try:
                     of=OldFormatFileWriter(command_result, out_file_name, out_format=command_result.molecule._format)
@@ -612,7 +612,7 @@ class ScriptWriter:
 
     def ___create_legacy_file(self):
         #function for Devora to convert tests, not for lab
-        out_file_name=os.path.join(self.folder, 'legacy.txt')
+        out_file_name=os.path.join(self.folder, 'legacy.'+self.format)
         with open(out_file_name, 'a', encoding='utf-8') as f:
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
