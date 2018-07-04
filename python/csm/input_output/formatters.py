@@ -15,6 +15,13 @@ def non_negative_zero(number):
     else:
         return number
 
+def format_unknown_str(input):
+    try:
+        num=float(input)
+        return "%.4lf" % (num)
+    except:
+        return str(input)
+
 
 def csm_log(*strings, file=sys.stderr, **kwargs):
     print(*strings, **kwargs, file=file)

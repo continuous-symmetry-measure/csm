@@ -2,7 +2,7 @@ import json
 
 import os
 from csm import __version__
-from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count
+from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count, format_unknown_str
 import io
 from openbabel import OBConversion
 from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_cycles, cart2sph
@@ -21,7 +21,7 @@ def write_array_to_file(f, arr, add_one=False, separator=" "):
     for item in arr:
         if add_one:
             item = item + 1
-        f.write(str(item) + separator)
+        f.write("%.4lf" %item  + separator)
 
 def print_structure(f, result):
             # print CSM, initial molecule, resulting structure and direction according to format specified
@@ -435,9 +435,9 @@ class ScriptWriter:
 
     def _get_mol_header(self, mol_index, result):
         try:
-            mol_index=result.molecule.index
+            mol_index=result.molecule.index #index from file is primary
         except:
-            pass
+            mol_index=mol_index+1 #switch from 0-start to 1-start
         mol_str="%04d" % mol_index
         return mol_str
 
@@ -451,7 +451,7 @@ class ScriptWriter:
                 f.write("\t")
             f.write("\n")
             for index, mol_results in enumerate(self.results):
-                f.write(self._get_mol_header(index, mol_results[0]))
+                f.write(self._get_mol_header(index, mol_results[0])+"\t")
                 for result in mol_results:
                     f.write("\t"+format_CSM(result.csm))
                 f.write("\n")
@@ -460,7 +460,7 @@ class ScriptWriter:
         #creates a tsv for permutations (needs to handle extra long permutations somehow)
         filename = os.path.join(self.folder, "permutation.txt")
         with open(filename, 'w') as f:
-            f.write("#Molecule\t#Command\tPermutation")
+            f.write("#Molecule\t#Command\tPermutation\n")
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
                     f.write(self._get_mol_header(mol_index, command_result)+"\t")
@@ -472,7 +472,7 @@ class ScriptWriter:
     def create_dir_tsv(self):
         filename = os.path.join(self.folder, "directional.txt")
         with open(filename, 'w') as f:
-            f.write("#Molecule\t#Command\tX\tY\tZ")
+            f.write("#Molecule\t#Command\tX\tY\tZ\n")
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
                     f.write(self._get_mol_header(mol_index, command_result)+"\t")
@@ -498,7 +498,7 @@ class ScriptWriter:
                 f.write(self._get_mol_header(mol_index, command_result) + "\t")
                 for line_index, command_result in enumerate(mol_results):
                     for key in sorted(command_result.overall_statistics):
-                        f.write(str(command_result.overall_statistics[key]))
+                        f.write(format_unknown_str(command_result.overall_statistics[key]))
                         f.write("\t")
                 f.write("\n")
 
