@@ -408,9 +408,13 @@ class ScriptWriter:
                 results = [results]
         except TypeError: #results isn't an array at all
             results=[[results]]
+
+
         self.results=results
         self.format=format
         self.folder=out_file_name
+        os.makedirs(os.path.join(self.folder, 'approx'))
+        os.makedirs(os.path.join(self.folder, 'old-csm-output'))
         self.polar=polar
 
     def write(self):
@@ -600,8 +604,6 @@ class ScriptWriter:
 
     def create_legacy_files(self):
         out_folder=os.path.join(self.folder, 'old-csm-output')
-        if not os.path.isdir(out_folder):
-            os.mkdir(out_folder)
         for mol_index, mol_results in enumerate(self.results):
             for line_index, command_result in enumerate(mol_results):
                 name="mol"+self._get_mol_header(mol_index, command_result)+"_"+self._get_line_header(line_index, command_result)

@@ -739,7 +739,7 @@ class ParallelApprox(ApproxCalculation):
 
             else:
                 self.max_iterations = self._max_iterations
-                best_result = self._calculate_for_directions(self._initial_directions)
+                best_result = self._calculate_for_directions(operation, self._initial_directions)
 
         return best_result
 
