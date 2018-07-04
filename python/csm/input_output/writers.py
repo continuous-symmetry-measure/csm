@@ -1,7 +1,7 @@
 import json
 
 import os
-
+from csm import __version__
 from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count
 import io
 from openbabel import OBConversion
@@ -422,6 +422,12 @@ class ScriptWriter:
         self.create_legacy_files()
         self.create_symm_mols()
         self.create_initial_mols()
+        self.write_version()
+
+    def write_version(self):
+        filename = os.path.join(self.folder, "version.txt")
+        with open(filename, 'w') as file:
+            file.write("CSM VERSION: "+str(__version__))
 
     def _get_line_header(self, index, result):
         index_str = "%02d" % index
@@ -429,7 +435,7 @@ class ScriptWriter:
 
     def _get_mol_header(self, mol_index, result):
         try:
-            mol_index=result.molecule.code
+            mol_index=result.molecule.index
         except:
             pass
         mol_str="%04d" % mol_index
