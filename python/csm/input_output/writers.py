@@ -413,8 +413,8 @@ class ScriptWriter:
         self.results=results
         self.format=format
         self.folder=out_file_name
-        os.makedirs(os.path.join(self.folder, 'approx'))
-        os.makedirs(os.path.join(self.folder, 'old-csm-output'))
+        os.makedirs(os.path.join(self.folder, 'approx'), exist_ok=True)
+        os.makedirs(os.path.join(self.folder, 'old-csm-output'), exist_ok=True)
         self.polar=polar
 
     def write(self):
