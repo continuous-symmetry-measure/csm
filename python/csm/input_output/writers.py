@@ -24,7 +24,9 @@ def write_array_to_file(f, arr, add_one=False, separator=" "):
     for item in arr:
         if add_one:
             item = item + 1
-        f.write("%.4lf" %item  + separator)
+            f.write(str(item) + separator)
+        else:
+            f.write("%.4lf" %item  + separator)
 
 def print_structure(f, result):
             # print CSM, initial molecule, resulting structure and direction according to format specified
@@ -408,14 +410,6 @@ class ScriptWriter:
             results=[[results]]
         self.results=results
         self.format=format
-
-        if not out_file_name:
-            out_file_name=os.path.join(os.getcwd(), 'csm_results')
-
-        if os.path.isdir(out_file_name):
-            head, tail=os.path.split(out_file_name)
-            out_file_name=os.path.join(head, tail+str(datetime.now().timestamp()))
-        os.mkdir(out_file_name)
         self.folder=out_file_name
         self.polar=polar
 
@@ -590,13 +584,16 @@ class ScriptWriter:
         filename = os.path.join(self.folder, "extra.txt")
         with open(filename, 'w') as f:
             for mol_index, mol_results in enumerate(self.results):
+                f.write("\n")
                 f.write(self._get_mol_header(mol_index, mol_results[0]) + "\n")
                 mol_results[0].molecule.print_equivalence_class_summary(True, f)
                 f.write("\n")
                 for line_index, command_result in enumerate(mol_results):
+                    f.write("\n")
                     f.write(self._get_line_header(line_index, command_result))
                     if len(command_result.molecule.chains) > 1:
                         f.write("\nChain perm: "+ command_result.chain_perm_string)
+                    f.write("\n")
                     print_structure(f, command_result)
                 f.write("\n-----------------------------\n")
 

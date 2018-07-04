@@ -231,6 +231,18 @@ def _process_arguments(parse_res):
         dictionary_args['legacy']=parse_res.legacy
 
     dictionary_args = {}
+
+    try:
+        out_file_name=parse_res.output
+        if os.path.isdir(out_file_name):
+            head, tail = os.path.split(out_file_name)
+            out_file_name = os.path.join(head, tail + str(datetime.now().timestamp()))
+        os.mkdir(out_file_name)
+    except AttributeError as e: #there is no output, eg in Read
+        pass
+    except TypeError as e: #output is None, eg in a line of command
+        pass
+
     dictionary_args["command"]=parse_res.command
     if parse_res.command == "read":
         dictionary_args["in_format"]=parse_res.format
