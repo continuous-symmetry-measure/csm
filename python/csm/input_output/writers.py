@@ -451,15 +451,14 @@ class ScriptWriter:
     #creates a tsv file with CSM per molecule
         filename = os.path.join(self.folder, "csm.txt")
         with open(filename, 'w') as f:
-            f.write("#Molecule\t")
+            f.write("%-10s"%"#Molecule")
             for index, res in enumerate(self.results[0]):
-                f.write(self._get_line_header(index, res))
-                f.write("\t")
+                f.write("%-10s" % (self._get_line_header(index, res)))
             f.write("\n")
             for index, mol_results in enumerate(self.results):
-                f.write(self._get_mol_header(index, mol_results[0])+"\t")
+                f.write("%-10s" % self._get_mol_header(index, mol_results[0]))
                 for result in mol_results:
-                    f.write("\t"+format_CSM(result.csm))
+                    f.write("%-10s" % format_CSM(result.csm))
                 f.write("\n")
 
     def create_perm_tsv(self):
