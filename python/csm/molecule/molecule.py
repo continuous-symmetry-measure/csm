@@ -813,7 +813,7 @@ class MoleculeReader:
                   use_chains=False, babel_bond=False,
                   remove_hy=False, ignore_symm=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
-                  keep_structure=False, select_atoms=[],
+                  keep_structure=False, select_atoms=[], conn_file=None,
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
@@ -845,14 +845,14 @@ class MoleculeReader:
                                                        use_chains, babel_bond,
                                                        remove_hy, ignore_symm, use_mass,
                                                        read_fragments, use_sequence,
-                                                       keep_structure, select_atoms)
+                                                       keep_structure, select_atoms, conn_file)
 
     @staticmethod
     def _process_single_molecule(mol, in_file_name, format, initialize=True,
                                  use_chains=False, babel_bond=False,
                                  remove_hy=False, ignore_symm=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
-                                 keep_structure=False, select_atoms=[], **kwargs):
+                                 keep_structure=False, select_atoms=[], conn_file=None, **kwargs):
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -867,6 +867,8 @@ class MoleculeReader:
 
         if format == "pdb":
             mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
+        if conn_file and format=="xyz":
+            MoleculeReader.read_xyz_connectivity(mol, conn_file)
         if not mol.bondset:
             if keep_structure:
                 raise ValueError(
@@ -889,39 +891,35 @@ class MoleculeReader:
                            use_chains=False, babel_bond=False,
                            remove_hy=False, ignore_symm=False, use_mass=False,
                            read_fragments=False, use_sequence=False,
-                           keep_structure=False, select_atoms=[],
+                           keep_structure=False, select_atoms=[], conn_file=None,
                            *args, **kwargs):
         mols = []
         format = get_format(in_format, in_file_name)
 
         if format == "csm":
             mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
-            MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
-                                                    use_chains, babel_bond,
-                                                    remove_hy, ignore_symm, use_mass,
-                                                    read_fragments, use_sequence,
-                                                    keep_structure)
-            return [mol]
-
-        obms = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
-        if read_fragments:
-            mol = MoleculeReader.mol_from_obm(obms, format, babel_bond=babel_bond, ignore_symm=ignore_symm, use_mass=use_mass, read_fragments=read_fragments)
-            mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
-                                                          use_chains, babel_bond,
-                                                          remove_hy, ignore_symm, use_mass,
-                                                          read_fragments, use_sequence,
-                                                          keep_structure, select_atoms)
-            return [mol]
-
-        for obm in obms:
-            mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_symm=ignore_symm, use_mass=use_mass)
-            mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
-                                                          use_chains, babel_bond,
-                                                          remove_hy, ignore_symm, use_mass,
-                                                          read_fragments, use_sequence,
-                                                          keep_structure, select_atoms)
             mols.append(mol)
-        return mols
+
+        else:
+            obms = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
+            if read_fragments:
+                mol = MoleculeReader.mol_from_obm(obms, format, babel_bond=babel_bond, ignore_symm=ignore_symm, use_mass=use_mass, read_fragments=read_fragments)
+                mols.append(mol)
+
+            else:
+                for obm in obms:
+                    mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_symm=ignore_symm, use_mass=use_mass)
+                    mols.append(mol)
+
+        processed_mols=[]
+        for mol in mols:
+            p_mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
+                                                          use_chains, babel_bond,
+                                                          remove_hy, ignore_symm, use_mass,
+                                                          read_fragments, use_sequence,
+                                                          keep_structure, select_atoms, conn_file)
+            processed_mols.append(p_mol)
+        return processed_mols
 
 
     @staticmethod
@@ -1014,6 +1012,33 @@ class MoleculeReader:
         mol._babel_bond = babel_bond
         mol._format = format
         return mol
+
+    @staticmethod
+    def read_xyz_connectivity(mol, conn_file):
+        i=0
+        with open(conn_file, 'r') as file:
+            for raw_line in file:
+                line=raw_line.split()
+                try:
+                    atom_num = int(line.pop(0))
+                except (ValueError, IndexError):
+                    raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
+                if atom_num != i + 1:
+                    raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
+
+                neighbours = []
+                for neighbour_str in line:
+                    try:
+                        neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
+                    except ValueError:
+                        raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
+                    if neighbour >= len(mol):
+                        raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
+                    neighbours.append(neighbour)
+                mol.atoms[i].adjacent = MoleculeReader._remove_multi_bonds(neighbours)
+                i+=1
+        mol._create_bondset()
+
 
     @staticmethod
     def _read_csm_file(filename, ignore_symbol=False, use_mass=False):

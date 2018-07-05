@@ -20,6 +20,8 @@ class OurParser(ArgumentParser):
 def _create_parser():
     timestamp=str(datetime.now().timestamp())
     def input_utility_func(parser):
+        parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?',
+                            help='xyz connectivity file, default is connectivity.txt in current working directory')
         parser.add_argument('--remove-hy', action='store_true', default=False,
                             help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
         parser.add_argument('--ignore-sym', action='store_true', default=False,
@@ -211,7 +213,7 @@ def _process_arguments(parse_res):
         dictionary_args['use_sequence'] = parse_res.use_sequence
         dictionary_args['use_chains'] = parse_res.use_chains
         dictionary_args['read_fragments'] = parse_res.read_fragments
-        #dictionary_args["conn_file"]=parse_res.connect
+        dictionary_args["conn_file"]=parse_res.connect
 
         if not dictionary_args['use_chains'] and parse_res.read_fragments:
             dictionary_args['use_chains'] = True
