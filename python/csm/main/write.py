@@ -14,6 +14,8 @@ def write_results(results, **kwargs):
             results = [results]
     except TypeError:  # results isn't an array at all
         results = [[results]]
+    except IndexError: #results is an array, and the array is empty
+        raise ValueError("Can't write empty results")
 
     results_arr=results
     if kwargs['simple']:
