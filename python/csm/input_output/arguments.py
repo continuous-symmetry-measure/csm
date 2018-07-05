@@ -125,8 +125,8 @@ def _create_parser():
     exact_args_ = commands.add_parser('exact', help="Perform an exact CSM calculation", conflict_handler='resolve', usage='csm exact TYPE [optional args]')
     exact_args = exact_args_.add_argument_group("Args for exact calculation")
     shared_calc_utility_func(exact_args)
-    exact_args.add_argument('--use-perm', type=str,
-                            help='Compute exact CSM for a single permutation')
+    exact_args.add_argument('--use-perm', nargs="?", type=str, default=None, const=os.path.join(os.getcwd(), "perm.txt"),
+                            help='Compute exact CSM for a single permutation, default is current directory/perm.txt')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-branches', action='store_true', default=False,
