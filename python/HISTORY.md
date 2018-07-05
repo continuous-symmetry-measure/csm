@@ -1,6 +1,29 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.20.4 (beta)
+-------------------------
+
+* --connect flag added
+* --no-overwrite flag will automatically generate a new name for a result file/folder, 
+rather than overwriting existing
+* --statistics flag removed
+* default output and input directories added for --input, --input, --print-perms, command
+
+I/O tweaks:
+* enable support for molecule arguments in command lines
+* output files renamed
+* result tables in fixed-width
+* save command.txt and version.txt 
+* formatting for molecule name and command name changed
+
+Bug fixes from previous versions:
+
+* csm format molecules now have their format saved internally
+* csm format molecules now get written properly in results
+* fixed bug with openbabel hanging forever on .txt files
+* major bug causing all approx chirality calculations to be wrong fixed
+* use-perm bug with operations fixed
 
 Changes in version 0.20.1 (beta)
 -------------------------
