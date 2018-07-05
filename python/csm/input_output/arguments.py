@@ -40,6 +40,8 @@ def _create_parser():
                             help='Select only some atoms, eg 1-20,15,17,19-21')
 
     def output_utility_func(parser):
+        parser.add_argument('--no-overwrite', action='store_true', default=False,
+                            help="If output file already exists, create a new output file name instead")
         parser.add_argument('--json-output', action='store_true', default=False,
                             help='Print output in json format to a file. Only relevant with --legacy')
         parser.add_argument('--print-local', action='store_true', default=False,
@@ -320,15 +322,16 @@ def _process_arguments(parse_res):
 
     try:
         out_file_name=dictionary_args['out_file_name']
-        if os.path.exists(out_file_name):
-            if not os.path.isfile(out_file_name):
-                head, tail = os.path.split(out_file_name)
-                dictionary_args['out_file_name'] = os.path.join(head, tail + str(datetime.now().timestamp()))
-            else:
-                filename=os.path.basename(out_file_name)
-                filename=filename[:-4] + str(datetime.now().timestamp()) + filename[-4:]
-                head, tail = os.path.split(out_file_name)
-                dictionary_args['out_file_name']=os.path.join(head, filename)
+        if parse_res.no_overwrite:
+            if os.path.exists(out_file_name):
+                if not os.path.isfile(out_file_name):
+                    head, tail = os.path.split(out_file_name)
+                    dictionary_args['out_file_name'] = os.path.join(head, tail + str(datetime.now().timestamp()))
+                else:
+                    filename=os.path.basename(out_file_name)
+                    filename=filename[:-4] + str(datetime.now().timestamp()) + filename[-4:]
+                    head, tail = os.path.split(out_file_name)
+                    dictionary_args['out_file_name']=os.path.join(head, filename)
 
     except KeyError as e: #there is no output, eg in Read
         pass

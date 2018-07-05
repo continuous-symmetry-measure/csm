@@ -50,7 +50,7 @@ def get_command_args(command_file, old_command=True):
 
 def do_commands(molecules, **dictionary_args):
     if not os.path.isdir(dictionary_args["out_file_name"]):
-        os.mkdir(dictionary_args["out_file_name"])
+        os.makedirs(dictionary_args["out_file_name"], exist_ok=True)
     copyfile(dictionary_args["command_file"], os.path.join(dictionary_args["out_file_name"], "command.txt"))
 
 
