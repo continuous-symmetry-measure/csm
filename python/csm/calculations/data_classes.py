@@ -134,13 +134,13 @@ class CSMResult:
         self.ongoing_statistics=ongoing_stats
 
         falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, operation)
-        self.overall_statistics["# of illegal cycles"]=falsecount
-        self.overall_statistics["% molecules in illegal cycles"]= num_invalid / len(self.molecule)
+        self.overall_statistics["# bad cycles"]=falsecount
+        self.overall_statistics["% bad cycles"]= num_invalid / len(self.molecule)
         try:
-            self.overall_statistics["% structure preservation"]=check_perm_structure_preservation(self.molecule, self.perm)
+            self.overall_statistics["% structure"]=check_perm_structure_preservation(self.molecule, self.perm)
         except ValueError:
-            self.overall_statistics["% structure preservation"]= "n/a"
-        self.overall_statistics["csm by formula"]=self.formula_csm
+            self.overall_statistics["% structure"]= "n/a"
+        self.overall_statistics["formula CSM"]=self.formula_csm
 
     @property
     def d_min(self):

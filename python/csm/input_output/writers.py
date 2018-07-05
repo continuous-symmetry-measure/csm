@@ -26,7 +26,7 @@ def write_array_to_file(f, arr, add_one=False, separator=" "):
             item = item + 1
             f.write(str(item) + separator)
         else:
-            f.write("%.4lf" %item  + separator)
+            f.write("%-10s" %  ("%.4lf" %item ))
 
 def print_structure(f, result):
             # print CSM, initial molecule, resulting structure and direction according to format specified
@@ -394,6 +394,7 @@ class OldFormatFileWriter(_ResultWriter):
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
                 self._write_results(f)
 
+
 class ScriptWriter:
     def __init__(self, results, format, out_file_name=None, polar=False, **kwargs):
         '''
@@ -465,47 +466,55 @@ class ScriptWriter:
         #creates a tsv for permutations (needs to handle extra long permutations somehow)
         filename = os.path.join(self.folder, "permutation.txt")
         with open(filename, 'w') as f:
-            f.write("#Molecule\t#Command\tPermutation\n")
+            f.write("%-10s%-10s%-10s\n" %("#Molecule", "#Command", "#Permutation"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write(self._get_mol_header(mol_index, command_result)+"\t")
-                    f.write(self._get_line_header(line_index, command_result))
-                    f.write("\t")
+                    f.write("%-10s" % (self._get_mol_header(mol_index, command_result)))
+                    f.write("%-10s" % (self._get_line_header(line_index, command_result)))
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")
 
     def create_dir_tsv(self):
         filename = os.path.join(self.folder, "directional.txt")
         with open(filename, 'w') as f:
-            f.write("#Molecule\t#Command\tX\tY\tZ\n")
+            f.write("%-10s%-10s%-10s%-10s%-10s\n" % ("#Molecule", "#Command", "X", "Y", "Z"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
                     f.write(self._get_mol_header(mol_index, command_result)+"\t")
                     f.write(self._get_line_header(line_index, command_result))
                     f.write("\t")
-                    write_array_to_file(f, command_result.dir, separator="\t")
+                    write_array_to_file(f, command_result.dir, separator="%-10s")
                     f.write("\n")
 
     def create_extra_tsv(self):
         #create headers
         #first row: cmd
-        header_lines_1="\t"
-        header_lines_2="\n\t"
+        format_strings=[]
+        headers_arr_1=[]
+        headers_arr_2=[]
+
         for line_index, command_result in enumerate(self.results[0]):
-                for key in sorted(command_result.overall_statistics):
-                    header_lines_1+= self._get_line_header(line_index, command_result)
-                    header_lines_2 += key + "\t"
+            format_string=""
+            for key in sorted(command_result.overall_statistics):
+                format_string+= "%-" + str(len(key)+2) + "s"
+                headers_arr_1.append(self._get_line_header(line_index, command_result))
+                headers_arr_2.append(key)
+            format_strings.append(format_string)
+        format_strings[-1]+="\n"
+
+        full_string="".join(format_strings)
 
         filename = os.path.join(self.folder, "extra.tab")
         with open(filename, 'w') as f:
-            f.write(header_lines_1+header_lines_2+"\n")
+            f.write("%-10s" % "#Molecule")
+            f.write(full_string % tuple(headers_arr_1))
+            f.write("%-10s" % " ")
+            f.write(full_string % tuple(headers_arr_2))
             for mol_index, mol_results in enumerate(self.results):
-                f.write(self._get_mol_header(mol_index, command_result) + "\t")
+                f.write("%-10s" % self._get_mol_header(mol_index, mol_results[0]))
                 for line_index, command_result in enumerate(mol_results):
-                    for key in sorted(command_result.overall_statistics):
-                        f.write(format_unknown_str(command_result.overall_statistics[key]))
-                        f.write("\t")
-                f.write("\n")
+                    f.write(format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
+                                                                for key in sorted(command_result.overall_statistics)]))
 
     def create_approx_statistics(self):
         #(in approx there's also a table with initial direction, initial CSM, final direction, final CSM, number iterations, run time, and stop reason for each direction in approx)
