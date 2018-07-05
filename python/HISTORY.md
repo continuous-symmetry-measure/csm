@@ -16,6 +16,7 @@ I/O tweaks:
 * result tables in fixed-width
 * save command.txt and version.txt 
 * formatting for molecule name and command name changed
+* resultwriter can accept single array or single result
 
 Bug fixes from previous versions:
 
