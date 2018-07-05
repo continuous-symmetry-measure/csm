@@ -1016,27 +1016,30 @@ class MoleculeReader:
     @staticmethod
     def read_xyz_connectivity(mol, conn_file):
         i=0
-        with open(conn_file, 'r') as file:
-            for raw_line in file:
-                line=raw_line.split()
-                try:
-                    atom_num = int(line.pop(0))
-                except (ValueError, IndexError):
-                    raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
-                if atom_num != i + 1:
-                    raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
-
-                neighbours = []
-                for neighbour_str in line:
+        try:
+            with open(conn_file, 'r') as file:
+                for raw_line in file:
+                    line=raw_line.split()
                     try:
-                        neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
-                    except ValueError:
-                        raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                    if neighbour >= len(mol):
-                        raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                    neighbours.append(neighbour)
-                mol.atoms[i].adjacent = MoleculeReader._remove_multi_bonds(neighbours)
-                i+=1
+                        atom_num = int(line.pop(0))
+                    except (ValueError, IndexError):
+                        raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
+                    if atom_num != i + 1:
+                        raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
+
+                    neighbours = []
+                    for neighbour_str in line:
+                        try:
+                            neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
+                        except ValueError:
+                            raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
+                        if neighbour >= len(mol):
+                            raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
+                        neighbours.append(neighbour)
+                    mol.atoms[i].adjacent = MoleculeReader._remove_multi_bonds(neighbours)
+                    i+=1
+        except FileNotFoundError:
+            raise FileNotFoundError("Failed to find connectivity file: "+str(conn_file))
         mol._create_bondset()
 
 
@@ -1177,7 +1180,6 @@ class MoleculeReader:
             remoteness = pdb_dict.remoteness
             serial_number = pdb_dict.sequence_number
             key = tuple([atom_type, remoteness, serial_number])
-            print(key)
             if key not in likeness_dict:
                 likeness_dict[key] = [cur_atom]
             else:
