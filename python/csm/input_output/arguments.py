@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, SUPPRESS
 import logging
 
 import os
@@ -18,7 +18,7 @@ class OurParser(ArgumentParser):
         sys.exit(2)
 
 def _create_parser():
-    timestamp=str(datetime.now().timestamp())
+
     def input_utility_func(parser):
         parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?',
                             help='xyz connectivity file, default is connectivity.txt in current working directory')
@@ -42,8 +42,6 @@ def _create_parser():
                             help='Select only some atoms, eg 1-20,15,17,19-21')
 
     def output_utility_func(parser):
-        parser.add_argument('--no-overwrite', action='store_true', default=False,
-                            help="If output file already exists, create a new output file name instead")
         parser.add_argument('--json-output', action='store_true', default=False,
                             help='Print output in json format to a file. Only relevant with --legacy')
         parser.add_argument('--print-local', action='store_true', default=False,
@@ -89,13 +87,15 @@ def _create_parser():
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output (requires --output)")
         parser_output_args.add_argument("--output", const=os.path.join(os.getcwd(), 'csm_results', timestamp), nargs='?',
-                                        help="output file or folder, default is 'csm_results\timestamp' folder in current working directory",)
+                                        help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created",)
         parser_output_args.add_argument('--out-format', help='override guessing format from output file ending with provided format',
                                 default=None)
         output_utility_func(parser_output_args)
 
 
     parser = OurParser(allow_abbrev=False)
+    timestamp = str(datetime.now().timestamp())
+    parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
     commands = parser.add_subparsers(title="Available commands", dest="command")
 
     #command
@@ -116,7 +116,7 @@ def _create_parser():
     #WRITE
     out_args = commands.add_parser('write', help="Output the results of the calculation to a file", usage="csm write filename [optional args]")
     out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results', timestamp), nargs='?',
-                          help="output file or folder, default is 'csm_results\timestamp' folder in current working directory")
+                          help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created",)
     out_args.add_argument('--format', help='override guessing format from file ending with provided format',
                             default=None)
     output_utility_func(out_args)
@@ -322,16 +322,18 @@ def _process_arguments(parse_res):
                 if parse_res.permute_chains or parse_res.use_chains:
                     dictionary_args["use_chains"]=True
 
+    dictionary_args["timestamp"]=parse_res.timestamp
+
     try:
+        timestamp=str(parse_res.timestamp)
         out_file_name=dictionary_args['out_file_name']
-        if parse_res.no_overwrite:
-            if os.path.exists(out_file_name):
+        if os.path.exists(out_file_name):
                 if not os.path.isfile(out_file_name):
                     head, tail = os.path.split(out_file_name)
-                    dictionary_args['out_file_name'] = os.path.join(head, tail + str(datetime.now().timestamp()))
+                    dictionary_args['out_file_name'] = os.path.join(head, tail + timestamp)
                 else:
                     filename=os.path.basename(out_file_name)
-                    filename=filename[:-4] + str(datetime.now().timestamp()) + filename[-4:]
+                    filename=filename[:-4] + timestamp + filename[-4:]
                     head, tail = os.path.split(out_file_name)
                     dictionary_args['out_file_name']=os.path.join(head, filename)
 
