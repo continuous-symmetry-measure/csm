@@ -590,8 +590,8 @@ class Molecule:
                         chainstring += " "
                         chainstring += str(self.chains._indexes_to_strings[index])
                     print(str(chainstring), file=file)
-            else:
-                print("Molecule has no chains", file=file)
+            #else:
+            #    print("Molecule has no chains", file=file)
 
     def _complete_initialization(self, use_chains, remove_hy, select_atoms=[]):
         """

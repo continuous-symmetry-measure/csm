@@ -35,8 +35,8 @@ def write_results(results, **kwargs):
 
 
         if not os.path.isdir(kwargs['out_file_name']):
-            if len(results_arr) == 1 and len(results_arr[0]) == 1:
-                print("You are running a single file and command. Did you want to print to the old format, --legacy?")
+            #if len(results_arr) == 1 and len(results_arr[0]) == 1:
+            #    print("You are running a single file and command. Did you want to print to the old format, --legacy?")
             kwargs['out_file_name']=os.path.dirname(kwargs['out_file_name'])
 
         if 'out_format' in kwargs and kwargs['out_format']:
