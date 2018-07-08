@@ -400,7 +400,7 @@ class ScriptWriter:
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
-        a single array of results will be treated as multiple molecules and one command
+        a single array of results will be treated as multiple commands on one molecule
         :param format: molecule format to output to
         :param out_file_name: if none is provided, the current working directory/csm_results will be used
         '''
@@ -414,11 +414,11 @@ class ScriptWriter:
         self.results=results
         self.format=format
         self.folder=out_file_name
-        os.makedirs(os.path.join(self.folder, 'approx'), exist_ok=True)
-        os.makedirs(os.path.join(self.folder, 'old-csm-output'), exist_ok=True)
         self.polar=polar
 
     def write(self):
+        os.makedirs(os.path.join(self.folder, 'approx'), exist_ok=True)
+        os.makedirs(os.path.join(self.folder, 'old-csm-output'), exist_ok=True)
         self.create_CSM_tsv()
         self.create_perm_tsv()
         self.create_dir_tsv()
