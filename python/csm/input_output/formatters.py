@@ -18,6 +18,8 @@ def non_negative_zero(number):
 def format_unknown_str(input):
     try:
         num=float(input)
+        if int(input)==num:
+            return int(input)
         return "%.4lf" % (num)
     except:
         return str(input)
