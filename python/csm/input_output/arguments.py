@@ -94,7 +94,7 @@ def _create_parser():
 
 
     parser = OurParser(allow_abbrev=False)
-    timestamp = str(datetime.now().timestamp())
+    timestamp = str(datetime.now().timestamp())[:10]
     parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
     commands = parser.add_subparsers(title="Available commands", dest="command")
 
