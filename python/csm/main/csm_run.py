@@ -1,5 +1,3 @@
-import json
-import logging
 import sys
 import timeit
 
@@ -8,28 +6,17 @@ from shutil import copyfile
 import os
 
 from csm.calculations.constants import CalculationTimeoutError
-from csm.calculations.data_classes import CSMResult, Operation
 from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
 from csm import __version__
-from csm.input_output.readers import read_from_sys_std_in
 from csm.main.calculate import do_calculation
-from csm.main.read import read_molecules, read_mols_from_std_in, read
-from csm.main.write import write_results, write
+from csm.input_output.read import read_molecules, read_mols_from_std_in, read
+from csm.input_output.write import write_results, write
 
 from csm.input_output.formatters import csm_log as print
 from csm.main.normcsm import norm_calc
 from csm.molecule.molecule import MoleculeReader
 
 sys.setrecursionlimit(10000)
-
-
-def sym_run():
-    #by default, sym_run reads any molecules in the folder it's being run from
-
-    #by default, it reads the command.txt in that folder
-
-    pass
-
 
 def get_command_args(command_file, old_command=True):
     args_array=[]
@@ -61,6 +48,7 @@ def do_commands(molecules, **dictionary_args):
                 args_dict["molecule"]=molecule
                 if modifies_molecule:
                     new_molecule=MoleculeReader.redo_molecule(molecule, **args_dict)
+                    new_molecule.metadata.index=mol_index
                     args_dict["molecule"]=new_molecule
                 result = do_calculation(**args_dict)
                 total_results[mol_index].append(result)

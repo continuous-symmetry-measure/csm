@@ -4,6 +4,7 @@ import sys
 import os
 
 from csm.calculations.data_classes import CSMResult
+from csm.input_output.formatters import format_CSM
 from csm.input_output.readers import read_from_sys_std_in
 from csm.input_output.writers import OldFormatFileWriter, ScriptWriter
 
@@ -21,7 +22,7 @@ def write_results(results, **kwargs):
     if kwargs['simple']:
         for mol_index, mol_result in enumerate(results_arr):
             for lin_index, line_result in enumerate(mol_result):
-                print("mol", mol_index, "cmd", lin_index, " CSM: ", line_result.csm)
+                print("mol", mol_index+1, "cmd", lin_index+1, " CSM: ", format_CSM(line_result.csm))
         return
 
     if kwargs['out_file_name']:
@@ -44,7 +45,7 @@ def write_results(results, **kwargs):
         elif 'in_format' in kwargs and kwargs['in_format']:
             format=kwargs['in_format']
         else:
-            format=results_arr[0][0].molecule._format
+            format=results_arr[0][0].molecule.metadata.format
         writer = ScriptWriter(results_arr, format, **kwargs)
         writer.write()
         return

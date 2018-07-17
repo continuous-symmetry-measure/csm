@@ -2,6 +2,7 @@
 @author: Devora Witty
 """
 import sys
+import os
 from collections import OrderedDict
 import copy
 from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
@@ -83,6 +84,39 @@ class Chains(OrderedDict):
     def index_to_string(self, index):
         return self._indexes_to_strings[index]
 
+class MoleculeMetaData:
+    '''
+    This class is primarily used to store metadata needed to write results, although format+filecontent+babel_bond
+    are sometimes used to recreate a molecule from scratch, see: redo_molecule
+
+    format, filename, and babel_bond are set in _initialize_single_molecule
+    file_content is set in read_obm or read_csm
+    index is set in read_multiple_molecules, or, revoltingly, in do_commands after calling redo_molecule
+    '''
+    def __init__(self, mol_contents=[], format=None, filename="", babel_bond=False, index=0):
+        self.file_content = mol_contents
+        self.format = format
+        self.filename=filename
+        self.babel_bond = babel_bond
+        self.index=index
+
+    @staticmethod
+    def from_dict(self, dict):
+        file_content = dict["file_content"]
+        format = dict["format"]
+        filename=dict["filename"]
+        babel_bond = dict["babel_bond"]
+        index=dict["index"]
+        return MoleculeMetaData(file_content, format, filename, babel_bond, index)
+
+    def to_dict(self):
+        return {
+            "file_content":self.file_content,
+            "format":self.format,
+            "filename":self.filename,
+            "babel_bond":self.babel_bond,
+            "index":self.index
+        }
 
 class Molecule:
     """
@@ -112,12 +146,11 @@ class Molecule:
 
             # getting rid of obmol:
             # self._obmol = obmol
-            self._file_content = []
-            self._format = None
             self._deleted_atom_indices = []
-            self._babel_bond = False
-
             self.has_been_normalized=None
+
+            self.metadata=MoleculeMetaData()
+
 
     def copy(self):
         # deepcopy is used only for atoms,
@@ -128,11 +161,8 @@ class Molecule:
         m._atoms = copy.deepcopy(self.atoms)
         m._norm_factor = self.norm_factor
 
-        # m._obmol=self.obmol
-        m._file_content = self._file_content
-        m._format = self._format
         m._deleted_atom_indices = self._deleted_atom_indices
-        m._babel_bond = self._babel_bond
+        m.metadata=self.metadata
 
         m._bondset = self.bondset
         m._Q = self.Q
@@ -164,9 +194,8 @@ class Molecule:
             # Classes:
             # obmol: needed for printing:
             "deleted indices": self._deleted_atom_indices,
-            "file_content": self._file_content,
-            "format": self._format,
-            "babel_bond": self._babel_bond,
+            "metadata":self.metadata.to_dict(),
+
             # chains
             "chains": self.chains.to_array()
 
@@ -192,11 +221,8 @@ class Molecule:
         c.from_array(in_dict["chains"])
         m._chains = c
 
-        m._file_content = in_dict["file_content"]
-        m._format = in_dict["format"]
         m._deleted_atom_indices = in_dict["deleted indices"]
-        # m._format=in_dict["format"]
-        m._babel_bond = in_dict["babel_bond"]
+        m.metadata= MoleculeMetaData.from_dict(in_dict["metadata"])
 
         m._center_of_mass = in_dict["center of mass"]
         m._equivalence_classes = in_dict["equivalence classes"]
@@ -854,6 +880,10 @@ class MoleculeReader:
                                  read_fragments=False, use_sequence=False,
                                  keep_structure=False, select_atoms=[], conn_file=None, **kwargs):
 
+        mol.metadata.format=format
+        mol.metadata.babel_bond=babel_bond
+        mol.metadata.filename=os.path.basename(in_file_name)
+
         if use_sequence:
             if format.lower() != 'pdb':
                 raise ValueError("--use-sequence only works with PDB files")
@@ -912,12 +942,13 @@ class MoleculeReader:
                     mols.append(mol)
 
         processed_mols=[]
-        for mol in mols:
+        for index, mol in enumerate(mols):
             p_mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                           use_chains, babel_bond,
                                                           remove_hy, ignore_symm, use_mass,
                                                           read_fragments, use_sequence,
                                                           keep_structure, select_atoms, conn_file)
+            p_mol.metadata.index=index
             processed_mols.append(p_mol)
         return processed_mols
 
@@ -971,6 +1002,7 @@ class MoleculeReader:
             notatend = conv.Read(obmol)
         return obmols
 
+
     @staticmethod
     def mol_from_obm(obmols, format, babel_bond=False, ignore_symm=False, use_mass=False, read_fragments=False, **kwargs):
         """
@@ -1006,11 +1038,8 @@ class MoleculeReader:
                 atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                 atoms.append(atom)
 
-
         mol = Molecule(atoms)
-        mol._file_content = mol_contents
-        mol._babel_bond = babel_bond
-        mol._format = format
+        mol.metadata.file_content=mol_contents
         return mol
 
     @staticmethod
@@ -1113,9 +1142,7 @@ class MoleculeReader:
                 pass  # assume there are no chains
         mol=Molecule(atoms)
         with open(filename, 'r') as file:
-            mol._file_content = file.read()
-        mol._babel_bond = False
-        mol._format = "csm"
+            mol.metadata.file_content = file.read()
         return mol
 
     @staticmethod
@@ -1228,37 +1255,31 @@ class MoleculeReader:
 
     @staticmethod
     def redo_molecule(in_mol, **kwargs):
-        if "babel_bond" in kwargs:
-            babel_bond=kwargs["babel_bond"]
-        else:
-            babel_bond=in_mol._babel_bond
-            kwargs["babel_bond"]=babel_bond
-
-        format=in_mol._format
+        format=in_mol.metadata.format
         try:
             if kwargs["in_format"]:
                 format=kwargs["in_format"]
         except KeyError:
             pass
 
-
-
-        obms=MoleculeReader._obm_from_strings(in_mol._file_content,
-                                        format,
-                                        babel_bond)
-
-        try:
-            if kwargs["read_fragments"]:
+        #question 1: do we need openbabel:
+        #babel_bond
+        if "babel_bond" in kwargs:
+            obms = MoleculeReader._obm_from_strings(in_mol.metadata.file_content,
+                                                    format,
+                                                    babel_bond)
+            if "read_fragments" in kwargs:
                 out_mol = MoleculeReader.mol_from_obm(obms, format, **kwargs)
-                out_mol = MoleculeReader._process_single_molecule(out_mol, format, **kwargs)
-                return out_mol
-        except KeyError:
-            pass
+            else:
+                obm = obms[0]
+                out_mol = MoleculeReader.mol_from_obm([obm], format, **kwargs)
 
-        obm=obms[0]
-        out_mol = MoleculeReader.mol_from_obm([obm], format, **kwargs)
-        kwargs.pop("in_file_name")
-        out_mol = MoleculeReader._process_single_molecule(out_mol, None, format,  **kwargs)
+        else:
+            out_mol = in_mol.copy()
+
+
+        in_file= kwargs.pop("in_file_name")
+        out_mol = MoleculeReader._process_single_molecule(out_mol, in_file, format, **kwargs)
         return out_mol
 
 
