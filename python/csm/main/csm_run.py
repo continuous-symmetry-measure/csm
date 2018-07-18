@@ -44,7 +44,15 @@ def do_commands(molecules, **dictionary_args):
     args_array=get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
     total_results=[[] for mol in molecules]
     for args_dict, modifies_molecule in args_array:
-            for mol_index, molecule in enumerate(molecules):
+        if 'select_mols' in args_dict:
+            try:
+                actual_mols = [molecules[i] for i in args_dict['select_mols']]
+            except IndexError:
+                raise IndexError("You have selected more molecules than you have input")
+        else:
+            actual_mols = molecules
+
+        for mol_index, molecule in enumerate(actual_mols):
                 args_dict["molecule"]=molecule
                 if modifies_molecule:
                     new_molecule=MoleculeReader.redo_molecule(molecule, **args_dict)
