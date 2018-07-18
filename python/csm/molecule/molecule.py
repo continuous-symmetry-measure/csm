@@ -1264,7 +1264,8 @@ class MoleculeReader:
 
         #question 1: do we need openbabel:
         #babel_bond
-        if "babel_bond" in kwargs:
+        try:
+            babel_bond=kwargs["babel_bond"]
             obms = MoleculeReader._obm_from_strings(in_mol.metadata.file_content,
                                                     format,
                                                     babel_bond)
@@ -1274,12 +1275,13 @@ class MoleculeReader:
                 obm = obms[0]
                 out_mol = MoleculeReader.mol_from_obm([obm], format, **kwargs)
 
-        else:
+        except KeyError:
             out_mol = in_mol.copy()
 
 
-        in_file= kwargs.pop("in_file_name")
-        out_mol = MoleculeReader._process_single_molecule(out_mol, in_file, format, **kwargs)
+        kwargs.pop("in_file_name")
+
+        out_mol = MoleculeReader._process_single_molecule(out_mol, in_mol.metadata.filename, format, **kwargs)
         return out_mol
 
 
