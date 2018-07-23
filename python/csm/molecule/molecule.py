@@ -454,7 +454,7 @@ class Molecule:
 
             group_num += 1
 
-        logger.debug("initial number of groups:" + str(group_num))
+        #logger.debug("initial number of groups:" + str(group_num))
         # iteratively refine the breakdown into groups
         # break into subgroups at an infinite depth - as long as there's something to break, it is broken
 
@@ -491,7 +491,7 @@ class Molecule:
 
             groups.extend(new_groups)
 
-        logger.debug("Broken into %d groups with %d iterations." % (group_num, num_iters))
+        #logger.debug("Broken into %d groups with %d iterations." % (group_num, num_iters))
 
         self._equivalence_classes = groups
         for group in groups:
@@ -541,7 +541,7 @@ class Molecule:
             # if remove_hy: #this is meant to affect print at end
             # self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
 
-        logger.debug(len(removed_atoms), "atoms removed")
+        #logger.debug(len(removed_atoms), "atoms removed")
 
     def _calculate_center_of_mass(self):
         coords = [atom.pos for atom in self._atoms]
