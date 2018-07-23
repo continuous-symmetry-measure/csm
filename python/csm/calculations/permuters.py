@@ -4,7 +4,7 @@ import datetime
 import numpy as np
 from csm.fast import PreCalcPIP, PermInProgress
 from csm.calculations.basic_calculations import now, run_time
-from csm.calculations.constants import start_time, CalculationTimeoutError
+from csm.calculations.constants import CalculationTimeoutError
 from csm.input_output.formatters import csm_log as print
 __author__ = 'Devora'
 '''
@@ -430,6 +430,7 @@ class ConstraintPermuter:
         self.falsecount = 0
         self.cycle_lengths = [1, op_order]
         self.timeout = timeout
+        self.start_time=datetime.datetime.now()
         if op_type == 'SN':
             self.cycle_lengths.append(2)
         self.constraints_prop = ConstraintPropagator(self.molecule, self.op_order, self.op_type, keep_structure)
@@ -439,7 +440,7 @@ class ConstraintPermuter:
     def check_timeout(self):
         # step zero: check if time out
         now = datetime.datetime.now()
-        time_d = datetime.datetime.now() - start_time
+        time_d = datetime.datetime.now() - self.start_time
         if time_d.total_seconds() > self.timeout:
             raise CalculationTimeoutError(time_d.total_seconds())
         return now

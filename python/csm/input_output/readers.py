@@ -1,8 +1,7 @@
 import sys
 from csm.molecule.molecule import MoleculeReader
 from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_equivalence, check_perm_cycles
-import logging
-logger = logging.getLogger(__name__)
+from csm.input_output.formatters import csm_log as print
 
 
 
@@ -16,12 +15,12 @@ def check_perm_validity(mol, perm, **kwargs):
     '''
     falsecount, num_invalid, cycle_counts, bad_indices= check_perm_cycles(perm, kwargs['operation'])
     if falsecount>0:
-        logger.warning("Permutation does not maintain cycle structure")
+        print("Warning: Permutation does not maintain cycle structure")
     if not check_perm_equivalence(mol, perm):
-        logger.warning("Permutation contains switches between non-equivalent atoms")
+        print("Warning: Permutation contains switches between non-equivalent atoms")
     try:
         if check_perm_structure_preservation(mol, perm) < 1:
-            logger.warning("Permutation does not preserve molecule structure")
+            print("Warning: Permutation does not preserve molecule structure")
     except ValueError: #molecule has no structure
         pass
 

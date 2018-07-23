@@ -5,7 +5,8 @@ import os
 from datetime import datetime
 
 from csm import __version__
-from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count, format_unknown_str
+from csm.input_output.formatters import format_CSM, non_negative_zero, format_perm_count, format_unknown_str, \
+    output_strings, mol_header
 import io
 from openbabel import OBConversion
 from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_cycles, cart2sph
@@ -32,7 +33,7 @@ def print_structure(f, result):
             # print CSM, initial molecule, resulting structure and direction according to format specified
             try:
                 percent_structure = check_perm_structure_preservation(result.molecule, result.perm)
-                f.write("The permutation found maintains"+
+                f.write("The permutation found maintains "+
                       str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
 
             except ValueError:
@@ -51,7 +52,8 @@ def print_structure(f, result):
                             cycle_len == 2 and result.operation.type == 'SN')
                     count = cycle_counts[cycle_len]
                     f.write("\nThere %s %d %s %s of length %d" % (
-                        "is" if count == 1 else "are", count, "invalid" if not valid else "",
+                        "is" if count == 1 else "are", count,
+                        "invalid" if not valid else "",
                         "cycle" if count == 1 else "cycles",
                         cycle_len))
 
@@ -306,8 +308,7 @@ class _ResultWriter:
         f.write("\n")
 
     def print_structure(self):
-        import sys
-        print_structure(f=sys.stderr, result=self.result)
+        self.result.print_structure()
 
     def print_result(self):
         print("%s: %s" % (self.op_name, format_CSM(self.result.csm)))
@@ -394,15 +395,12 @@ class OldFormatFileWriter(_ResultWriter):
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
                 self._write_results(f)
 
-
 def get_line_header(index, result):
     index_str = "%02d" % (index+1) #start from 1 instead of 0
     return "L"+index_str + "_" + result.operation.op_code
 
-def get_mol_header(mol_index, result):
-    mol_index=result.molecule.metadata.index #index from file is primary
-    mol_str="%04d" % mol_index
-    return mol_str
+def get_mol_header(index, result):
+    return mol_header(result.molecule, index)
 
 class ScriptWriter:
     def __init__(self, results, format, out_file_name=None, polar=False, **kwargs):
@@ -589,20 +587,9 @@ class ScriptWriter:
         #4. Cycle numbers and lengths
         filename = os.path.join(self.folder, "extra.txt")
         with open(filename, 'w') as f:
-            for mol_index, mol_results in enumerate(self.results):
+            for item in output_strings:
+                f.write(item)
                 f.write("\n")
-                f.write(get_mol_header(mol_index, mol_results[0]) + "\n")
-                mol_results[0].molecule.print_equivalence_class_summary(True, f)
-                f.write("\n")
-                for line_index, command_result in enumerate(mol_results):
-                    f.write("\n")
-                    f.write(get_line_header(line_index, command_result))
-                    if len(command_result.molecule.chains) > 1:
-                        f.write("\nChain perm: "+ command_result.chain_perm_string)
-                    f.write("\n")
-                    print_structure(f, command_result)
-                f.write("\n-----------------------------\n")
-
 
     def create_legacy_files(self):
         out_folder=os.path.join(self.folder, 'old-csm-output')

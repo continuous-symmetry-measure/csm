@@ -240,6 +240,7 @@ class SingleDirApproximator(_OptionalLogger):
 
 class _PermFromDirBuilder(_OptionalLogger):
     def __init__(self, operation, molecule, log_func, timeout):
+        self.start_time=datetime.datetime.now()
         self._log_func = log_func
         self._molecule = molecule
         self.operation=operation

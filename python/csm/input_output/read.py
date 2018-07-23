@@ -5,6 +5,7 @@ import sys
 
 from csm.molecule.molecule import MoleculeReader, Molecule
 from csm.input_output.readers import read_from_sys_std_in
+from csm.input_output.formatters import csm_log as print
 
 def read_molecules(**kwargs):
     input_name=kwargs["in_file_name"]
@@ -21,7 +22,7 @@ def read_molecules(**kwargs):
                     mols.append(mol)
                 except Exception as e:
                     if mol_file[-3:] in ["mol", "pdb", "sdf", "xyz", "csm", "cif"]:
-                        print("failed to create a molecule from", file_name, e)
+                        print("failed to create a molecule from", file_name, str(e))
                     #else:
                     #    print(file_name, "was not read")
             break

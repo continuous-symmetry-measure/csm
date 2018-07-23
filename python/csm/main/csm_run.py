@@ -8,7 +8,7 @@ import os
 from csm.calculations.constants import CalculationTimeoutError
 from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
 from csm import __version__
-from csm.main.calculate import do_calculation
+from csm.main.calculate import single_calculation
 from csm.input_output.read import read_molecules, read_mols_from_std_in, read
 from csm.input_output.write import write_results, write
 
@@ -32,7 +32,7 @@ def get_command_args(command_file, old_command=True):
             except:  # want to be able to run even if some lines are invalid
                 print("failed to read args from line", line)
                 continue
-            args_array.append((args_dict, modifies_molecule))
+            args_array.append((line, args_dict, modifies_molecule))
     return args_array
 
 def do_commands(molecules, **dictionary_args):
@@ -43,67 +43,76 @@ def do_commands(molecules, **dictionary_args):
 
     args_array=get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
     total_results=[[] for mol in molecules]
-    for args_dict, modifies_molecule in args_array:
-        if 'select_mols' in args_dict:
-            try:
-                actual_mols = [molecules[i] for i in args_dict['select_mols']]
-            except IndexError:
-                raise IndexError("You have selected more molecules than you have input")
-        else:
+    for line, args_dict, modifies_molecule in args_array:
+        print("\nexecuting command:", line[:-1])
+        try:
+            selections=args_dict['select_mols']
+            actual_mols = [molecules[i] for i in selections]
+            assert len(actual_mols)>0
+        except IndexError:
+            raise IndexError("You have selected more molecules than you have input")
+        except AssertionError:
             actual_mols = molecules
 
         for mol_index, molecule in enumerate(actual_mols):
-                args_dict["molecule"]=molecule
-                if modifies_molecule:
-                    new_molecule=MoleculeReader.redo_molecule(molecule, **args_dict)
-                    new_molecule.metadata.index=mol_index
-                    args_dict["molecule"]=new_molecule
-                result = do_calculation(**args_dict)
+            molecule.print_equivalence_class_summary(True)
+            args_dict["molecule"]=molecule
+            if modifies_molecule:
+                new_molecule=MoleculeReader.redo_molecule(molecule, **args_dict)
+                new_molecule.metadata.index=mol_index
+                args_dict["molecule"]=new_molecule
+            try:
+                result= single_calculation(args_dict["molecule"], args_dict)
                 total_results[mol_index].append(result)
+            except CalculationTimeoutError:
+                print("calculation timed out")
 
-    write_results(total_results, **dictionary_args)
     return total_results
 
+
 def csm_run(args=[]):
-    print("CSM version %s" % __version__)
     #get command
     if not args:
         args = sys.argv[1:]
+    print(" ".join(args))
     dictionary_args=get_parsed_args(args)
+    if dictionary_args["pipe"]:
+        from csm.input_output import formatters
+        formatters.csm_out_pipe=sys.stderr
+
+    print("CSM version %s" % __version__)
     command= dictionary_args["command"]
 
     #call command funcs:
     if command=="read":
-        read(**dictionary_args)
+        return read(**dictionary_args)
 
     elif command=="write":
-        write(**dictionary_args)
+        return write(**dictionary_args)
 
+
+    if dictionary_args["in_file_name"]:
+        molecules = read_molecules(**dictionary_args)
+    elif dictionary_args["pipe"]:
+        molecules = read_mols_from_std_in()
     else:
-        if dictionary_args["in_file_name"]:
-            molecules = read_molecules(**dictionary_args)
-        else:
-            molecules = read_mols_from_std_in()
+        raise ValueError("No input for molecules specified")
 
+    if True:
         if command=="command":
-            return do_commands(molecules, **dictionary_args)
-
-        total_results=[]
-        for molecule in molecules:
-            dictionary_args["molecule"]=molecule
-            try:
-                result = do_calculation(**dictionary_args)
-                total_results.append(result)
+            total_results= do_commands(molecules, **dictionary_args)
+        else:
+            total_results=[]
+            for molecule in molecules:
                 try:
-                    if len(dictionary_args['normalizations']) > 0:
-                        norm_calc(result, dictionary_args['normalizations'])
-                except KeyError:
-                    pass
-            except CalculationTimeoutError as e:
-                print("Calculation timed out")
+                    result= single_calculation(molecule, dictionary_args)
+                    total_results.append([result])
+                except CalculationTimeoutError:
+                    print("calculation timed out")
 
         write_results(total_results, **dictionary_args)
-        return total_results
+
+
 
 def run_no_return(args=[]):
     csm_run(args)
@@ -112,4 +121,4 @@ def run_no_return(args=[]):
 if __name__ == '__main__':
     timer = timeit.Timer(lambda: csm_run(args=sys.argv[1:]))
     time = timer.timeit(number=1)
-    print("Runtime:", time, "seconds")
+    print("Runtime: "+ str(time)+ " seconds")

@@ -589,7 +589,7 @@ class Molecule:
     def create_Q(self):
         self._Q = np.array([np.array(atom.pos) for atom in self.atoms])
 
-    def print_equivalence_class_summary(self, display_chains, file=sys.stderr):
+    def print_equivalence_class_summary(self, display_chains):
         """
         Displays information about equivalence classes and chains
         """
@@ -600,24 +600,21 @@ class Molecule:
             except KeyError:
                 lengths[len(group)] = 1
         for key in lengths:
-            print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key),
-                  file=file)
+            print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
 
         if display_chains:
             if len(self.chains) > 1:
                 for chain in self.chains:
-                    print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])),
-                          file=file)
-                print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''),
-                      file=file)
+                    print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
+                print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
                 for chaingroup in self.chain_equivalences:
                     chainstring = "Group of length " + str(len(chaingroup)) + ":"
                     for index in chaingroup:
                         chainstring += " "
                         chainstring += str(self.chains._indexes_to_strings[index])
-                    print(str(chainstring), file=file)
+                    print(str(chainstring))
             #else:
-            #    print("Molecule has no chains", file=file)
+            #    print("Molecule has no chains")
 
     def _complete_initialization(self, use_chains, remove_hy, select_atoms=[]):
         """
@@ -904,16 +901,16 @@ class MoleculeReader:
                 raise ValueError(
                     "User input --keep-structure but input molecule has no bonds. Did you forget --babel-bond?")
             else:
-                logger.warn("Input molecule has no bond information")
+                print("Warning: Input molecule has no bond information")
 
         if initialize:
             mol._complete_initialization(use_chains, remove_hy, select_atoms)
             if len(mol.chains) < 2:
                 if read_fragments:
-                    logger.warn("Although you input --read-fragments, no fragments were found in file. "
+                    print("Warning: Although you input --read-fragments, no fragments were found in file. "
                                 "Fragments are marked by $$$ in mol files or by model/endmdl in pdb files")
                 elif use_chains:
-                    logger.warn("You specified --use-chains but molecule only has one chain")
+                    print("Warning: You specified --use-chains but molecule only has one chain")
         return mol
 
     @staticmethod

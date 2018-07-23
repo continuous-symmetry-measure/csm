@@ -2,7 +2,10 @@ import csv
 
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox, DirectionChooser
 from csm.calculations.approx.dirs import get_direction_chooser
+from csm.calculations.constants import CalculationTimeoutError
 from csm.input_output.readers import read_perm
+from csm.input_output.formatters import csm_log as print
+from csm.main.normcsm import norm_calc
 
 
 def do_calculation(**dictionary_args):
@@ -39,3 +42,18 @@ def do_calculation(**dictionary_args):
     #run the calculation
     calc.calculate(**dictionary_args)
     return calc.result
+
+
+def single_calculation(molecule, dictionary_args):
+    molecule.print_equivalence_class_summary(True)
+    dictionary_args["molecule"] = molecule
+    result = do_calculation(**dictionary_args)
+    result.print_structure()
+    if len(result.molecule.chains) > 1:
+        print("\nChain perm: " + result.chain_perm_string)
+    try:
+        if len(dictionary_args['normalizations']) > 0:
+            norm_calc(result, dictionary_args['normalizations'])
+    except KeyError:
+        pass
+    return result

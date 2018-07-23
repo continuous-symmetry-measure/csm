@@ -8,7 +8,7 @@ import sys
 
 from csm.calculations.basic_calculations import check_perm_cycles, now, run_time
 from csm.calculations.data_classes import CSMState, Operation, CSMResult
-from csm.calculations.constants import MINDOUBLE, MAXDOUBLE, start_time
+from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.fast import calc_ref_plane
 
 from csm.fast import CythonPermuter, SinglePermPermuter
@@ -146,7 +146,7 @@ class ExactCalculation:
         for calc_state in permuter.permute():
             if permuter.count % 1000000 == 0:
                 print("calculated for", int(permuter.count / 1000000), "million permutations thus far...\t Time:",
-                      datetime.datetime.now() - start_time)
+                      datetime.datetime.now() - self.start_time)
             csm, dir = calc_ref_plane(op_order, op_type == 'CS', calc_state)
 
             if self.callback_func:

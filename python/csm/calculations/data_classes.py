@@ -245,6 +245,31 @@ class CSMResult:
             local_csm[i] = sum * (100.0 / (2 * operation.order))
         return local_csm
 
+    def print_structure(self):
+        try:
+            percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
+            print("The permutation found maintains" +
+                    str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
+
+        except ValueError:
+            print("The input molecule does not have bond information and therefore conservation of structure cannot be measured")
+
+        if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
+            falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, self.operation)
+            print(
+                "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
+                    falsecount, "cycle" if falsecount == 1 else "cycles",
+                    100 * (len(self.molecule) - num_invalid) / len(self.molecule)))
+
+            for cycle_len in sorted(cycle_counts):
+                valid = cycle_len == 1 or cycle_len == self.operation.order or (
+                        cycle_len == 2 and self.operation.type == 'SN')
+                count = cycle_counts[cycle_len]
+                print("\nThere %s %d %s %s of length %d" % (
+                    "is" if count == 1 else "are", count, "invalid" if not valid else "",
+                    "cycle" if count == 1 else "cycles",
+                    cycle_len))
+
     def to_dict(self):
         return {"Result":
             {
@@ -264,8 +289,6 @@ class CSMResult:
                 "ongoing stats":self.ongoing_statistics
             }
         }
-
-
 
     @staticmethod
     def from_dict():

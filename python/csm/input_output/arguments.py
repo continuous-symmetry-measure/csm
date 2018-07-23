@@ -13,8 +13,8 @@ import sys
 
 class OurParser(ArgumentParser):
     def error(self, message):
-        print("Error: %s" % message, file=sys.stderr)
-        print("Enter csm --help for help", file=sys.stderr)
+        sys.stdout.write("Error: %s" % message, file=sys.stderr)
+        sys.stdout.write("Enter csm --help for help", file=sys.stderr)
         sys.exit(2)
 
 def _create_parser():
@@ -36,9 +36,9 @@ def _create_parser():
                             help='When a molecule has chains, use them (affects trivial, approx)')
         parser.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
-        parser.add_argument('--select-mols', default="",
+        parser.add_argument('--select-mols', default=None,
                             help='Select only some molecules, eg 1-20,15,17,19-21')
-        parser.add_argument('--select-atoms',default="",
+        parser.add_argument('--select-atoms',default=None,
                             help='Select only some atoms, eg 1-20,15,17,19-21')
 
     def output_utility_func(parser):
@@ -95,6 +95,8 @@ def _create_parser():
 
     parser = OurParser(allow_abbrev=False)
     timestamp = str(datetime.now().timestamp())[:10]
+    parser.add_argument("--pipe", action='store_true', default=False,
+                        help="treat this program as a piped program (read from sys.stdin, write to sys.stdout)")
     parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
     commands = parser.add_subparsers(title="Available commands", dest="command")
 
@@ -217,8 +219,7 @@ def _process_arguments(parse_res):
 
         if not dictionary_args['use_chains'] and parse_res.read_fragments:
             dictionary_args['use_chains'] = True
-            logger.warning(
-                "--read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
+            logger.warning("Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
 
@@ -235,6 +236,7 @@ def _process_arguments(parse_res):
         dictionary_args['legacy']=parse_res.legacy
 
     dictionary_args = {}
+    dictionary_args["pipe"]=parse_res.pipe
     dictionary_args["command"]=parse_res.command
     if parse_res.command == "read":
         dictionary_args["in_format"]=parse_res.format

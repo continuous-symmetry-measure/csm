@@ -24,6 +24,18 @@ def format_unknown_str(input):
     except:
         return str(input)
 
+def mol_header(molecule, index=0):
+    mol_index=molecule.metadata.index+1 #index from file is primary
+    mol_str="%04d" % mol_index
+    return mol_str
 
-def csm_log(*strings, file=sys.stderr, **kwargs):
+
+global csm_out_pipe
+csm_out_pipe=sys.stdout
+
+global output_strings
+output_strings=[]
+
+def csm_log(*strings, file=csm_out_pipe, **kwargs):
+    output_strings.append(" ".join(strings))
     print(*strings, **kwargs, file=file)
