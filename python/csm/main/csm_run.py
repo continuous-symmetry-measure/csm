@@ -22,6 +22,8 @@ def get_command_args(command_file, old_command=True):
     args_array=[]
     with open(command_file, 'r') as file:
         for line in file:
+            if line[0]=="#":
+                continue
             modifies_molecule=check_modifies_molecule(line)
             if old_command:
                 fixed_args = old_cmd_converter(line)
