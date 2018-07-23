@@ -111,6 +111,7 @@ def csm_run(args=[]):
                     print("calculation timed out")
 
         write_results(total_results, **dictionary_args)
+        return total_results
 
 
 

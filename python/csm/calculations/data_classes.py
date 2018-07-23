@@ -248,7 +248,7 @@ class CSMResult:
     def print_structure(self):
         try:
             percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
-            print("The permutation found maintains" +
+            print("The permutation found maintains " +
                     str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
 
         except ValueError:

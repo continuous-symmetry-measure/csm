@@ -37,5 +37,5 @@ global output_strings
 output_strings=[]
 
 def csm_log(*strings, file=csm_out_pipe, **kwargs):
-    output_strings.append(" ".join(strings))
+    output_strings.append(" ".join(str(s) for s in strings))
     print(*strings, **kwargs, file=file)
