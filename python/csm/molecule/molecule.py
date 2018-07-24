@@ -93,12 +93,13 @@ class MoleculeMetaData:
     file_content is set in read_obm or read_csm
     index is set in read_multiple_molecules, or, revoltingly, in do_commands after calling redo_molecule
     '''
-    def __init__(self, mol_contents=[], format=None, filename="", babel_bond=False, index=0):
+    def __init__(self, mol_contents=[], format=None, filename="", babel_bond=False, index=0, title=None):
         self.file_content = mol_contents
         self.format = format
         self.filename=filename
         self.babel_bond = babel_bond
         self.index=index
+        title=title
 
     @staticmethod
     def from_dict(self, dict):
@@ -107,7 +108,8 @@ class MoleculeMetaData:
         filename=dict["filename"]
         babel_bond = dict["babel_bond"]
         index=dict["index"]
-        return MoleculeMetaData(file_content, format, filename, babel_bond, index)
+        title=dict["title"]
+        return MoleculeMetaData(file_content, format, filename, babel_bond, index, title)
 
     def to_dict(self):
         return {
@@ -115,8 +117,11 @@ class MoleculeMetaData:
             "format":self.format,
             "filename":self.filename,
             "babel_bond":self.babel_bond,
-            "index":self.index
+            "index":self.index,
+            "title":title
         }
+
+
 
 class Molecule:
     """
@@ -646,6 +651,10 @@ class Molecule:
         return coords
 
 
+
+
+
+
 class MoleculeFactory:
     @staticmethod
     def dummy_molecule_from_size(size, groups):
@@ -1012,6 +1021,7 @@ class MoleculeReader:
         atoms = []
         mol_contents=[]
         for obmol_id, obmol in enumerate(obmols):
+            title_contents=obmol.GetTitle()
             mol_contents.append(mol_string_from_obm(obmol, format))
             for i, obatom in enumerate(OBMolAtomIter(obmol)):
                 position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
@@ -1037,6 +1047,7 @@ class MoleculeReader:
 
         mol = Molecule(atoms)
         mol.metadata.file_content=mol_contents
+        mol.metadata.title=title_contents
         return mol
 
     @staticmethod
