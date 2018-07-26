@@ -1,6 +1,13 @@
 The Python CSM Package
 ======================
 
+
+Changes in version 0.20.5 (beta)
+-------------------------
+
+a variety of output changes are in the process of being added, but this version update 
+is for the csm-website, and includes changes to the requirements
+
 Changes in version 0.20.4 (beta)
 -------------------------
 
