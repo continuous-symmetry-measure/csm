@@ -13,8 +13,8 @@ import sys
 
 class OurParser(ArgumentParser):
     def error(self, message):
-        sys.stdout.write("Error: %s" % message, file=sys.stderr)
-        sys.stdout.write("Enter csm --help for help", file=sys.stderr)
+        sys.stdout.write("Error: %s" % message)
+        sys.stdout.write("Enter csm --help for help")
         sys.exit(2)
 
 def _create_parser():
