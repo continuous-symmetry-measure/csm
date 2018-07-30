@@ -1,6 +1,19 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.20.6 (beta)
+-------------------------
+
+* replace default pipe behavior with flag --pipe
+* move printing back to sys.stdout unless --pipe is specified
+* save all printouts to a file
+* added support for comments in command files, prefixed with #
+* when a calculation fails on a specific molecule or command, continue, and report FailedResult for that line
+* multiple tweaks to output, like changes in number of decimal places
+* created class MoleculeMetaData for storing information about writing molecules unrelated to actual calculation.
+includes adding support for molecule title, which can then be modified...
+* handle select-mols with command. number according to original numbers, not new indices
+* Many miscellaneous bug fixes, including symmetric structure in chirality not calculating properly
 
 Changes in version 0.20.5 (beta)
 -------------------------
