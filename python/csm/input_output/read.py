@@ -37,8 +37,6 @@ def read_molecules(**kwargs):
             mols=[mols[i] for i in kwargs['select_mols']]
         except IndexError:
             raise IndexError("You have selected more molecules than you have input")
-    for mol in mols:
-        mol.print_equivalence_class_summary(True)
     return mols
 
 def read_mols_from_std_in():

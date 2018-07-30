@@ -58,7 +58,6 @@ def do_commands(molecules, **dictionary_args):
             actual_mols = molecules
 
         for mol_index, molecule in enumerate(actual_mols):
-            molecule.print_equivalence_class_summary(True)
             args_dict["molecule"]=molecule
             if modifies_molecule:
                 new_molecule=MoleculeReader.redo_molecule(molecule, **args_dict)

@@ -152,7 +152,7 @@ class CSMResult:
             else:
                 self.overall_statistics["best chirality"] =  "S%d" % (self.op_order)
 
-        
+
         self.overall_statistics["formula CSM"]=self.formula_csm
 
     @property
@@ -278,7 +278,7 @@ class CSMResult:
                 valid = cycle_len == 1 or cycle_len == self.operation.order or (
                         cycle_len == 2 and self.operation.type == 'SN')
                 count = cycle_counts[cycle_len]
-                print("\nThere %s %d %s %s of length %d" % (
+                print("There %s %d %s %s of length %d" % (
                     "is" if count == 1 else "are", count, "invalid" if not valid else "",
                     "cycle" if count == 1 else "cycles",
                     cycle_len))

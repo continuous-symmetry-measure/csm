@@ -56,4 +56,5 @@ def single_calculation(molecule, dictionary_args):
             norm_calc(result, dictionary_args['normalizations'])
     except KeyError:
         pass
+    print("-----")
     return result
