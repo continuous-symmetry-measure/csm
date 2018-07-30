@@ -2,7 +2,7 @@ import numpy as np
 
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
     check_perm_structure_preservation
-from csm.calculations.constants import MINDOUBLE
+from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
 from csm.molecule.molecule import Molecule
 from csm.molecule.normalizations import de_normalize_coords, normalize_coords
 from collections import namedtuple
@@ -114,6 +114,7 @@ class Operation:
 
 class CSMResult:
     def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
+        self.failed=False
         #input
         self.molecule=state.molecule.copy() #not yet denormalized
         self.normalized_molecule_coords = np.array(self.molecule.Q)
@@ -301,3 +302,30 @@ class CSMResult:
         state=CSMState(molecule, operation.order, operation.type, result_dict["csm"], result_dict["perm"], result_dict["dir"])
         result=CSMResult(state, operation, result_dict["overall stats"], result_dict["ongoing stats"])
         return result
+
+class FailedResult:
+    def __init__(self, failed_reason, molecule=None, **kwargs):
+        self.failed=True
+        self.failed_reason=failed_reason
+
+        self.molecule=molecule
+        self.normalized_molecule_coords = np.array(self.molecule.Q)
+        self.molecule.de_normalize()
+        self.operation=kwargs["operation"]
+        self.op_type=self.operation.type
+        self.op_order=self.operation.order
+
+        #result
+        self.csm=MAXDOUBLE
+        self.dir=[0,0,0]
+        self.perm=[-1 for i in range(len(molecule))]
+        self.normalized_symmetric_structure = [[0,0,0] for i in range(len(molecule))]
+        self.symmetric_structure =  [[0,0,0] for i in range(len(molecule))]
+        self.formula_csm = MAXDOUBLE
+
+        self.overall_statistics={
+            "failed":"FAILED",
+            "reason for failure":self.failed_reason
+        }
+
+        self.ongoing_statistics={}

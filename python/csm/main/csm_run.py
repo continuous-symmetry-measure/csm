@@ -6,6 +6,7 @@ from shutil import copyfile
 import os
 
 from csm.calculations.constants import CalculationTimeoutError
+from csm.calculations.data_classes import FailedResult
 from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
 from csm import __version__
 from csm.main.calculate import single_calculation
@@ -66,8 +67,9 @@ def do_commands(molecules, **dictionary_args):
             try:
                 result= single_calculation(args_dict["molecule"], args_dict)
                 total_results[mol_index].append(result)
-            except CalculationTimeoutError:
-                print("calculation timed out")
+            except Exception as e:#CalculationTimeoutError:
+                print(str(e))
+                total_results[mol_index].append(FailedResult(str(e), **dictionary_args))
 
     return total_results
 
@@ -109,8 +111,9 @@ def csm_run(args=[]):
                 try:
                     result= single_calculation(molecule, dictionary_args)
                     total_results.append([result])
-                except CalculationTimeoutError:
-                    print("calculation timed out")
+                except Exception as e:#CalculationTimeoutError:
+                    print(str(e))
+                    total_results.append([FailedResult(str(e), **dictionary_args)])
 
         write_results(total_results, **dictionary_args)
         return total_results

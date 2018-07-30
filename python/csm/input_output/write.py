@@ -19,7 +19,7 @@ def write_results(results, **kwargs):
     if kwargs['simple']:
         for mol_index, mol_result in enumerate(results_arr):
             for lin_index, line_result in enumerate(mol_result):
-                print("mol", mol_index+1, "cmd", lin_index+1, " CSM: ", format_CSM(line_result.csm))
+                print("mol", line_result.molecule.metadata.header(), "cmd", lin_index+1, " CSM: ", format_CSM(line_result.csm))
         return
 
     if kwargs["pipe"]:

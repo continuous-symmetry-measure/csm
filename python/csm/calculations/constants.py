@@ -8,5 +8,5 @@ CSM_THRESHOLD=0.0001
 
 class CalculationTimeoutError(TimeoutError):
     def __init__(self, timeout_delta, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__("Calculation timed out after "+str(timeout_delta)+" seconds", *args, **kwargs)
         self.timeout_delta=timeout_delta

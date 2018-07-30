@@ -99,7 +99,8 @@ class MoleculeMetaData:
         self.filename=filename
         self.babel_bond = babel_bond
         self.index=index
-        title=title
+        self.title=title
+        self.use_filename=True
 
     @staticmethod
     def from_dict(self, dict):
@@ -109,7 +110,8 @@ class MoleculeMetaData:
         babel_bond = dict["babel_bond"]
         index=dict["index"]
         title=dict["title"]
-        return MoleculeMetaData(file_content, format, filename, babel_bond, index, title)
+        m= MoleculeMetaData(file_content, format, filename, babel_bond, index, title)
+        m.use_filename=dict["use_filename"]
 
     def to_dict(self):
         return {
@@ -118,9 +120,25 @@ class MoleculeMetaData:
             "filename":self.filename,
             "babel_bond":self.babel_bond,
             "index":self.index,
-            "title":title
+            "title":self.title,
+            "use_filename":self.use_filename
         }
 
+    def header(self):
+        if self.use_filename:
+            return self.filename
+
+        mol_index=self.index+1 #start from 1 instead of 0
+
+        if self.title: #replace with internal index if relevant
+            start_index=self.title.find("mol_index=")
+            if start_index:
+                end_index=self.title.find(";")
+                start_index=start_index+10
+                mol_index=int(self.title[start_index:end_index])
+
+        mol_str="%04d" % mol_index
+        return mol_str
 
 
 class Molecule:
@@ -948,6 +966,9 @@ class MoleculeReader:
                     mols.append(mol)
 
         processed_mols=[]
+        use_filename=True
+        if len(mols)>1:
+            use_filename=False
         for index, mol in enumerate(mols):
             p_mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                           use_chains, babel_bond,
@@ -955,6 +976,7 @@ class MoleculeReader:
                                                           read_fragments, use_sequence,
                                                           keep_structure, select_atoms, conn_file)
             p_mol.metadata.index=index
+            p_mol.metadata.use_filename=use_filename
             processed_mols.append(p_mol)
         return processed_mols
 
