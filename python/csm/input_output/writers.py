@@ -105,7 +105,7 @@ class CSMMolWriter:
             f.write("\n")
 
 
-def write_ob_molecule(obmol, format, f, legacy=False):
+def write_ob_molecule(obmol, format, f, legacy=False, header_append=""):
         """
         Write an Open Babel molecule to file
         :param obmol: The molecule
@@ -113,6 +113,9 @@ def write_ob_molecule(obmol, format, f, legacy=False):
         :param f: The file to write output to
         :param f_name: The file's name (for extension-finding purpose)
         """
+        title=obmol.GetTitle()
+        obmol.SetTitle(title+header_append)
+
         conv = OBConversion()
         if not conv.SetOutFormat(format):
             raise ValueError("Error setting output format to " + format)
@@ -620,7 +623,7 @@ class ScriptWriter:
                     of=OldFormatFileWriter(command_result, out_file_name, out_format=self.format)
                     of._write_results(f)
 
-    def mult_mol_writer(self, filename, obmols):
+    def mult_mol_writer(self, filename, obmols, header=""):
         '''
         :param filename:
         :param obmols:
@@ -650,7 +653,7 @@ class ScriptWriter:
         #default, including for multiple obmols that aren't special case formats above
         with open(filename, 'a') as file:
             for mol in obmols:
-                write_ob_molecule(mol, self.format, file)
+                write_ob_molecule(mol, self.format, file, header_append=header)
 
 
     def create_initial_mols(self):
@@ -659,7 +662,7 @@ class ScriptWriter:
         with open(filename, 'w') as file:
             file.write('')
         for mol_results in self.results:
-            for result in mol_results:
+            for index, result in enumerate(mol_results):
                 if result.molecule.metadata.format=="csm":
                     writer=CSMMolWriter()
                     with open(filename, 'a') as f:
@@ -670,7 +673,7 @@ class ScriptWriter:
                 obmols = obmolwriter.obm_from_result(result)
                 for obmol in obmols:
                     obmolwriter.set_obm_from_original(obmol, result)
-                self.mult_mol_writer(filename, obmols)
+                self.mult_mol_writer(filename, obmols, "SYM_TXT_CODE="+get_line_header(index, result))
 
     def create_symm_mols(self):
         # chained file of symmetric structures
@@ -678,7 +681,7 @@ class ScriptWriter:
         with open(filename, 'w') as file:
             file.write('')
         for mol_results in self.results:
-            for result in mol_results:
+            for index, result in enumerate(mol_results):
                 if result.molecule.metadata.format=="csm":
                     writer=CSMMolWriter()
                     with open(filename, 'a') as f:
@@ -687,9 +690,10 @@ class ScriptWriter:
 
                 obmolwriter = OBMolWriter()
                 obmols = obmolwriter.obm_from_result(result)
+
                 for obmol in obmols:
                     obmolwriter.set_obm_from_symmetric(obmol, result)
-                self.mult_mol_writer(filename, obmols)
+                self.mult_mol_writer(filename, obmols, "SYM_TXT_CODE="+get_line_header(index, result))
 
 
 
