@@ -482,7 +482,7 @@ class ScriptWriter:
             f.write("%-20s%-10s%-10s%-10s%-10s\n" % ("#Molecule", "#Command", "X", "Y", "Z"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write("%-20s" % get_mol_header(mol_index, command_result)+"\t")
+                    f.write("%-20s" % get_mol_header(mol_index, command_result))
                     f.write("%-10s" % get_line_header(line_index, command_result))
                     write_array_to_file(f, command_result.dir, separator="%-10s")
                     f.write("\n")
