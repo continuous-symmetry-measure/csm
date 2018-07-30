@@ -634,22 +634,21 @@ class ApproxCalculation(_OptionalLogger):
         self.timeout = timeout
         overall_stats={}
         if self.operation.type=="CH": # Chirality
-                # First CS
-                best_op=Operation('cs')
-                best_result = self._calculate(best_op)
-                if best_result.csm > MINDOUBLE:
-                    # Try the SN's
-                    for op_order in range(2, self.operation.order + 1, 2):
-                        op=Operation("S"+str(op_order))
-                        result = self._calculate(self.operation)
-                        if result.csm < best_result.csm:
-                            best_result = result
-                            best_op=op
-                        if best_result.csm < MINDOUBLE:
-                            break
-                self.operation.order=best_op.order
-                self.operation.type=best_op.type
-                overall_stats["chirality"]=best_op.op_code
+            # First CS
+            best_op=Operation('cs')
+            best_result = self._calculate(best_op)
+            if best_result.csm > MINDOUBLE:
+                # Try the SN's
+                for op_order in range(2, self.operation.order + 1, 2):
+                    op=Operation("S"+str(op_order))
+                    result = self._calculate(self.operation)
+                    if result.csm < best_result.csm:
+                        best_result = result
+                        best_op=op
+                    if best_result.csm < MINDOUBLE:
+                        break
+            self.operation.order=best_op.order
+            self.operation.type=best_op.type
         else:
             best_result=self._calculate(self.operation)
         overall_stats["runtime"]=run_time(self.start_time)

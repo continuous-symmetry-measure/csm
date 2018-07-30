@@ -1,5 +1,5 @@
 import numpy as np
-
+from csm.input_output.formatters import csm_log as print
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
     check_perm_structure_preservation
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
@@ -83,6 +83,8 @@ class Operation:
             raise
         return OperationCode(type=data[0], order=data[1], name=data[2])
 
+
+
     @staticmethod
     def placeholder(op_type, op_order, sn_max=8):
         #make an arbitrary operation
@@ -143,6 +145,14 @@ class CSMResult:
             self.overall_statistics["% structure"]=check_perm_structure_preservation(self.molecule, self.perm)
         except ValueError:
             self.overall_statistics["% structure"]= "n/a"
+
+        if self.operation.name=="CHIRALITY":
+            if self.op_type == 'CS':
+                self.overall_statistics["best chirality"] = "CS"
+            else:
+                self.overall_statistics["best chirality"] =  "S%d" % (self.op_order)
+
+        
         self.overall_statistics["formula CSM"]=self.formula_csm
 
     @property
