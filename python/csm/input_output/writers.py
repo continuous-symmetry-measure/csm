@@ -430,7 +430,7 @@ class ScriptWriter:
         return format_CSM(result.csm)
 
     def write(self):
-        os.makedirs(os.path.join(self.folder), exist_ok=True)
+        os.makedirs(self.folder, exist_ok=True)
         self.create_CSM_tsv()
         self.create_perm_tsv()
         self.create_dir_tsv()
