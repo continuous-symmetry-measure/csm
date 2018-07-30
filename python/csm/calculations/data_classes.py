@@ -119,13 +119,15 @@ class CSMResult:
         self.normalized_molecule_coords = np.array(self.molecule.Q)
         self.molecule.de_normalize()
         self.operation=operation
+        self.op_type=state.op_type
+        self.op_order=state.op_order
 
         #result
         self.csm=state.csm
         self.dir=state.dir
         self.perm=state.perm
-        self.normalized_symmetric_structure = self.create_symmetric_structure(self.normalized_molecule_coords, self.perm, self.dir, self.operation.type,
-                                                         self.operation.order)
+        self.normalized_symmetric_structure = self.create_symmetric_structure(self.normalized_molecule_coords, self.perm, self.dir, self.op_type,
+                                                         self.op_order)
         self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure), self.molecule.norm_factor)
         self.formula_csm = self.get_CSM_by_formula(self.molecule, self.symmetric_structure)
 
