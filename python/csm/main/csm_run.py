@@ -102,7 +102,7 @@ def csm_run(args=[]):
         raise ValueError("No input for molecules specified")
 
     if True:
-        if command=="command":
+        if command=="comfile":
             total_results= do_commands(molecules, **dictionary_args)
         else:
             total_results=[]

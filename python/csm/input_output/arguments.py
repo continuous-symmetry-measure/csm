@@ -14,7 +14,7 @@ import sys
 class OurParser(ArgumentParser):
     def error(self, message):
         sys.stdout.write("Error: %s" % message)
-        sys.stdout.write("Enter csm --help for help")
+        sys.stdout.write("Enter csm --help for help, or csm [command] --help for help with a specific command")
         sys.exit(2)
 
 def _create_parser():
@@ -93,7 +93,10 @@ def _create_parser():
         output_utility_func(parser_output_args)
 
 
-    parser = OurParser(allow_abbrev=False)
+    parser = OurParser(allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
+                                                 "example: csm exact c2 --input mymol.mol --output --keep-structure\n"
+                                                 "for specific help with each subprogram and its available arguments, enter csm COMMAND -h\n"
+                                                 "e.g. csm exact -h")
     timestamp = str(datetime.now().timestamp())[:10]
     parser.add_argument("--pipe", action='store_true', default=False,
                         help="treat this program as a piped program (read from sys.stdin, write to sys.stdout)")
@@ -101,7 +104,7 @@ def _create_parser():
     commands = parser.add_subparsers(title="Available commands", dest="command")
 
     #command
-    commands_args_=commands.add_parser('command', help='provide a command file for running calculations')
+    commands_args_=commands.add_parser('comfile', help='provide a command file for running calculations')
     command_args=commands_args_.add_argument_group("Command args")
     command_args.add_argument('comfile', default=os.path.join(os.getcwd(), "cmd.txt"), nargs='?',
                               help="the file that contains the commands, default is cmd.txt in current working directory")
@@ -110,13 +113,16 @@ def _create_parser():
     add_input_output_utility_func(commands_args_)
 
     #READ
-    input_args = commands.add_parser('read', help="Read a molecule file into a json in CSM format", usage="csm read filename [optional args]")
+    input_args = commands.add_parser('read', help="Read a molecule file into a json in CSM format",
+                                     usage="csm read filename [optional args]\n"
+                                           "example: csm read mymol.pdb --read-fragments --remove-hy --select-atoms 1-3")
     input_args.add_argument('input', help='molecule file or folder, default is current working directory', default=os.getcwd(), nargs='?')
     input_args.add_argument('--format', help='override guessing format from file ending with provided format', default=None)
     input_utility_func(input_args)
 
     #WRITE
-    out_args = commands.add_parser('write', help="Output the results of the calculation to a file", usage="csm write filename [optional args]")
+    out_args = commands.add_parser('write', help="Output the results of the calculation to a file- must be used with piped input",
+                                   usage="csm write filename [optional args]")
     out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results', timestamp), nargs='?',
                           help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created",)
     out_args.add_argument('--format', help='override guessing format from file ending with provided format',
@@ -124,7 +130,9 @@ def _create_parser():
     output_utility_func(out_args)
 
     #EXACT
-    exact_args_ = commands.add_parser('exact', help="Perform an exact CSM calculation", conflict_handler='resolve', usage='csm exact TYPE [optional args]')
+    exact_args_ = commands.add_parser('exact', help="Perform an exact CSM calculation", conflict_handler='resolve',
+                                      usage='csm exact TYPE [optional args]\n'
+                                            'example: csm exact s4 --input --output myresults/1 --keep-structure')
     exact_args = exact_args_.add_argument_group("Args for exact calculation")
     shared_calc_utility_func(exact_args)
     exact_args.add_argument('--use-perm', nargs="?", type=str, default=None, const=os.path.join(os.getcwd(), "perm.txt"),
@@ -140,7 +148,9 @@ def _create_parser():
 
 
     #APPROX
-    approx_args_ = commands.add_parser('approx', help="Approximate the CSM value", conflict_handler='resolve', usage='csm approx TYPE [optional args]')
+    approx_args_ = commands.add_parser('approx', help="Approximate the CSM value", conflict_handler='resolve',
+                                       usage='csm approx TYPE [optional args]\n'
+                                             'example: csm approx ch --input --output --detect-outliers --parallel 4')
     approx_args = approx_args_.add_argument_group("Args for approx calculation")
     shared_calc_utility_func(approx_args)
     #choosing dir:
@@ -175,7 +185,9 @@ def _create_parser():
 
 
     #TRIVIAL
-    trivial_args_ = commands.add_parser('trivial', help="Calculate trivial (identity) CSM", conflict_handler='resolve', usage='csm trivial TYPE [optional args]')
+    trivial_args_ = commands.add_parser('trivial', help="Calculate trivial (identity) CSM", conflict_handler='resolve',
+                                        usage='csm trivial TYPE [optional args]\n'
+                                              'example: csm trivial c4 --input --output --permute-chains')
     trivial_args = trivial_args_.add_argument_group("Args for trivial calculation")
     shared_calc_utility_func(trivial_args)
     #this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
@@ -255,7 +267,7 @@ def _process_arguments(parse_res):
         dictionary_args["out_format"] = parse_res.out_format
 
 
-        if parse_res.command == "command":
+        if parse_res.command == "comfile":
             dictionary_args["command_file"]=parse_res.comfile
             dictionary_args["old_command"]=parse_res.old_cmd
         else:
