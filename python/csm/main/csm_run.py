@@ -5,7 +5,6 @@ from shutil import copyfile
 
 import os
 
-from csm.calculations.constants import CalculationTimeoutError
 from csm.calculations.data_classes import FailedResult
 from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
 from csm import __version__
@@ -79,6 +78,9 @@ def csm_run(args=[]):
         args = sys.argv[1:]
     print(" ".join(args))
     dictionary_args=get_parsed_args(args)
+    if dictionary_args["global_time_out"]:
+        from csm.calculations.constants import global_time_out
+        global_time_out=dictionary_args["global_time_out"]
     if dictionary_args["pipe"]:
         from csm.input_output import formatters
         formatters.csm_out_pipe=sys.stderr

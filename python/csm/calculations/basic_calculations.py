@@ -2,6 +2,9 @@ import numpy as np
 import math as m
 from datetime import datetime
 
+from csm.calculations.constants import global_start_time, global_time_out
+
+
 def now():
     return datetime.now()
 
@@ -9,6 +12,19 @@ def run_time(start_time):
     now = datetime.now()
     time_d = now - start_time
     return time_d.total_seconds()
+
+class CalculationTimeoutError(TimeoutError):
+    def __init__(self, timeout_delta, *args, **kwargs):
+        super().__init__("Calculation timed out after "+str(timeout_delta)+" seconds", *args, **kwargs)
+        self.timeout_delta=timeout_delta
+
+def check_timeout(local_start, local_timeout):
+    runtime=run_time(local_start)
+    if runtime>local_timeout:
+        raise CalculationTimeoutError(runtime)
+    g_runtime=run_time(global_start_time)
+    if g_runtime>global_time_out:
+        raise CalculationTimeoutError(g_runtime)
 
 
 def cart2sph(x,y,z, normalize=True):

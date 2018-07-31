@@ -60,6 +60,8 @@ def _create_parser():
                             #nargs="+")
         parser.add_argument('--timeout', default=300,
                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
+        parser.add_argument('--global-timeout', default=None,
+                            help="Specify a global timeout for CSM in seconds. Default is 50000 seconds (over 13 hours)", type=int)
         parser.add_argument('--sn-max', type=int, default=8,
                             help='The maximal sn to try, relevant only for chirality')
 
@@ -97,7 +99,7 @@ def _create_parser():
                                                  "example: csm exact c2 --input mymol.mol --output --keep-structure\n"
                                                  "for specific help with each subprogram and its available arguments, enter csm COMMAND -h\n"
                                                  "e.g. csm exact -h")
-    timestamp = str(datetime.now().timestamp())[:10]
+    timestamp = str(datetime.now().timestamp())[-11:].replace(".", "")
     parser.add_argument("--pipe", action='store_true', default=False,
                         help="treat this program as a piped program (read from sys.stdin, write to sys.stdout)")
     parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
@@ -249,6 +251,11 @@ def _process_arguments(parse_res):
 
     dictionary_args = {}
     dictionary_args["pipe"]=parse_res.pipe
+    dictionary_args["global_time_out"]=None
+    try:
+        dictionary_args["global_time_out"]=parse_res.global_timeout
+    except:
+        pass #Don't care, keep default
     dictionary_args["command"]=parse_res.command
     if parse_res.command == "read":
         dictionary_args["in_format"]=parse_res.format

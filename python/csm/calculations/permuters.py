@@ -3,8 +3,7 @@ import sys
 import datetime
 import numpy as np
 from csm.fast import PreCalcPIP, PermInProgress
-from csm.calculations.basic_calculations import now, run_time
-from csm.calculations.constants import CalculationTimeoutError
+from csm.calculations.basic_calculations import now, run_time, check_timeout
 from csm.input_output.formatters import csm_log as print
 __author__ = 'Devora'
 '''
@@ -439,11 +438,7 @@ class ConstraintPermuter:
 
     def check_timeout(self):
         # step zero: check if time out
-        now = datetime.datetime.now()
-        time_d = datetime.datetime.now() - self.start_time
-        if time_d.total_seconds() > self.timeout:
-            raise CalculationTimeoutError(time_d.total_seconds())
-        return now
+        check_timeout(self.start_time, self.timeout)
 
     def create_cycle(self, atom, pip):
         group = []
@@ -586,14 +581,9 @@ class ConstraintsOrderedByDistancePermuter(ConstraintPermuter):
         self._permute_timeout = perm_timeout
         #print("start time", start_time)
 
-    @property
-    def run_time(self):
-        return run_time(self._permute_start)
-
     def check_timeout(self):
         # step zero: check if time out
-        if self.run_time > self._permute_timeout:
-            raise CalculationTimeoutError(self.run_time)
+        check_timeout(self._permute_start, self._permute_timeout)
 
     def permute(self):
         # step 1: create initial empty pip and qip
@@ -634,10 +624,7 @@ class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
     def check_timeout(self):
         # step zero: check if time out
         #now = super().check_timeout()
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        if time_d.total_seconds() > self._permute_timeout:
-            raise CalculationTimeoutError(time_d.total_seconds())
+        check_timeout(self._permute_start, self._permute_timeout)
 
     def placement_generator(self, start_index):
         for distance_index in range(start_index, len(self.distances)):

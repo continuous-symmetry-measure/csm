@@ -2,7 +2,7 @@ import csv
 
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox, DirectionChooser
 from csm.calculations.approx.dirs import get_direction_chooser
-from csm.calculations.constants import CalculationTimeoutError
+from csm.calculations.basic_calculations import CalculationTimeoutError
 from csm.input_output.readers import read_perm
 from csm.input_output.formatters import csm_log as print
 from csm.main.normcsm import norm_calc

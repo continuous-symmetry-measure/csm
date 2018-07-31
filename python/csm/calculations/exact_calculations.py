@@ -146,7 +146,7 @@ class ExactCalculation:
         for calc_state in permuter.permute():
             if permuter.count % 1000000 == 0:
                 print("calculated for", int(permuter.count / 1000000), "million permutations thus far...\t Time:",
-                      datetime.datetime.now() - self.start_time)
+                      run_time(self.start_time))
             csm, dir = calc_ref_plane(op_order, op_type == 'CS', calc_state)
 
             if self.callback_func:

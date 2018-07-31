@@ -12,9 +12,10 @@ import numpy as np
 from csm.fast import approximate_perm_classic, munkres_wrapper
 from csm.input_output.formatters import format_CSM
 from csm.calculations.exact_calculations import ExactCalculation
-from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, check_perm_cycles
+from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, check_perm_cycles, \
+    CalculationTimeoutError
 from csm.calculations.data_classes import CSMState, Operation, CSMResult
-from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, CalculationTimeoutError, MINDOUBLE
+from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, MINDOUBLE
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
     ConstraintsSelectedByDistancePermuter
 from csm.molecule.molecule import MoleculeFactory
