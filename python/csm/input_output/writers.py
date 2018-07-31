@@ -673,7 +673,7 @@ class ScriptWriter:
                 obmols = obmolwriter.obm_from_result(result)
                 for obmol in obmols:
                     obmolwriter.set_obm_from_original(obmol, result)
-                self.mult_mol_writer(filename, obmols, "SYM_TXT_CODE="+get_line_header(index, result))
+                self.mult_mol_writer(filename, obmols, " SYM_TXT_CODE="+get_line_header(index, result))
 
     def create_symm_mols(self):
         # chained file of symmetric structures
@@ -693,7 +693,7 @@ class ScriptWriter:
 
                 for obmol in obmols:
                     obmolwriter.set_obm_from_symmetric(obmol, result)
-                self.mult_mol_writer(filename, obmols, "SYM_TXT_CODE="+get_line_header(index, result))
+                self.mult_mol_writer(filename, obmols, " SYM_TXT_CODE="+get_line_header(index, result))
 
 
 

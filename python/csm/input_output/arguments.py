@@ -132,7 +132,7 @@ def _create_parser():
     #EXACT
     exact_args_ = commands.add_parser('exact', help="Perform an exact CSM calculation", conflict_handler='resolve',
                                       usage='csm exact TYPE [optional args]\n'
-                                            'example: csm exact s4 --input --output myresults/1 --keep-structure')
+                                            'example: csm exact s4 --input --output myresults/1 --keep-structure --timeout 500')
     exact_args = exact_args_.add_argument_group("Args for exact calculation")
     shared_calc_utility_func(exact_args)
     exact_args.add_argument('--use-perm', nargs="?", type=str, default=None, const=os.path.join(os.getcwd(), "perm.txt"),
@@ -150,7 +150,7 @@ def _create_parser():
     #APPROX
     approx_args_ = commands.add_parser('approx', help="Approximate the CSM value", conflict_handler='resolve',
                                        usage='csm approx TYPE [optional args]\n'
-                                             'example: csm approx ch --input --output --detect-outliers --parallel 4')
+                                             'example: csm approx ch --input --output --detect-outliers --parallel 4 --sn-max 10')
     approx_args = approx_args_.add_argument_group("Args for approx calculation")
     shared_calc_utility_func(approx_args)
     #choosing dir:
