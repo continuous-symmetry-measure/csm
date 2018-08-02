@@ -52,6 +52,8 @@ def _create_parser():
                             help='print the old csm format')
         parser.add_argument("--simple",  action='store_true', default=False,
                             help='only output is CSM to screen')
+        parser.add_argument("--not-unique", action='store_true', default=False,
+                            help="don't ensure results folder is unique")
 
     def shared_calc_utility_func(parser):
         parser.add_argument('type',
@@ -348,7 +350,7 @@ def _process_arguments(parse_res):
     try:
         timestamp=str(parse_res.timestamp)
         out_file_name=dictionary_args['out_file_name']
-        if os.path.exists(out_file_name):
+        if os.path.exists(out_file_name) and not parse_res.not_unique:
                 if not os.path.isfile(out_file_name):
                     head, tail = os.path.split(out_file_name)
                     dictionary_args['out_file_name'] = os.path.join(head, tail + timestamp)
@@ -358,9 +360,10 @@ def _process_arguments(parse_res):
                     head, tail = os.path.split(out_file_name)
                     dictionary_args['out_file_name']=os.path.join(head, filename)
 
-    except KeyError as e: #there is no output, eg in Read
-        pass
-    except TypeError as e: #output is None, eg in a line of command
+    except (KeyError, TypeError, AttributeError) as e:
+    #there is no output, eg in Read
+    #output is None, eg in a line of command
+    #parse_res doesn't have unique attribute
         pass
 
     return dictionary_args
