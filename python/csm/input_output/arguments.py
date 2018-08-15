@@ -7,14 +7,14 @@ from datetime import datetime
 
 from csm.calculations import permuters
 from csm.calculations.data_classes import Operation
-
+from csm import __version__
 logger = logging.getLogger(__name__)
 import sys
 
 class OurParser(ArgumentParser):
     def error(self, message):
         sys.stdout.write("Error: %s" % message)
-        sys.stdout.write("Enter csm --help for help, or csm [command] --help for help with a specific command")
+        sys.stdout.write("\nEnter csm --help for help, or csm [command] --help for help with a specific command")
         sys.exit(2)
 
 def _create_parser():
@@ -66,6 +66,8 @@ def _create_parser():
                             help="Specify a global timeout for CSM in seconds. Default is 50000 seconds (over 13 hours)", type=int)
         parser.add_argument('--sn-max', type=int, default=8,
                             help='The maximal sn to try, relevant only for chirality')
+        parser.add_argument("--pipe", action='store_true', default=False,
+                            help="treat this program as a piped program (read from sys.stdin, write to sys.stdout)")
 
     def shared_normalization_utility_func(parser): #I made this because having normalization stuck in the calc utility func was ugly
         parser.add_argument('--normalize', default=[],
@@ -102,9 +104,8 @@ def _create_parser():
                                                  "for specific help with each subprogram and its available arguments, enter csm COMMAND -h\n"
                                                  "e.g. csm exact -h")
     timestamp = str(datetime.now().timestamp())[-11:].replace(".", "")
-    parser.add_argument("--pipe", action='store_true', default=False,
-                        help="treat this program as a piped program (read from sys.stdin, write to sys.stdout)")
     parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
+    parser.add_argument("--version", help="print version and exit", action='store_true', default=False)
     commands = parser.add_subparsers(title="Available commands", dest="command")
 
     #command
@@ -371,6 +372,9 @@ def _process_arguments(parse_res):
 def get_parsed_args(args):
     parser = _create_parser()
     parsed_args = parser.parse_args(args)
+    if parsed_args.version:
+        print("CSM version:", __version__)
+        sys.exit()
     if parsed_args.command is None:
         parser.error("You must select a command from: read, exact, approx, trivial, write")
     processed_args = _process_arguments(parsed_args)
