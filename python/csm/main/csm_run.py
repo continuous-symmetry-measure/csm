@@ -79,8 +79,8 @@ def csm_run(args=[]):
     print(" ".join(args))
     dictionary_args=get_parsed_args(args)
     if dictionary_args["global_time_out"]:
-        from csm.calculations.constants import global_time_out
-        global_time_out=dictionary_args["global_time_out"]
+        from csm.calculations.constants import set_global_timeout
+        set_global_timeout(dictionary_args["global_time_out"])
     if dictionary_args["pipe"]:
         from csm.input_output import formatters
         formatters.csm_out_pipe=sys.stderr

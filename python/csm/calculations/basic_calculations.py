@@ -2,7 +2,7 @@ import numpy as np
 import math as m
 from datetime import datetime
 
-from csm.calculations.constants import global_start_time, global_time_out
+
 
 
 def now():
@@ -19,6 +19,7 @@ class CalculationTimeoutError(TimeoutError):
         self.timeout_delta=timeout_delta
 
 def check_timeout(local_start, local_timeout):
+    from csm.calculations.constants import global_start_time, global_time_out
     runtime=run_time(local_start)
     if runtime>local_timeout:
         raise CalculationTimeoutError(runtime)

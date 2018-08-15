@@ -13,3 +13,6 @@ global global_time_out
 global_time_out=50000
 
 
+def set_global_timeout(timeout):
+    global global_time_out
+    global_time_out=timeout
