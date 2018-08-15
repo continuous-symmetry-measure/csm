@@ -23,11 +23,19 @@ def write_array_to_file(f, arr, add_one=False, separator=" "):
     :param separator: default is " "
     '''
     for item in arr:
+
+
         if add_one:
-            item = item + 1
+            if item == "n/a":
+                pass
+            else:
+                item = item + 1
             f.write(str(item) + separator)
         else:
-            f.write("%-10s" %  ("%.4lf" %item ))
+            if item == "n/a":
+                f.write("%10s" % item)
+            else:
+                f.write("%10s" % ("%.4lf" % item))
 
 def print_structure(f, result):
             # print CSM, initial molecule, resulting structure and direction according to format specified
@@ -311,7 +319,19 @@ class _ResultWriter:
         f.write("\n")
 
     def print_structure(self):
-        self.result.print_structure()
+        try:
+            percent_structure = check_perm_structure_preservation(self.result.molecule, self.result.perm)
+            print("The permutation found maintains " +
+                    str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
+
+        except ValueError:
+            print("The input molecule does not have bond information and therefore conservation of structure cannot be measured")
+
+        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.result.perm, self.result.operation)
+        print(
+            "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
+                falsecount, "cycle" if falsecount == 1 else "cycles",
+                    100 * (len(self.result.molecule) - num_invalid) / len(self.result.molecule)))
 
     def print_result(self):
         print("%s: %s" % (self.op_name, format_CSM(self.result.csm)))
@@ -320,6 +340,19 @@ class _ResultWriter:
     def print_chain_perm(self):
         if len(self.result.molecule.chains)>1:
             print("Chain perm: ", self.result.chain_perm_string)
+
+
+    def print_local(self, filename):
+        result=self.result
+        sum = 0
+        with open(filename, 'w') as f:
+            f.write("\nLocal CSM: \n")
+            size = len(result.molecule.atoms)
+            for i in range(size):
+                sum += result.local_csm[i]
+                f.write("%s %7lf\n" % (result.molecule.atoms[i].symbol, non_negative_zero(result.local_csm[i])))
+            f.write("\nsum: %7lf\n" % sum)
+
 
 class ApproxStatisticWriter:
     def __init__(self, statistics, stat_file_name, polar):
@@ -407,7 +440,7 @@ def get_mol_header(index, result):
     return test
 
 class ScriptWriter:
-    def __init__(self, results, format, out_file_name=None, polar=False, **kwargs):
+    def __init__(self, results, format, out_file_name=None, polar=False, verbose=False, **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
@@ -421,7 +454,7 @@ class ScriptWriter:
         except TypeError: #results isn't an array at all
             results=[[results]]
 
-
+        self.verbose=verbose
         self.results=results
         self.format=format
         self.folder=out_file_name
@@ -437,9 +470,10 @@ class ScriptWriter:
         self.create_CSM_tsv()
         self.create_perm_tsv()
         self.create_dir_tsv()
-        self.create_extra_tsv()
+        #self.create_extra_tsv()
         self.create_extra_txt()
-        self.create_approx_statistics()
+        if self.verbose:
+            self.create_approx_statistics()
         self.create_legacy_files()
         self.create_symm_mols()
         self.create_initial_mols()
@@ -459,7 +493,7 @@ class ScriptWriter:
                 f.write("%-10s" % (get_line_header(index, res)))
             f.write("\n")
             for index, mol_results in enumerate(self.results):
-                f.write("%-20s" % get_mol_header(index, mol_results[0]))
+                f.write("%-20s" % mol_results[0].molecule.metadata.header())
                 for result in mol_results:
                     f.write("%-10s" % self.format_CSM(result))
                 f.write("\n")
@@ -471,7 +505,7 @@ class ScriptWriter:
             f.write("%-20s%-10s%-10s\n" %("#Molecule", "#Command", "#Permutation"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write("%-20s" % (get_mol_header(mol_index, command_result)))
+                    f.write("%-20s" % (command_result.molecule.metadata.header()))
                     f.write("%-10s" % (get_line_header(line_index, command_result)))
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")
@@ -479,11 +513,11 @@ class ScriptWriter:
     def create_dir_tsv(self):
         filename = os.path.join(self.folder, "directional.txt")
         with open(filename, 'w') as f:
-            f.write("%-20s%-10s%-10s%-10s%-10s\n" % ("#Molecule", "#Command", "X", "Y", "Z"))
+            f.write("%-20s%-10s%10s%10s%10s\n" % ("#Molecule", "#Command", "X", "Y", "Z"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write("%-20s" % get_mol_header(mol_index, command_result))
-                    f.write("%-10s" % get_line_header(line_index, command_result))
+                    f.write("%-20s" % command_result.molecule.metadata.header())
+                    f.write("%10s" % get_line_header(line_index, command_result))
                     write_array_to_file(f, command_result.dir, separator="%-10s")
                     f.write("\n")
 
@@ -512,7 +546,7 @@ class ScriptWriter:
             f.write("%-10s" % " ")
             f.write(full_string % tuple(headers_arr_2))
             for mol_index, mol_results in enumerate(self.results):
-                f.write("%-20s" % get_mol_header(mol_index, mol_results[0]))
+                f.write("%-20s" % mol_results[0].molecule.metadata.header())
                 for line_index, command_result in enumerate(mol_results):
                     f.write(format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
                                                                 for key in sorted(command_result.overall_statistics)]))
@@ -536,7 +570,7 @@ class ScriptWriter:
 
         for mol_index, mol_results in enumerate(self.results):
             for line_index, command_result in enumerate(mol_results):
-                name=get_mol_header(mol_index, command_result)+"_"+get_line_header(line_index, command_result)
+                name=command_result.molecule.metadata.header(no_file_format=True)+"_"+get_line_header(line_index, command_result)
                 filename=os.path.join(out_folder, name+".tsv")
                 if command_result.ongoing_statistics:
                     self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
@@ -604,7 +638,7 @@ class ScriptWriter:
         os.makedirs(out_folder, exist_ok=True)
         for mol_index, mol_results in enumerate(self.results):
             for line_index, command_result in enumerate(mol_results):
-                name=get_mol_header(mol_index, command_result)+"_"+get_line_header(line_index, command_result)
+                name=command_result.molecule.metadata.header(no_file_format=True)+"_"+get_line_header(line_index, command_result)
                 file_name=name+"."+command_result.molecule.metadata.format
                 out_file_name= os.path.join(out_folder, file_name)
                 try:
@@ -673,7 +707,8 @@ class ScriptWriter:
                 obmols = obmolwriter.obm_from_result(result)
                 for obmol in obmols:
                     obmolwriter.set_obm_from_original(obmol, result)
-                self.mult_mol_writer(filename, obmols, " SYM_TXT_CODE="+get_line_header(index, result))
+                header_append=" "+result.molecule.metadata.header()+"\tSYM_TXT_CODE="+get_line_header(index, result)
+                self.mult_mol_writer(filename, obmols,header_append)
 
     def create_symm_mols(self):
         # chained file of symmetric structures
@@ -693,7 +728,8 @@ class ScriptWriter:
 
                 for obmol in obmols:
                     obmolwriter.set_obm_from_symmetric(obmol, result)
-                self.mult_mol_writer(filename, obmols, " SYM_TXT_CODE="+get_line_header(index, result))
+                header_append=" "+result.molecule.metadata.header()+"\tSYM_TXT_CODE="+get_line_header(index, result)
+                self.mult_mol_writer(filename, obmols,header_append)
 
 
 

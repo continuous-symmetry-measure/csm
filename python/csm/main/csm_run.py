@@ -46,7 +46,7 @@ def do_commands(molecules, **dictionary_args):
     args_array=get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
     total_results=[[] for mol in molecules]
     for line, args_dict, modifies_molecule in args_array:
-        print("\nexecuting command:", line[:-1])
+        print("\n**executing command:", line[:-1], "**")
         try:
             selections=args_dict['select_mols']
             actual_mols = [molecules[i] for i in selections]
@@ -67,7 +67,7 @@ def do_commands(molecules, **dictionary_args):
                 total_results[mol_index].append(result)
             except Exception as e:#CalculationTimeoutError:
                 print(str(e))
-                total_results[mol_index].append(FailedResult(str(e), **dictionary_args))
+                total_results[mol_index].append(FailedResult(str(e), **args_dict))
 
     return total_results
 
@@ -76,7 +76,9 @@ def csm_run(args=[]):
     #get command
     if not args:
         args = sys.argv[1:]
+    print("CSM version %s" % __version__)
     print(" ".join(args))
+
     dictionary_args=get_parsed_args(args)
     if dictionary_args["global_time_out"]:
         from csm.calculations.constants import set_global_timeout
@@ -85,7 +87,7 @@ def csm_run(args=[]):
         from csm.input_output import formatters
         formatters.csm_out_pipe=sys.stderr
 
-    print("CSM version %s" % __version__)
+
     command= dictionary_args["command"]
 
     #call command funcs:
@@ -103,21 +105,22 @@ def csm_run(args=[]):
     else:
         raise ValueError("No input for molecules specified")
 
-    if True:
-        if command=="comfile":
-            total_results= do_commands(molecules, **dictionary_args)
-        else:
-            total_results=[]
-            for molecule in molecules:
-                try:
-                    result= single_calculation(molecule, dictionary_args)
-                    total_results.append([result])
-                except Exception as e:#CalculationTimeoutError:
-                    print(str(e))
-                    total_results.append([FailedResult(str(e), **dictionary_args)])
+    print("----------")
 
-        write_results(total_results, **dictionary_args)
-        return total_results
+    if command=="comfile":
+        total_results= do_commands(molecules, **dictionary_args)
+    else:
+        total_results=[]
+        for molecule in molecules:
+            try:
+                result= single_calculation(molecule, dictionary_args)
+                total_results.append([result])
+            except Exception as e:#CalculationTimeoutError:
+                print(str(e))
+                total_results.append([FailedResult(str(e), **dictionary_args)])
+
+    write_results(total_results, **dictionary_args)
+    return total_results
 
 
 

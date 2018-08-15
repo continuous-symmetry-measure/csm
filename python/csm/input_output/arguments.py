@@ -115,6 +115,8 @@ def _create_parser():
                               help="the file that contains the commands, default is cmd.txt in current working directory")
     command_args.add_argument('--old-cmd', action='store_true', default=False,
                               help="the old format with csm sym __INPUT__ __OUTPUT__ --approx etc")
+    command_args.add_argument("--verbose", action='store_true', default=False,
+                             help='create a fixed width spreadsheet of information about each direction for ann approx commands')
     add_input_output_utility_func(commands_args_)
 
     #READ
@@ -181,6 +183,8 @@ def _create_parser():
     approx_args.add_argument('--parallel', type=int, const=0, nargs='?',
                              help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used')
     #outputs
+    approx_args.add_argument("--verbose", action='store_true', default=False,
+                             help='create a fixed width spreadsheet of information about each direction')
     approx_args.add_argument('--polar', action='store_true', default=False,
                              help="Print polar coordinates instead of cartesian coordinates in statistics")
     approx_args.add_argument('--print-approx', action='store_true', default=False,
@@ -225,18 +229,18 @@ def _process_arguments(parse_res):
 
     def parse_input(dictionary_args):
         dictionary_args['in_file_name'] = parse_res.input
-        dictionary_args['remove_hy'] = parse_res.remove_hy
+        #dictionary_args['remove_hy'] = parse_res.remove_hy
         dictionary_args['ignore_symm'] = parse_res.ignore_sym
-        dictionary_args['use_mass'] = parse_res.use_mass
-        dictionary_args['babel_bond'] = parse_res.babel_bond
-        dictionary_args['use_sequence'] = parse_res.use_sequence
-        dictionary_args['use_chains'] = parse_res.use_chains
-        dictionary_args['read_fragments'] = parse_res.read_fragments
+        #dictionary_args['use_mass'] = parse_res.use_mass
+        #dictionary_args['babel_bond'] = parse_res.babel_bond
+        #dictionary_args['use_sequence'] = parse_res.use_sequence
+        #dictionary_args['use_chains'] = parse_res.use_chains
+        #dictionary_args['read_fragments'] = parse_res.read_fragments
         dictionary_args["conn_file"]=parse_res.connect
 
-        if not dictionary_args['use_chains'] and parse_res.read_fragments:
+        if parse_res.read_fragments:
             dictionary_args['use_chains'] = True
-            logger.warning("Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
+            #logger.warning("Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
 
@@ -247,13 +251,16 @@ def _process_arguments(parse_res):
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
-        dictionary_args['json_output'] = parse_res.json_output
+        #dictionary_args['json_output'] = parse_res.json_output
         dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
-        dictionary_args['print_denorm'] = parse_res.print_denorm
-        dictionary_args['legacy']=parse_res.legacy
+        #dictionary_args['print_denorm'] = parse_res.print_denorm
+        #dictionary_args['legacy']=parse_res.legacy
 
-    dictionary_args = {}
-    dictionary_args["pipe"]=parse_res.pipe
+    dictionary_args=vars(parse_res)
+    try:
+        dictionary_args["pipe"]=parse_res.pipe
+    except AttributeError:
+        dictionary_args["pipe"]=False
     dictionary_args["global_time_out"]=None
     try:
         dictionary_args["global_time_out"]=parse_res.global_timeout
@@ -289,14 +296,14 @@ def _process_arguments(parse_res):
             #    ops.append(op)
             #dictionary_args['operations'] = ops
             dictionary_args['operation'] = Operation(parse_res.type)
-            dictionary_args['timeout'] = parse_res.timeout
-            dictionary_args['sn_max'] = parse_res.sn_max
+            #dictionary_args['timeout'] = parse_res.timeout
+            #dictionary_args['sn_max'] = parse_res.sn_max
             dictionary_args['normalizations']=parse_res.normalize
 
             if parse_res.command == 'exact':
                 if parse_res.use_perm:
                     dictionary_args['perm_file_name'] = parse_res.use_perm
-                dictionary_args['keep_structure'] = parse_res.keep_structure
+                #dictionary_args['keep_structure'] = parse_res.keep_structure
                 #dictionary_args['no_constraint'] = parse_res.no_constraint
                 dictionary_args['print_branches'] = parse_res.output_branches
                 permuters.print_branches = parse_res.output_branches
@@ -310,12 +317,12 @@ def _process_arguments(parse_res):
                         dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
             if parse_res.command == 'approx':
                 #choose dir:
-                dictionary_args['detect_outliers'] = parse_res.detect_outliers
+                #dictionary_args['detect_outliers'] = parse_res.detect_outliers
                 dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
                 if parse_res.fibonacci is not None:
                     dictionary_args["fibonacci"] = True
                     dictionary_args["num_dirs"] = parse_res.fibonacci
-                dictionary_args['use_best_dir'] = parse_res.use_best_dir
+                #dictionary_args['use_best_dir'] = parse_res.use_best_dir
                 dir = parse_res.dir
                 if dir:
                     dictionary_args['dirs'] = [dir]
@@ -340,8 +347,8 @@ def _process_arguments(parse_res):
                 dictionary_args['pool_size'] = parse_res.parallel
 
                 #outputs:
-                dictionary_args['print_approx'] = parse_res.print_approx
-                dictionary_args['polar'] = parse_res.polar
+                #dictionary_args['print_approx'] = parse_res.print_approx
+                #dictionary_args['polar'] = parse_res.polar
             if parse_res.command == 'trivial':
                 if parse_res.permute_chains or parse_res.use_chains:
                     dictionary_args["use_chains"]=True

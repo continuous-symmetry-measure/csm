@@ -258,7 +258,7 @@ class CSMResult:
             local_csm[i] = sum * (100.0 / (2 * operation.order))
         return local_csm
 
-    def print_structure(self):
+    def print_summary(self):
         try:
             percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
             print("The permutation found maintains " +
@@ -267,14 +267,13 @@ class CSMResult:
         except ValueError:
             print("The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
-        if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
-            falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, self.operation)
-            print(
-                "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
-                    falsecount, "cycle" if falsecount == 1 else "cycles",
+        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, self.operation)
+        print(
+            "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
+                falsecount, "cycle" if falsecount == 1 else "cycles",
                     100 * (len(self.molecule) - num_invalid) / len(self.molecule)))
 
-            for cycle_len in sorted(cycle_counts):
+        for cycle_len in sorted(cycle_counts):
                 valid = cycle_len == 1 or cycle_len == self.operation.order or (
                         cycle_len == 2 and self.operation.type == 'SN')
                 count = cycle_counts[cycle_len]
@@ -282,6 +281,17 @@ class CSMResult:
                     "is" if count == 1 else "are", count, "invalid" if not valid else "",
                     "cycle" if count == 1 else "cycles",
                     cycle_len))
+        if len(self.molecule.chains) > 1:
+            print("\nChain perm: " + self.chain_perm_string)
+
+        if self.operation.name == "CHIRALITY":
+            print("Minimum chirality was found in", self.overall_statistics["best chirality"])
+
+
+
+        print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
+
+        print("CSM by formula: %.6lf" % (self.formula_csm))
 
     def to_dict(self):
         return {"Result":
@@ -314,24 +324,23 @@ class CSMResult:
         return result
 
 class FailedResult:
-    def __init__(self, failed_reason, molecule=None, **kwargs):
+    def __init__(self, failed_reason, molecule, **kwargs):
         self.failed=True
         self.failed_reason=failed_reason
 
         self.molecule=molecule
-        self.normalized_molecule_coords = np.array(self.molecule.Q)
-        self.molecule.de_normalize()
+        self.normalized_molecule_coords = []
         self.operation=kwargs["operation"]
         self.op_type=self.operation.type
         self.op_order=self.operation.order
 
         #result
-        self.csm=MAXDOUBLE
-        self.dir=[0,0,0]
-        self.perm=[-1 for i in range(len(molecule))]
-        self.normalized_symmetric_structure = [[0,0,0] for i in range(len(molecule))]
-        self.symmetric_structure =  [[0,0,0] for i in range(len(molecule))]
-        self.formula_csm = MAXDOUBLE
+        self.csm="n/a"
+        self.dir=["n/a", "n/a", "n/a"]
+        self.perm=["n/a"]
+        self.normalized_symmetric_structure = []# [["n/a"] for i in range(len(molecule))]
+        self.symmetric_structure = []#  [[0,0,0] for i in range(len(molecule))]
+        self.formula_csm = "n/a"
 
         self.overall_statistics={
             "failed":"FAILED",
