@@ -1,10 +1,13 @@
 The Python CSM Package
 ======================
 
-Changes in version 0.20.6 (beta)
+
+Changes in version 0.20.7
 -------------------------
 
-* replace default pipe behavior with flag --pipe
+* rename "command" to "comfile"
+* expand parser help
+* replace default pipe behavior with flag --pipe for exact, trivial, and approx
 * move printing back to sys.stdout unless --pipe is specified
 * save all printouts to a file
 * added support for comments in command files, prefixed with #
@@ -14,6 +17,9 @@ Changes in version 0.20.6 (beta)
 includes adding support for molecule title, which can then be modified...
 * handle select-mols with command. number according to original numbers, not new indices
 * Many miscellaneous bug fixes, including symmetric structure in chirality not calculating properly
+* add flag --not-unique for not creating new folders
+* add flag --version for printing CSM version (usage: `csm --version`)
+* add flag --verbose, without which approx spreadsheet is not created
 
 Changes in version 0.20.5 (beta)
 -------------------------
