@@ -679,8 +679,8 @@ class ScriptWriter:
                 if use_file:
                     title+="\t"+mol_name
                 if "mol_index=" not in title:
-                    title+="\tmol_index="+mol_index
-                    
+                    title+="\tmol_index="+str(mol_index)
+
             title+="\tSYM_TXT_CODE="+line_header
             mol.SetTitle(title)
 
