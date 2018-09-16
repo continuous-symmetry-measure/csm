@@ -11,6 +11,9 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
 
+#if EIGEN_WORLD_VERSION==3 && EIGEN_MAJOR_VERSION==3 && EIGEN_MINOR_VERSION < 3
+#error Unsupported Eigen Version, please upgrade to Eigen 3.3.3 or newer
+#endif
 // from rpoly.c Jenkins-Traub Polynomial Solver
 extern "C" {
 	int rpoly(double *op, int degree, double *zeror, double *zeroi);
@@ -61,10 +64,13 @@ std::vector<std::complex<double> > FindPolyRoots(const std::vector<double>& coef
 
 std::vector<EigenResult> GetEigens(const double matrix[3][3])
 {
+	//this function is not called by the python code
 	Eigen::Matrix3d m;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
+		{
 			m(i, j) = matrix[i][j];
+		}
 
 	Eigen::EigenSolver<Eigen::Matrix3d> solver(m, true);
 	std::vector<EigenResult> results(3);
@@ -73,7 +79,9 @@ std::vector<EigenResult> GetEigens(const double matrix[3][3])
 		results[i].value = solver.eigenvalues()[i].real();
 		results[i].vector.resize(3);
 		for (int j = 0; j < 3; j++)
+		{
 			results[i].vector[j] = solver.eigenvectors().col(i)[j].real();
+		}
 	}
 
 	return results;
@@ -81,11 +89,14 @@ std::vector<EigenResult> GetEigens(const double matrix[3][3])
 
 void GetEigens(const double matrix[3][3], double eigenVectors[3][3], double eigenValues[3])
 {
+    std::cout<<"Eigen version:"<<EIGEN_WORLD_VERSION<<"."<<EIGEN_MAJOR_VERSION<<"."<<EIGEN_MINOR_VERSION<<"\n";
 	Eigen::Matrix3d m;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
 		{
+			//std::cout << "matij: " << matrix[i][j] << "\n";
 			m(j,i) = matrix[i][j];
+			//std::cout << "mji: " << m(j,i) << "\n";
 		}
 
 	Eigen::EigenSolver<Eigen::Matrix3d> solver(m, true);
@@ -93,8 +104,11 @@ void GetEigens(const double matrix[3][3], double eigenVectors[3][3], double eige
 	for (int i = 0; i < 3; i++)
 	{
 		eigenValues[i] = solver.eigenvalues()[i].real();
-		
+		//std::cout << "eigenvalues i: " << eigenValues[i] << "\n";
 		for (int j = 0; j < 3; j++)
+		{
 			eigenVectors[i][j] = solver.eigenvectors().col(i)[j].real();
+			std::cout << "eigenvectors i: " << eigenVectors[i][j] << "\n";
+		}
 	}
 }
