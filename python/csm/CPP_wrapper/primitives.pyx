@@ -15,7 +15,7 @@ cdef class Matrix3D:
         cdef int i, j
         for i in range(3):
             for j in range(3):
-                m[i][j] = 0
+                m.buf[i][j] = 0
         return m
 
     cdef copy(Matrix3D self):
@@ -109,7 +109,6 @@ cdef class Matrix3D:
         """
         cdef Vector3D result = Vector3D.zero()
         cdef int i, j
-
         for i in range(3):
             for j in range(3):
                 result.buf[i] += self.buf[i][j] * vec.buf[j]
@@ -124,7 +123,7 @@ cdef class Vector3D:
         cdef Vector3D v = Vector3D()
         cdef int i
         for i in range(3):
-            v[i] = 0
+            v.buf[i] = 0
         return v
 
     cdef copy(Vector3D self):
