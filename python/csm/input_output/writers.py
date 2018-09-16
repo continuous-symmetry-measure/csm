@@ -455,6 +455,8 @@ class ScriptWriter:
         self.results=results
         self.format=format
         self.folder=out_file_name
+        if not self.folder:
+            self.folder=os.path.join(os.getcwd(), "csm_results")
         self.polar=polar
 
     def format_CSM(self, result):
