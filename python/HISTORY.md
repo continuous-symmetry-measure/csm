@@ -1,6 +1,9 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.20.8
+------------------------
+* Compile-time check for Eigen version
 
 Changes in version 0.20.7
 -------------------------
