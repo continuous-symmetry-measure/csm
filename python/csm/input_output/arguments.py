@@ -22,8 +22,13 @@ def _create_parser():
     def input_utility_func(parser):
         parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?',
                             help='xyz connectivity file, default is connectivity.txt in current working directory')
-        parser.add_argument('--remove-hy', action='store_true', default=False,
+        mutex_args=parser.add_mutually_exclusive_group()
+        mutex_args.add_argument('--remove-hy', action='store_true', default=False,
                             help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
+        mutex_args.add_argument('--select-atoms',default=None,
+                            help='Select only some atoms, eg 1-20,15,17,19-21')
+        parser.add_argument('--select-mols', default=None,
+                            help='Select only some molecules, eg 1-20,15,17,19-21')
         parser.add_argument('--ignore-sym', action='store_true', default=False,
                             help='Ignore all atomic symbols, performing a purely geometric operation')
         parser.add_argument('--use-mass', action='store_true', default=False,
@@ -36,10 +41,8 @@ def _create_parser():
                             help='When a molecule has chains, use them (affects trivial, approx)')
         parser.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
-        parser.add_argument('--select-mols', default=None,
-                            help='Select only some molecules, eg 1-20,15,17,19-21')
-        parser.add_argument('--select-atoms',default=None,
-                            help='Select only some atoms, eg 1-20,15,17,19-21')
+
+
 
     def output_utility_func(parser):
         parser.add_argument('--json-output', action='store_true', default=False,
@@ -172,11 +175,12 @@ def _create_parser():
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
     #algorithm choice
-    approx_args.add_argument('--greedy', action='store_true', default=False,
-                             help='use the old greedy approx algorithm (no hungarian)')
-    approx_args.add_argument('--many-chains', action='store_true', default=False,
-                             help='Use the new chains algorithm for many chains. Will automatically apply use-chains')
-    approx_args.add_argument('--keep-structure', action='store_true', default=False,
+    mutex_approx_args=approx_args.add_mutually_exclusive_group()
+    mutex_approx_args.add_argument('--greedy',  action='store_const', const='greedy', default='hungarian', dest='approx_algorithm',
+                                   help='use the old greedy approx algorithm (no hungarian)')
+    mutex_approx_args.add_argument('--many-chains',  action='store_const', const='many-chains', dest='approx_algorithm',
+                                   help='Use the new chains algorithm for many chains. Will automatically apply use-chains')
+    mutex_approx_args.add_argument('--keep-structure', action='store_const', const='structured', dest='approx_algorithm',
                              help='Use keep-structure approximate algorithm')
     approx_args.add_argument('--selective', type=int,
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
@@ -236,8 +240,6 @@ def _process_arguments(parse_res):
 
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
         dictionary_args['select_atoms']  = _parse_ranges_and_numbers(parse_res.select_atoms)
-        if parse_res.select_atoms and parse_res.remove_hy:
-            raise ValueError("Remove-hy and select-atoms cannot be used together")
 
 
     def parse_output(dictionary_args):
@@ -291,16 +293,8 @@ def _process_arguments(parse_res):
                     dictionary_args['dirs'] = [dir]
 
                 #algorithm choice:
-                dictionary_args['approx_algorithm'] = 'hungarian'
-                if parse_res.greedy:
-                    dictionary_args['approx_algorithm'] = 'greedy'
-                if parse_res.many_chains:
-                    if parse_res.greedy:
-                        raise ValueError("--many-chains and --greedy are mutually exclusive")
+                if parse_res.approx_algorithm=="many-chains":
                     dictionary_args['use_chains'] = True
-                    dictionary_args['approx_algorithm'] = 'many-chains'
-                if parse_res.keep_structure:
-                    dictionary_args['approx_algorithm'] = 'structured'
 
                 if parse_res.selective is not None:
                     dictionary_args["num_selected"] = parse_res.selective
