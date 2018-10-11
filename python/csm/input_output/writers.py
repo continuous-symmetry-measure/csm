@@ -65,6 +65,16 @@ def print_structure(f, result):
                         "cycle" if count == 1 else "cycles",
                         cycle_len))
 
+def write_local_csm(f, result):
+        sum = 0
+        f.write("\nLocal CSM: \n")
+        size = len(result.molecule.atoms)
+        for i in range(size):
+            sum += result.local_csm[i]
+            f.write("%s %7lf\n" % (result.molecule.atoms[i].symbol, non_negative_zero(result.local_csm[i])))
+        f.write("\nsum: %7lf\n" % sum)
+
+
 # molwriters
 class CSMMolWriter:
     def write(self, f, result, op_name, format="csm"):
@@ -284,7 +294,7 @@ class _ResultWriter:
         self.write_dir(f)
 
         if self.print_local:
-            self.write_local_csm(f)
+            write_local_csm(f, self.result)
 
         if self.op_name == "CHIRALITY":
             self.write_chirality(f)
@@ -308,15 +318,6 @@ class _ResultWriter:
         f.write("%lf %lf %lf\n" % (
             non_negative_zero(self.result.dir[0]), non_negative_zero(self.result.dir[1]),
             non_negative_zero(self.result.dir[2])))
-
-    def write_local_csm(self, f):
-        sum = 0
-        f.write("\nLocal CSM: \n")
-        size = len(self.result.molecule.atoms)
-        for i in range(size):
-            sum += self.result.local_csm[i]
-            f.write("%s %7lf\n" % (self.result.molecule.atoms[i].symbol, non_negative_zero(self.result.local_csm[i])))
-        f.write("\nsum: %7lf\n" % sum)
 
     def write_chirality(self, f):
         if self.result.op_type == 'CS':
@@ -452,7 +453,7 @@ def get_mol_header(index, result):
     return test
 
 class ScriptWriter:
-    def __init__(self, results, format, out_file_name=None, polar=False, verbose=False, **kwargs):
+    def __init__(self, results, format, out_file_name=None, polar=False, verbose=False, print_local=False, **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
@@ -473,6 +474,7 @@ class ScriptWriter:
         if not self.folder:
             self.folder=os.path.join(os.getcwd(), "csm_results")
         self.polar=polar
+        self.print_local=print_local
 
     def format_CSM(self, result):
         if result.failed:
@@ -656,7 +658,7 @@ class ScriptWriter:
                 file_name=name+"."+command_result.molecule.metadata.format
                 out_file_name= os.path.join(out_folder, file_name)
                 try:
-                    of=OldFormatFileWriter(command_result, out_file_name, out_format=command_result.molecule.metadata.format)
+                    of=OldFormatFileWriter(command_result, out_file_name, out_format=command_result.molecule.metadata.format, print_local=self.print_local)
                     with open(out_file_name, 'w', encoding='utf-8') as f:
                         of._write_results(f)
                 except Exception as e:
