@@ -68,6 +68,9 @@ def print_structure(f, result):
 # molwriters
 class CSMMolWriter:
     def write(self, f, result, op_name, format="csm"):
+        self.f=f
+        self.result=result
+        self.op_name=op_name
         self.print_output_csm(f, result, op_name)
 
     def print_output_csm(self, f, result, op_name):
@@ -77,9 +80,16 @@ class CSMMolWriter:
         :param result: The result of the CSM calculation (a CSMState)
         :param calc_args: Calculation arguments to CSM
         """
-        size = len(result.molecule.atoms)
+        self.print_initial()
+        self.print_symmetric()
 
+
+    def print_initial(self):
         # print initial molecule
+        f=self.f
+        result=self.result
+        op_name=self.op_name
+        size = len(result.molecule.atoms)
 
         f.write("\nINITIAL STRUCTURE COORDINATES\n%i\n\n" % size)
         for i in range(size):
@@ -97,6 +107,11 @@ class CSMMolWriter:
 
         # print resulting structure coordinates
 
+    def print_symmetric(self):
+        f=self.f
+        result=self.result
+        op_name=self.op_name
+        size = len(result.molecule.atoms)
         f.write("\nMODEL 02 RESULTING STRUCTURE COORDINATES\n%i\n" % size)
 
         for i in range(size):
@@ -656,7 +671,7 @@ class ScriptWriter:
                     of=OldFormatFileWriter(command_result, out_file_name, out_format=self.format)
                     of._write_results(f)
 
-    def mult_mol_writer(self, filename, result, index):
+    def mult_mol_writer(self, filename, result, index, symmetric=False):
         '''
         :param filename:
         :param obmols:
@@ -667,18 +682,21 @@ class ScriptWriter:
         obmolwriter = OBMolWriter()
         obmols = obmolwriter.obm_from_result(result)
         for obmol in obmols:
-            obmolwriter.set_obm_from_original(obmol, result)
+            if symmetric:
+                obmolwriter.set_obm_from_symmetric(obmol, result)
+            else:
+                obmolwriter.set_obm_from_original(obmol, result)
 
         #handle headers:
-        mol_name = result.molecule.metadata.header(no_file_format=True)
-        use_file= result.molecule.metadata.use_filename
-        mol_index= result.molecule.metadata.index+1
+        metadata=result.molecule.metadata
+        mol_name = metadata.header(no_file_format=True)
+        mol_index= metadata.index+1
 
         line_header = get_line_header(index, result)
         for mol in obmols:
             title = mol.GetTitle()
             if mol_name not in title:
-                if use_file:
+                if metadata.use_filename:
                     title+="\t"+mol_name
                 if "mol_index=" not in title:
                     title+="\tmol_index="+str(mol_index)
@@ -721,9 +739,9 @@ class ScriptWriter:
         for mol_results in self.results:
             for index, result in enumerate(mol_results):
                 if result.molecule.metadata.format=="csm":
-                    writer=CSMMolWriter()
+                    writer=CSMMolWriter(f, result, result.operation.name)
                     with open(filename, 'a') as f:
-                        writer.write(f, result, result.operation.name)
+                        writer.print_initial()
                 else:
                     self.mult_mol_writer(filename, result, index)
 
@@ -735,11 +753,11 @@ class ScriptWriter:
         for mol_results in self.results:
             for index, result in enumerate(mol_results):
                 if result.molecule.metadata.format=="csm":
-                    writer=CSMMolWriter()
+                    writer=CSMMolWriter(f, result, result.operation.name)
                     with open(filename, 'a') as f:
-                        writer.write(f, result, result.operation.name)
+                        writer.print_symmetric()
                 else:
-                    self.mult_mol_writer(filename, result, index)
+                    self.mult_mol_writer(filename, result, index, symmetric=True)
 
 
 
