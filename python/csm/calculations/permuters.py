@@ -435,6 +435,13 @@ class ConstraintPermuter:
         self.constraints_prop = ConstraintPropagator(self.molecule, self.op_order, self.op_type, keep_structure)
         self.constraints = DictionaryConstraints(self.molecule)
         self.print_branches = False
+        self._permute_start = datetime.datetime.now()
+
+    @property
+    def run_time(self):
+        now = datetime.datetime.now()
+        time_d = now - self._permute_start
+        return time_d.total_seconds()
 
     def check_timeout(self):
         # step zero: check if time out
@@ -612,14 +619,8 @@ class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
             sys.setrecursionlimit(len(molecule))
         self.distances = distances_list
         #self.print_branches=True
-        self._permute_start = datetime.datetime.now()
         self._permute_timeout = perm_timeout
 
-    @property
-    def run_time(self):
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        return time_d.total_seconds()
 
     def check_timeout(self):
         # step zero: check if time out
