@@ -838,7 +838,7 @@ class MoleculeReader:
     @staticmethod
     def from_string(string, format, initialize=True,
                     use_chains=False, babel_bond=False,
-                    remove_hy=False, ignore_symm=False, use_mass=False):
+                    remove_hy=False, ignore_sym=False, use_mass=False):
         """
         create a Molecule from a string
         :param string: the string to create the molecule from
@@ -847,7 +847,7 @@ class MoleculeReader:
         :param use_chains: boolean, default False, when True chains are read from the string 
         :param babel_bond: boolean, default False, when True OpenBabel will attempt to guess connectivity information
         :param remove_hy: boolean, default False, when True hydrogen atoms will be removed
-        :param ignore_symm: boolean, default False, when True all atom symbols will be "X" instead of elements 
+        :param ignore_sym: boolean, default False, when True all atom symbols will be "X" instead of elements 
                             (this affects equivalence class calculation)
         :param use_mass: boolean, default False, when True atomic mass will be used, when False all atoms have a mass of 1
         :return: an instance of class Molecule
@@ -855,7 +855,7 @@ class MoleculeReader:
         # note: useMass is used when creating molecule, even though it is actually about creating the normalization
         # step one: get the molecule object
         obm = MoleculeReader._obm_from_strings([string], format, babel_bond)
-        mol = MoleculeReader.mol_from_obm(obm, format, ignore_symm, use_mass)
+        mol = MoleculeReader.mol_from_obm(obm, format, ignore_sym=ignore_sym, use_mass=use_mass)
         if initialize:
             mol._complete_initialization(use_chains, remove_hy)
         return mol
@@ -863,7 +863,7 @@ class MoleculeReader:
     @staticmethod
     def from_file(in_file_name, in_format=None, initialize=True,
                   use_chains=False, babel_bond=False,
-                  remove_hy=False, ignore_symm=False, use_mass=False,
+                  remove_hy=False, ignore_sym=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
                   keep_structure=False, select_atoms=[], conn_file=None,
                   *args, **kwargs):
@@ -874,7 +874,7 @@ class MoleculeReader:
         :param use_chains: boolean, default False, when True chains are read from the string 
         :param babel_bond: boolean, default False, when True OpenBabel will attempt to guess connectivity information
         :param remove_hy: boolean, default False, when True hydrogen atoms will be removed
-        :param ignore_symm: boolean, default False, when True all atom symbols will be "X" instead of elements 
+        :param ignore_sym: boolean, default False, when True all atom symbols will be "X" instead of elements 
                             (this affects equivalence class calculation)
         :param use_mass: boolean, default False, when True atomic mass will be used, when False all atoms have a mass of 1
         :param read_fragments: boolean, default False, when True, multiple molecules in one file will be treated 
@@ -889,20 +889,20 @@ class MoleculeReader:
 
         format = get_format(in_format, in_file_name)
         if format == "csm":
-            mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
+            mol = MoleculeReader._read_csm_file(in_file_name, ignore_sym, use_mass)
         else:
             obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
-            mol = MoleculeReader.mol_from_obm(obm, format, ignore_symm, use_mass, read_fragments)
+            mol = MoleculeReader.mol_from_obm(obm, format, ignore_sym=ignore_sym, use_mass=use_mass, read_fragments=read_fragments)
         return MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                        use_chains, babel_bond,
-                                                       remove_hy, ignore_symm, use_mass,
+                                                       remove_hy, ignore_sym, use_mass,
                                                        read_fragments, use_sequence,
                                                        keep_structure, select_atoms, conn_file)
 
     @staticmethod
     def _process_single_molecule(mol, in_file_name, format, initialize=True,
                                  use_chains=False, babel_bond=False,
-                                 remove_hy=False, ignore_symm=False, use_mass=False,
+                                 remove_hy=False, ignore_sym=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
                                  keep_structure=False, select_atoms=[], conn_file=None, **kwargs):
 
@@ -917,7 +917,7 @@ class MoleculeReader:
             mol = MoleculeReader._create_pdb_with_sequence (mol, in_file_name, use_chains=use_chains,
                                                            babel_bond=babel_bond,
                                                            read_fragments=read_fragments, remove_hy=remove_hy,
-                                                           ignore_symm=ignore_symm, use_mass=use_mass)
+                                                           ignore_sym=ignore_sym, use_mass=use_mass)
             # we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             return mol
 
@@ -945,7 +945,7 @@ class MoleculeReader:
     @staticmethod
     def multiple_from_file(in_file_name, in_format=None, initialize=True,
                            use_chains=False, babel_bond=False,
-                           remove_hy=False, ignore_symm=False, use_mass=False,
+                           remove_hy=False, ignore_sym=False, use_mass=False,
                            read_fragments=False, use_sequence=False,
                            keep_structure=False, select_atoms=[], conn_file=None,
                            *args, **kwargs):
@@ -953,18 +953,18 @@ class MoleculeReader:
         format = get_format(in_format, in_file_name)
 
         if format == "csm":
-            mol = MoleculeReader._read_csm_file(in_file_name, ignore_symm, use_mass)
+            mol = MoleculeReader._read_csm_file(in_file_name, ignore_sym, use_mass)
             mols.append(mol)
 
         else:
             obms = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
             if read_fragments:
-                mol = MoleculeReader.mol_from_obm(obms, format, babel_bond=babel_bond, ignore_symm=ignore_symm, use_mass=use_mass, read_fragments=read_fragments)
+                mol = MoleculeReader.mol_from_obm(obms, format, babel_bond=babel_bond, ignore_sym=ignore_sym, use_mass=use_mass, read_fragments=read_fragments)
                 mols.append(mol)
 
             else:
                 for obm in obms:
-                    mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_symm=ignore_symm, use_mass=use_mass)
+                    mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_sym=ignore_sym, use_mass=use_mass)
                     mols.append(mol)
 
         processed_mols=[]
@@ -974,7 +974,7 @@ class MoleculeReader:
         for index, mol in enumerate(mols):
             p_mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                           use_chains, babel_bond,
-                                                          remove_hy, ignore_symm, use_mass,
+                                                          remove_hy, ignore_sym, use_mass,
                                                           read_fragments, use_sequence,
                                                           keep_structure, select_atoms, conn_file)
             p_mol.metadata.index=index
@@ -1034,7 +1034,7 @@ class MoleculeReader:
 
 
     @staticmethod
-    def mol_from_obm(obmols, format, babel_bond=False, ignore_symm=False, use_mass=False, read_fragments=False, **kwargs):
+    def mol_from_obm(obmols, format, babel_bond=False, ignore_sym=False, use_mass=False, read_fragments=False, **kwargs):
         """
         :param obmol: OBmol molecule
         :param args_dict: dictionary of processed command line arguments
@@ -1049,7 +1049,7 @@ class MoleculeReader:
             mol_contents.append(mol_string_from_obm(obmol, format))
             for i, obatom in enumerate(OBMolAtomIter(obmol)):
                 position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
-                if ignore_symm:
+                if ignore_sym:
                     symbol = "XX"
                 else:
                     # get symbol by atomic number
@@ -1105,7 +1105,7 @@ class MoleculeReader:
 
 
     @staticmethod
-    def _read_csm_file(filename, ignore_symbol=False, use_mass=False):
+    def _read_csm_file(filename, ignore_sym=False, use_mass=False):
         """
         :param filename: Name of CSM file
         :param ignore_symbol: When true, the atom's symbol is not read
@@ -1127,7 +1127,7 @@ class MoleculeReader:
             for i in range(size):
                 line = f.readline().split()
                 try:
-                    if ignore_symbol:
+                    if ignore_sym:
                         symbol = "XX"
                     else:
                         symbol = line[0]
@@ -1232,7 +1232,7 @@ class MoleculeReader:
     @staticmethod
     def _create_pdb_with_sequence(mol, in_file_name, initialize=True,
                                   use_chains=False, babel_bond=False, read_fragments=False,
-                                  ignore_hy=False, remove_hy=False, ignore_symm=False, use_mass=False):
+                                  ignore_hy=False, remove_hy=False, ignore_sym=False, use_mass=False):
         def read_atom(line, likeness_dict, cur_atom):
             pdb_dict = PDBLine._pdb_line_to_dict(line)
             atom_type = pdb_dict.atom_symbol

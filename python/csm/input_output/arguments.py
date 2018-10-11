@@ -230,7 +230,7 @@ def _process_arguments(parse_res):
     def parse_input(dictionary_args):
         dictionary_args['in_file_name'] = parse_res.input
         #dictionary_args['remove_hy'] = parse_res.remove_hy
-        dictionary_args['ignore_symm'] = parse_res.ignore_sym
+        #dictionary_args['ignore_sym'] = parse_res.ignore_sym
         #dictionary_args['use_mass'] = parse_res.use_mass
         #dictionary_args['babel_bond'] = parse_res.babel_bond
         #dictionary_args['use_sequence'] = parse_res.use_sequence
