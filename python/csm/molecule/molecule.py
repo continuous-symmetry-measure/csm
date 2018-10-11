@@ -1298,22 +1298,24 @@ class MoleculeReader:
         #babel_bond
         try:
             babel_bond=kwargs["babel_bond"]
-            obms = MoleculeReader._obm_from_strings(in_mol.metadata.file_content,
+        except KeyError:
+            babel_bond=in_mol.metadata.babel_bond
+
+
+        obms = MoleculeReader._obm_from_strings(in_mol.metadata.file_content,
                                                     format,
                                                     babel_bond)
-            if "read_fragments" in kwargs:
+        if "read_fragments" in kwargs:
                 out_mol = MoleculeReader.mol_from_obm(obms, format, **kwargs)
-            else:
-                obm = obms[0]
-                out_mol = MoleculeReader.mol_from_obm([obm], format, **kwargs)
-
-        except KeyError:
-            out_mol = in_mol.copy()
-
+        else:
+            obm = obms[0]
+            out_mol = MoleculeReader.mol_from_obm([obm], format, **kwargs)
 
         kwargs.pop("in_file_name")
 
         out_mol = MoleculeReader._process_single_molecule(out_mol, in_mol.metadata.filename, format, **kwargs)
+        out_mol.metadata=in_mol.metadata
+        out_mol.metadata.babel_bond=babel_bond
         return out_mol
 
 
