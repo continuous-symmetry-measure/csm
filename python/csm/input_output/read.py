@@ -12,8 +12,13 @@ def read_molecules(**kwargs):
     if os.path.isdir(input_name):
         kwargs.pop('in_file_name')
         mols=[]
-        for directory, subdirectories, files in os.walk(input_name):
-            for file_name in files:
+        files=[]
+        for directory, subdirectories, files1 in os.walk(input_name):
+            files+=files1
+            break
+
+        files.sort()
+        for file_name in files:
                 if file_name=="sym.txt":
                     continue
                 mol_file= os.path.join(input_name, file_name)
@@ -25,7 +30,7 @@ def read_molecules(**kwargs):
                         print("failed to create a molecule from", file_name, str(e))
                     #else:
                     #    print(file_name, "was not read")
-            break
+
     elif not os.path.isfile(input_name):
         raise ValueError("invalid file/folder name for molecule")
     else: #file
