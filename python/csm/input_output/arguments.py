@@ -229,21 +229,12 @@ def _process_arguments(parse_res):
 
     def parse_input(dictionary_args):
         dictionary_args['in_file_name'] = parse_res.input
-        #dictionary_args['remove_hy'] = parse_res.remove_hy
-        #dictionary_args['ignore_sym'] = parse_res.ignore_sym
-        #dictionary_args['use_mass'] = parse_res.use_mass
-        #dictionary_args['babel_bond'] = parse_res.babel_bond
-        #dictionary_args['use_sequence'] = parse_res.use_sequence
-        #dictionary_args['use_chains'] = parse_res.use_chains
-        #dictionary_args['read_fragments'] = parse_res.read_fragments
         dictionary_args["conn_file"]=parse_res.connect
-
         if parse_res.read_fragments:
             dictionary_args['use_chains'] = True
             #logger.warning("Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
-
         dictionary_args['select_atoms']  = _parse_ranges_and_numbers(parse_res.select_atoms)
         if parse_res.select_atoms and parse_res.remove_hy:
             raise ValueError("Remove-hy and select-atoms cannot be used together")
@@ -251,10 +242,7 @@ def _process_arguments(parse_res):
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
-        #dictionary_args['json_output'] = parse_res.json_output
         dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
-        #dictionary_args['print_denorm'] = parse_res.print_denorm
-        #dictionary_args['legacy']=parse_res.legacy
 
     dictionary_args=vars(parse_res)
     try:
