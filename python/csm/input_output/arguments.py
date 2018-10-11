@@ -245,54 +245,30 @@ def _process_arguments(parse_res):
         dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
     dictionary_args=vars(parse_res)
-    try:
-        dictionary_args["pipe"]=parse_res.pipe
-    except AttributeError:
+    if "pipe" not in dictionary_args:
         dictionary_args["pipe"]=False
-    dictionary_args["global_time_out"]=None
-    try:
-        dictionary_args["global_time_out"]=parse_res.global_timeout
-    except:
-        pass #Don't care, keep default
-    dictionary_args["command"]=parse_res.command
+
     if parse_res.command == "read":
         dictionary_args["in_format"]=parse_res.format
         parse_input(dictionary_args)
     elif parse_res.command == "write":
         dictionary_args["out_format"] = parse_res.format
         parse_output(dictionary_args)
-        dictionary_args['simple'] = parse_res.simple
     else:
         # get input/output if relevant
-        dictionary_args['simple'] = parse_res.simple
-
         parse_input(dictionary_args)
-        dictionary_args["in_format"] = parse_res.in_format
         parse_output(dictionary_args)
-        dictionary_args["out_format"] = parse_res.out_format
-
 
         if parse_res.command == "comfile":
             dictionary_args["command_file"]=parse_res.comfile
             dictionary_args["old_command"]=parse_res.old_cmd
         else:
-            # get shared arguments:
-            #types=parse_res.type
-            #ops=[]
-            #for type in types:
-            #    op = Operation(type)
-            #    ops.append(op)
-            #dictionary_args['operations'] = ops
             dictionary_args['operation'] = Operation(parse_res.type)
-            #dictionary_args['timeout'] = parse_res.timeout
-            #dictionary_args['sn_max'] = parse_res.sn_max
             dictionary_args['normalizations']=parse_res.normalize
 
             if parse_res.command == 'exact':
                 if parse_res.use_perm:
                     dictionary_args['perm_file_name'] = parse_res.use_perm
-                #dictionary_args['keep_structure'] = parse_res.keep_structure
-                #dictionary_args['no_constraint'] = parse_res.no_constraint
                 dictionary_args['print_branches'] = parse_res.output_branches
                 permuters.print_branches = parse_res.output_branches
 
@@ -309,8 +285,7 @@ def _process_arguments(parse_res):
                 dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
                 if parse_res.fibonacci is not None:
                     dictionary_args["num_dirs"] = parse_res.fibonacci
-                    dictionary_args["fibonacci"] = True
-                #dictionary_args['use_best_dir'] = parse_res.use_best_dir
+                    dictionary_args["fibonacci"] = True #doing this before previous line causes weird bug
                 dir = parse_res.dir
                 if dir:
                     dictionary_args['dirs'] = [dir]
@@ -328,20 +303,20 @@ def _process_arguments(parse_res):
                     dictionary_args['approx_algorithm'] = 'structured'
 
                 if parse_res.selective is not None:
-                    dictionary_args["selective"] = True
                     dictionary_args["num_selected"] = parse_res.selective
+                    dictionary_args["selective"] = True #likewise, weird bugs
 
-                dictionary_args['parallel'] = parse_res.parallel is not None
-                dictionary_args['pool_size'] = parse_res.parallel
 
-                #outputs:
+                if parse_res.parallel is not None:
+                    dictionary_args['pool_size'] = parse_res.parallel
+                    dictionary_args['parallel'] = True #likewise, weird bugs
+
+                    #outputs:
                 #dictionary_args['print_approx'] = parse_res.print_approx
                 #dictionary_args['polar'] = parse_res.polar
             if parse_res.command == 'trivial':
                 if parse_res.permute_chains or parse_res.use_chains:
                     dictionary_args["use_chains"]=True
-
-    dictionary_args["timestamp"]=parse_res.timestamp
 
     try:
         timestamp=str(parse_res.timestamp)
