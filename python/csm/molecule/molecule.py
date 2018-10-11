@@ -134,7 +134,7 @@ class MoleculeMetaData:
 
         if self.title: #replace with internal index if relevant
             start_index=self.title.find("mol_index=")
-            if start_index:
+            if start_index != -1:
                 end_index=self.title.find(";")
                 start_index=start_index+10
                 mol_index=int(self.title[start_index:end_index])
