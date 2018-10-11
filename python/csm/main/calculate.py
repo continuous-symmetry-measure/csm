@@ -45,7 +45,7 @@ def do_calculation(command, perms_csv_name=None, parallel=False, print_approx=Fa
 
 
 def single_calculation(molecule, dictionary_args):
-    print("Molecule:", molecule.metadata.header())
+    print("Molecule:", molecule.metadata.header(no_str_format=True))
     molecule.print_equivalence_class_summary(True)
     dictionary_args["molecule"] = molecule
     result = do_calculation(**dictionary_args)

@@ -124,7 +124,7 @@ class MoleculeMetaData:
             "use_filename":self.use_filename
         }
 
-    def header(self, no_file_format=False):
+    def header(self, no_file_format=False, no_str_format=False):
         if self.use_filename:
             if no_file_format:
                 return self.filename[:-4]
@@ -138,6 +138,8 @@ class MoleculeMetaData:
                 end_index=self.title.find(";")
                 start_index=start_index+10
                 mol_index=int(self.title[start_index:end_index])
+        if no_str_format:
+            return str(mol_index)
 
         mol_str="%04d" % mol_index
         return mol_str
