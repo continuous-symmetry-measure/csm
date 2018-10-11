@@ -89,7 +89,6 @@ std::vector<EigenResult> GetEigens(const double matrix[3][3])
 
 void GetEigens(const double matrix[3][3], double eigenVectors[3][3], double eigenValues[3])
 {
-    std::cout<<"Eigen version:"<<EIGEN_WORLD_VERSION<<"."<<EIGEN_MAJOR_VERSION<<"."<<EIGEN_MINOR_VERSION<<"\n";
 	Eigen::Matrix3d m;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
@@ -108,7 +107,6 @@ void GetEigens(const double matrix[3][3], double eigenVectors[3][3], double eige
 		for (int j = 0; j < 3; j++)
 		{
 			eigenVectors[i][j] = solver.eigenvectors().col(i)[j].real();
-			std::cout << "eigenvectors i: " << eigenVectors[i][j] << "\n";
 		}
 	}
 }
