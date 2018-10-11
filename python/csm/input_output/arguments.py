@@ -308,8 +308,8 @@ def _process_arguments(parse_res):
                 #dictionary_args['detect_outliers'] = parse_res.detect_outliers
                 dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
                 if parse_res.fibonacci is not None:
-                    dictionary_args["fibonacci"] = True
                     dictionary_args["num_dirs"] = parse_res.fibonacci
+                    dictionary_args["fibonacci"] = True
                 #dictionary_args['use_best_dir'] = parse_res.use_best_dir
                 dir = parse_res.dir
                 if dir:
