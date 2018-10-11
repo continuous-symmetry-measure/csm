@@ -69,6 +69,8 @@ def do_commands(molecules, **dictionary_args):
                 print(str(e))
                 total_results[mol_index].append(FailedResult(str(e), **args_dict))
 
+
+    total_results= [result for result in total_results if result]
     return total_results
 
 
