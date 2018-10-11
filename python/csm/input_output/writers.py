@@ -696,10 +696,9 @@ class ScriptWriter:
         for mol in obmols:
             title = mol.GetTitle()
             if mol_name not in title:
-                if metadata.use_filename:
-                    title+="\t"+mol_name
-                if "mol_index=" not in title:
-                    title+="\tmol_index="+str(mol_index)
+                if not metadata.use_filename:
+                    if "mol_index=" not in title:
+                        title+="\tmol_index="+str(mol_index)
 
             title+="\tSYM_TXT_CODE="+line_header
             mol.SetTitle(title)
