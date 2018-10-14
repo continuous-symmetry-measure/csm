@@ -18,8 +18,6 @@ from csm.calculations.basic_calculations import create_rotation_matrix, array_di
     CalculationTimeoutError
 from csm.calculations.data_classes import CSMState, Operation, CSMResult
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, MINDOUBLE
-from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
-    ConstraintsSelectedByDistancePermuter
 from csm.molecule.molecule import MoleculeFactory
 from csm.fast import CythonPermuter
 from csm.input_output.formatters import csm_log as print
@@ -556,49 +554,6 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
         indexes = munkres_wrapper(group_distance_matrix)
         return indexes, group_distance_matrix
 
-
-class _StructuredPermBuilder(_PermFromDirBuilder):
-    def create_perm_from_dir(self, dir, chainperm="dontcare"):
-        return self.build_perm_and_state_version_dict(self._op_type, self._op_order, self._molecule, dir)
-
-    def build_perm_and_state_version_list(self, op_type, op_order, molecule, dir):
-        rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
-        rotated = (rotation_mat @ molecule.Q.T).T
-
-        distances_list = []
-        for index_a, a in enumerate(molecule.Q):
-            for index_b, b in enumerate(rotated):
-                if index_b in molecule.atoms[index_a].equivalency:
-                    distance = array_distance(a, b)
-                    distances_list.append(((index_a, index_b), distance))
-
-        distances_list.sort(key=operator.itemgetter(1))
-        permuter = ContraintsSelectedFromDistanceListPermuter(self._molecule, self._op_order, self._op_type,
-                                                              distances_list, timeout=30000)
-        state = permuter.permute().__next__()
-        self._log("\t\t\t Permutation took ", permuter.run_time, "seconds to find")
-        perm = state.perm
-        return perm
-
-    def build_perm_and_state_version_dict(self, op_type, op_order, molecule, dir):
-        rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
-        rotated = (rotation_mat @ molecule.Q.T).T
-
-        distances_dict = {}
-        for index_a, a in enumerate(molecule.Q):
-            distances_dict[index_a] = {}
-            for index_b, b in enumerate(rotated):
-                if index_b in molecule.atoms[index_a].equivalency:
-                    distance = array_distance(a, b)
-                    distances_dict[index_a][index_b] = distance
-
-        permuter_class = ConstraintsOrderedByDistancePermuter  # ConstraintsSelectedByDistancePermuter
-        permuter = permuter_class(self._molecule, self._op_order, self._op_type, distances_dict, perm_timeout=30000)
-        state = permuter.permute().__next__()
-        self._log("\t\t\tit took ", permuter.run_time, "seconds to find the permutation")
-        perm = state.perm
-        return perm
-
 class ApproxCalculation(_OptionalLogger):
     def __init__(self, operation, molecule, approx_algorithm='hungarian',
                  log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
@@ -716,52 +671,3 @@ class ApproxCalculation(_OptionalLogger):
                     break
         return best, least_invalid
 
-class ParallelApprox(ApproxCalculation):
-    def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
-                 log_func=None, selective=False, num_selected=10, pool_size=0, *args, **kwargs):
-        if log_func is not None:
-            raise ValueError("Cannot run logging on approx in parallel calculation")
-        self.pool_size=pool_size
-        if pool_size==0:
-            self.pool_size= multiprocessing.cpu_count() - 1
-        super().__init__(operation, molecule, direction_chooser, approx_algorithm,
-                         log_func=log_func, selective=selective, num_selected=num_selected)
-
-    def _calculate(self, operation):
-        if operation.type == 'CI' or (operation.type == 'SN' and operation.order == 2):
-            raise ValueError("Please don't use parallel calculation for inversion")
-        else:
-            if self.selective:
-                self.max_iterations = 1
-                self._calculate_for_directions(operation, self._initial_directions)
-                best_dirs = []
-                sorted_csms = sorted(self.statistics.directions_arr)
-                for item in sorted_csms[:self.num_selected]:
-                    best_dirs.append(item.start_dir)
-                self.max_iterations = self._max_iterations
-                best_result = self._calculate_for_directions(operation, best_dirs)
-
-            else:
-                self.max_iterations = self._max_iterations
-                best_result = self._calculate_for_directions(operation, self._initial_directions)
-
-        return best_result
-
-    def _calculate_for_directions(self, operation, dirs):
-        pool = multiprocessing.Pool(processes=self.pool_size)
-        print("Approximating across {} processes".format(self.pool_size))
-        single_dir_approximator = SingleDirApproximator(operation, self._molecule,
-                                                        self.perm_builder, self._log,
-                                                        self.timeout, max_iterations=self.max_iterations)
-        pool_outputs = pool.map(single_dir_approximator.calculate, dirs)
-        pool.close()
-        pool.join()
-        best_result = CSMState(csm=MAXDOUBLE)
-        self.statistics = ApproxStatistics(dirs)
-        for (result, statistics) in pool_outputs:
-            dir = statistics.start_dir
-            self.statistics[dir] = statistics
-            if result.csm < best_result.csm:
-                best_result = result
-        self.result = best_result
-        return best_result

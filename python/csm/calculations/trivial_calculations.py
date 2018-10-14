@@ -1,15 +1,13 @@
 import datetime
 from csm.fast import CythonPermuter
-from csm.calculations.data_classes import CSMState, Operation, CSMResult
+from csm.calculations.data_classes import CSMState, CSMResult
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import ExactCalculation
-from csm.calculations.permuters import ConstraintPermuter
-from csm.molecule.molecule import Molecule, MoleculeFactory
-from csm.calculations.basic_calculations import now, run_time
+from csm.molecule.molecule import MoleculeFactory
+from csm.calculations.basic_calculations import run_time
 
 '''
 contains the trivial calculation (identity perm on a chain permutation)
-and the perm count
 '''
 
 class TrivialCalculation:

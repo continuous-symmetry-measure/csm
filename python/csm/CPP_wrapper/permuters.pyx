@@ -23,7 +23,7 @@ __author__ = 'Devora'
 
 cdef class PermChecker:
     """
-    an 'abstract class', that True and Structure permcheckers both inherit from.
+    an 'abstract class', that permcheckers both inherit from.
     """
     def __init__(self):
         pass
@@ -40,25 +40,6 @@ cdef class TruePermChecker(PermChecker):
 
     cpdef bool is_legal(self, pip, origin, destination):
         return True
-
-
-class StructurePermChecker(PermChecker):
-    """
-    returns False if the proposed indices break the keepStructure constraint, and True otherwise
-    """
-    def __init__(self, mol):
-        self.mol = mol
-
-    def is_legal(self, PermInProgress pip, int origin, int destination):
-        cdef int adjacent
-        #print(origin, destination)
-        for adjacent in self.mol.atoms[origin].adjacent:
-            if pip.p[adjacent] != -1 and  (destination, pip.p[adjacent]) not in self.mol.bondset:
-                #print("DEADEND")
-                return False
-        return True
-
-
 
 cpdef public calcstate_from_python(pythonstate):
         cdef CalcState copy = CalcState(pythonstate.molecule_size, pythonstate.op_order, True)
@@ -257,24 +238,19 @@ cdef class CythonPermuter:
     cdef timeout
     cdef start_time
 
-    def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True, timeout=300):
+    def __init__(self, mol, op_order, op_type, precalculate=True, timeout=300):
         """
         :param mol:
         :param op_order:
         :param op_type:
-        :param keep_structure:
         :param precalculate: false when we want perms WITHOUT csm (eg chainperm)
         :param timeout:
         """
         self.count=0
         self.mol=mol
         self._groups = mol.equivalence_classes
-        self.choose_cycle=keep_structure
         self.timeout=timeout
-        if keep_structure:
-            perm_checker=StructurePermChecker
-        else:
-            perm_checker=TruePermChecker
+        perm_checker=TruePermChecker
         if precalculate:
             perm_class=PreCalcPIP
         else:
@@ -290,14 +266,6 @@ cdef class CythonPermuter:
 
     cdef choose_next_cycle(self, pip, remainder):
         res=remainder[0]
-        if self.choose_cycle:
-            if len(remainder)==1:
-                return res
-            for i, mol_index in enumerate(remainder):
-                for neighbor in self.mol.atoms[mol_index].adjacent:
-                    if pip.p[neighbor]!=-1:
-                        res=mol_index
-                        return res
         return res
 
 
