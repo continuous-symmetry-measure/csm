@@ -52,7 +52,7 @@ def get_version():
 csm_version = get_version()
 print("Packaging CSM version %s" % csm_version)
 setup(
-    name='csm',
+    name='proteincsm',
     version=csm_version,
     packages=['csm.calculations', 'csm.calculations.approx', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],

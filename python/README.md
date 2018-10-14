@@ -24,22 +24,11 @@ the exact measure would be unreasonable.
 
 ## Usage
 
-After installation, the program can be called from the command line. 
+After installation, the program can be called from the command line. For example:
 
-The `csm` program offers a choice of 5 commands: `read`, `exact`, `approx`,
-`trivial`, `write`
+`csm c2 inputmol.mol output.txt --optional-args`
 
-the `read` and `write` commands enable CSM to be used as a pipe-able program.
-
-`exact`, `approx`, and `trivial` allow use of the exact, approximate, and trivial CSM calculations.
-
-A complete usage example would be as follows:
-
-`csm exact c2 --input inputmolecule.mol --output outputfile.mol --keep-structure`
-
-Help for any of the options can be accessed by entering `csm <OPTION_NAME> -h`, for example `csm exact -h`.
-
-This will provide a full list of optional and required arguments, with explanations.
+You can access a help menu with a list of all available options via `csm -h`
 
 In addition to the possibility of using CSM from the command line, CSM can be accessed programmatically through its API, 
 detailed in the file API.md (including examples)
@@ -58,20 +47,29 @@ You must also install openbabel's python bindings (`pip install openbabel`) and 
 
 CSM can be installed using:
 
-`pip install csm --extra-index-url=https://repo.fury.io/theresearchsoftwarecompany`
+`pip install proteincsm`
 
+## Citations ##
+
+Please cite CSM using the following:
+
+```
+Alon, G., and Tuvi-Arad, I. "Improved algorithms for symmetry analysis: Structure preserving permutations". J. Math. Chem., 56(1), 193–212 (2018).
+
+H. Zabrodsky, S. Peleg and D. Avnir "Continuous Symmetry Measures" J. Am. Chem. Soc., 114, 7843-7851 (1992) 
+
+Chaim Dryzun, Amir Zait and David Avnir “Quantitative Symmetry and Chirality—A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells” J. Comput. Chem., 32, 2526 – 2538, (2011) 
+```
 
 ## Credits
 
-[to be added-- citation instructions]
-
 Science/Math:
 
-David Avnir (david.avnir@mail.huji.ac.il)
+David Avnir - Hebrew University
 
-Inbal Tuvi-Arad (inbaltu@openu.ac.il)
+Inbal Tuvi-Arad - Open University
 
-Gil Alon (gil.alon@gmail.com)
+Gil Alon - Open University
 
 Programming:
 
@@ -79,19 +77,15 @@ The Research Software Company (chelem.co.il)
 
 Testing, scripts, additional technical support:
 
-Sagiv
+Sagiv - Open University
 
-## Contact
+#Contact
 
+For chemistry questions, contact Inbal Tuvi-Arad at inbaltu@openu.ac.il
 
-### Contributing
-
-You can contribute to the project by sending bug reports or feature requests to
-Devora@chelem.co.il or via the contact form at chelem.co.il
-
-### Help
-
-Similarly, send requests for help to Devora@chelem.co.il or via the contact form at chelem.co.il
+For programming questions, bug reports, and feature requests,
+contact The Research Software Company at contact@chelem.co.il 
+or via the contact form at the chelem website (chelem.co.il)
 
 ## License
 
