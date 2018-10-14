@@ -1,6 +1,11 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.20.9
+------------------------
+
+Bug fixes in output, approx, and some argument parsing
+
 Changes in version 0.20.8
 ------------------------
 * Compile-time check for Eigen version
