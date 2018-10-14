@@ -913,15 +913,13 @@ class MoleculeReader:
         mol.metadata.filename=os.path.basename(in_file_name)
 
         if use_sequence:
-            if format.lower() != 'pdb':
-                raise ValueError("--use-sequence only works with PDB files")
-
-            mol = MoleculeReader._create_pdb_with_sequence (mol, in_file_name, use_chains=use_chains,
+            if format.lower() == 'pdb':
+                mol = MoleculeReader._create_pdb_with_sequence (mol, in_file_name, use_chains=use_chains,
                                                            babel_bond=babel_bond,
                                                            read_fragments=read_fragments, remove_hy=remove_hy,
                                                            ignore_sym=ignore_sym, use_mass=use_mass)
-            # we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
-            return mol
+                # we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
+                return mol
 
         if format == "pdb":
             mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)

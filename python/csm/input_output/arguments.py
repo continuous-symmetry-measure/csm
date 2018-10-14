@@ -92,10 +92,13 @@ def _process_arguments(parse_res):
     dictionary_args['in_file_name'] = parse_res.input
     dictionary_args['out_file_name'] = parse_res.output
 
-    if dictionary_args["approx_algorithm"]!="hungarian" and dictionary_args["calc_type"]!="approx":
+    if dictionary_args["calc_type"]=="approx":
+        dictionary_args["use_sequence"] = True
+
+    elif dictionary_args["approx_algorithm"]!="hungarian":
         logger.warning("--many-chains and --greedy are only relevant with --approx and will be ignored")
 
-    dictionary_args["use_sequence"]=True
+
     return dictionary_args
 
 
