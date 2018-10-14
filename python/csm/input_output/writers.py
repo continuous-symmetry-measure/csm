@@ -2,7 +2,6 @@ import json
 from csm.input_output.formatters import format_CSM, non_negative_zero
 import io
 from openbabel import OBConversion
-from csm.calculations.basic_calculations import check_perm_structure, check_perm_cycles, cart2sph
 from csm.molecule.molecule import MoleculeReader
 
 
@@ -72,9 +71,9 @@ class OBMolWriter:
             f.write("\nMODEL 01")
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
 
-        obmol = MoleculeReader._obm_from_file(result.molecule._filename,
-                                              result.molecule._format,
-                                              result.molecule._babel_bond)[0]
+        obmol = MoleculeReader._obm_from_file(result.molecule.metadata.filename,
+                                              result.molecule.metadata.format,
+                                              result.molecule.metadata.babel_bond)[0]
         for to_remove in result.molecule._deleted_atom_indices:
             obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
 
@@ -233,29 +232,7 @@ class ResultWriter:
         f.write("\n")
 
     def print_structure(self):
-        # print CSM, initial molecule, resulting structure and direction according to format specified
-        try:
-            percent_structure = check_perm_structure(self.result.molecule, self.result.perm)
-            print("The permutation found maintains",
-                  str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
-
-        except ValueError:
-            print(
-                "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
-
-        if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
-            print(
-                "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
-                    self.result.falsecount, "cycle" if self.result.falsecount == 1 else "cycles",
-                    100 * (len(self.result.molecule) - self.result.num_invalid) / len(self.result.molecule)))
-            for cycle_len in sorted(self.result.cycle_counts):
-                valid = cycle_len == 1 or cycle_len == self.result.op_order or (
-                    cycle_len == 2 and self.result.op_type == 'SN')
-                count = self.result.cycle_counts[cycle_len]
-                print("There %s %d %s %s of length %d" % (
-                    "is" if count == 1 else "are", count, "invalid" if not valid else "",
-                    "cycle" if count == 1 else "cycles",
-                    cycle_len))
+        self.result.print_summary()
 
     def print_result(self):
         print("%s: %s" % (self.op_name, format_CSM(self.result.csm)))

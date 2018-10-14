@@ -10,6 +10,8 @@ from collections import OrderedDict
 
 import numpy as np
 from csm.fast import approximate_perm_classic, munkres_wrapper
+
+from csm.calculations.approx.dirs import ClassicDirectionChooser
 from csm.input_output.formatters import format_CSM
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, check_perm_cycles, \
@@ -598,7 +600,7 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
         return perm
 
 class ApproxCalculation(_OptionalLogger):
-    def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
+    def __init__(self, operation, molecule, approx_algorithm='hungarian',
                  log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
         self.operation=operation
         self._molecule = molecule
@@ -616,6 +618,7 @@ class ApproxCalculation(_OptionalLogger):
             self.perm_builder = _StructuredPermBuilder
 
         # get the directions
+        direction_chooser=ClassicDirectionChooser(molecule, operation.type, operation.order)
         self._initial_directions = direction_chooser.dirs
         if len(self._initial_directions) > 1:
             self._log("There are", len(self._initial_directions),

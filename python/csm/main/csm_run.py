@@ -4,7 +4,7 @@ import logging
 import sys
 import timeit
 
-from csm.calculations.constants import CalculationTimeoutError
+from csm.calculations.basic_calculations import CalculationTimeoutError
 from csm.input_output.arguments import get_split_arguments
 from csm.calculations import Approx, Trivial, Exact
 from csm.input_output.readers import read_perm
@@ -31,13 +31,7 @@ def run(args=[]):
         mol.print_equivalence_class_summary(dictionary_args['use_chains'])
         #step five: call the calculation
         if dictionary_args['calc_type'] == 'approx':
-            if dictionary_args['print_approx']:
-                class PrintApprox(Approx):
-                    def log(self, *args, **kwargs):
-                        print(*args)
-                calc=PrintApprox(**dictionary_args)
-            else:
-                calc = Approx(**dictionary_args)
+            calc = Approx(**dictionary_args)
         elif dictionary_args['calc_type'] == 'trivial':
             calc = Trivial(**dictionary_args)
         else:
@@ -60,19 +54,9 @@ def run(args=[]):
             return
         result=calc.result
         #step six: print the results
-        if dictionary_args['calc_local']:
-            result.compute_local_csm()
-        fw=FileWriter(result, **dictionary_args)
+        fw=FileWriter(result, format=dictionary_args['molecule'].metadata.format, **dictionary_args)
         fw.write()
         return result
-    except Exception as e:
-        if dictionary_args['json_output']:
-            json_dict = {
-                "Error": str(e)
-            }
-            with open(dictionary_args['out_file_name'], 'w', encoding='utf-8') as f:
-                json.dump(json_dict, f)
-        raise
 
     finally:
         if csv_file:

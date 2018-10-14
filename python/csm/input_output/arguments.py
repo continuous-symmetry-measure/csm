@@ -4,13 +4,11 @@ Parse the CSM command line arguments.
 from argparse import ArgumentParser
 import logging
 
-from csm.calculations import permuters
 from csm.calculations.data_classes import Operation
 
 logger = logging.getLogger(__name__)
 import sys
 
-from collections import namedtuple
 
 __author__ = 'zmbq'
 
@@ -30,7 +28,7 @@ def _create_parser():
     parser.add_argument('input', help='Input molecule file')
     parser.add_argument('output', default='output.txt', help='Output file')
 
-    # Optional arguments (their names start with --)
+    # Optional arguments
 
     # types of calculations (default is exact):
     calculation_type = parser.add_argument_group('Calculation Type (default is exact)')
@@ -46,7 +44,6 @@ def _create_parser():
     parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
 
     # general input/calculation arguments:
-    # parser.add_argument('--ignore-hy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
     input_type = parser.add_argument_group('Input Arguments')
     input_type.add_argument('--remove-hy', action='store_true', default=False,
                             help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
@@ -55,15 +52,12 @@ def _create_parser():
     input_type.add_argument('--use-mass', action='store_true', default=False,
                             help='Use the atomic masses to define center of mass')
     input_type.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
-    # parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
-    input_type.add_argument('--use-sequence', action='store_true', default=False,
-                            help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
+    #input_type.add_argument('--use-sequence', action='store_true', default=False,
+    #                        help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
     input_type.add_argument('--use-chains', action='store_true', default=False,
                             help='When a molecule has chains, use them (affects trivial, approx)')
 
     # calculation arguments that only apply to approx
-    # parser.add_argument('--use-dir', type=str,
-    #                    help='Run the approx algorithm using predefined axes as the starting point')
     approx_args = parser.add_argument_group('Arguments for Approx Algorithm')
     _approx_args=approx_args.add_mutually_exclusive_group()
     _approx_args.add_argument('--many-chains', action='store_const', default='hungarian', const='many-chains', dest='approx_algorithm',
@@ -101,6 +95,7 @@ def _process_arguments(parse_res):
     if dictionary_args["approx_algorithm"]!="hungarian" and dictionary_args["calc_type"]!="approx":
         logger.warning("--many-chains and --greedy are only relevant with --approx and will be ignored")
 
+    dictionary_args["use_sequence"]=True
     return dictionary_args
 
 
