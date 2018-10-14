@@ -4,7 +4,7 @@ import math
 import os
 import warnings
 
-from csm.main.csm_run import run
+from csm.main.csm_run_old import run
 from csm.molecule.molecule import Molecule, MoleculeReader
 
 

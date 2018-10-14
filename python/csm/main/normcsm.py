@@ -1,55 +1,48 @@
-from csm.main.csm_run import run as csmrun
-import sys
-from csm.molecule.normalizations import normalize_coords, de_normalize_coords
-from argparse import ArgumentParser
-from csm.input_output.arguments import _create_parser
-from csm.molecule.molecule import Molecule, MoleculeFactory
-from csm.calculations.exact_calculations import exact_calculation
+import json
+from argparse import ArgumentParser, RawTextHelpFormatter
 import numpy as np
-from argparse import RawTextHelpFormatter
-import logging
-logger = logging.getLogger(__name__)
+import sys
+from csm.calculations import ExactCalculation
+from csm.calculations.data_classes import CSMResult, Operation
+from csm.input_output.readers import read_from_sys_std_in
+from csm.molecule.molecule import Molecule, MoleculeFactory
+from csm.input_output.formatters import csm_log as print
 
-def get_normalization_type(args):
-    parser = _create_parser()
-    parser.formatter_class=RawTextHelpFormatter
-    parser.usage = "\nnorm_csm normalization type input_molecule output_file [additional arguments]"
-    norm_argument= parser.add_argument('normalization', default='0',
-                        help = 'Types of normalization available:\n'
-                               '0: standard normalization, according to centers of mass (without scaling)\n'
-                               '1: normalization according to the center of mass of each fragment\n'
-                               '2: normalization according to an approximation of the symmetric structure of the centers '
-                               'of mass of each fragment, based on the solution permutation\n'
-                               '3: normalization according to an approximation of the symmetric structure of the centers '
-                               'of mass of each fragment, without using the solution permutation\n'
-                               '4: normalization according to averages of approximation to symmetry of fragments\n'
-                               '5: normalization according to number of atoms\n'
-                               '6: linear normalization',
-                        choices=['0', '1', '2', '3', '4', '5', '6'],
-                        nargs='+', metavar="normalization"
-                        )
-    parser._actions.pop()
-    parser._actions.insert(1, norm_argument)
+def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False, suppress_print=False, timeout=300, *args, **kwargs):
+    ec= ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm, no_constraint)
+    ec.calculate(timeout)
+    return ec.result
+
+
+def _create_parser():
+    parser=ArgumentParser()
+    parser.formatter_class = RawTextHelpFormatter
+    parser.usage = "\nnorm_csm normalizations [additional arguments]"
+    parser.add_argument('normalization', default='0',
+                                        help='Types of normalization available:\n'
+                                             '0: standard normalization, according to centers of mass (without scaling)\n'
+                                             '1: normalization according to the center of mass of each fragment\n'
+                                             '2: normalization according to an approximation of the symmetric structure of the centers '
+                                             'of mass of each fragment, based on the solution permutation\n'
+                                             '3: normalization according to an approximation of the symmetric structure of the centers '
+                                             'of mass of each fragment, without using the solution permutation\n'
+                                             '4: normalization according to averages of approximation to symmetry of fragments\n'
+                                             '5: normalization according to number of atoms\n'
+                                             '6: linear normalization',
+                                        choices=['0', '1', '2', '3', '4', '5', '6'],
+                                        nargs='+', metavar="normalization"
+                                        )
     parser.add_argument('--output-norm', action='store', default=None,
                         help='Write debug information from normalization factors to a file')
+    return parser
+
+def process_args(args):
+    parser=_create_parser()
     parsed_args = parser.parse_args(args)
     normalizations = parsed_args.normalization
-    norm_file=parsed_args.output_norm
-    if norm_file: #remove the norm file arguments
-        args.remove('--output-norm')
-        args.remove(norm_file)
-
-    #TODO: add check that by perm is only if keep-structure or use-chains is applied
-    if not set(normalizations).isdisjoint(('1', '2', '3', '4')):
-        if not parsed_args.use_chains:
-            raise ValueError("You selected a normalization type (1,2,3, or 4) that expects fragments, but did not select --use-chains")
-    #TODO: add check that anything using fragments is either a pdb with chains, or includes a fragment file
+    norm_file = parsed_args.output_norm
     return normalizations, norm_file
 
-#    dictionary_args['norm_output_file']= parse_res.output_norm
-
-def get_fragments():
-    pass
 
 def get_fragment_centers(chains, positions, file):
     fragment_centers={}
@@ -226,17 +219,23 @@ normalization_dict={
 }
 
 
-def run(args=[]):
-
+def run(args=[], results=None):
+    print("entered normcsm")
     if not args:
         args = sys.argv[1:]
+    norm_types, norm_file= process_args(args)
+    if results is None:
+        raw_json = read_from_sys_std_in()
+        less_raw_json = json.loads(raw_json)
+        results=[[CSMResult.from_dict(result_dict) for result_dict in mol_arr] for mol_arr in less_raw_json]
+    norm_results=[]
+    for mol_result in results:
+        for result in mol_result:
+            norm_results.append(norm_calc(result, norm_types, norm_file))
+    return norm_results
 
-    norm_types, norm_file = get_normalization_type(args)
-    args=[x for x in args if x not in norm_types]  # remove the normalization argument
 
-    result = csmrun(args)
-
-
+def norm_calc(result, norm_types, norm_file=None):
     if not set(norm_types).isdisjoint(('1','2','3','4')):
         if len(result.molecule.chains) <= 1:
             raise ValueError("Normalization types 1,2,3,4 are based on the molecule's fragments, "
@@ -259,7 +258,7 @@ def run(args=[]):
                 normalization_results[norm_type]=(norm_factor, final_csm)
                 print("Csm normalized with", normalization_dict[norm_type], "("+ norm_type+ ")", "is:", final_csm)
                 print("Normalization factor is:", norm_factor)
-            except IOError as e:
+            except Exception as e:
                 print("FAILED to normalize csm with",  normalization_dict[norm_type], "("+ norm_type+ ")")
                 print("Cause:", str(e))
         return normalization_results

@@ -1,94 +1,136 @@
-import csv
-import json
-import logging
 import sys
 import timeit
 
-from csm.calculations.constants import CalculationTimeoutError
-from csm.input_output.arguments import get_split_arguments
-from csm.calculations import Approx, Trivial, Exact
-from csm.input_output.readers import read_perm
-from csm.input_output.writers import FileWriter
+from shutil import copyfile
+
+import os
+
+from csm.calculations.data_classes import FailedResult
+from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
 from csm import __version__
+from csm.main.calculate import single_calculation
+from csm.input_output.read import read_molecules, read_mols_from_std_in, read
+from csm.input_output.write import write_results, write
+
+from csm.input_output.formatters import csm_log as print
+from csm.main.normcsm import norm_calc
 from csm.molecule.molecule import MoleculeReader
 
 sys.setrecursionlimit(10000)
 
+def get_command_args(command_file, old_command=True):
+    args_array=[]
+    with open(command_file, 'r') as file:
+        for line in file:
+            if line[0]=="#":
+                continue
+            modifies_molecule=check_modifies_molecule(line)
+            if old_command:
+                fixed_args = old_cmd_converter(line)
+            else:
+                fixed_args = line.split()
+            try:
+                args_dict = get_parsed_args(fixed_args)
+            except:  # want to be able to run even if some lines are invalid
+                print("failed to read args from line", line)
+                continue
+            args_array.append((line, args_dict, modifies_molecule))
+    return args_array
 
-def run(args=[]):
-    print("CSM version %s" % __version__)
+def do_commands(molecules, **dictionary_args):
+    if not os.path.isdir(dictionary_args["out_file_name"]):
+        os.makedirs(dictionary_args["out_file_name"], exist_ok=True)
+    copyfile(dictionary_args["command_file"], os.path.join(dictionary_args["out_file_name"], "command.txt"))
+
+
+    args_array=get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
+    total_results=[[] for mol in molecules]
+    for line, args_dict, modifies_molecule in args_array:
+        print("\n**executing command:", line[:-1], "**")
+        try:
+            selections=args_dict['select_mols']
+            actual_mols = [molecules[i] for i in selections]
+            assert len(actual_mols)>0
+        except IndexError:
+            raise IndexError("You have selected more molecules than you have input")
+        except AssertionError:
+            actual_mols = molecules
+
+        for mol_index, molecule in enumerate(actual_mols):
+            args_dict["molecule"]=molecule
+            if modifies_molecule:
+                new_molecule=MoleculeReader.redo_molecule(molecule, **args_dict)
+                new_molecule.metadata.index=mol_index
+                args_dict["molecule"]=new_molecule
+            try:
+                result= single_calculation(args_dict["molecule"], args_dict)
+                total_results[mol_index].append(result)
+            except Exception as e:#CalculationTimeoutError:
+                print(str(e))
+                total_results[mol_index].append(FailedResult(str(e), **args_dict))
+
+
+    total_results= [result for result in total_results if result]
+    return total_results
+
+
+def csm_run(args=[]):
+    #get command
     if not args:
         args = sys.argv[1:]
-    csv_file = None
-    #step one: parse args
-    dictionary_args = get_split_arguments(args)
-    try:
-        #step two: read molecule from file
-        mol=MoleculeReader.from_file(**dictionary_args)
-        dictionary_args['molecule']=mol
-        dictionary_args['perm']=read_perm(**dictionary_args)
-        #step three: print molecule printouts
-        mol.print_equivalence_class_summary(dictionary_args['use_chains'])
-        #step five: call the calculation
-        if dictionary_args['calc_type'] == 'approx':
-            if dictionary_args['print_approx']:
-                class PrintApprox(Approx):
-                    def log(self, *args, **kwargs):
-                        print(*args)
-                calc=PrintApprox(**dictionary_args)
-            else:
-                calc = Approx(**dictionary_args)
-        elif dictionary_args['calc_type'] == 'trivial':
-            calc = Trivial(**dictionary_args)
-        else:
-            # step four: create a callback function for the calculation
-            # Outputing permutations
-            csm_state_tracer_func= None
-            if dictionary_args['perms_csv_name']:
-                csv_file = open(dictionary_args['perms_csv_name'], 'w')
-                perm_writer = csv.writer(csv_file, lineterminator='\n')
-                perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
-                csm_state_tracer_func = lambda state: perm_writer.writerow(
-                    [[p + 1 for p in state.perm],
-                     state.dir,
-                     state.csm, ])
-            calc=Exact(**dictionary_args, callback_func=csm_state_tracer_func)
-        try:
-            calc.calculate()
-        except CalculationTimeoutError as e:
-            print("Timed out")
-            return
-        result=calc.result
-        #step six: print the results
-        if dictionary_args['calc_local']:
-            result.compute_local_csm()
-        fw=FileWriter(result, **dictionary_args)
-        fw.write()
-        return result
-    except Exception as e:
-        if dictionary_args['json_output']:
-            json_dict = {
-                "Error": str(e)
-            }
-            with open(dictionary_args['out_file_name'], 'w', encoding='utf-8') as f:
-                json.dump(json_dict, f)
-        raise
+    print("CSM version %s" % __version__)
+    print(" ".join(args))
 
-    finally:
-        if csv_file:
-            csv_file.close()
+    dictionary_args=get_parsed_args(args)
+    if "global_time_out" in dictionary_args:
+        from csm.calculations.constants import set_global_timeout
+        set_global_timeout(dictionary_args["global_time_out"])
+    if dictionary_args["pipe"]:
+        from csm.input_output import formatters
+        formatters.csm_out_pipe=sys.stderr
+
+
+    command= dictionary_args["command"]
+
+    #call command funcs:
+    if command=="read":
+        return read(**dictionary_args)
+
+    elif command=="write":
+        return write(**dictionary_args)
+
+
+    if dictionary_args["in_file_name"]:
+        molecules = read_molecules(**dictionary_args)
+    elif dictionary_args["pipe"]:
+        molecules = read_mols_from_std_in()
+    else:
+        raise ValueError("No input for molecules specified")
+
+    print("----------")
+
+    if command=="comfile":
+        total_results= do_commands(molecules, **dictionary_args)
+    else:
+        total_results=[]
+        for molecule in molecules:
+            try:
+                result= single_calculation(molecule, dictionary_args)
+                total_results.append([result])
+            except Exception as e:#CalculationTimeoutError:
+                print(str(e))
+                total_results.append([FailedResult(str(e), **dictionary_args)])
+
+    write_results(total_results, **dictionary_args)
+    return total_results
+
+
 
 def run_no_return(args=[]):
-    run(args)
+    csm_run(args)
 
-
-def run_many_times():
-    for i in range(100):
-        print(i)
-        run(args=sys.argv[1:])
 
 if __name__ == '__main__':
-    #timer = timeit.Timer(lambda: run_many_times())
-    timer = timeit.Timer(lambda: run(args=sys.argv[1:]))
+    timer = timeit.Timer(lambda: csm_run(args=sys.argv[1:]))
     time = timer.timeit(number=1)
-    print("Runtime:", time, "seconds")
+    print("Runtime: "+ str(time)+ " seconds")

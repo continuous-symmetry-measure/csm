@@ -3,9 +3,8 @@ import sys
 import datetime
 import numpy as np
 from csm.fast import PreCalcPIP, PermInProgress
-
-from csm.calculations.constants import start_time, CalculationTimeoutError
-
+from csm.calculations.basic_calculations import now, run_time, check_timeout
+from csm.input_output.formatters import csm_log as print
 __author__ = 'Devora'
 '''
 All the other oermuters are implemented in Cython, this currently hold the constraints permuter and related code only
@@ -430,19 +429,23 @@ class ConstraintPermuter:
         self.falsecount = 0
         self.cycle_lengths = [1, op_order]
         self.timeout = timeout
+        self.start_time=datetime.datetime.now()
         if op_type == 'SN':
             self.cycle_lengths.append(2)
         self.constraints_prop = ConstraintPropagator(self.molecule, self.op_order, self.op_type, keep_structure)
         self.constraints = DictionaryConstraints(self.molecule)
         self.print_branches = False
+        self._permute_start = datetime.datetime.now()
+
+    @property
+    def run_time(self):
+        now = datetime.datetime.now()
+        time_d = now - self._permute_start
+        return time_d.total_seconds()
 
     def check_timeout(self):
         # step zero: check if time out
-        now = datetime.datetime.now()
-        time_d = datetime.datetime.now() - start_time
-        if time_d.total_seconds() > self.timeout:
-            raise CalculationTimeoutError(time_d.total_seconds())
-        return now
+        check_timeout(self.start_time, self.timeout)
 
     def create_cycle(self, atom, pip):
         group = []
@@ -581,20 +584,13 @@ class ConstraintsOrderedByDistancePermuter(ConstraintPermuter):
             sys.setrecursionlimit(len(molecule))
         self.constraints=DistanceConstraints(molecule, distances_dict)
         #self.print_branches = True
-        self._permute_start = datetime.datetime.now()
+        self._permute_start = now()
         self._permute_timeout = perm_timeout
         #print("start time", start_time)
 
-    @property
-    def run_time(self):
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        return time_d.total_seconds()
-
     def check_timeout(self):
         # step zero: check if time out
-        if self.run_time > self._permute_timeout:
-            raise CalculationTimeoutError(self.run_time)
+        check_timeout(self._permute_start, self._permute_timeout)
 
     def permute(self):
         # step 1: create initial empty pip and qip
@@ -623,22 +619,13 @@ class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
             sys.setrecursionlimit(len(molecule))
         self.distances = distances_list
         #self.print_branches=True
-        self._permute_start = datetime.datetime.now()
         self._permute_timeout = perm_timeout
 
-    @property
-    def run_time(self):
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        return time_d.total_seconds()
 
     def check_timeout(self):
         # step zero: check if time out
         #now = super().check_timeout()
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        if time_d.total_seconds() > self._permute_timeout:
-            raise CalculationTimeoutError(time_d.total_seconds())
+        check_timeout(self._permute_start, self._permute_timeout)
 
     def placement_generator(self, start_index):
         for distance_index in range(start_index, len(self.distances)):
@@ -691,14 +678,3 @@ class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
 
         # undo the handling of len ones
         self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
-
-
-if __name__ == "__main__":
-    import sys
-    from csm.input_output.arguments import get_split_arguments
-    from csm.input_output.readers import read_inputs
-
-    args = sys.argv[1:]
-    in_args, calc_args, out_args = get_split_arguments(args)
-    calc_args['molecule'], calc_args['perm'], calc_args['dirs'] = read_inputs(**in_args)
-    c = ConstraintPermuter(**calc_args)

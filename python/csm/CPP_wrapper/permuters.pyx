@@ -4,7 +4,8 @@ import random
 
 import datetime
 import numpy as np
-from csm.calculations.constants import start_time, CalculationTimeoutError
+
+from csm.calculations.basic_calculations import check_timeout, CalculationTimeoutError
 cimport numpy as np
 cimport cython
 import math
@@ -254,6 +255,7 @@ cdef class CythonPermuter:
     cdef mol
     cdef choose_cycle
     cdef timeout
+    cdef start_time
 
     def __init__(self, mol, op_order, op_type, keep_structure, precalculate=True, timeout=300):
         """
@@ -278,6 +280,7 @@ cdef class CythonPermuter:
         else:
             perm_class=PermInProgress
 
+        self.start_time=datetime.datetime.now()
         self._pip = perm_class(mol, op_order, op_type, perm_checker)
         self._cycle_lengths = (1, op_order)
         if op_type == 'SN':
@@ -311,9 +314,7 @@ cdef class CythonPermuter:
             curr_atom<---curr_atom
             """
             #check if we've timed out:
-            time_d= datetime.datetime.now()-start_time
-            if time_d.total_seconds()>self.timeout:
-                raise CalculationTimeoutError(time_d.total_seconds())
+            check_timeout(self.start_time, self.timeout)
             # Check if this can be a complete cycle
             if cycle_length in self._cycle_lengths:
                 # Yes it can, attempt to close it

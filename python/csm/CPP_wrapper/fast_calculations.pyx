@@ -126,7 +126,7 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2, log=False):
     cdef double lambda_max = -MAXDOUBLE
     cdef int i
     cdef int j
-
+    log=False
     if log:
         print("get lambda max")
         print("lambdas", str(lambdas))
@@ -178,12 +178,12 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
     log = False
     #if(list(calc_state.perm) ==[6,7,0,1,2,3,4,5]):
     #    log = True
-
     if log:
         print("Perm:")
         print(calc_state.perms.get_perm(1))
         print("A:")
         print(str(calc_state.A))
+
         print("B:")
         print(str(calc_state.B))
 
@@ -191,8 +191,8 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
         print(str(calc_state.CSM))
 
 
-    cdef Matrix3D m = Matrix3D()
-    cdef Vector3D lambdas = Vector3D()
+    cdef Matrix3D m = Matrix3D.zero()
+    cdef Vector3D lambdas = Vector3D.zero()
     fastcpp.GetEigens(calc_state.A.buf, m.buf, lambdas.buf)
 
     if log:
@@ -202,7 +202,7 @@ cpdef calc_ref_plane(int op_order, bool is_op_cs, CalcState calc_state):
         print(str(lambdas))
 
     cdef Vector3D m_t_B = m.T_mul_by_vec(calc_state.B)
-    cdef Vector3D m_t_B_2 = Vector3D()
+    cdef Vector3D m_t_B_2 = Vector3D.zero()
     for i in range(3):
         m_t_B_2.buf[i] = m_t_B[i] * m_t_B[i]
 

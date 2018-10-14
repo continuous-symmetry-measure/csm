@@ -39,7 +39,7 @@ class Atom:
         :param chain: string, name of the chain the atom belongs to
         """
         self.index=index
-        self._symbol = symbol
+        self._symbol=symbol.strip() #make sure no white space in symbol
         self.adjacent = []
         self.pos = pos
         if useMass and symbol != 'XX':
@@ -75,7 +75,7 @@ class Atom:
     def __str__(self):
         return "Symbol: %s\tPos: %s\tChain: %s\tAdjacent: %s" % (self.symbol, self.pos, self.chain, self.adjacent)
 
-    def to_json(self):
+    def to_dict(self):
         return {
         "index": self.index,
         "symbol": self._symbol,
@@ -87,11 +87,11 @@ class Atom:
         }
 
     @staticmethod
-    def from_json(in_json):
-        a=Atom(in_json["symbol"], in_json["pos"], in_json["index"], chain=in_json["chain"])
-        a._mass=in_json["mass"]
-        a._adjacent=in_json["adjacent"]
-        a._equivalency=in_json["equivalency"]
+    def from_dict(in_dict):
+        a=Atom(in_dict["symbol"], in_dict["pos"], in_dict["index"], chain=in_dict["chain"])
+        a._mass=in_dict["mass"]
+        a._adjacent=in_dict["adjacent"]
+        a._equivalency=in_dict["equivalency"]
         return a
 
 

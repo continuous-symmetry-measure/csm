@@ -1,7 +1,7 @@
 import os
 import pytest
 from csm.molecule.molecule import Molecule, MoleculeReader
-from csm.input_output.arguments import get_split_arguments
+from csm.input_output.arguments_old import get_split_arguments
 import logging
 from conftest import test_folder
 

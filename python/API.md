@@ -8,9 +8,9 @@ A basic run of CSM would be as follows:
 2. There are three calculation classes: 
 `csm.calculations.Exact`, `csm.calculations.Trivial`, and `csm.calculations.Approx`.
 Each has its own relevant arguments. All of them have the function calculate().
-The result can be accessed via the property `result`.
-In addition, certain statistics about the calculation will be available. Right now
-the properties `dead_ends`, `perm_count`, and `num_branches` are available from Exact.
+The result can be accessed via the property `result`, which contains an instance of the class `CSMResult`.
+In addition, certain statistics about the calculation are available in the property `statistics`- the kind of
+Statistics class returned varies by calculation.
 3. Additional information can be obtained from the `CSMResult` class that is returned with the property
 `result`. For example, it is possible to call `compute_local_csm` and obtain the local CSM per atom
 in the molecule
@@ -20,14 +20,15 @@ A simple example:
 
 ```
 from csm.molecule.molecule import MoleculeReader
-from csm.calculations import Exact, Operation
+from csm.calculations.data_classes import Operation
+from csm.calculations import Exact
 from csm.input_output.writers import FileWriter
 
 mol=MoleculeReader('myfile.mol')
 op=Operation("ch", sn_max=10)
 calculation=Exact(op, mol)
 calculation.calc()
-FileWriter(calculation.result, "myfile.out", op_name, "mol", json_output=True)
+FileWriter(calculation.result, "myfile.out", op, json_output=True)
 ```
 
 This program will print a json dictionary of the results of an exact calculation on myfile.mol into the file myfile.out
@@ -149,10 +150,16 @@ ExactCalculation, ApproxCalculation, and TrivialCalculation all inherit from the
 
 All calculations expect to receive an operation and a molecule (and optionally additional arguments) when initializing.
 
-All calculations have a function `calculate()` which performs the operation (most call it from their __init__ func)
+All calculations have a function `calculate()` which performs the operation
 
 All calculations have a property `result` which gives the CSMResult from the calculate() function
 (is also generally returned directly by calls to that function )
+
+ExactCalculation has a property `statistics` which returns an instance of `ExactStatistics`.
+
+ApproxCalculation has a property `statistics` which returns an instance of `ApproxStatistics`.
+
+TrivialCalculation has a filler property `statistics` which returns an empty dictionary.
 
 ##The ExactCalculation Class
 

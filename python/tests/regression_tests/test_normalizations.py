@@ -1,6 +1,6 @@
 from os import path
 import pytest
-from csm.main.normcsm import normrun
+from csm.main.normcsm import run
 from tests.utils.run_test import close_enough
 from conftest import test_folder, output_file, my_tolerance
 
