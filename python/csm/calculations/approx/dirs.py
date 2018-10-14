@@ -170,54 +170,6 @@ class ClassicDirectionChooser(DirectionChooser):
 
         return np.array(added_dirs)
 
-class FibonacciDirectionChooser(DirectionChooser):
-    '''
-    this class chooses directions based on an approximation of evenly distributing n points on a sphere using a fibonacci spiral
-    '''
-    def __init__(self, num_dirs=50):
-        self._dirs = self.fibonacci_sphere(num_dirs)
-    def fibonacci_sphere(self, num_dirs, randomize=False):
-        # https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere/26127012#26127012
-        rnd = 1.
-        # if randomize:
-        #    rnd = random.random() * samples
-
-        dirs = []
-        offset = 2. / num_dirs
-        increment = math.pi * (3. - math.sqrt(5.));
-
-        for i in range(num_dirs):
-            y = ((i * offset) - 1) + (offset / 2);
-            r = math.sqrt(1 - pow(y, 2))
-
-            phi = ((i + rnd) % num_dirs) * increment
-
-            x = math.cos(phi) * r
-            z = math.sin(phi) * r
-
-            dirs.append([x, y, z])
-
-        return dirs
-
-class PseudoDirectionChooser(DirectionChooser):
-    '''
-    this class simply returns the directions it receives at initialization
-    '''
-    def __init__(self, dirs):
-        self._dirs=dirs
-
-
-def get_direction_chooser(molecule=None, op_type=None, op_order=None, use_best_dir=False, get_orthogonal=True, detect_outliers=False, dirs=None, fibonacci=False, num_dirs=50, *args, **kwargs):
-    if dirs is not None:
-        return PseudoDirectionChooser(dirs)
-    elif fibonacci:
-        return FibonacciDirectionChooser(num_dirs)
-    else:
-        return ClassicDirectionChooser(molecule, op_type, op_order, use_best_dir, get_orthogonal, detect_outliers)
-
-
-
-
 
 
 
