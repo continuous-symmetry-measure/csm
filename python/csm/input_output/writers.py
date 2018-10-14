@@ -240,7 +240,7 @@ class ResultWriter:
 
     def print_chain_perm(self):
         if len(self.result.molecule.chains)>1:
-            print("Chain perm: ", self.result.chain_perm_string())
+            print("Chain perm: ", self.result.chain_perm_string)
 
 class StatisticWriter:
     def __init__(self, result, stat_file_name, polar):
