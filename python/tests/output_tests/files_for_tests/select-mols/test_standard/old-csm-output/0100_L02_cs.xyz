@@ -1,0 +1,28 @@
+MIRROR SYMMETRY: 0.0227
+SCALING FACTOR: 0.999546
+
+INITIAL STRUCTURE COORDINATES
+5
+mol_index=100; OGIBIR  **FRAG**        1
+Te        -0.11304        0.08039       -0.54736
+C         -1.06598       -1.14123        0.91587
+C          1.48519        1.08562        0.42616
+Cl        -1.71113        1.82162        0.26164
+Cl         1.40497       -1.84639       -1.05629
+
+RESULTING STRUCTURE COORDINATES
+5
+mol_index=100; OGIBIR  **FRAG**        1
+Te        -0.12054        0.08935       -0.54423
+C         -1.03335       -1.18022        0.90224
+C          1.48131        1.09025        0.42778
+Cl        -1.71042        1.84835        0.25307
+Cl         1.38300       -1.84773       -1.03885
+
+ DIRECTIONAL COSINES:
+
+0.619933 -0.740709 -0.258907
+
+ PERMUTATION:
+
+1 2 3 5 4 

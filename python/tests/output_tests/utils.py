@@ -4,7 +4,8 @@ import datetime
 import pytest
 
 from csm.main.csm_run import csm_run
-from output_tests.conftest import session_folder, version, test_folder
+from tests.output_tests.conftest import test_folder, session_folder
+
 
 def standard_folder(test_name):
     return os.path.join(test_folder, test_name, "test_standard")
@@ -14,17 +15,19 @@ def close_enough(x, y):
 
 def check_correct(result, test_standard):
     try:
-        assert close_enough(float(result), float(test_standard))
+        return close_enough(float(result), float(test_standard))
     except ValueError:
-        assert result == test_standard
+        return result == test_standard
 
 def check_file(result_file, test_standard_file):
+    passed=True
     with open(result_file, 'r') as r, open(test_standard_file, 'r') as s:
         for line_r, line_s in zip(r,s):
             split_r=line_r.strip().split()
             split_s=line_s.strip().split()
             for res, stand in zip (split_r, split_s):
-                check_correct(res, stand)
+                passed= passed and check_correct(res, stand)
+    return passed
 
 
 class CheckFolder:
@@ -41,24 +44,36 @@ class CheckFolder:
         pass
 
     def call_checker(self, filename, test_name):
-        check_file(os.path.join(self.result_folder(test_name), filename),
+        return check_file(os.path.join(self.result_folder(test_name), filename),
                    os.path.join(standard_folder(test_name), filename))
 
     def test_files(self, test_name):
+        failures=[]
         standard=standard_folder(test_name)
         result=self.result_folder(test_name)
         for root, dirs, files in os.walk(standard):
             for file in files:
                 if file=="extra.txt":
                     continue
-                self.call_checker(file, test_name)
-                print(file, "passed")
+                passed= self.call_checker(file, test_name)
+                if passed:
+                    print(file, "passed")
+                else:
+                    failures.append(file)
             break
         for dir in dirs:
             for file in os.listdir(os.path.join(standard, dir)):
-                check_file(os.path.join(result, dir, file),
+                passed=check_file(os.path.join(result, dir, file),
                            os.path.join(standard, dir, file))
-                print(file, "passed")
+                if passed:
+                    print(file, "passed")
+                else:
+                    failures.append(dir+"/"+file)
+
+        for failure in failures:
+            print(failure, "failed")
+
+        assert len(failures)==0
 
 
 

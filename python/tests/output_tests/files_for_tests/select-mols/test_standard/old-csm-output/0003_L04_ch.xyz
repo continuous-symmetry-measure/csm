@@ -1,0 +1,31 @@
+CHIRALITY: 0.0021
+SCALING FACTOR: 0.999976
+
+INITIAL STRUCTURE COORDINATES
+5
+mol_index=3; ASEHUB01**FRAG**        1
+Te         0.15670        0.55484        0.01759
+C         -1.01329       -0.66435        1.30048
+C          0.63521       -0.85676       -1.47532
+Cl        -1.94221        1.15657       -1.21150
+Cl         2.16360       -0.19032        1.36877
+
+RESULTING STRUCTURE COORDINATES
+5
+mol_index=3; ASEHUB01**FRAG**        1
+Te         0.16574        0.55189        0.02324
+C         -1.02418       -0.66079        1.29367
+C          0.63976       -0.85824       -1.47248
+Cl        -1.94728        1.15532       -1.20729
+Cl         2.16596       -0.18818        1.36287
+
+ DIRECTIONAL COSINES:
+
+0.817280 -0.266946 0.510679
+
+ MINIMUM CHIRALITY WAS FOUND IN CS
+
+
+ PERMUTATION:
+
+1 2 3 5 4 

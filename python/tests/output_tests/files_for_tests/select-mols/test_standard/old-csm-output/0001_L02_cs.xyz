@@ -1,0 +1,28 @@
+MIRROR SYMMETRY: 0.0025
+SCALING FACTOR: 0.999951
+
+INITIAL STRUCTURE COORDINATES
+5
+mol_index=1; FUQFOO  **FRAG**        1
+Te         0.23875       -0.48014       -0.28392
+C          0.86736        0.61842        1.44837
+C         -1.50030        0.78102       -0.61327
+Cl        -1.07025       -2.15993        1.05085
+Cl         1.46444        1.24063       -1.60205
+
+RESULTING STRUCTURE COORDINATES
+5
+mol_index=1; FUQFOO  **FRAG**        1
+Te         0.22503       -0.47921       -0.29585
+C          0.86815        0.61980        1.44808
+C         -1.50059        0.77961       -0.61254
+Cl        -1.06436       -2.16033        1.05597
+Cl         1.47177        1.24014       -1.59567
+
+ DIRECTIONAL COSINES:
+
+0.753498 -0.050837 0.655482
+
+ PERMUTATION:
+
+1 3 2 4 5 

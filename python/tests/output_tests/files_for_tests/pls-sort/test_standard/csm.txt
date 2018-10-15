@@ -1,0 +1,10 @@
+#Molecule           L01_c2    
+1AHG-nita2.pdb      0.0406    
+1RTO-gkc2.pdb       0.0000    
+1l3a-gsi4.pdb       0.0055    
+1l3a-sa4.pdb        0.0090    
+1l3a-si4.pdb        0.0093    
+2a10-agi6.pdb       0.0012    
+2a10-gsa6.pdb       0.0198    
+2w7n-ain2.pdb       0.1207    
+3alb-gkt4.pdb       0.0453    

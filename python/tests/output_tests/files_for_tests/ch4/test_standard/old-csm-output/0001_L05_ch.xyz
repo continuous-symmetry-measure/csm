@@ -1,0 +1,31 @@
+CHIRALITY: 0.0000
+SCALING FACTOR: 1.000000
+
+INITIAL STRUCTURE COORDINATES
+5
+i =        0, time =        0.000, E =        -7.5473172209
+C          0.00000        0.00000        0.00000
+H          0.00000        0.00000        1.08900
+H          1.02672        0.00000       -0.36300
+H         -0.51336       -0.88916       -0.36300
+H         -0.51336        0.88916       -0.36300
+
+RESULTING STRUCTURE COORDINATES
+5
+i =        0, time =        0.000, E =        -7.5473172209
+C          0.00000        0.00000        0.00000
+H          0.00000        0.00000        1.08900
+H          1.02672        0.00000       -0.36300
+H         -0.51336       -0.88916       -0.36300
+H         -0.51336        0.88916       -0.36300
+
+ DIRECTIONAL COSINES:
+
+0.000000 1.000000 0.000000
+
+ MINIMUM CHIRALITY WAS FOUND IN CS
+
+
+ PERMUTATION:
+
+1 2 3 5 4 

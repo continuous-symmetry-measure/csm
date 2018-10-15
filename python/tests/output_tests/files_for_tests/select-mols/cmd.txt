@@ -1,0 +1,4 @@
+exact c2 --select-mols 1-5,7,100-101 
+exact cs --select-mols 1-5,7,100-101 
+exact ci --select-mols 1-5,7,100-101 
+exact ch --select-mols 1-5,7,100-101 

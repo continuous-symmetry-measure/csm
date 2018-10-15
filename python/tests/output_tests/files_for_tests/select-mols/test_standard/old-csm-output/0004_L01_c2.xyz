@@ -1,0 +1,28 @@
+C2 SYMMETRY: 0.0015
+SCALING FACTOR: 0.999970
+
+INITIAL STRUCTURE COORDINATES
+5
+mol_index=4; BIBBOE  **FRAG**        1
+Te        -0.66246       -0.14858        0.01410
+C          0.94760       -0.05785        1.40905
+C          0.79066        0.44184       -1.42900
+Cl        -0.02774       -2.55546       -0.39578
+Cl        -1.04804        2.32007        0.40164
+
+RESULTING STRUCTURE COORDINATES
+5
+mol_index=4; BIBBOE  **FRAG**        1
+Te        -0.66397       -0.14180        0.01052
+C          0.94633       -0.06450        1.40527
+C          0.79441        0.43626       -1.43286
+Cl        -0.02427       -2.55190       -0.39024
+Cl        -1.05250        2.32194        0.40730
+
+ DIRECTIONAL COSINES:
+
+-0.977830 -0.208828 0.015493
+
+ PERMUTATION:
+
+1 3 2 5 4 

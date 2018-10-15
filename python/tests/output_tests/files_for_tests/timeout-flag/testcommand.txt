@@ -1,0 +1,1 @@
+comfile cmd.txt --input ferrocene.xyz --output __OUTPUT__

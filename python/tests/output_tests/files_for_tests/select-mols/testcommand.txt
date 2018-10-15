@@ -1,0 +1,1 @@
+comfile cmd.txt --input TeC2Cl2.xyz --output __OUTPUT__

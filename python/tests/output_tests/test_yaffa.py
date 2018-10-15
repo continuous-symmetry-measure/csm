@@ -1,8 +1,8 @@
 import os
 import pytest
 from csm.main.csm_run import csm_run
-from output_tests.conftest import test_folder
-from output_tests.utils import CheckFolder, standard_folder
+from tests.output_tests.conftest import test_folder
+from tests.output_tests.utils import CheckFolder, standard_folder
 
 
 class TestYaffa(CheckFolder):

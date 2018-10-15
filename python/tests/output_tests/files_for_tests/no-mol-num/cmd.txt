@@ -1,0 +1,5 @@
+exact c2   --keep-structure   --connect connectivity.txt 
+exact cs   --keep-structure   --connect connectivity.txt 
+exact c4   --keep-structure   --connect connectivity.txt 
+exact s4   --keep-structure   --connect connectivity.txt 
+exact ch   --keep-structure   --connect connectivity.txt 

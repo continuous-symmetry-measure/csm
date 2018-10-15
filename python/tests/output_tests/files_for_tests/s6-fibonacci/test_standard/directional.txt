@@ -1,0 +1,2 @@
+#Molecule           #Command           X         Y         Z
+2a10-agi6.pdb           L01_s6   -0.5858   -0.6064   -0.5376

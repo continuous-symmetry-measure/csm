@@ -1,0 +1,5 @@
+#Molecule           #Command  #Permutation
+BF3.mol             L01_c2    1 4 3 2 
+BF3.xyz             L01_c2    1 4 3 2 
+BFClH.mol           L01_c2    1 4 3 2 
+BFClH.xyz           L01_c2    1 4 3 2 

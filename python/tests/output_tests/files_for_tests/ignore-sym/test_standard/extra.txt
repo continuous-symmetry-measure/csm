@@ -1,0 +1,43 @@
+CSM version 0.20.9
+exact c2 --input --ignore-sym --output C:\Users\devora\Sources\csm\tests\ignore-sym\test_standard
+Warning: Input molecule has no bond information
+Warning: Input molecule has no bond information
+----------
+Molecule: BF3.mol
+1 group of length 1
+1 group of length 3
+The permutation found maintains 100.0% of the original molecule's structure
+The permutation found contains 0 invalid cycles. 100.00% of the molecule's atoms are in legal cycles
+There are 2  cycles of length 1
+There is 1  cycle of length 2
+C2 SYMMETRY: 0.351143
+CSM by formula: 0.351143
+-----
+Molecule: BF3.xyz
+1 group of length 4
+The input molecule does not have bond information and therefore conservation of structure cannot be measured
+The permutation found contains 0 invalid cycles. 100.00% of the molecule's atoms are in legal cycles
+There are 2  cycles of length 1
+There is 1  cycle of length 2
+C2 SYMMETRY: 0.351143
+CSM by formula: 0.351143
+-----
+Molecule: BFClH.mol
+1 group of length 1
+1 group of length 3
+The permutation found maintains 100.0% of the original molecule's structure
+The permutation found contains 0 invalid cycles. 100.00% of the molecule's atoms are in legal cycles
+There are 2  cycles of length 1
+There is 1  cycle of length 2
+C2 SYMMETRY: 0.351143
+CSM by formula: 0.351143
+-----
+Molecule: BFClH.xyz
+1 group of length 4
+The input molecule does not have bond information and therefore conservation of structure cannot be measured
+The permutation found contains 0 invalid cycles. 100.00% of the molecule's atoms are in legal cycles
+There are 2  cycles of length 1
+There is 1  cycle of length 2
+C2 SYMMETRY: 0.351143
+CSM by formula: 0.351143
+-----

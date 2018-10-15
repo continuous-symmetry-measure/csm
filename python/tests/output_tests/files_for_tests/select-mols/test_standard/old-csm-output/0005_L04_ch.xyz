@@ -1,0 +1,31 @@
+CHIRALITY: 0.0004
+SCALING FACTOR: 0.999995
+
+INITIAL STRUCTURE COORDINATES
+5
+mol_index=5; BIBCAR  **FRAG**        1
+Te         0.00000        0.00000        0.68173
+C          0.69000        1.27917       -0.83680
+C         -0.69000       -1.27917       -0.83680
+Cl         2.22683       -1.21561        0.49593
+Cl        -2.22683        1.21561        0.49593
+
+RESULTING STRUCTURE COORDINATES
+5
+mol_index=5; BIBCAR  **FRAG**        1
+Te         0.00000        0.00000        0.68173
+C          0.69481        1.27655       -0.83680
+C         -0.69481       -1.27655       -0.83680
+Cl         2.22833       -1.21285        0.49593
+Cl        -2.22833        1.21285        0.49593
+
+ DIRECTIONAL COSINES:
+
+0.878326 -0.478062 0.000000
+
+ MINIMUM CHIRALITY WAS FOUND IN CS
+
+
+ PERMUTATION:
+
+1 2 3 5 4 

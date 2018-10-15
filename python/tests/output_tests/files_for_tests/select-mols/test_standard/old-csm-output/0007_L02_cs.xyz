@@ -1,0 +1,28 @@
+MIRROR SYMMETRY: 0.0259
+SCALING FACTOR: 0.999482
+
+INITIAL STRUCTURE COORDINATES
+5
+mol_index=7; BOHNAN  **FRAG**        2
+Te        -0.09819       -0.53311        0.23604
+C          1.10606        1.12633        0.72800
+C         -0.79110        0.32055       -1.58105
+Cl        -2.00407        0.64280        1.53782
+Cl         1.78728       -1.55658       -0.92080
+
+RESULTING STRUCTURE COORDINATES
+5
+mol_index=7; BOHNAN  **FRAG**        2
+Te        -0.13209       -0.51349        0.25775
+C          1.11291        1.12237        0.72361
+C         -0.81167        0.33246       -1.56788
+Cl        -1.98676        0.63011        1.51141
+Cl         1.81761       -1.57146       -0.92490
+
+ DIRECTIONAL COSINES:
+
+0.757012 -0.438079 -0.484788
+
+ PERMUTATION:
+
+1 2 3 5 4 
