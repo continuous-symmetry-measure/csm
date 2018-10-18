@@ -1,1 +1,0 @@
-ch h2o2-twist1.xyz -babelbond
