@@ -43,6 +43,8 @@ version 2.4.0 or later.
 
 You must also install openbabel's python bindings (`pip install openbabel`) and numpy (`pip install numpy`)
 
+Openbabel does not always work well with python 3.6, and therefore python 3.5 is recommended.
+
 ### Installation
 
 CSM can be installed using:
