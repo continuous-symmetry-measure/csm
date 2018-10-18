@@ -43,24 +43,24 @@ version 2.4.0 or later.
 
 You must also install openbabel's python bindings (`pip install openbabel`) and numpy (`pip install numpy`)
 
-Openbabel does not always work well with python 3.6, and therefore python 3.5 is recommended.
-
 ### Installation
 
 CSM can be installed using:
 
 `pip install proteincsm --extra-index-url https://repo.fury.io/theresearchsoftwarecompany`
 
+You can also install CSM from the source. Note that CSM requires Eigen, and the variable EIGEN_INCLUDE_DIR in setup.py should be modified accordingly.
+
 ## Citations ##
 
 Please cite CSM using the following:
 
 ```
-Alon, G., and Tuvi-Arad, I. "Improved algorithms for symmetry analysis: Structure preserving permutations". J. Math. Chem., 56(1), 193–212 (2018).
+Alon, G., and Tuvi-Arad, I. "Improved algorithms for symmetry analysis: Structure preserving permutations". J. Math. Chem., 56(1), 193ï¿½212 (2018).
 
 H. Zabrodsky, S. Peleg and D. Avnir "Continuous Symmetry Measures" J. Am. Chem. Soc., 114, 7843-7851 (1992) 
 
-Chaim Dryzun, Amir Zait and David Avnir “Quantitative Symmetry and Chirality—A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells” J. Comput. Chem., 32, 2526 – 2538, (2011) 
+Chaim Dryzun, Amir Zait and David Avnir ï¿½Quantitative Symmetry and Chiralityï¿½A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cellsï¿½ J. Comput. Chem., 32, 2526 ï¿½ 2538, (2011) 
 ```
 
 ## Credits
@@ -80,6 +80,8 @@ The Research Software Company (chelem.co.il)
 Testing, scripts, additional technical support:
 
 Sagiv - Open University
+
+The code for the hungarian algorithm is copyright (c) 2012, Jacob Frelinger
 
 #Contact
 
