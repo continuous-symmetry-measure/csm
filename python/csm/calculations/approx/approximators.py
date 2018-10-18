@@ -265,7 +265,7 @@ class _ChainPermsPermBuilder(_PermFromDirBuilder):
     def _calc_chain_permutations(self):
         chain_permutations = []
         dummy = MoleculeFactory.dummy_molecule_from_size(len(self._molecule.chains), self._molecule.chain_equivalences)
-        permuter = CythonPermuter(dummy, self._op_order, self._op_type, keep_structure=False, precalculate=False)
+        permuter = CythonPermuter(dummy, self._op_order, self._op_type, precalculate=False)
         for state in permuter.permute():
             chain_permutations.append([i for i in state.perm])
         return chain_permutations
