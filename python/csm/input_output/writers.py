@@ -302,9 +302,10 @@ class FileWriter(ResultWriter):
         super().__init__(result, op_name, format, print_local)
 
     def write(self):
-        self.print_structure()
-        self.print_result()
-        self.print_chain_perm()
+        self.result.print_summary()
+        #self.print_structure()
+        #self.print_result()
+        #self.print_chain_perm()
         self.statistic_writer.write()
         if self.json_output:
             with open(self.out_file_name, 'w', encoding='utf-8') as f:
