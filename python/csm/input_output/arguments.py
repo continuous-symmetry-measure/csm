@@ -34,7 +34,7 @@ def _create_parser():
     calculation_type = parser.add_argument_group('Calculation Type (default is exact)')
     _calculation_type=calculation_type.add_mutually_exclusive_group()
     _calculation_type.add_argument('--approx', action='store_const', default='exact', const='approx', dest='calc_type',
-                                  help='use the approximate algorithm to estimate the CSM')
+                                  help='use the Hungarian algorithm to estimate the CSM of protein homomers')
     _calculation_type.add_argument('--trivial', action='store_const', const='trivial', dest='calc_type',
                                   help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
 
@@ -47,10 +47,6 @@ def _create_parser():
     input_type = parser.add_argument_group('Input Arguments')
     input_type.add_argument('--remove-hy', action='store_true', default=False,
                             help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
-    input_type.add_argument('--ignore-sym', action='store_true', default=False,
-                            help='Ignore all atomic symbols, performing a purely geometric operation')
-    input_type.add_argument('--use-mass', action='store_true', default=False,
-                            help='Use the atomic masses to define center of mass')
     input_type.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
     #input_type.add_argument('--use-sequence', action='store_true', default=False,
     #                        help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
@@ -61,9 +57,9 @@ def _create_parser():
     approx_args = parser.add_argument_group('Arguments for Approx Algorithm')
     _approx_args=approx_args.add_mutually_exclusive_group()
     _approx_args.add_argument('--many-chains', action='store_const', default='hungarian', const='many-chains', dest='approx_algorithm',
-                             help='APPROX ONLY: Use the new chains algorithm for many chains. Will automatically apply use-chains')
+                             help='Use the new chains algorithm for many chains. Will automatically apply use-chains')
     _approx_args.add_argument('--greedy', action='store_const', const='greedy', dest='approx_algrithm',
-                             help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
+                             help='Use the old greedy approx algorithm (no hungarian)')
 
     return parser
 

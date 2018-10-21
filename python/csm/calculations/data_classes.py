@@ -281,17 +281,14 @@ class CSMResult:
                     "is" if count == 1 else "are", count, "invalid" if not valid else "",
                     "cycle" if count == 1 else "cycles",
                     cycle_len))
-        if len(self.molecule.chains) > 1:
-            print("\nChain perm: " + self.chain_perm_string)
 
         if self.operation.name == "CHIRALITY":
             print("Minimum chirality was found in", self.overall_statistics["best chirality"])
 
+        print("%s: %.4lf" % (self.operation.name, abs(self.csm)))
 
+        print("\nChain perm: " + self.chain_perm_string)
 
-        print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
-
-        print("CSM by formula: %.6lf" % (self.formula_csm))
 
     def to_dict(self):
         return {"Result":

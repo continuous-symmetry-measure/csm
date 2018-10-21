@@ -10,7 +10,7 @@ from csm.molecule.molecule import MoleculeReader
 sys.setrecursionlimit(10000)
 
 def run(args=[]):
-    print("CSM version %s" % __version__)
+    print("Protein-CSM version %s" % __version__)
     if not args:
         args = sys.argv[1:]
 

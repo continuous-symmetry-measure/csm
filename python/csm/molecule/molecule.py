@@ -616,7 +616,7 @@ class Molecule:
     def create_Q(self):
         self._Q = np.array([np.array(atom.pos) for atom in self.atoms])
 
-    def print_equivalence_class_summary(self, display_chains):
+    def print_equivalence_class_summary(self, display_chains=True):
         """
         Displays information about equivalence classes and chains
         """
@@ -629,8 +629,7 @@ class Molecule:
         for key in lengths:
             print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
 
-        if display_chains:
-            if len(self.chains) > 1:
+        if True: #len(self.chains) > 1:
                 for chain in self.chains:
                     print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
                 print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
