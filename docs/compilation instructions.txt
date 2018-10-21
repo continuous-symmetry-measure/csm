@@ -77,14 +77,3 @@ cmake -DBOOST_ROOT=<your boost dir> -DBOOST_LIBRARYDIR=<boost library path> ..
 The 'boost library path' is the folder inside the Boost root directory, with a name like lib32-msvc-12.0.
 
 This will generate a Visual Studio solution you can use to compile or modify CSM.
-
-Running the Python Test
-To run the Python tests, you need to have Python 3.4 installed (older versions of Python 3 might work, too. Python 2 is not supported). So first install it.
-
-Now make another symbolic link – from csmroot/bin to the folder with the compiled CSM binaries.
-
-To run the tests, switch to csmroot/Testing and run
-
-python -m unittest test.py
-
-Note that you need to run Python 3, so you might have to specify a path or run python3 – depending on your setup.
