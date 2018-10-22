@@ -4,23 +4,14 @@ README v0.1 / 15 March 2018
 
 ## Introduction
 
-The CSM (Continuous Symmetry Measure) program allows users to measure the continuous symmetry of molecules.
-Molecules can be input in a variety of file formats (any supported by the OpenBabel program). The CSM can be measured
-precisely for smaller molecules, or approximated for larger molecules where the runtime for calculating 
-the exact measure would be unreasonable.
+The Protein CSM (Continuous Symmetry Measure) program allows users to measure the continuous symmetry of homomer proteins.
 
 ##Features
 
-* The exact continuous symmetry measure calculator: The calculator goes through every single possible (valid) permutation
- of the molecule's atoms, and selects the permutation with the lowest continuous symmetry.
- 
- * The approximate continuous symmetry measure calculator: For molecules large enough that going through all the permutations
- is not feasible, a good alternative is the approximate algorithm, which uses an iterative algorithm based on building
- permutations around a selection of possible symmetry axes to approximate the molecule's continous symmetry measure
- 
- * The trivial continuous symmetry measure calculator: Particularly well suited to proteins with almost identical sub-polymers,
- the trivial continous symmetry measure returns the symmetry measure of the molecule without any displacement of molecules within
- each fragment.
+
+ * The hungarian algorithm for approximating the continuous symmetry measure of a homomer proteincsm
+ * The greedy algorithm for approximating the continuous symmetry measure of a homomer proteincsm
+ * The trivial algorithm for approximating the continuous symmetry measure of a homomer proteincsm
 
 ## Usage
 
@@ -29,9 +20,6 @@ After installation, the program can be called from the command line. For example
 `csm c2 inputmol.mol output.txt --optional-args`
 
 You can access a help menu with a list of all available options via `csm -h`
-
-In addition to the possibility of using CSM from the command line, CSM can be accessed programmatically through its API, 
-detailed in the file API.md (including examples)
 
 ## Installation
 
