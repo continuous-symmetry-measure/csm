@@ -934,11 +934,8 @@ class MoleculeReader:
         if initialize:
             mol._complete_initialization(use_chains, remove_hy, select_atoms)
             if len(mol.chains) < 2:
-                if read_fragments:
-                    print("Warning: Although you input --read-fragments, no fragments were found in file. "
-                                "Fragments are marked by $$$ in mol files or by model/endmdl in pdb files")
-                elif use_chains:
-                    print("Warning: You specified --use-chains but molecule only has one chain")
+                raise ValueError("The molecule you have provided has less than 2 chains. "
+                                 "Protein-csm only works with molecules with 2 or more chains.")
         return mol
 
     @staticmethod
@@ -1074,109 +1071,6 @@ class MoleculeReader:
         return mol
 
     @staticmethod
-    def read_xyz_connectivity(mol, conn_file):
-        i=0
-        try:
-            with open(conn_file, 'r') as file:
-                for raw_line in file:
-                    line=raw_line.split()
-                    try:
-                        atom_num = int(line.pop(0))
-                    except (ValueError, IndexError):
-                        raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
-                    if atom_num != i + 1:
-                        raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
-
-                    neighbours = []
-                    for neighbour_str in line:
-                        try:
-                            neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
-                        except ValueError:
-                            raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                        if neighbour >= len(mol):
-                            raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                        neighbours.append(neighbour)
-                    mol.atoms[i].adjacent = MoleculeReader._remove_multi_bonds(neighbours)
-                    i+=1
-        except FileNotFoundError:
-            raise FileNotFoundError("Failed to find connectivity file: "+str(conn_file))
-        mol._create_bondset()
-
-
-    @staticmethod
-    def _read_csm_file(filename, ignore_sym=False, use_mass=False):
-        """
-        :param filename: Name of CSM file
-        :param ignore_symbol: When true, the atom's symbol is not read
-        :param use_mass: Use the atom's mass
-        :return: A list of Atoms
-        """
-
-        with open(filename, 'r') as f:
-            try:
-                size = int(f.readline())
-            except ValueError:
-                raise ValueError("Input Error: Number of atoms not supplied")
-
-            if size > 0:
-                atoms = []
-            else:
-                return None
-
-            for i in range(size):
-                line = f.readline().split()
-                try:
-                    if ignore_sym:
-                        symbol = "XX"
-                    else:
-                        symbol = line[0]
-                    position = (float(line[1]), float(line[2]), float(line[3]))
-                    atom = Atom(symbol, position, i, use_mass)
-                except (ValueError, IndexError):
-                    raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                atoms.append(atom)
-
-            for i in range(size):
-                line = f.readline().split()
-                try:
-                    atom_num = int(line.pop(0))
-                except (ValueError, IndexError):
-                    raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
-                if atom_num != i + 1:
-                    raise ValueError("Input Error: Failed reading connectivity for atom " + str(i + 1))
-
-                neighbours = []
-                for neighbour_str in line:
-                    try:
-                        neighbour = int(neighbour_str) - 1  # Indexes in csm file start with 1
-                    except ValueError:
-                        raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                    if neighbour >= size:
-                        raise ValueError("Input Error: Failed reading input for atom " + str(i + 1))
-                    neighbours.append(neighbour)
-
-                atoms[i].adjacent = MoleculeReader._remove_multi_bonds(neighbours)
-
-            # chains = Chains() #used to get chain indices???
-            try:
-                numchains = int(f.readline())
-                for i in range(numchains):
-                    line = f.readline().split()
-                    chain_name = line[0]
-                    #chains[chain_name]=[]
-                    for j in range(1, len(line)):
-                        atom_index = int(line[j]) - 1
-                        #chains[chain_name].append(atom_index)
-                        atoms[atom_index]._chain = chains.index_map[chain_name]
-
-            except:
-                pass  # assume there are no chains
-        mol=Molecule(atoms)
-        with open(filename, 'r') as file:
-            mol.metadata.file_content = file.read()
-        return mol
-
-    @staticmethod
     def _read_pdb_connectivity_and_chains(filename, mol, read_fragments, babel_bond):
         with open(filename, 'r') as file:
             # Count ATOM and HETATM lines, mapping them to our ATOM numbers.
@@ -1284,38 +1178,6 @@ class MoleculeReader:
 
         return mol
 
-    @staticmethod
-    def redo_molecule(in_mol, **kwargs):
-        format=in_mol.metadata.format
-        try:
-            if kwargs["in_format"]:
-                format=kwargs["in_format"]
-        except KeyError:
-            pass
-
-        #question 1: do we need openbabel:
-        #babel_bond
-        try:
-            babel_bond=kwargs["babel_bond"]
-        except KeyError:
-            babel_bond=in_mol.metadata.babel_bond
-
-
-        obms = MoleculeReader._obm_from_strings(in_mol.metadata.file_content,
-                                                    format,
-                                                    babel_bond)
-        if "read_fragments" in kwargs:
-                out_mol = MoleculeReader.mol_from_obm(obms, format, **kwargs)
-        else:
-            obm = obms[0]
-            out_mol = MoleculeReader.mol_from_obm([obm], format, **kwargs)
-
-        kwargs.pop("in_file_name")
-
-        out_mol = MoleculeReader._process_single_molecule(out_mol, in_mol.metadata.filename, format, **kwargs)
-        out_mol.metadata=in_mol.metadata
-        out_mol.metadata.babel_bond=babel_bond
-        return out_mol
 
 
 
