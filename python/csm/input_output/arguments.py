@@ -30,13 +30,13 @@ def _create_parser():
 
     # Optional arguments
 
-    # types of calculations (default is exact):
-    calculation_type = parser.add_argument_group('Calculation Type (default is exact)')
+    # types of calculations:
+    calculation_type = parser.add_argument_group('Calculation Type (default is approx with hungarian algorithm)')
     _calculation_type=calculation_type.add_mutually_exclusive_group()
-    _calculation_type.add_argument('--approx', action='store_const', default='exact', const='approx', dest='calc_type',
-                                  help='use the Hungarian algorithm to estimate the CSM of protein homomers')
-    _calculation_type.add_argument('--trivial', action='store_const', const='trivial', dest='calc_type',
+    _calculation_type.add_argument('--trivial', action='store_const', const='trivial', default='approx', dest='calc_type',
                                   help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
+    _calculation_type.add_argument('--greedy', action='store_const', const='greedy', default='many-chains', dest='approx_algrithm',
+                             help='Use the old greedy approx algorithm (no hungarian)-- not relevant for trivial')
 
 
     parser.add_argument('--timeout', default=300,
@@ -50,16 +50,8 @@ def _create_parser():
     input_type.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
     #input_type.add_argument('--use-sequence', action='store_true', default=False,
     #                        help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
-    input_type.add_argument('--use-chains', action='store_true', default=False,
-                            help='When a molecule has chains, use them (affects trivial, approx)')
-
-    # calculation arguments that only apply to approx
-    approx_args = parser.add_argument_group('Arguments for Approx Algorithm')
-    _approx_args=approx_args.add_mutually_exclusive_group()
-    _approx_args.add_argument('--many-chains', action='store_const', default='hungarian', const='many-chains', dest='approx_algorithm',
-                             help='Use the new chains algorithm for many chains. Will automatically apply use-chains')
-    _approx_args.add_argument('--greedy', action='store_const', const='greedy', dest='approx_algrithm',
-                             help='Use the old greedy approx algorithm (no hungarian)')
+    #input_type.add_argument('--use-chains', action='store_true', default=False,
+    #                        help='When a molecule has chains, use them (affects trivial, approx)')
 
     return parser
 
@@ -88,12 +80,8 @@ def _process_arguments(parse_res):
     dictionary_args['in_file_name'] = parse_res.input
     dictionary_args['out_file_name'] = parse_res.output
 
-    if dictionary_args["calc_type"]=="approx":
-        dictionary_args["use_sequence"] = True
-
-    elif dictionary_args["approx_algorithm"]!="hungarian":
-        logger.warning("--many-chains and --greedy are only relevant with --approx and will be ignored")
-
+    dictionary_args["use_sequence"] = True
+    dictionary_args["use_chains"] = True
 
     return dictionary_args
 
