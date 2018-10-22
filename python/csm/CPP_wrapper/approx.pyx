@@ -3,7 +3,7 @@ from libcpp.vector cimport vector
 import numpy as np
 cimport numpy as np
 from csm.calculations.constants import MAXDOUBLE
-from csm.calculations.basic_calculations import create_rotation_matrix
+from csm.calculations.basic_calculations import create_rotation_matrix, check_timeout
 from cython_munkres import munkres
 
 cdef class Vector3D
@@ -183,6 +183,7 @@ def approximate_perm_classic(op_type, op_order, molecule, dir, chain_perm):
 
     #permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
     for cycle in cycle_builder(chain_perm):
+        check_timeout()
         # Todo: Convert cycle into a vector[int]
         for chains_in_group in molecule.groups_with_internal_chains:
             #1. create the group of atom indices we will be building a distance matrix with

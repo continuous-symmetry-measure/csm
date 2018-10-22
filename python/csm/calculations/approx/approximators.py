@@ -13,7 +13,7 @@ from csm.fast import approximate_perm_classic, munkres_wrapper
 from csm.input_output.formatters import format_CSM
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, check_perm_cycles, \
-    CalculationTimeoutError
+    CalculationTimeoutError, check_timeout
 from csm.calculations.data_classes import CSMState, Operation, CSMResult
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, MINDOUBLE
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
@@ -161,6 +161,8 @@ class SingleDirApproximator(_OptionalLogger):
         self.max_iterations = max_iterations
         self.perm_from_dir_builder = perm_from_dir_builder(operation, molecule, log_func, timeout)
         self._chain_permutations = self.perm_from_dir_builder.get_chain_perms()
+        self.timeout=timeout
+        self.start= datetime.datetime.now()
 
     def _create_perm_from_dir(self, dir, chainperm):
         return self.perm_from_dir_builder.create_perm_from_dir(dir, chainperm)
@@ -180,7 +182,9 @@ class SingleDirApproximator(_OptionalLogger):
                                                          csm=MAXDOUBLE, dir=dir)
             i = 0
             while True:
+                check_timeout(self.start, self.timeout)
                 i += 1
+
                 self._log("\t\titeration", i, ":")
 
                 try:

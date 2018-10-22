@@ -18,11 +18,12 @@ class CalculationTimeoutError(TimeoutError):
         super().__init__("Calculation timed out after "+str(timeout_delta)+" seconds", *args, **kwargs)
         self.timeout_delta=timeout_delta
 
-def check_timeout(local_start, local_timeout):
+def check_timeout(local_start=None, local_timeout=None):
     from csm.calculations.constants import global_start_time, global_time_out
-    runtime=run_time(local_start)
-    if runtime>local_timeout:
-        raise CalculationTimeoutError(runtime)
+    if local_start:
+        runtime=run_time(local_start)
+        if runtime>local_timeout:
+            raise CalculationTimeoutError(runtime)
     g_runtime=run_time(global_start_time)
     if g_runtime>global_time_out:
         raise CalculationTimeoutError(g_runtime)
