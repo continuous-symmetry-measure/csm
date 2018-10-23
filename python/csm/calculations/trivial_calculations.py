@@ -5,7 +5,7 @@ from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.permuters import ConstraintPermuter
 from csm.molecule.molecule import Molecule, MoleculeFactory
-from csm.calculations.basic_calculations import now, run_time
+from csm.calculations.basic_calculations import now, run_time, check_timeout
 
 '''
 contains the trivial calculation (identity perm on a chain permutation)
@@ -17,7 +17,7 @@ class TrivialCalculation:
     Calculates the CSM of the identity permutation of a molecule. 
     If use-chains is specified, calculates the identity permutation of every possible chain permutation, returns best.
     """
-    def __init__(self, operation, molecule, use_chains=True, *args, **kwargs):
+    def __init__(self, operation, molecule, use_chains=True, timeout=300, *args, **kwargs):
         """
         :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry.
         :param molecule: instance of Molecule class on which the described symmetry calculation will be performed.
@@ -29,6 +29,7 @@ class TrivialCalculation:
         self.use_chains=use_chains
         self.statistics={}
         self.start_time=datetime.datetime.now()
+        self.timeout=timeout
 
     def calculate(self, *args, **kwargs):
         molecule=self.molecule
@@ -37,9 +38,11 @@ class TrivialCalculation:
             chain_permutations = []
             dummy = MoleculeFactory.dummy_molecule_from_size(len(molecule.chains), molecule.chain_equivalences)
             permuter = CythonPermuter(dummy, self.operation.order, self.operation.type, keep_structure=False, precalculate=False)
-            for state in permuter.permute():
+            for i, state in enumerate(permuter.permute()):
+                check_timeout(self.start_time, self.timeout)
                 chain_permutations.append(list(state.perm))
-            for chainperm in chain_permutations:
+            for i, chainperm in enumerate(chain_permutations):
+                check_timeout(self.start_time, self.timeout)
                 perm = [-1 for i in range(len(molecule))]
                 for f_index in range(len(chainperm)):
                     f_chain = molecule.chains[f_index]

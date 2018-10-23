@@ -223,6 +223,7 @@ cdef class PreCalcPIP(PermInProgress):
         cdef int index, permuted_index
         cdef double dists
         for iop in range(1, self.state.op_order):
+            check_timeout()
             dists=0.0
             for index in group:
                 permuted_index= self.state.perms.get_perm_value(iop - 1, self.p[index])
