@@ -555,7 +555,7 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
         return indexes, group_distance_matrix
 
 class ApproxCalculation(_OptionalLogger):
-    def __init__(self, operation, molecule, approx_algorithm='hungarian',
+    def __init__(self, operation, molecule, approx_algorithm='greedy',
                  log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
         self.operation=operation
         self._molecule = molecule
@@ -569,8 +569,6 @@ class ApproxCalculation(_OptionalLogger):
             self.perm_builder = _GreedyPermBuilder
         if approx_algorithm == 'many-chains':
             self.perm_builder = _ManyChainsPermBuilder
-        if approx_algorithm == 'structured':
-            self.perm_builder = _StructuredPermBuilder
 
         # get the directions
         direction_chooser=ClassicDirectionChooser(molecule, operation.type, operation.order)
