@@ -287,7 +287,7 @@ class CSMResult:
 
         print("%s: %.4lf" % (self.operation.name, abs(self.csm)))
 
-        print("\nChain perm: " + self.chain_perm_string)
+        print("Chain perm: " + self.chain_perm_string)
 
 
     def to_dict(self):
