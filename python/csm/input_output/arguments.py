@@ -35,7 +35,7 @@ def _create_parser():
     _calculation_type=calculation_type.add_mutually_exclusive_group()
     _calculation_type.add_argument('--trivial', action='store_const', const='trivial', default='approx', dest='calc_type',
                                   help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
-    _calculation_type.add_argument('--greedy', action='store_const', const='greedy', default='many-chains', dest='approx_algrithm',
+    _calculation_type.add_argument('--greedy', action='store_const', const='greedy', default='many-chains', dest='approx_algorithm',
                              help='Use the old greedy approx algorithm (no hungarian)-- not relevant for trivial')
 
 
