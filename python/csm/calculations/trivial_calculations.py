@@ -34,7 +34,7 @@ class TrivialCalculation:
             best = CSMState(molecule=molecule, op_type=self.operation.type, op_order=self.operation.order, csm=MAXDOUBLE)
             chain_permutations = []
             dummy = MoleculeFactory.dummy_molecule_from_size(len(molecule.chains), molecule.chain_equivalences)
-            permuter = CythonPermuter(dummy, self.operation.order, self.operation.type, keep_structure=False, precalculate=False)
+            permuter = CythonPermuter(dummy, self.operation.order, self.operation.type, precalculate=False)
             for state in permuter.permute():
                 chain_permutations.append(list(state.perm))
             for chainperm in chain_permutations:
