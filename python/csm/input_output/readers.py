@@ -1,9 +1,8 @@
 import sys
-from csm.molecule.molecule import MoleculeReader
-from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_equivalence, check_perm_cycles
+
+from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_equivalence, \
+    check_perm_cycles
 from csm.input_output.formatters import csm_log as print
-
-
 
 
 def check_perm_validity(mol, perm, **kwargs):
@@ -13,15 +12,15 @@ def check_perm_validity(mol, perm, **kwargs):
     :param mol: the molecule being permuted
     :param perm: the permutation
     '''
-    falsecount, num_invalid, cycle_counts, bad_indices= check_perm_cycles(perm, kwargs['operation'])
-    if falsecount>0:
+    falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(perm, kwargs['operation'])
+    if falsecount > 0:
         print("Warning: Permutation does not maintain cycle structure")
     if not check_perm_equivalence(mol, perm):
         print("Warning: Permutation contains switches between non-equivalent atoms")
     try:
         if check_perm_structure_preservation(mol, perm) < 1:
             print("Warning: Permutation does not preserve molecule structure")
-    except ValueError: #molecule has no structure
+    except ValueError:  # molecule has no structure
         pass
 
 
@@ -46,7 +45,7 @@ def read_perm_file(filename):
             if num < 1 or num > len(line):
                 raise ValueError("Invalid permutation %s - out of range" % line)
             num -= 1
-            if num  in used:
+            if num in used:
                 raise ValueError("Invalid permutation %s - number appears twice" % line)
             result.append(num)
             used.add(num)
@@ -78,21 +77,18 @@ def read_dir_file(filename):
     :param filename: Name of dir file
     :return: (x,y,z) of the symmetry axis
     """
-    dirs=[]
+    dirs = []
     try:
         with open(filename, 'r') as f:
             for fileline in f:
                 line = fileline.split()
                 result = (float(line[0]), float(line[1]), float(line[2]))
                 dirs.append(result)
-        if len(dirs)==0:
+        if len(dirs) == 0:
             raise ValueError("provided dir file is empty")
         return dirs
     except Exception as e:
         raise ValueError("Invalid input for use-dir")
-
-
-
 
 
 def read_from_sys_std_in():

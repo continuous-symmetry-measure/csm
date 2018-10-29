@@ -1,8 +1,19 @@
-from cpython cimport array
+rom cpython cimport array
 cimport numpy as np
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
-from libcpp.vector cimport vector
+
+cimport
+numpy as np
+from cpython cimport
+
+array
+from libc.stdlib cimport
+
+malloc, free
+from libc.string cimport
+
+memcpy
 
 np.set_printoptions(precision=20)
 

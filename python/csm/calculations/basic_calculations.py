@@ -1,48 +1,49 @@
-import numpy as np
 import math as m
 from datetime import datetime
 
-
+import numpy as np
 
 
 def now():
     return datetime.now()
+
 
 def run_time(start_time):
     now = datetime.now()
     time_d = now - start_time
     return time_d.total_seconds()
 
+
 class CalculationTimeoutError(TimeoutError):
     def __init__(self, timeout_delta, *args, **kwargs):
-        super().__init__("Calculation timed out after "+str(timeout_delta)+" seconds", *args, **kwargs)
-        self.timeout_delta=timeout_delta
+        super().__init__("Calculation timed out after " + str(timeout_delta) + " seconds", *args, **kwargs)
+        self.timeout_delta = timeout_delta
+
 
 def check_timeout(local_start=None, local_timeout=None):
     from csm.calculations.constants import global_start_time, global_time_out
     if local_start:
-        runtime=run_time(local_start)
-        if runtime>local_timeout:
+        runtime = run_time(local_start)
+        if runtime > local_timeout:
             raise CalculationTimeoutError(runtime)
-    g_runtime=run_time(global_start_time)
-    if g_runtime>global_time_out:
+    g_runtime = run_time(global_start_time)
+    if g_runtime > global_time_out:
         raise CalculationTimeoutError(g_runtime)
 
 
-def cart2sph(x,y,z, normalize=True):
+def cart2sph(x, y, z, normalize=True):
     def do_normalize(x, y, z):
-        norm= x*x + y*y + z*z
-        return x/norm, y/norm, z/norm
-    #https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
+        norm = x * x + y * y + z * z
+        return x / norm, y / norm, z / norm
+
+    # https://stackoverflow.com/questions/4116658/faster-numpy-cartesian-to-spherical-coordinate-conversion
     if normalize:
         x, y, z = do_normalize(x, y, z)
-    XsqPlusYsq = x**2 + y**2
-    r = m.sqrt(XsqPlusYsq + z**2)               # r
-    elev = m.atan2(z,m.sqrt(XsqPlusYsq))     # theta
-    az = m.atan2(y,x)                           # phi
+    XsqPlusYsq = x ** 2 + y ** 2
+    r = m.sqrt(XsqPlusYsq + z ** 2)  # r
+    elev = m.atan2(z, m.sqrt(XsqPlusYsq))  # theta
+    az = m.atan2(y, x)  # phi
     return r, elev, az
-
-
 
 
 def create_rotation_matrix(iOp, op_type, op_order, dir):
@@ -65,10 +66,6 @@ def create_rotation_matrix(iOp, op_type, op_order, dir):
     return rot
 
 
-
-
-
-
 def check_perm_cycles(perm, operation):
     '''
     This function checks the cycles in a given permutation according to the provided operation order and type.
@@ -79,48 +76,42 @@ def check_perm_cycles(perm, operation):
     :return: the number of illegal cycles, the number of molecules in illegal cycles, a dictionary of cycle lengths-
     with key =length cycle, val= mnumber of cycles of that length, and an array of the indices in bad cycles
     '''
-    op_order=operation.order
-    op_type=operation.type
-    checked=[False]*len(perm)
-    num_molecules_in_bad_cycles=0
-    num_good_cycles=0
-    num_bad_cycles=0
+    op_order = operation.order
+    op_type = operation.type
+    checked = [False] * len(perm)
+    num_molecules_in_bad_cycles = 0
+    num_good_cycles = 0
+    num_bad_cycles = 0
 
-    cycle_counts={}
+    cycle_counts = {}
 
-    indices_in_bad_cycles=[]
-
+    indices_in_bad_cycles = []
 
     for i, index in enumerate(perm):
         if checked[i]:
             continue
-        checked[i]=True
-        cycle=[index]
+        checked[i] = True
+        cycle = [index]
         while not checked[index]:
             checked[index] = True
             index = perm[index]
             cycle.append(index)
 
-        cycle_len=len(cycle)
+        cycle_len = len(cycle)
 
         if cycle_len in cycle_counts:
-            cycle_counts[cycle_len]+=1
+            cycle_counts[cycle_len] += 1
         else:
-            cycle_counts[cycle_len]=1
+            cycle_counts[cycle_len] = 1
 
         if cycle_len == 1 or cycle_len == op_order or (cycle_len == 2 and op_type == 'SN'):
             num_good_cycles += 1
         else:
             num_molecules_in_bad_cycles += cycle_len
-            num_bad_cycles+=1
-            indices_in_bad_cycles+=cycle
-
+            num_bad_cycles += 1
+            indices_in_bad_cycles += cycle
 
     return num_bad_cycles, num_molecules_in_bad_cycles, cycle_counts, indices_in_bad_cycles
-
-
-
-
 
 
 def check_perm_equivalence(mol, perm):
@@ -128,6 +119,7 @@ def check_perm_equivalence(mol, perm):
         if destination not in mol.atoms[origin].equivalency:
             return False
     return True
+
 
 def check_perm_structure_preservation(mol, perm):
     '''
@@ -137,16 +129,16 @@ def check_perm_structure_preservation(mol, perm):
     :param perm: the permutation whose structure preservation is being measured
     :return: percent of bonds that are preserved
     '''
-    if len(mol.bondset)==0:
+    if len(mol.bondset) == 0:
         raise ValueError("Molecule does not have any bond information")
 
-    broken=0
+    broken = 0
     for origin, destination in enumerate(perm):
         for adjacent in mol.atoms[origin].adjacent:
             if (destination, perm[adjacent]) not in mol.bondset:
-                broken+=1
+                broken += 1
 
-    percent_structure= (len(mol.bondset)- broken )/len(mol.bondset)
+    percent_structure = (len(mol.bondset) - broken) / len(mol.bondset)
 
     return percent_structure
 

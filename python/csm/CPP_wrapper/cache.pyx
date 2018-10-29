@@ -1,5 +1,3 @@
-import math
-import numpy as np
 cdef class Vector3D
 cdef class Matrix3D
 
@@ -15,15 +13,14 @@ cdef Vector3D cross_product(a, b):
     out[2] = a[0] * b[1] - a[1] * b[0]
     return Vector3D.buffer_copy(out)
 
-cdef double inner_product(a,b):
+cdef double inner_product(a, b):
     '''
     :param a: length 3 vector
     :param b: length 3 vector
     :return: single number, inner product of a and b
     '''
-    cdef double res= a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
+    cdef double res = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
     return res
-
 
 cdef Matrix3D outer_product_sum(a, b):
     '''
@@ -32,10 +29,10 @@ cdef Matrix3D outer_product_sum(a, b):
     :return: 3 x3 matrix, the outer sum of a and b plus the outer sum of b and a
     '''
     cdef double out[3][3]
-    cdef int i,j
+    cdef int i, j
     for i in range(3):
         for j in range(3):
-            out[i][j]=a[i]*b[j] + b[i]*a[j]
+            out[i][j] = a[i] * b[j] + b[i] * a[j]
     return Matrix3D.buffer_copy(out)
 
 cdef class Cache:
@@ -50,36 +47,35 @@ cdef class Cache:
     cdef _inner
     cdef _mol
     def __init__(self, mol):
-        self._cross= {}
+        self._cross = {}
         self._outer = {}
-        self._inner={}
-        self._mol=mol
+        self._inner = {}
+        self._mol = mol
         cdef int i, j
         for group in mol.equivalence_classes:
             for i in group:
                 for j in group:
-                    self._cross[(i,j)]= cross_product(mol.Q[i],mol.Q[j])
-                    self._inner[(i,j)]= inner_product(mol.Q[i],mol.Q[j])
-                    self._outer[(i,j)]= outer_product_sum(mol.Q[i],mol.Q[j])
+                    self._cross[(i, j)] = cross_product(mol.Q[i], mol.Q[j])
+                    self._inner[(i, j)] = inner_product(mol.Q[i], mol.Q[j])
+                    self._outer[(i, j)] = outer_product_sum(mol.Q[i], mol.Q[j])
 
     cpdef double inner_product(Cache self, int i, int j):
         try:
-            return self._inner[(i,j)]
+            return self._inner[(i, j)]
         except KeyError:
-            return inner_product(self._mol.Q[i],self._mol.Q[j])
+            return inner_product(self._mol.Q[i], self._mol.Q[j])
 
     cpdef Matrix3D outer_product_sum(Cache self, int i, int j):
         try:
-            return self._outer[(i,j)]
+            return self._outer[(i, j)]
         except KeyError:
-            return outer_product_sum(self._mol.Q[i],self._mol.Q[j])
+            return outer_product_sum(self._mol.Q[i], self._mol.Q[j])
 
     cpdef Vector3D cross(Cache self, int i, int j):
         try:
-            return self._cross[(i,j)]
+            return self._cross[(i, j)]
         except KeyError:
-            return cross_product(self._mol.Q[i],self._mol.Q[j])
-
+            return cross_product(self._mol.Q[i], self._mol.Q[j])
 
 cdef class FakeCache(Cache):
     """
@@ -87,13 +83,13 @@ cdef class FakeCache(Cache):
     Can be safely used on larger molecules.
     """
     def __init__(self, mol):
-        self._mol=mol
+        self._mol = mol
 
     cpdef double inner_product(FakeCache self, int i, int j):
-        return inner_product(self._mol.Q[i],self._mol.Q[j])
+        return inner_product(self._mol.Q[i], self._mol.Q[j])
 
     cpdef Matrix3D outer_product_sum(FakeCache self, int i, int j):
-        return outer_product_sum(self._mol.Q[i],self._mol.Q[j])
+        return outer_product_sum(self._mol.Q[i], self._mol.Q[j])
 
     cpdef Vector3D cross(FakeCache self, int i, int j):
-        return cross_product(self._mol.Q[i],self._mol.Q[j])
+        return cross_product(self._mol.Q[i], self._mol.Q[j])

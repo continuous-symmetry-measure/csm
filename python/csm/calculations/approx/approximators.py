@@ -2,37 +2,39 @@
 the classes used for running the approximate algorithm
 '''
 
-import multiprocessing
-import operator
-
 import datetime
+import multiprocessing
 from collections import OrderedDict
 
 import numpy as np
+import operator
+from csm.fast import CythonPermuter
 from csm.fast import approximate_perm_classic, munkres_wrapper
-from csm.input_output.formatters import format_CSM
-from csm.calculations.exact_calculations import ExactCalculation
+
 from csm.calculations.basic_calculations import create_rotation_matrix, array_distance, check_perm_cycles, \
     CalculationTimeoutError, check_timeout
-from csm.calculations.data_classes import CSMState, Operation, CSMResult
-from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, MINDOUBLE
-from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter, \
-    ConstraintsSelectedByDistancePermuter
-from csm.molecule.molecule import MoleculeFactory
-from csm.fast import CythonPermuter
-from csm.input_output.formatters import csm_log as print
 from csm.calculations.basic_calculations import now, run_time
+from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, MINDOUBLE
+from csm.calculations.data_classes import CSMState, Operation, CSMResult
+from csm.calculations.exact_calculations import ExactCalculation
+from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter
+from csm.input_output.formatters import csm_log as print
+from csm.input_output.formatters import format_CSM
+from csm.molecule.molecule import MoleculeFactory
 
 
 class _OptionalLogger:
     '''
     Utility class for having calls to a function which, if non-existent, does nothing
     '''
+
     def __init__(self, log_func=None):
         self._log_func = log_func
+
     def _log(self, *args):
         if self._log_func:
             self._log_func(*args)
+
 
 class _SingleDirectionStatistics:
     # per direction, we want to store:
@@ -104,29 +106,30 @@ class _SingleDirectionStatistics:
 
     def to_dict(self):
         try:
-            return_dict= {
-            "start dir":list(self.start_dir),
-            "start csm":self.start_csm,
-            "stop reason": self.stop_reason,
-            "end dir": list(self.end_dir),
-            "end csm":self.end_csm,
-            "num iterations":self.num_iterations,
-            "dirs":[list(dir) for dir in self.dirs],
-            "csms":self.csms,
-            "cycle stats":self.cycle_stats,
-            "run time":self.run_time
-                }
+            return_dict = {
+                "start dir": list(self.start_dir),
+                "start csm": self.start_csm,
+                "stop reason": self.stop_reason,
+                "end dir": list(self.end_dir),
+                "end csm": self.end_csm,
+                "num iterations": self.num_iterations,
+                "dirs": [list(dir) for dir in self.dirs],
+                "csms": self.csms,
+                "cycle stats": self.cycle_stats,
+                "run time": self.run_time
+            }
             return return_dict
         except:
-            return{
-            "start dir":list(self.start_dir),
-            "stop reason": "was never reached"
+            return {
+                "start dir": list(self.start_dir),
+                "stop reason": "was never reached"
             }
+
 
 class DirectionStatisticsContainer:
     def __init__(self, initial_directions):
         self.directions_dict = OrderedDict()
-        self.directions_arr=[]
+        self.directions_arr = []
         for index, dir in enumerate(initial_directions):
             self.directions_dict[tuple(dir)] = _SingleDirectionStatistics(dir)
             self.directions_arr.append(self.directions_dict[tuple(dir)])
@@ -144,7 +147,8 @@ class DirectionStatisticsContainer:
         return str(self.directions_dict)
 
     def to_dict(self):
-        return [{"dir":dir, "stats":self.directions_dict[dir].to_dict()} for dir in self.directions_dict]
+        return [{"dir": dir, "stats": self.directions_dict[dir].to_dict()} for dir in self.directions_dict]
+
 
 class ApproxStatistics(DirectionStatisticsContainer):
     pass
@@ -157,12 +161,12 @@ class SingleDirApproximator(_OptionalLogger):
         self._molecule = molecule
         self._op_type = operation.type
         self._op_order = operation.order
-        self._operation=operation
+        self._operation = operation
         self.max_iterations = max_iterations
         self.perm_from_dir_builder = perm_from_dir_builder(operation, molecule, log_func, timeout)
         self._chain_permutations = self.perm_from_dir_builder.get_chain_perms()
-        self.timeout=timeout
-        self.start= datetime.datetime.now()
+        self.timeout = timeout
+        self.start = datetime.datetime.now()
 
     def _create_perm_from_dir(self, dir, chainperm):
         return self.perm_from_dir_builder.create_perm_from_dir(dir, chainperm)
@@ -197,7 +201,7 @@ class SingleDirApproximator(_OptionalLogger):
 
                 if interim_results.num_invalid < self.least_invalid.num_invalid or \
                         (interim_results.num_invalid == self.least_invalid.num_invalid
-                                     and interim_results.csm < self.least_invalid.csm):
+                         and interim_results.csm < self.least_invalid.csm):
                     self.least_invalid = interim_results
                 statistics.append_sub_direction(interim_results)
                 # self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
@@ -243,12 +247,13 @@ class SingleDirApproximator(_OptionalLogger):
         statistics.end_clock()
         return best, statistics
 
+
 class _PermFromDirBuilder(_OptionalLogger):
     def __init__(self, operation, molecule, log_func, timeout):
-        self.start_time=datetime.datetime.now()
+        self.start_time = datetime.datetime.now()
         self._log_func = log_func
         self._molecule = molecule
-        self.operation=operation
+        self.operation = operation
         self._op_type = operation.type
         self._op_order = operation.order
         self.timeout = timeout
@@ -256,7 +261,7 @@ class _PermFromDirBuilder(_OptionalLogger):
 
     def _precalculate(self):
         '''should be overridden by inheriting classes that need chain permutations'''
-        self._chain_permutations=[[0]]
+        self._chain_permutations = [[0]]
 
     def get_chain_perms(self):
         return self._chain_permutations
@@ -601,10 +606,11 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
         perm = state.perm
         return perm
 
+
 class ApproxCalculation(_OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
-        self.operation=operation
+        self.operation = operation
         self._molecule = molecule
 
         self._log_func = log_func
@@ -625,7 +631,6 @@ class ApproxCalculation(_OptionalLogger):
             self._log("There are", len(self._initial_directions),
                       "initial directions to search for the best permutation")
 
-
         self.selective = selective
         self.num_selected = num_selected
         self.statistics = ApproxStatistics(self._initial_directions)
@@ -637,28 +642,28 @@ class ApproxCalculation(_OptionalLogger):
     def calculate(self, timeout=100, *args, **kwargs):
         self.start_time = now()
         self.timeout = timeout
-        overall_stats={}
-        if self.operation.type=="CH": # Chirality
+        overall_stats = {}
+        if self.operation.type == "CH":  # Chirality
             # First CS
-            best_op=Operation('cs')
+            best_op = Operation('cs')
             best_result = self._calculate(best_op)
             if best_result.csm > MINDOUBLE:
                 # Try the SN's
                 for op_order in range(2, self.operation.order + 1, 2):
-                    op=Operation("S"+str(op_order))
+                    op = Operation("S" + str(op_order))
                     result = self._calculate(self.operation)
                     if result.csm < best_result.csm:
                         best_result = result
-                        best_op=op
+                        best_op = op
                     if best_result.csm < MINDOUBLE:
                         break
-            self.operation.order=best_op.order
-            self.operation.type=best_op.type
+            self.operation.order = best_op.order
+            self.operation.type = best_op.type
         else:
-            best_result=self._calculate(self.operation)
-        overall_stats["runtime"]=run_time(self.start_time)
+            best_result = self._calculate(self.operation)
+        overall_stats["runtime"] = run_time(self.start_time)
         self.result = CSMResult(best_result, self.operation, overall_stats=overall_stats,
-                                    ongoing_stats={"approx":self.statistics.to_dict()})
+                                ongoing_stats={"approx": self.statistics.to_dict()})
         return self.result
 
     def _calculate(self, operation):
@@ -690,26 +695,26 @@ class ApproxCalculation(_OptionalLogger):
             else:
                 print("(A result with better preservation of integrity of cycle lengths was found")
                 print("Direction: ", least_invalid.dir, " yields a CSM of", format_CSM(least_invalid.csm),
-                      "\n",(1 - (least_invalid.num_invalid / len(self._molecule))) * 100,
+                      "\n", (1 - (least_invalid.num_invalid / len(self._molecule))) * 100,
                       "% of the molecule's atoms are in legal cycles)")
                 print("--------")
         return best_result
 
-
     def _calculate_for_directions(self, operation, dirs, max_iterations):
         best = CSMState(molecule=self._molecule, op_type=operation.type, op_order=operation.order, csm=MAXDOUBLE,
                         num_invalid=MAXDOUBLE)
-        least_invalid = CSMState(molecule=self._molecule,  op_type=operation.type, op_order=operation.order,
+        least_invalid = CSMState(molecule=self._molecule, op_type=operation.type, op_order=operation.order,
                                  csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
         single_dir_approximator = SingleDirApproximator(operation, self._molecule,
                                                         self.perm_builder, self._log,
                                                         self.timeout, max_iterations=max_iterations)
         for dir in dirs:
             best_result_for_dir, statistics = single_dir_approximator.calculate(dir)
-            self.statistics[dir]=statistics
+            self.statistics[dir] = statistics
             least_invalid_for_dir = single_dir_approximator.least_invalid
             if least_invalid_for_dir.num_invalid < least_invalid.num_invalid or \
-                    (least_invalid_for_dir.num_invalid == least_invalid.num_invalid and least_invalid_for_dir.csm < least_invalid.csm):
+                    (
+                            least_invalid_for_dir.num_invalid == least_invalid.num_invalid and least_invalid_for_dir.csm < least_invalid.csm):
                 least_invalid = least_invalid_for_dir
             if best_result_for_dir.csm < best.csm:
                 best = best_result_for_dir
@@ -717,14 +722,15 @@ class ApproxCalculation(_OptionalLogger):
                     break
         return best, least_invalid
 
+
 class ParallelApprox(ApproxCalculation):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=None, selective=False, num_selected=10, pool_size=0, *args, **kwargs):
         if log_func is not None:
             raise ValueError("Cannot run logging on approx in parallel calculation")
-        self.pool_size=pool_size
-        if pool_size==0:
-            self.pool_size= multiprocessing.cpu_count() - 1
+        self.pool_size = pool_size
+        if pool_size == 0:
+            self.pool_size = multiprocessing.cpu_count() - 1
         super().__init__(operation, molecule, direction_chooser, approx_algorithm,
                          log_func=log_func, selective=selective, num_selected=num_selected)
 

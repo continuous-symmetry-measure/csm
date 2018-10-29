@@ -1,34 +1,38 @@
+from collections import namedtuple
+
 import numpy as np
-from csm.input_output.formatters import csm_log as print
+
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
     check_perm_structure_preservation
-from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
+from csm.input_output.formatters import csm_log as print
 from csm.molecule.molecule import Molecule
-from csm.molecule.normalizations import de_normalize_coords, normalize_coords
-from collections import namedtuple
+from csm.molecule.normalizations import de_normalize_coords
+
+
 class CSMState(namedtuple('CSMState', ['molecule',
-                                   'op_order',
-                                   'op_type',
-                                   'csm',
-                                   'perm',
-                                   'dir',
-                                   'perm_count',
-                                    'num_invalid'])):
+                                       'op_order',
+                                       'op_type',
+                                       'csm',
+                                       'perm',
+                                       'dir',
+                                       'perm_count',
+                                       'num_invalid'])):
     pass
+
 
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
+
 class Operation:
     def __init__(self, op, sn_max=8, init=True):
-        self.op_code=op
+        self.op_code = op
         if init:
-            op=self._get_operation_data(op)
-            self.type= op.type
+            op = self._get_operation_data(op)
+            self.type = op.type
             self.order = op.order
-            if op.type=="CH":
-                self.order=sn_max
+            if op.type == "CH":
+                self.order = sn_max
             self.name = op.name
-
 
     def _get_operation_data(self, opcode):
         """
@@ -83,77 +87,76 @@ class Operation:
             raise
         return OperationCode(type=data[0], order=data[1], name=data[2])
 
-
-
     @staticmethod
     def placeholder(op_type, op_order, sn_max=8):
-        #make an arbitrary operation
-        o=Operation("C2", init=False)
-        #overwrite values to match input
-        o.type=op_type
-        o.order=op_order
-        if op_type=="CH":
-            o.order=sn_max
+        # make an arbitrary operation
+        o = Operation("C2", init=False)
+        # overwrite values to match input
+        o.type = op_type
+        o.order = op_order
+        if op_type == "CH":
+            o.order = sn_max
         return o
 
     def to_dict(self):
         return {
-            "name":self.name,
-            "order":self.order,
-            "type":self.type
+            "name": self.name,
+            "order": self.order,
+            "type": self.type
         }
 
     @staticmethod
     def from_dict(in_dict):
-        #make an arbitrary operation
-        o=Operation("C2", init=False)
-        #overwrite values
-        o.type=in_dict["type"]
-        o.name=in_dict["name"]
-        o.order=in_dict["order"]
+        # make an arbitrary operation
+        o = Operation("C2", init=False)
+        # overwrite values
+        o.type = in_dict["type"]
+        o.name = in_dict["name"]
+        o.order = in_dict["order"]
         return o
 
 
 class CSMResult:
     def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
-        self.failed=False
-        #input
-        self.molecule=state.molecule.copy() #not yet denormalized
+        self.failed = False
+        # input
+        self.molecule = state.molecule.copy()  # not yet denormalized
         self.normalized_molecule_coords = np.array(self.molecule.Q)
         self.molecule.de_normalize()
-        self.operation=operation
-        self.op_type=state.op_type
-        self.op_order=state.op_order
+        self.operation = operation
+        self.op_type = state.op_type
+        self.op_order = state.op_order
 
-        #result
-        self.csm=state.csm
-        self.dir=state.dir
-        self.perm=state.perm
-        self.normalized_symmetric_structure = self.create_symmetric_structure(self.normalized_molecule_coords, self.perm, self.dir, self.op_type,
-                                                         self.op_order)
-        self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure), self.molecule.norm_factor)
+        # result
+        self.csm = state.csm
+        self.dir = state.dir
+        self.perm = state.perm
+        self.normalized_symmetric_structure = self.create_symmetric_structure(self.normalized_molecule_coords,
+                                                                              self.perm, self.dir, self.op_type,
+                                                                              self.op_order)
+        self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure),
+                                                       self.molecule.norm_factor)
         self.formula_csm = self.get_CSM_by_formula(self.molecule, self.symmetric_structure)
 
-        #stats
-        self.overall_statistics=overall_stats
-        self.ongoing_statistics=ongoing_stats
+        # stats
+        self.overall_statistics = overall_stats
+        self.ongoing_statistics = ongoing_stats
 
         falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, operation)
-        self.overall_statistics["# bad cycles"]=falsecount
-        self.overall_statistics["% bad cycles"]= num_invalid / len(self.molecule)
+        self.overall_statistics["# bad cycles"] = falsecount
+        self.overall_statistics["% bad cycles"] = num_invalid / len(self.molecule)
         try:
-            self.overall_statistics["% structure"]=check_perm_structure_preservation(self.molecule, self.perm)
+            self.overall_statistics["% structure"] = check_perm_structure_preservation(self.molecule, self.perm)
         except ValueError:
-            self.overall_statistics["% structure"]= "n/a"
+            self.overall_statistics["% structure"] = "n/a"
 
-        if self.operation.name=="CHIRALITY":
+        if self.operation.name == "CHIRALITY":
             if self.op_type == 'CS':
                 self.overall_statistics["best chirality"] = "CS"
             else:
-                self.overall_statistics["best chirality"] =  "S%d" % (self.op_order)
+                self.overall_statistics["best chirality"] = "S%d" % (self.op_order)
 
-
-        self.overall_statistics["formula CSM"]=self.formula_csm
+        self.overall_statistics["formula CSM"] = self.formula_csm
 
     @property
     def d_min(self):
@@ -165,8 +168,8 @@ class CSMResult:
 
     @property
     def chain_perm_string(self):
-        molecule=self.molecule
-        perm=self.perm
+        molecule = self.molecule
+        perm = self.perm
         chain_perm_dict = {}
         for chain in molecule.chains:
             index = molecule.chains[chain][0]
@@ -179,12 +182,12 @@ class CSMResult:
         for chain in molecule.chains:
             permuted_index = chain_perm_dict[chain]
             chain_perm.append(permuted_index)
-        chain_str=""
+        chain_str = ""
         for from_index, to_index in enumerate(chain_perm):
-            from_chain=self.molecule.chains.index_to_string(from_index)
-            to_chain=self.molecule.chains.index_to_string(to_index)
-            chain_str+=from_chain + "->" + to_chain + ", "
-        chain_str=chain_str[:-2] #remove final comma and space
+            from_chain = self.molecule.chains.index_to_string(from_index)
+            to_chain = self.molecule.chains.index_to_string(to_index)
+            chain_str += from_chain + "->" + to_chain + ", "
+        chain_str = chain_str[:-2]  # remove final comma and space
         return chain_str
 
     def create_symmetric_structure(self, molecule_coords, perm, dir, op_type, op_order):
@@ -220,7 +223,7 @@ class CSMResult:
         return symmetric
 
     def get_CSM_by_formula(self, molecule, symmetric_structure):
-        Q=molecule.Q
+        Q = molecule.Q
         # step one: get average of all atoms
         init_avg = np.mean(Q, axis=0)
         # step two: distance between intial and actual: initial - actual, squared
@@ -262,32 +265,31 @@ class CSMResult:
         try:
             percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
             print("The permutation found maintains " +
-                    str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
+                  str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
 
         except ValueError:
-            print("The input molecule does not have bond information and therefore conservation of structure cannot be measured")
+            print(
+                "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
         falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, self.operation)
         print(
             "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
                 falsecount, "cycle" if falsecount == 1 else "cycles",
-                    100 * (len(self.molecule) - num_invalid) / len(self.molecule)))
+                100 * (len(self.molecule) - num_invalid) / len(self.molecule)))
 
         for cycle_len in sorted(cycle_counts):
-                valid = cycle_len == 1 or cycle_len == self.operation.order or (
-                        cycle_len == 2 and self.operation.type == 'SN')
-                count = cycle_counts[cycle_len]
-                print("There %s %d %s %s of length %d" % (
-                    "is" if count == 1 else "are", count, "invalid" if not valid else "",
-                    "cycle" if count == 1 else "cycles",
-                    cycle_len))
+            valid = cycle_len == 1 or cycle_len == self.operation.order or (
+                    cycle_len == 2 and self.operation.type == 'SN')
+            count = cycle_counts[cycle_len]
+            print("There %s %d %s %s of length %d" % (
+                "is" if count == 1 else "are", count, "invalid" if not valid else "",
+                "cycle" if count == 1 else "cycles",
+                cycle_len))
         if len(self.molecule.chains) > 1:
             print("\nChain perm: " + self.chain_perm_string)
 
         if self.operation.name == "CHIRALITY":
             print("Minimum chirality was found in", self.overall_statistics["best chirality"])
-
-
 
         print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
 
@@ -308,43 +310,45 @@ class CSMResult:
                 "symmetric_structure": [list(i) for i in self.symmetric_structure],
                 "formula_csm": self.formula_csm,
 
-                "overall stats":self.overall_statistics,
-                "ongoing stats":self.ongoing_statistics
+                "overall stats": self.overall_statistics,
+                "ongoing stats": self.ongoing_statistics
             }
         }
 
     @staticmethod
     def from_dict():
-        result_dict=input["Result"]
-        molecule=Molecule.from_dict(result_dict["molecule"])
+        result_dict = input["Result"]
+        molecule = Molecule.from_dict(result_dict["molecule"])
         molecule.normalize()
-        operation=Operation.from_dict(result_dict["operation"])
-        state=CSMState(molecule, operation.order, operation.type, result_dict["csm"], result_dict["perm"], result_dict["dir"])
-        result=CSMResult(state, operation, result_dict["overall stats"], result_dict["ongoing stats"])
+        operation = Operation.from_dict(result_dict["operation"])
+        state = CSMState(molecule, operation.order, operation.type, result_dict["csm"], result_dict["perm"],
+                         result_dict["dir"])
+        result = CSMResult(state, operation, result_dict["overall stats"], result_dict["ongoing stats"])
         return result
+
 
 class FailedResult:
     def __init__(self, failed_reason, molecule, **kwargs):
-        self.failed=True
-        self.failed_reason=failed_reason
+        self.failed = True
+        self.failed_reason = failed_reason
 
-        self.molecule=molecule
+        self.molecule = molecule
         self.normalized_molecule_coords = []
-        self.operation=kwargs["operation"]
-        self.op_type=self.operation.type
-        self.op_order=self.operation.order
+        self.operation = kwargs["operation"]
+        self.op_type = self.operation.type
+        self.op_order = self.operation.order
 
-        #result
-        self.csm="n/a"
-        self.dir=["n/a", "n/a", "n/a"]
-        self.perm=["n/a"]
-        self.normalized_symmetric_structure = []# [["n/a"] for i in range(len(molecule))]
-        self.symmetric_structure = []#  [[0,0,0] for i in range(len(molecule))]
+        # result
+        self.csm = "n/a"
+        self.dir = ["n/a", "n/a", "n/a"]
+        self.perm = ["n/a"]
+        self.normalized_symmetric_structure = []  # [["n/a"] for i in range(len(molecule))]
+        self.symmetric_structure = []  # [[0,0,0] for i in range(len(molecule))]
         self.formula_csm = "n/a"
 
-        self.overall_statistics={
-            "failed":"FAILED",
-            "reason for failure":self.failed_reason
+        self.overall_statistics = {
+            "failed": "FAILED",
+            "reason for failure": self.failed_reason
         }
 
-        self.ongoing_statistics={}
+        self.ongoing_statistics = {}

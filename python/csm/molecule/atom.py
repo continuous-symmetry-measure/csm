@@ -1,4 +1,5 @@
 from collections import namedtuple
+
 from openbabel import OBAtom, OBElementTable
 
 __author__ = 'zmbq'
@@ -6,6 +7,7 @@ __author__ = 'zmbq'
 _tbl = OBElementTable()
 
 ChainedPermutation = namedtuple('ChainedPermutation', ['chain_perm', 'atom_perm'])
+
 
 def GetAtomicMass(symbol):
     """ Returns the atomic mass of an element
@@ -30,6 +32,7 @@ def GetAtomicSymbol(atomic_num):
 class Atom:
     """ A single atom, alogn with its position and neighbors
     """
+
     def __init__(self, symbol, pos, index, useMass=False, chain='Simulated Chain'):
         """
         :param symbol: atomic symbol (ie 'C', 'H', 'N')
@@ -38,8 +41,8 @@ class Atom:
         :param useMass: boolean, when True atomic mass is used, when False mass=1.0
         :param chain: string, name of the chain the atom belongs to
         """
-        self.index=index
-        self._symbol=symbol.strip() #make sure no white space in symbol
+        self.index = index
+        self._symbol = symbol.strip()  # make sure no white space in symbol
         self.adjacent = []
         self.pos = pos
         if useMass and symbol != 'XX':
@@ -47,7 +50,7 @@ class Atom:
         else:
             self._mass = 1.0
         self._chain = chain
-        self._equivalency=[]
+        self._equivalency = []
 
     @property
     def mass(self):
@@ -63,7 +66,7 @@ class Atom:
 
     @chain.setter
     def chain(self, c):
-        self._chain=c
+        self._chain = c
 
     @property
     def equivalency(self):
@@ -77,21 +80,19 @@ class Atom:
 
     def to_dict(self):
         return {
-        "index": self.index,
-        "symbol": self._symbol,
-        "adjacent": self.adjacent,
-        "pos": self.pos,
-        "mass": self._mass,
-        "chain": self._chain,
-        "equivalency": self._equivalency
+            "index": self.index,
+            "symbol": self._symbol,
+            "adjacent": self.adjacent,
+            "pos": self.pos,
+            "mass": self._mass,
+            "chain": self._chain,
+            "equivalency": self._equivalency
         }
 
     @staticmethod
     def from_dict(in_dict):
-        a=Atom(in_dict["symbol"], in_dict["pos"], in_dict["index"], chain=in_dict["chain"])
-        a._mass=in_dict["mass"]
-        a._adjacent=in_dict["adjacent"]
-        a._equivalency=in_dict["equivalency"]
+        a = Atom(in_dict["symbol"], in_dict["pos"], in_dict["index"], chain=in_dict["chain"])
+        a._mass = in_dict["mass"]
+        a._adjacent = in_dict["adjacent"]
+        a._equivalency = in_dict["equivalency"]
         return a
-
-

@@ -1,16 +1,11 @@
-
-import ctypes
 import random
 
 import datetime
 import numpy as np
 
-from csm.calculations.basic_calculations import check_timeout, CalculationTimeoutError
+from csm.calculations.basic_calculations import check_timeout
 cimport numpy as np
-cimport cython
 import math
-from libc.stdlib cimport malloc, free
-from libc.string cimport memcpy
 from libcpp cimport bool
 
 cdef class Cache
