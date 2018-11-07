@@ -676,7 +676,7 @@ class ScriptWriter:
                     of = OldFormatFileWriter(command_result, out_file_name, out_format=self.format)
                     of._write_results(f)
 
-    def mult_mol_writer(self, filename, result, index, symmetric=False):
+    def mult_mol_writer(self, filename, result, index, symmetric=False, end=True):
         '''
         :param filename:
         :param obmols:
@@ -686,7 +686,7 @@ class ScriptWriter:
         # get obmols
         obmolwriter = OBMolWriter()
         obmols = obmolwriter.obm_from_result(result)
-        for obmol in obmols:
+        for i, obmol in enumerate(obmols):
             if symmetric:
                 obmolwriter.set_obm_from_symmetric(obmol, result)
             else:
@@ -709,23 +709,26 @@ class ScriptWriter:
             mol.SetTitle(title)
 
         # handle special cases
-        if len(obmols) > 1:
+        if len(obmols) > 1 or not end:
             if self.format == "mol":
                 string = ""
                 for mol in obmols:
                     string += mol_string_from_obm(mol, self.format)
                     string += "\n$$$$\n"
-                with open(filename, 'w') as file:
+                with open(filename, 'a') as file:
                     file.write(string)
                 return
 
             elif self.format == "pdb":
                 string = ""
+                # It may be necessary to add "model        #" here (see: alternating)
+                # but it's not clear, so I'm leaving it be until the topic comes up again
                 for mol in obmols:
                     string += mol_string_from_obm(mol, self.format)
-                string.replace("END", "ENDMDL")
-                string += "\nEND"
-                with open(filename, 'w') as file:
+                string=string.replace("END", "ENDMDL")
+                if end:
+                    string += "\nEND"
+                with open(filename, 'a') as file:
                     file.write(string)
                 return
 
@@ -761,3 +764,25 @@ class ScriptWriter:
                         writer.print_symmetric()
                 else:
                     self.mult_mol_writer(filename, result, index, symmetric=True)
+
+    def alternating_mol_writer(self, filename):
+        filename = os.path.join(self.folder, filename + "." + self.format)
+        with open(filename, 'w') as file:
+            file.write('')
+        i=0
+        for mol_results in self.results:
+            for index, result in enumerate(mol_results):
+                model_str="MODEL        {}\n".format(i)
+                if self.format == "pdb":
+                    with open(filename, 'a') as file:
+                        file.write(model_str)
+                    i+=1
+                self.mult_mol_writer(filename, result, index, symmetric=False, end=False)
+                if self.format == "pdb":
+                    with open(filename, 'a') as file:
+                        file.write(model_str)
+                    i+=1
+                self.mult_mol_writer(filename, result, index, symmetric=True, end=False)
+        if self.format == "pdb":
+            with open(filename, 'a') as file:
+                file.write("\nEND")
