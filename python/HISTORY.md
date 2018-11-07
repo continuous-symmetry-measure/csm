@@ -1,6 +1,10 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.20.12
+------------------------
+Add option for alternating original/symm result file
+
 Changes in version 0.20.9
 ------------------------
 
