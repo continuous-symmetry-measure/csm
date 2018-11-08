@@ -1,4 +1,5 @@
 import json
+import re
 
 import io
 import os
@@ -726,8 +727,6 @@ class ScriptWriter:
                 for mol in obmols:
                     string += mol_string_from_obm(mol, self.format)
                 string=string.replace("END", "ENDMDL")
-                if end:
-                    string += "\nEND"
                 with open(filename, 'a') as file:
                     file.write(string)
                 return
@@ -769,20 +768,40 @@ class ScriptWriter:
         filename = os.path.join(self.folder, filename + "." + self.format)
         with open(filename, 'w') as file:
             file.write('')
-        i=0
-        for mol_results in self.results:
-            for index, result in enumerate(mol_results):
-                model_str="MODEL        {}\n".format(i)
-                if self.format == "pdb":
-                    with open(filename, 'a') as file:
-                        file.write(model_str)
-                    i+=1
-                self.mult_mol_writer(filename, result, index, symmetric=False, end=False)
-                if self.format == "pdb":
-                    with open(filename, 'a') as file:
-                        file.write(model_str)
-                    i+=1
-                self.mult_mol_writer(filename, result, index, symmetric=True, end=False)
-        if self.format == "pdb":
-            with open(filename, 'a') as file:
-                file.write("\nEND")
+        if self.format=="pdb":
+            i=0
+            string=""
+            for mol_results in self.results:
+                for index, result in enumerate(mol_results):
+                    obmolwriter = OBMolWriter()
+                    obmols = obmolwriter.obm_from_result(result)
+
+                    model_str = "MODEL        {}\n".format(i)
+                    string+=model_str
+                    for obmol in obmols:
+                        obmolwriter.set_obm_from_symmetric(obmol, result)
+                        for mol in obmols:
+                            mol_string= mol_string_from_obm(mol, self.format)
+                            modified=re.sub("MODEL        \d+", "", mol_string)
+                            string+=modified
+                    i += 1
+
+                    model_str = "MODEL        {}\n".format(i)
+                    string+=model_str
+                    for obmol in obmols:
+                        obmolwriter.set_obm_from_original(obmol, result)
+                        for mol in obmols:
+                            mol_string= mol_string_from_obm(mol, self.format)
+                            modified = re.sub("MODEL        \d+", "", mol_string)
+                            string+=modified
+                    i += 1
+            string = string.replace("END", "ENDMDL")
+            string+="\nEND"
+            with open(filename, 'w') as file:
+                file.write(string)
+
+        else:
+            for mol_results in self.results:
+                for index, result in enumerate(mol_results):
+                    self.mult_mol_writer(filename, result, index, symmetric=False, end=False)
+                    self.mult_mol_writer(filename, result, index, symmetric=True, end=False)
