@@ -181,7 +181,8 @@ class Molecule:
             self.has_been_normalized = None
 
             self.metadata = MoleculeMetaData()
-
+    def __str__(self):
+        return self.metadata.header()
     def copy(self):
         # deepcopy is used only for atoms,
         # because atoms are the only property changed between runs of Directions that necessitated copying
