@@ -135,12 +135,13 @@ class MoleculeMetaData:
 
         mol_index = self.index + 1  # start from 1 instead of 0
 
-        if self.title:  # replace with internal index if relevant
-            start_index = self.title.find("mol_index=")
-            if start_index != -1:
-                end_index = self.title.find(";")
-                start_index = start_index + 10
-                mol_index = int(self.title[start_index:end_index])
+        #while this was initially requested by yaffa, inbal overrode it
+        #if self.title:  # replace with internal index if relevant
+        #    start_index = self.title.find("mol_index=")
+        #    if start_index != -1:
+        #        end_index = self.title.find(";")
+        #        start_index = start_index + 10
+        #        mol_index = int(self.title[start_index:end_index])
         if no_str_format:
             return str(mol_index)
 
