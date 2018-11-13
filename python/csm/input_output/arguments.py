@@ -46,8 +46,8 @@ def _create_parser():
     def output_utility_func(parser):
         parser.add_argument('--json-output', action='store_true', default=False,
                             help='Print output in json format to a file. Only relevant with --legacy')
-        parser.add_argument('--print-local', action='store_true', default=False,
-                            help='Print the local CSM (csm for each atom) in the output file')
+        #parser.add_argument('--print-local', action='store_true', default=False,
+        #                    help='Print the local CSM (csm for each atom) in the output file')
         parser.add_argument('--print-denorm', action='store_true', default=False,
                             help='when printing the original molecule, print the denormalized coordinates')
         parser.add_argument("--legacy", action='store_true', default=False,
@@ -253,7 +253,7 @@ def _process_arguments(parse_res):
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
-        dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
+    #    dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
     dictionary_args = dict(vars(parse_res))
     if "pipe" not in dictionary_args:
