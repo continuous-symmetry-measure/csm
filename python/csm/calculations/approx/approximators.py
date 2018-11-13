@@ -651,7 +651,7 @@ class ApproxCalculation(_OptionalLogger):
                 # Try the SN's
                 for op_order in range(2, self.operation.order + 1, 2):
                     op = Operation("S" + str(op_order))
-                    result = self._calculate(self.operation)
+                    result = self._calculate(op)
                     if result.csm < best_result.csm:
                         best_result = result
                         best_op = op
