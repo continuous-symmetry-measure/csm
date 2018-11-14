@@ -703,8 +703,15 @@ class ScriptWriter:
             title = mol.GetTitle()
             if mol_name not in title:
                 if not metadata.use_filename:
-                    if "mol_index=" not in title:
+                    start_index = title.find("mol_index=")
+                    if start_index == -1:
                         title += "\tmol_index=" + str(mol_index)
+                    else:
+                        end_index = title.find(";")
+                        start_index = start_index + 10
+                        inner_mol_index = (title[start_index:end_index])
+                        title=title.replace("mol_index="+inner_mol_index, "mol_index="+str(mol_index))
+
 
             title += "\tSYM_TXT_CODE=" + line_header
             mol.SetTitle(title)
