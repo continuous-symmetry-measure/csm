@@ -102,7 +102,7 @@ class MoleculeMetaData:
         self.filename = filename
         self.babel_bond = babel_bond
         self.index = index
-        self.title = title
+        self._title = title
         self.use_filename = True
 
     @staticmethod
@@ -127,6 +127,23 @@ class MoleculeMetaData:
             "use_filename": self.use_filename
         }
 
+    @property
+    def title(self):
+        title=self._title
+        start_index = title.find("mol_index=")
+        end_index=0
+        if start_index != -1:
+            end_index = title.find(";")
+            start_index = start_index + 10
+            inner_mol_index = title[start_index:end_index]
+            title = title.replace("mol_index=" + inner_mol_index, "mol_index=" + str(self.index))
+        if not self.filename and self.filename not in title:
+            title_start=title[:end_index+1]
+            title_fin=title[end_index+1:]
+            title= title_start +"\tfilename="+self.filename + title_fin
+        return title
+
+
     def header(self, no_file_format=False, no_str_format=False):
         if self.use_filename:
             if no_file_format:
@@ -134,14 +151,6 @@ class MoleculeMetaData:
             return self.filename
 
         mol_index = self.index + 1  # start from 1 instead of 0
-
-        #while this was initially requested by yaffa, inbal overrode it
-        #if self.title:  # replace with internal index if relevant
-        #    start_index = self.title.find("mol_index=")
-        #    if start_index != -1:
-        #        end_index = self.title.find(";")
-        #        start_index = start_index + 10
-        #        mol_index = int(self.title[start_index:end_index])
         if no_str_format:
             return str(mol_index)
 
@@ -1076,7 +1085,7 @@ class MoleculeReader:
 
         mol = Molecule(atoms)
         mol.metadata.file_content = mol_contents
-        mol.metadata.title = title_contents
+        mol.metadata._title = title_contents
         return mol
 
     @staticmethod
