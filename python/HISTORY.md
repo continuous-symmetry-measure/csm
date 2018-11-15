@@ -1,5 +1,11 @@
 The Python CSM Package
 ======================
+Changes in version 0.21.12
+------------------------
+* remove --print-local
+* bug fix in chirality
+* changes to molecule index printing
+* add title with file information to molecule header
 
 Changes in version 0.20.12
 ------------------------
