@@ -96,3 +96,13 @@ class Atom:
         a._adjacent = in_dict["adjacent"]
         a._equivalency = in_dict["equivalency"]
         return a
+
+    def __getitem__(self, index):
+        if index in (0,1,2):
+            return self.pos[index]
+        raise ValueError("Invalid Index")
+
+    def __setitem__(self, index, value):
+        if index in (0,1,2):
+            self.pos[index]=value
+        raise ValueError("Invalid Index")
