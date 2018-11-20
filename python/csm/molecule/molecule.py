@@ -4,12 +4,12 @@
 import json
 import logging
 from collections import OrderedDict
-
+from pathlib import Path
 import copy
 import numpy as np
 import os
 from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
-
+import openbabel as ob
 from csm.input_output.formatters import csm_log as print
 from csm.molecule.atom import Atom, GetAtomicSymbol
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords, calculate_norm_factor
@@ -19,6 +19,102 @@ logger = logging.getLogger("csm")
 ob_debug = False
 if not ob_debug:
     obErrorLog.SetOutputLevel(obError)
+
+
+class MoleculeData(object):
+    """
+    Taken from pybel https://github.com/openbabel/documentation/blob/master/pybel.py
+    Store molecule data in a dictionary-type object
+
+    Required parameters:
+      `obmol` -- an Open Babel :obapi:`OBMol`
+    Methods and accessor methods are like those of a dictionary except
+    that the data is retrieved on-the-fly from the underlying :obapi:`OBMol`.
+    Example:
+
+    >>> mol = readfile("sdf", 'head.sdf').next() # Python 2
+    >>> # mol = next(readfile("sdf", 'head.sdf')) # Python 3
+    >>> data = mol.data
+    >>> print data
+    {'Comment': 'CORINA 2.61 0041  25.10.2001', 'NSC': '1'}
+    >>> print len(data), data.keys(), data.has_key("NSC")
+    2 ['Comment', 'NSC'] True
+    >>> print data['Comment']
+    CORINA 2.61 0041  25.10.2001
+    >>> data['Comment'] = 'This is a new comment'
+    >>> for k,v in data.items():
+    ...    print k, "-->", v
+    Comment --> This is a new comment
+    NSC --> 1
+    >>> del data['NSC']
+    >>> print len(data), data.keys(), data.has_key("NSC")
+    1 ['Comment'] False
+    """
+
+    def __init__(self, obmol):
+        self._mol = obmol
+
+    def _data(self):
+        return [ob.toPairData(x) for x in self._mol.GetData() if
+                x.GetDataType() == ob.PairData or x.GetDataType() == ob.CommentData]
+
+    def _testforkey(self, key):
+        if not key in self:
+            raise KeyError("'%s' is not a Key" % key)
+
+    def keys(self):
+        return [x.GetAttribute() for x in self._data()]
+
+    def values(self):
+        return [x.GetValue() for x in self._data()]
+
+    def items(self):
+        return zip(self.keys(), self.values())
+
+    def __iter__(self):
+        return iter(self.keys())
+
+    def iteritems(self):
+        return iter(self.items())
+
+    def __len__(self):
+        return len(self._data())
+
+    def __contains__(self, key):
+        return self._mol.HasData(key)
+
+    def __delitem__(self, key):
+        self._testforkey(key)
+        self._mol.DeleteData(self._mol.GetData(key))
+
+    def clear(self):
+        for key in self:
+            del self[key]
+
+    def has_key(self, key):
+        return key in self
+
+    def update(self, dictionary):
+        for k, v in dictionary.iteritems():
+            self[k] = v
+
+    def __getitem__(self, key):
+        self._testforkey(key)
+        return ob.toPairData(self._mol.GetData(key)).GetValue()
+
+    def __setitem__(self, key, value):
+        if key in self:
+            pairdata = ob.toPairData(self._mol.GetData(key))
+            pairdata.SetValue(str(value))
+        else:
+            pairdata = ob.OBPairData()
+            pairdata.SetAttribute(key)
+            pairdata.SetValue(str(value))
+            self._mol.CloneData(pairdata)
+
+    def __repr__(self):
+        return dict(self.iteritems()).__repr__()
+
 
 
 def get_format(format, filename):
@@ -85,7 +181,6 @@ class Chains(OrderedDict):
     def index_to_string(self, index):
         return self._indexes_to_strings[index]
 
-
 class MoleculeMetaData:
     '''
     This class is primarily used to store metadata needed to write results, although format+filecontent+babel_bond
@@ -96,62 +191,40 @@ class MoleculeMetaData:
     index is set in read_multiple_molecules, or, revoltingly, in do_commands after calling redo_molecule
     '''
 
-    def __init__(self, mol_contents=[], format=None, filename="", babel_bond=False, index=0, title=None):
-        self.file_content = mol_contents
+    def __init__(self, file_content=[], format=None, filename="", babel_bond=False, index=0, initial_title="", initial_comments="", use_filename=True):
+        self.file_content = file_content
         self.format = format
         self.filename = filename
         self.babel_bond = babel_bond
         self.index = index
-        self._title = title
-        self.use_filename = True
+        self.initial_title = initial_title
+        self.initial_comments = initial_comments
+        self.use_filename = use_filename
 
     @staticmethod
     def from_dict(self, dict):
-        file_content = dict["file_content"]
-        format = dict["format"]
-        filename = dict["filename"]
-        babel_bond = dict["babel_bond"]
-        index = dict["index"]
-        title = dict["title"]
-        m = MoleculeMetaData(file_content, format, filename, babel_bond, index, title)
-        m.use_filename = dict["use_filename"]
+        m=MoleculeData(**dict)
+        return m
 
     def to_dict(self):
-        return {
-            "file_content": self.file_content,
-            "format": self.format,
-            "filename": self.filename,
-            "babel_bond": self.babel_bond,
-            "index": self.index,
-            "title": self.title,
-            "use_filename": self.use_filename
-        }
+        return vars(self)
 
-    @property
-    def title(self):
-        title=self._title
-        start_index = title.find("mol_index=")
-        end_index=0
-        if start_index != -1:
-            end_index = title.find(";")
-            start_index = start_index + 10
-            inner_mol_index = title[start_index:end_index]
-            title = title.replace("mol_index=" + inner_mol_index, "mol_index=" + str(self.index))
-        if not self.filename and self.filename not in title:
-            title_start=title[:end_index+1]
-            title_fin=title[end_index+1:]
-            title= title_start +"\tfilename="+self.filename + title_fin
-        return title
-
-
-    def header(self, no_file_format=False, no_str_format=False):
+    def appellation(self, no_file_format=False, no_leading_zeros=False):
+        '''
+        the name for the molecule when printing to screen or creating tables.
+        if the molecule was read from a folder, it's the filename
+        otherwise it's the internal index
+        :param no_file_format: remove file ending (eg .xyz)
+        :param no_leading_zeros: print the index without leading zeroes
+        :return: 
+        '''
         if self.use_filename:
             if no_file_format:
-                return self.filename[:-4]
+                return Path(self.filename).stem
             return self.filename
 
         mol_index = self.index + 1  # start from 1 instead of 0
-        if no_str_format:
+        if no_leading_zeros:
             return str(mol_index)
 
         mol_str = "%04d" % mol_index
@@ -191,7 +264,7 @@ class Molecule:
 
             self.metadata = MoleculeMetaData()
     def __str__(self):
-        return self.metadata.header()
+        return self.metadata.appellation()
     def copy(self):
         # deepcopy is used only for atoms,
         # because atoms are the only property changed between runs of Directions that necessitated copying
@@ -1054,6 +1127,7 @@ class MoleculeReader:
         :param args_dict: dictionary of processed command line arguments
         :return: A list of Atoms and a list of chains
         """
+        import openbabel
         if not read_fragments:
             obmols = obmols[:1]
         atoms = []
