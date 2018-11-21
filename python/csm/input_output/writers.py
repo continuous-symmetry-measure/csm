@@ -5,8 +5,8 @@ from openbabel import OBConversion
 from csm import __version__
 from csm.calculations.basic_calculations import cart2sph
 from csm.input_output.formatters import format_CSM, format_unknown_str, output_strings, non_negative_zero
-from csm.molecule.molecule import MoleculeReader, MoleculeData, mol_string_from_obm
-
+from csm.molecule.molecule import MoleculeReader, mol_string_from_obm
+import openbabel as ob
 
 def write_array_to_file(f, arr, add_one=False, separator=" "):
     '''
@@ -43,19 +43,16 @@ class LegacyFormatWriter:
         f.write("%s: %s\n" % (self.result.operation.name, format_CSM(self.result.csm)))
         f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(self.result.d_min))
 
-        molecule_writer_class = OBMolWriter
-        if self.format == "csm":
-            molecule_writer_class = CSMFormatWriter
-        molecule_writer = molecule_writer_class(self.result.molecule)
+        molecule_writer = MoleculeWriter(MoleculeWrapper(self.result, 0))
         if self.format == 'pdb':
             f.write("\nMODEL 01")
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
-        molecule_writer.write_original(f, self.result, self.format, legacy=True)
+        molecule_writer.write_original(f, self.result, consecutive=True)
 
         if self.format == 'pdb':
             f.write("\nMODEL 02")
         f.write("\nRESULTING STRUCTURE COORDINATES\n")
-        molecule_writer.write_symmetric(f, self.result, self.format, legacy=True)
+        molecule_writer.write_symmetric(f, self.result, consecutive=True)
         if self.format == 'pdb':
             f.write("END\n")
 
@@ -116,88 +113,37 @@ class LegacyFormatWriter:
 
         json.dump(json_dict, f)
 
+class MoleculeWriter:
+    def __init__(self, molecule_wrapper):
+        self.molecule_wrapper=molecule_wrapper
+        self.format = molecule_wrapper.molecule.metadata.format
+        self.write_molecule = self._write_obm_molecule
+        if self.format == "csm":
+            self.write_molecule = self._write_csm_molecule
 
-class CSMFormatWriter:
-    def __init__(self, molecule):
-        self.molecule=molecule
+    def write_symmetric(self, f, result, consecutive=False,  model_number=None):
+        self.write_molecule(f, result.symmetric_structure, consecutive, model_number)
 
-    def write_symmetric(self, f, result, *args, **kwargs):
-        self.write_molecule(f, result.symmetric_structure)
+    def write_original(self, f, result, consecutive=False,  model_number=None):
+        self.write_molecule(f, result.molecule.atoms, consecutive, model_number)
 
-    def write_original(self, f, result, *args, **kwargs):
-        self.write_molecule(f, result.molecule.atoms)
-
-    def write_molecule(self, f, coordinates):
+    def _write_csm_molecule(self, f, coordinates, *args, **kwargs):
         size=len(coordinates)
         f.write("%i\n" % size)
         for i in range(size):
             f.write("%3s%10.5lf %10.5lf %10.5lf\n" %
-                    (self.molecule.atoms[i].symbol,
+                    (self.molecule_wrapper.molecule.atoms[i].symbol,
                      non_negative_zero(coordinates[i][0]),
                      non_negative_zero(coordinates[i][1]),
                      non_negative_zero(coordinates[i][2])))
 
         for i in range(size):
             f.write("%d " % (i + 1))
-            for j in self.molecule.atoms[i].adjacent:
+            for j in self.molecule_wrapper.molecule.atoms[i].adjacent:
                 f.write("%d " % (j + 1))
             f.write("\n")
 
-class OBMolWriter:
-    def __init__(self, molecule):
-        self.molecule=molecule
-        self.metadata=molecule.metadata
-        self.obmols=self.obm_from_molecule(molecule)
-        self.obmol=self.obmols[0]
-        if len(self.obmols)>1:
-            raise ValueError("We are temporarily not supporting reading fragments from a file and writing results")
-        self.data = MoleculeData(self.obmols[0])
-
-    def obm_from_molecule(self, molecule):
-        obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
-                                                  molecule.metadata.format,
-                                                  molecule.metadata.babel_bond)
-        _atom_indices = []
-
-        for mol_index, obmol in enumerate(obmols):
-            num_atoms = obmol.NumAtoms()
-            for atom_index in range(num_atoms):
-                _atom_indices.append((mol_index, atom_index))
-
-        for to_remove in molecule._deleted_atom_indices:
-            mol_index, atom_index = _atom_indices[to_remove]
-            obmol = obmols[mol_index]
-            obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
-
-        return obmols
-
-    def set_obm_from_original(self, obmol, result):
-        return self.set_coordinates(obmol, result.molecule.atoms)
-
-    def set_obm_from_symmetric(self, obmol, result):
-        return self.set_coordinates(obmol, result.symmetric_structure)
-
-    def set_coordinates(self, obmol, coordinates):
-        num_atoms = obmol.NumAtoms()
-        for i in range(num_atoms):
-            try:
-                a = obmol.GetAtom(i + 1)
-                a.SetVector(non_negative_zero(coordinates[i][0]),
-                            non_negative_zero(coordinates[i][1]),
-                            non_negative_zero(coordinates[i][2]))
-            except Exception as e:
-                print(e)
-        return obmol
-
-    def write_symmetric(self, f, result, format, legacy=False):
-        obm=self.set_obm_from_symmetric(self.obmol, result)
-        self.write_molecule(f, obm, format, legacy=legacy)
-
-    def write_original(self, f, result, format, legacy=False):
-        obm=self.set_obm_from_original(self.obmol, result)
-        self.write_molecule(f, obm, format, legacy=legacy)
-
-    def write_molecule(self, f, obmol, format, legacy=False):
+    def _write_obm_molecule(self, f, coordinates, consecutive=False, model_number=None):
         """
         Write an Open Babel molecule to file
         :param obmol: The molecule
@@ -205,172 +151,252 @@ class OBMolWriter:
         :param f: The file to write output to
         :param legacy: replace end with endmdl
         """
-        conv = OBConversion()
-        if not conv.SetOutFormat(format):
-            raise ValueError("Error setting output format to " + format)
-        # write to file
-        try:
-            s = conv.WriteString(obmol)
-        except (TypeError, ValueError, IOError):
-            raise ValueError("Error writing data file using OpenBabel")
+        if model_number is not None and self.format=="pdb":
+            model_str= "MODEL     {}\n".format(model_number)
+            f.write(model_str)
 
-        if legacy:
-            if str.lower(format) == 'pdb':
-                s = s.replace("END", "ENDMDL")
-        f.write(s)
+        obmols=self.molecule_wrapper.set_obm_coordinates(coordinates)
 
+        if len(obmols)>1:
+            print("WARNING: result printing for fragments may have errors")
 
-    def replace_internal_index(self, string_to_modify):
-        '''
-        xyz files have an internal index unrelated to the ordinal index they have in file, this replaces them
-        :param
-        :return:
-        '''
-        start_index = string_to_modify.find("mol_index=")
-        end_index = 0
-        if start_index != -1:
-            end_index = string_to_modify.find(";")
-            start_index = start_index + 10
-            inner_mol_index = string_to_modify[start_index:end_index]
-            string_to_modify = string_to_modify.replace("mol_index=" + inner_mol_index, "mol_index=" + str(self.metadata.index+1))
-        return string_to_modify
+        for obmol in obmols:
+            conv = OBConversion()
+            if not conv.SetOutFormat(self.format):
+                raise ValueError("Error setting output format to " + format)
+            # write to file
+            try:
+                s = conv.WriteString(obmol)
+            except (TypeError, ValueError, IOError):
+                raise ValueError("Error writing data file using OpenBabel")
 
-    def add_filename(self, string_to_modify):
-        start_index = string_to_modify.find("mol_index=")
-        end_index = 0
-        if start_index != -1:
-            end_index = string_to_modify.find(";")
-        filename=self.metadata.filename
-        if filename not in string_to_modify:
-            title_start = string_to_modify[:end_index + 1]
-            title_fin = string_to_modify[end_index + 1:]
-            string_to_modify = title_start + "\tfilename=" + filename + title_fin
-        return string_to_modify
-
-    def modify_title(self, replace_internal_index=True, add_filename=True, add_is_symmetric=False):
-        '''
-        the title string, which can be used with obmol.SetTitle()
-        :param replace_internal_index: replace the original indices in an xyz file with ordinal
-        :param add_filename: add filename to header if not already present
-        :param add_is_symmetric: add symmetric/original to title
-        :return:
-        '''
-        title=self.metadata.initial_title
-        if replace_internal_index:
-            title = self.replace_internal_index(title)
-        if add_filename:
-            title = self.add_filename(title)
-        if add_is_symmetric:
-            pass
-        return title
+            if consecutive:
+                if str.lower(self.format) == 'pdb':
+                    s=re.sub("MODEL\s+\d+", "", s)
+                    s = s.replace("END", "ENDMDL")
+                if str.lower(self.format) in ['mol', 'sdf']:
+                    s+="\n$$$$\n"
+            f.write(s)
 
 
-def mult_mol_writer(filename, format, result, index, symmetric=False, end=True):
-        '''
-        :param filename:
-        :param obmols:
-        :return:
-        '''
+class MoleculeWrapper:
+    class MoleculeData(object):
+        """
+        Taken from pybel https://github.com/openbabel/documentation/blob/master/pybel.py
+        Store molecule data in a dictionary-type object
 
-        obmWriter=OBMolWriter(result.molecule)
+        Required parameters:
+          `obmol` -- an Open Babel :obapi:`OBMol`
+        Methods and accessor methods are like those of a dictionary except
+        that the data is retrieved on-the-fly from the underlying :obapi:`OBMol`.
+        Example:
 
-        # get obmols
-        obmols = obmWriter.obmols
+        >>> mol = readfile("sdf", 'head.sdf').next() # Python 2
+        >>> # mol = next(readfile("sdf", 'head.sdf')) # Python 3
+        >>> data = mol.data
+        >>> print data
+        {'Comment': 'CORINA 2.61 0041  25.10.2001', 'NSC': '1'}
+        >>> print len(data), data.keys(), data.has_key("NSC")
+        2 ['Comment', 'NSC'] True
+        >>> print data['Comment']
+        CORINA 2.61 0041  25.10.2001
+        >>> data['Comment'] = 'This is a new comment'
+        >>> for k,v in data.items():
+        ...    print k, "-->", v
+        Comment --> This is a new comment
+        NSC --> 1
+        >>> del data['NSC']
+        >>> print len(data), data.keys(), data.has_key("NSC")
+        1 ['Comment'] False
+        """
 
-        #requires result
-        for i, obmol in enumerate(obmols):
-            if symmetric:
-                obmWriter.set_obm_from_symmetric(obmol, result)
+        def __init__(self, obmol):
+            self._mol = obmol
+
+        def _data(self):
+            return [ob.toPairData(x) for x in self._mol.GetData() if
+                    x.GetDataType() == ob.PairData or x.GetDataType() == ob.CommentData]
+
+        def _testforkey(self, key):
+            if not key in self:
+                raise KeyError("'%s' is not a Key" % key)
+
+        def keys(self):
+            return [x.GetAttribute() for x in self._data()]
+
+        def values(self):
+            return [x.GetValue() for x in self._data()]
+
+        def items(self):
+            return zip(self.keys(), self.values())
+
+        def __iter__(self):
+            return iter(self.keys())
+
+        def iteritems(self):
+            return iter(self.items())
+
+        def __len__(self):
+            return len(self._data())
+
+        def __contains__(self, key):
+            return self._mol.HasData(key)
+
+        def __delitem__(self, key):
+            self._testforkey(key)
+            self._mol.DeleteData(self._mol.GetData(key))
+
+        def clear(self):
+            for key in self:
+                del self[key]
+
+        def has_key(self, key):
+            return key in self
+
+        def update(self, dictionary):
+            for k, v in dictionary.iteritems():
+                self[k] = v
+
+        def __getitem__(self, key):
+            self._testforkey(key)
+            return ob.toPairData(self._mol.GetData(key)).GetValue()
+
+        def __setitem__(self, key, value):
+            if key in self:
+                pairdata = ob.toPairData(self._mol.GetData(key))
+                pairdata.SetValue(str(value))
             else:
-                obmWriter.set_obm_from_original(obmol, result)
+                pairdata = ob.OBPairData()
+                pairdata.SetAttribute(key)
+                pairdata.SetValue(str(value))
+                self._mol.CloneData(pairdata)
 
-        # handle headers:
-        metadata = result.molecule.metadata
-        mol_name = metadata.appellation(no_file_format=True)
-        mol_index = metadata.index + 1
+        def __repr__(self):
+            return dict(self.iteritems()).__repr__()
 
-        #requires result
-        line_header = get_line_header(index, result)
+    def __init__(self, result, line_index):
+        self.result=result
+        self.molecule=result.molecule
+        self.line_index=line_index
+        self.metadata=result.molecule.metadata
+        self.format=self.metadata.format
+        if self.format!="csm":
+            self.obmols=self.obms_from_molecule(self.molecule)
+            self.obmol=self.obmols[0]
+            self.moleculedata=MoleculeWrapper.MoleculeData(self.obmol)
+            self.set_initial_molecule_fields()
 
-        moleculewriters=[]
-        for mol in obmols:
-            title = obmWriter.modify_title()
-            title += "\tSYM_TXT_CODE=" + line_header
-            mol.SetTitle(title)
+    def obms_from_molecule(self, molecule):
+        obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
+                                                  molecule.metadata.format,
+                                                  molecule.metadata.babel_bond)
+        self._obm_atom_indices = []
 
-        # handle special cases
-        if len(obmols) > 1 or not end:
-            if format == "mol":
-                string = ""
-                for mol in obmols:
-                    string += mol_string_from_obm(mol, format)
-                    string += "\n$$$$\n"
-                with open(filename, 'a') as file:
-                    file.write(string)
-                return
+        for mol_index, obmol in enumerate(obmols):
+            num_atoms = obmol.NumAtoms()
+            for atom_index in range(num_atoms):
+                self._obm_atom_indices.append((mol_index, atom_index))
 
-            elif format == "pdb":
-                string = ""
-                # It may be necessary to add "model        #" here (see: alternating)
-                # but it's not clear, so I'm leaving it be until the topic comes up again
-                for mol in obmols:
-                    string += mol_string_from_obm(mol, format)
-                string=string.replace("END", "ENDMDL")
-                with open(filename, 'a') as file:
-                    file.write(string)
-                return
+        for to_remove in molecule._deleted_atom_indices:
+            mol_index, atom_index = self._obm_atom_indices[to_remove]
+            obmol = obmols[mol_index]
+            obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
 
-        # default, including for multiple obmols that aren't special case formats above
-        with open(filename, 'a') as file:
-            for mol in obmols:
-                obmWriter.write_molecule(file, mol, format)
+        return obmols
 
-def alternating_mol_writer(results, filename, format):
-        with open(filename, 'w') as file:
-            file.write('')
-        if format!="pdb":
-            for mol_results in results:
-                for index, result in enumerate(mol_results):
-                    mult_mol_writer(filename, result, index, symmetric=False, end=False)
-                    mult_mol_writer(filename, result, index, symmetric=True, end=False)
+    def set_obm_coordinates(self, coordinates):
+        num_atoms = len(self.molecule)
+        for i in range(num_atoms):
+            mol_index, atom_index = self._obm_atom_indices[i]
+            obmol = self.obmols[mol_index]
+            try:
+                a = obmol.GetAtom(atom_index + 1)
+                a.SetVector(non_negative_zero(coordinates[i][0]),
+                            non_negative_zero(coordinates[i][1]),
+                            non_negative_zero(coordinates[i][2]))
+            except Exception as e:
+                print(e)
+        return self.obmols
+
+    def insert_pdb_new_lines(self, string_to_modify):
+        '''
+        pdb lines cannot be longer than 78 characters, openbabel will automatically add new lines with correct header,
+         if there's a newline
+        :param string_to_modify:
+        :return:
+        '''
+        if len(string_to_modify)<77:
+            return string_to_modify
+        modified=""
+        curr_index=0
+        while len(string_to_modify[curr_index:]>77):
+            string_to_modify=modified+string_to_modify[:77]+"\n"+string_to_modify[77:]
+            curr_index=curr_index+76
+        return string_to_modify
+
+    def append_description(self, description):
+        if self.format in ["mol", "sdf"]:
+            key='Comment'
+            self.moleculedata[key] = description
+        if self.format=="pdb":
+            key='REMARK'
+            description="     "+description
+            description=self.insert_pdb_new_lines(description)
+            self.moleculedata[key]=description
+        if self.format=="xyz":
+            old_title=self.obmol.GetTitle()
+            new_title=old_title+"  "+description
+            self.obmol.SetTitle(new_title)
+
+    def append_title(self, title):
+        if self.format=="csm":
+            return
+        if self.format=="pdb":
+            key="TITLE"
+            if key in self.moleculedata:
+                title=self.moleculedata[key] + title
+            else:
+                title = "     " + title
+            title = self.insert_pdb_new_lines(title)
+            self.moleculedata[key] = title
         else:
-            i=0
-            string=""
-            for mol_results in results:
-                for index, result in enumerate(mol_results):
-                    obmWriter = OBMolWriter(result.molecule)
-                    obmols = obmWriter.obmols
+            old_title=self.obmol.GetTitle()
+            new_title=old_title+"  "+title
+            self.obmol.SetTitle(new_title)
 
-                    model_str = "MODEL        {}\n".format(i)
-                    string+=model_str
-                    for obmol in obmols:
-                        obmWriter.set_obm_from_original(obmol, result)
-                        for mol in obmols:
-                            mol_string= mol_string_from_obm(mol, format)
-                            modified = re.sub("MODEL        \d+", "", mol_string)
-                            string+=modified
-                    i += 1
+    def clean_title(self, string_to_remove):
+        original_title=self.obmol.GetTitle()
+        if self.format=="pdb":
+            original_title=self.moleculedata["TITLE"]
 
-                    model_str = "MODEL        {}\n".format(i)
-                    string+=model_str
-                    for obmol in obmols:
-                        obmWriter.set_obm_from_symmetric(obmol, result)
-                        for mol in obmols:
-                            mol_string= mol_string_from_obm(mol, format)
-                            modified=re.sub("MODEL        \d+", "", mol_string)
-                            string+=modified
-                    i += 1
+        if string_to_remove in original_title:
+            new_title=original_title.replace(string_to_remove, "")
+        else:
+            return
 
-
-            string = string.replace("END", "ENDMDL")
-            string+="\nEND"
-            with open(filename, 'w') as file:
-                file.write(string)
+        if self.format == "pdb":
+            self.moleculedata["TITLE"]=new_title
+        self.obmol.SetTitle(new_title)
 
 
 
+    def set_initial_molecule_fields(self):
+        title=""
+        original_title=self.obmol.GetTitle()
+        if self.metadata.appellation() not in original_title:
+            title+=self.metadata.appellation()+ " "
+        title= title + get_line_header(self.line_index, self.result)
+        self.append_title(title)
+        description="index="+str(self.metadata.index)+";" + "filename: "+self.metadata.filename
+        self.append_description(description)
 
-
+    def set_symmetric_title(self, symmetric=True):
+        self.clean_title("(Original)")
+        self.clean_title("(Symmetric)")
+        if symmetric:
+            self.append_title("(Symmetric)")
+        else:
+            self.append_title("(Original)")
 
 
 class ScriptWriter:
@@ -397,6 +423,11 @@ class ScriptWriter:
         self.polar = polar
         self.print_local = print_local
 
+    def result_molecule_iterator(self):
+        for mol_index, mol_results in enumerate(self.results):
+            for command_index, command_results in enumerate(mol_results):
+                yield MoleculeWrapper(command_results, command_index)
+
     def format_CSM(self, result):
         if result.failed:
             return "n/a"
@@ -412,7 +443,7 @@ class ScriptWriter:
         if self.verbose:
             self.create_approx_statistics(out_folder = os.path.join(self.folder, 'approx'))
         self.create_legacy_files(out_folder = os.path.join(self.folder, 'old-csm-output'))
-        self.create_symm_mols(filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format))
+        self.create_symmetric_mols(filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format))
         self.create_initial_mols(filename = os.path.join(self.folder, "initial_normalized_coordinates." + self.format))
         self.write_version(filename = os.path.join(self.folder, "version.txt"))
 
@@ -581,28 +612,40 @@ class ScriptWriter:
                     print("failed to write legacy file for" + file_name + ": " + str(e))
 
     def create_initial_mols(self, filename):
-        # chained file of initial structures
-        with open(filename, 'w') as file:
-            file.write('')
-        for mol_results in self.results:
-            for index, result in enumerate(mol_results):
-                if result.molecule.metadata.format == "csm":
-                    writer = CSMFormatWriter(result.molecule)
-                    with open(filename, 'a') as f:
-                        writer.write_original(f, result)
-                else:
-                    mult_mol_writer(filename, self.format, result, index)
+        with open(filename, 'a') as file:
+            for molecule_wrapper in self.result_molecule_iterator():
+                molecule_wrapper.set_symmetric_title(symmetric=False)
+                mw = MoleculeWriter(molecule_wrapper)
+                mw.write_original(file, molecule_wrapper.result, consecutive=True,
+                                  model_number=molecule_wrapper.metadata.index+1)
+            if self.format == "pdb":
+                file.write("\nEND")
 
-    def create_symm_mols(self, filename):
-        # chained file of symmetric structures
+    def create_symmetric_mols(self, filename):
         with open(filename, 'w') as file:
-            file.write('')
-        for mol_results in self.results:
-            for index, result in enumerate(mol_results):
-                if result.molecule.metadata.format == "csm":
-                    writer = CSMFormatWriter(result.molecule)
-                    with open(filename, 'a') as f:
-                        writer.write_symmetric(f, result)
-                else:
-                    mult_mol_writer(filename, self.format, result, index, symmetric=True)
+            for molecule_wrapper in self.result_molecule_iterator():
+                molecule_wrapper.set_symmetric_title(symmetric=True)
+                mw = MoleculeWriter(molecule_wrapper)
+                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
+                                   model_number=molecule_wrapper.metadata.index+1)
+            if self.format == "pdb":
+                file.write("\nEND")
+
+    def create_alternating_mols(self, filename):
+        i = 1
+        with open(filename, 'w') as file:
+            for molecule_wrapper in self.result_molecule_iterator():
+                molecule_wrapper.set_symmetric_title(symmetric=False)
+                mw = MoleculeWriter(molecule_wrapper)
+                mw.write_original(file, molecule_wrapper.result, consecutive=True,
+                                  model_number=i)
+                i += 1
+                molecule_wrapper.set_symmetric_title(symmetric=True)
+                mw = MoleculeWriter(molecule_wrapper)
+
+                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
+                                   model_number=i)
+                i += 1
+            if self.format == "pdb":
+                file.write("\nEND")
 

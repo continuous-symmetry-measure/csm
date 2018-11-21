@@ -6,7 +6,7 @@ import os
 from csm.input_output.formatters import csm_log as print
 from csm.input_output.readers import read_from_sys_std_in
 from csm.molecule.molecule import MoleculeReader, Molecule
-
+from pathlib import Path
 
 def read_molecules(**kwargs):
     input_name = kwargs["in_file_name"]
@@ -19,15 +19,32 @@ def read_molecules(**kwargs):
             break
 
         files.sort()
+
+        supported_formats=[".mol", ".pdb", ".sdf", ".xyz", ".csm", ".cif"]
+
+        have_warned=False
+        i=0
+        mol_format = Path(files[i]).suffix
+        try:
+            while mol_format not in  supported_formats:
+                i+=1
+                mol_format = Path(files[i]).suffix
+        except: #this is simply a check for a warning to user and not important enough to crash over
+            pass
+
         for file_name in files:
             if file_name == "sym.txt":
                 continue
             mol_file = os.path.join(input_name, file_name)
+            mol_format_2 = Path(mol_file).suffix
+            if mol_format_2!=mol_format and mol_format_2 in supported_formats and not have_warned:
+                print("WARNING: you are reading multiple formats of files. Result printing may have errors")
+                have_warned=True
             try:
                 mol = MoleculeReader.from_file(mol_file, **kwargs)
                 mols.append(mol)
             except Exception as e:
-                if mol_file[-3:] in ["mol", "pdb", "sdf", "xyz", "csm", "cif"]:
+                if mol_format_2 in supported_formats:
                     print("failed to create a molecule from", file_name, str(e))
                 # else:
                 #    print(file_name, "was not read")
