@@ -43,7 +43,7 @@ class LegacyFormatWriter:
         f.write("%s: %s\n" % (self.result.operation.name, format_CSM(self.result.csm)))
         f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(self.result.d_min))
 
-        molecule_writer = MoleculeWriter(MoleculeWrapper(self.result, 0))
+        molecule_writer = MoleculeWriter(MoleculeWrapper(self.result))
         if self.format == 'pdb':
             f.write("\nMODEL 01")
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
@@ -274,9 +274,10 @@ class MoleculeWrapper:
         def __repr__(self):
             return dict(self.iteritems()).__repr__()
 
-    def __init__(self, result, line_index):
+    def __init__(self, result, molecule_index=0, line_index=0):
         self.result=result
         self.molecule=result.molecule
+        self.molecule_index=molecule_index
         self.line_index=line_index
         self.metadata=result.molecule.metadata
         self.format=self.metadata.format
@@ -329,7 +330,7 @@ class MoleculeWrapper:
             return string_to_modify
         modified=""
         curr_index=0
-        while len(string_to_modify[curr_index:]>77):
+        while len(string_to_modify[curr_index:])>77:
             string_to_modify=modified+string_to_modify[:77]+"\n"+string_to_modify[77:]
             curr_index=curr_index+76
         return string_to_modify
@@ -340,8 +341,12 @@ class MoleculeWrapper:
             self.moleculedata[key] = description
         if self.format=="pdb":
             key='REMARK'
-            description="     "+description
-            description=self.insert_pdb_new_lines(description)
+            description = "     " + description
+            description = self.insert_pdb_new_lines(description)
+
+            if key in self.moleculedata:
+                description=self.moleculedata[key] + "\n"+ description
+
             self.moleculedata[key]=description
         if self.format=="xyz":
             old_title=self.obmol.GetTitle()
@@ -353,11 +358,12 @@ class MoleculeWrapper:
             return
         if self.format=="pdb":
             key="TITLE"
-            if key in self.moleculedata:
-                title=self.moleculedata[key] + title
-            else:
-                title = "     " + title
+            title = "     " + title
             title = self.insert_pdb_new_lines(title)
+
+            if key in self.moleculedata:
+                title=self.moleculedata[key] + "\n"+ title
+
             self.moleculedata[key] = title
         else:
             old_title=self.obmol.GetTitle()
@@ -387,7 +393,7 @@ class MoleculeWrapper:
             title+=self.metadata.appellation()+ " "
         title= title + get_line_header(self.line_index, self.result)
         self.append_title(title)
-        description="index="+str(self.metadata.index)+";" + "filename: "+self.metadata.filename
+        description="index="+str(self.metadata.index+1)+";" + "filename: "+self.metadata.filename
         self.append_description(description)
 
     def set_symmetric_title(self, symmetric=True):
@@ -426,7 +432,7 @@ class ScriptWriter:
     def result_molecule_iterator(self):
         for mol_index, mol_results in enumerate(self.results):
             for command_index, command_results in enumerate(mol_results):
-                yield MoleculeWrapper(command_results, command_index)
+                yield MoleculeWrapper(command_results, mol_index, command_index)
 
     def format_CSM(self, result):
         if result.failed:
@@ -613,21 +619,25 @@ class ScriptWriter:
 
     def create_initial_mols(self, filename):
         with open(filename, 'a') as file:
+            i=1
             for molecule_wrapper in self.result_molecule_iterator():
                 molecule_wrapper.set_symmetric_title(symmetric=False)
                 mw = MoleculeWriter(molecule_wrapper)
                 mw.write_original(file, molecule_wrapper.result, consecutive=True,
-                                  model_number=molecule_wrapper.metadata.index+1)
+                                  model_number=i)
+                i+=1
             if self.format == "pdb":
                 file.write("\nEND")
 
     def create_symmetric_mols(self, filename):
         with open(filename, 'w') as file:
+            i=1
             for molecule_wrapper in self.result_molecule_iterator():
                 molecule_wrapper.set_symmetric_title(symmetric=True)
                 mw = MoleculeWriter(molecule_wrapper)
                 mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
-                                   model_number=molecule_wrapper.metadata.index+1)
+                                   model_number=i)
+                i+=1
             if self.format == "pdb":
                 file.write("\nEND")
 
