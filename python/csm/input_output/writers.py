@@ -441,23 +441,27 @@ class ScriptWriter:
 
     def write(self):
         os.makedirs(self.folder, exist_ok=True)
-        self.create_CSM_tsv(filename=os.path.join(self.folder, "csm.txt"))
-        self.create_perm_tsv(filename=os.path.join(self.folder, "permutation.txt"))
-        self.create_dir_tsv(filename=os.path.join(self.folder, "directional.txt"))
-        # self.create_extra_tsv(filename = os.path.join(self.folder, "extra.tab"))
-        self.create_extra_txt(filename = os.path.join(self.folder, "extra.txt"))
+        self.create_CSM_tsv()
+        self.create_perm_tsv()
+        self.create_dir_tsv()
+        # self.create_extra_tsv()
+        self.create_extra_txt()
         if self.verbose:
-            self.create_approx_statistics(out_folder = os.path.join(self.folder, 'approx'))
-        self.create_legacy_files(out_folder = os.path.join(self.folder, 'old-csm-output'))
-        self.create_symmetric_mols(filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format))
-        self.create_initial_mols(filename = os.path.join(self.folder, "initial_normalized_coordinates." + self.format))
-        self.write_version(filename = os.path.join(self.folder, "version.txt"))
+            self.create_approx_statistics()
+        self.create_legacy_files()
+        self.create_initial_mols()
+        self.create_symmetric_mols()
+        self.write_version()
 
-    def write_version(self, filename):
+    def write_version(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "version.txt")
         with open(filename, 'w') as file:
             file.write("CSM VERSION: " + str(__version__))
 
-    def create_CSM_tsv(self, filename):
+    def create_CSM_tsv(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "csm.txt")
         # creates a tsv file with CSM per molecule
         with open(filename, 'w') as f:
             f.write("%-20s" % "#Molecule")
@@ -470,7 +474,9 @@ class ScriptWriter:
                     f.write("%-10s" % self.format_CSM(result))
                 f.write("\n")
 
-    def create_perm_tsv(self, filename):
+    def create_perm_tsv(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "permutation.txt")
         # creates a tsv for permutations (needs to handle extra long permutations somehow)
         with open(filename, 'w') as f:
             f.write("%-20s%-10s%-10s\n" % ("#Molecule", "#Command", "#Permutation"))
@@ -481,7 +487,9 @@ class ScriptWriter:
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")
 
-    def create_dir_tsv(self, filename):
+    def create_dir_tsv(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "directional.txt")
         with open(filename, 'w') as f:
             f.write("%-20s%-10s%10s%10s%10s\n" % ("#Molecule", "#Command", "X", "Y", "Z"))
             for mol_index, mol_results in enumerate(self.results):
@@ -491,7 +499,9 @@ class ScriptWriter:
                     write_array_to_file(f, command_result.dir, separator="%-10s")
                     f.write("\n")
 
-    def create_extra_tsv(self, filename):
+    def create_extra_tsv(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "extra.tab")
         # create headers
         # first row: cmd
         format_strings = []
@@ -521,12 +531,14 @@ class ScriptWriter:
                         format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
                                                             for key in sorted(command_result.overall_statistics)]))
 
-    def create_approx_statistics(self, out_folder):
+    def create_approx_statistics(self, out_folder=None):
         # (in approx there's also a table with initial direction, initial CSM, final direction, final CSM, number iterations, run time, and stop reason for each direction in approx)
         # create headers
         # first row: cmd
 
         # first, check that at least one of the commands has running statistics:
+        if not out_folder:
+            out_folder = os.path.join(self.folder, 'approx')
         has_ongoing = False
         for command_result in self.results[0]:
             if command_result.ongoing_statistics:
@@ -594,15 +606,19 @@ class ScriptWriter:
                     finally:
                         f.write(start_str + "failed to read statistics\n")
 
-    def create_extra_txt(self, filename):
+    def create_extra_txt(self, filename=None):
         # 2. the equivalence class and chain information (number and length)
         # 4. Cycle numbers and lengths
+        if not filename:
+            filename = os.path.join(self.folder, "extra.txt")
         with open(filename, 'w') as f:
             for item in output_strings:
                 f.write(item)
                 f.write("\n")
 
-    def create_legacy_files(self, out_folder):
+    def create_legacy_files(self, out_folder=None):
+        if not out_folder:
+            out_folder = os.path.join(self.folder, 'old-csm-output')
         os.makedirs(out_folder, exist_ok=True)
         for mol_index, mol_results in enumerate(self.results):
             for line_index, command_result in enumerate(mol_results):
@@ -617,7 +633,9 @@ class ScriptWriter:
                 except Exception as e:
                     print("failed to write legacy file for" + file_name + ": " + str(e))
 
-    def create_initial_mols(self, filename):
+    def create_initial_mols(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "initial_normalized_coordinates." + self.format)
         with open(filename, 'a') as file:
             i=1
             for molecule_wrapper in self.result_molecule_iterator():
@@ -629,7 +647,9 @@ class ScriptWriter:
             if self.format == "pdb":
                 file.write("\nEND")
 
-    def create_symmetric_mols(self, filename):
+    def create_symmetric_mols(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format)
         with open(filename, 'w') as file:
             i=1
             for molecule_wrapper in self.result_molecule_iterator():
@@ -641,7 +661,9 @@ class ScriptWriter:
             if self.format == "pdb":
                 file.write("\nEND")
 
-    def create_alternating_mols(self, filename):
+    def create_alternating_mols(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "resulting_mols." + self.format)
         i = 1
         with open(filename, 'w') as file:
             for molecule_wrapper in self.result_molecule_iterator():
