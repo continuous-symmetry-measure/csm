@@ -406,7 +406,7 @@ class MoleculeWrapper:
 
 
 class ScriptWriter:
-    def __init__(self, results, format, out_file_name=None, polar=False, verbose=False, print_local=False, **kwargs):
+    def __init__(self, results, format, out_file_name=None, polar=False, verbose=False, print_local=False, argument_string="", **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
@@ -429,15 +429,23 @@ class ScriptWriter:
         self.polar = polar
         self.print_local = print_local
 
-    def result_molecule_iterator(self):
-        for mol_index, mol_results in enumerate(self.results):
-            for command_index, command_results in enumerate(mol_results):
-                yield MoleculeWrapper(command_results, mol_index, command_index)
+        self.inverted_results=[[] for i in range(len(self.results[0]))]
+        for mol_index, mol_result in enumerate(self.results):
+            for com_index, command_result in enumerate(mol_result):
+                self.inverted_results[com_index].append(mol_result)
+
+        self.argument_string=argument_string
 
     def format_CSM(self, result):
         if result.failed:
             return "n/a"
         return format_CSM(result.csm)
+
+    def result_molecule_iterator(self):
+        for mol_index, mol_results in enumerate(self.results):
+            for command_index, command_results in enumerate(mol_results):
+                yield MoleculeWrapper(command_results, mol_index, command_index)
+
 
     def write(self):
         os.makedirs(self.folder, exist_ok=True)
@@ -457,6 +465,7 @@ class ScriptWriter:
         if not filename:
             filename = os.path.join(self.folder, "version.txt")
         with open(filename, 'w') as file:
+            file.write(self.argument_string)
             file.write("CSM VERSION: " + str(__version__))
 
     def create_CSM_tsv(self, filename=None):
@@ -638,7 +647,8 @@ class ScriptWriter:
             filename = os.path.join(self.folder, "initial_normalized_coordinates." + self.format)
         with open(filename, 'a') as file:
             i=1
-            for molecule_wrapper in self.result_molecule_iterator():
+            for mol_index, mol_results in enumerate(self.results):
+                molecule_wrapper= MoleculeWrapper(mol_results[0], mol_index)
                 molecule_wrapper.set_symmetric_title(symmetric=False)
                 mw = MoleculeWriter(molecule_wrapper)
                 mw.write_original(file, molecule_wrapper.result, consecutive=True,

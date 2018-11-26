@@ -44,7 +44,6 @@ def do_commands(molecules, **dictionary_args):
     args_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
     total_results = [[] for mol in molecules]
     for line, args_dict, modifies_molecule in args_array:
-        print("\n**executing command:", line[:-1], "**")
         try:
             selections = args_dict['select_mols']
             actual_mols = [molecules[i] for i in selections]
@@ -55,6 +54,7 @@ def do_commands(molecules, **dictionary_args):
             actual_mols = molecules
 
         for mol_index, molecule in enumerate(actual_mols):
+            print("\n**executing command:", line[:-1], "**")
             args_dict["molecule"] = molecule
             if modifies_molecule:
                 new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)
@@ -79,6 +79,7 @@ def csm_run(args=[]):
     print(" ".join(args))
 
     dictionary_args = get_parsed_args(args)
+    dictionary_args["argument_string"]= " ".join(args) + "\n"
     if "global_timeout" in dictionary_args:
         from csm.calculations.constants import set_global_timeout
         set_global_timeout(dictionary_args["global_timeout"])
