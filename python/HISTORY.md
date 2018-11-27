@@ -1,6 +1,6 @@
 The Python CSM Package
 ======================
-Changes in version 0.21.12
+Changes in version 0.21.2
 ------------------------
 * remove --print-local
 * bug fix in chirality
