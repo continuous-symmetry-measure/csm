@@ -54,7 +54,7 @@ def do_commands(molecules, **dictionary_args):
             actual_mols = molecules
 
         for mol_index, molecule in enumerate(actual_mols):
-            print("\n**executing command:", line[:-1], "**")
+            print("\n**executing command:", line.rstrip(), "**")
             args_dict["molecule"] = molecule
             if modifies_molecule:
                 new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)
