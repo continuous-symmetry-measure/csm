@@ -94,9 +94,7 @@ def get_command_args(command_file, old_command=True):
     return args_array, operation_array
 
 def csm_run(args=[]):
-    os.chdir(r"C:\Users\devora\Sources\temp\csm_output_examples\approx")
-    args=r"comfile cmd.txt --input --output C:\Users\devora\Sources\temp\csm_output_examples\output --verbose".split()
-    # get command
+  # get command
     if not args:
         args = sys.argv[1:]
     print("CSM version %s" % __version__)
