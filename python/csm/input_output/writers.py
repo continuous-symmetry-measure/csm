@@ -411,117 +411,7 @@ def format_result_CSM(result):
 
 
 
-class ConsolidatedScriptWriter():
-    def __init__(self, results, format, **kwargs):
-        '''
-        :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
-        by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
-        a single array of results will be treated as multiple commands on one molecule
-        :param format: molecule format to output to
-        :param out_file_name: if none is provided, the current working directory/csm_results will be used
-        '''
-        try:
-            if not isinstance(results[0], list):  # results is a single array
-                results = [results]
-        except TypeError:  # results isn't an array at all
-            results = [[results]]
-        self.results=results
 
-        commands = []
-        for result in results[0]:
-            commands.append(result.operation)
-
-        self.writer = ScriptContextWriter(commands, format, **kwargs)
-
-    def result_molecule_iterator(self):
-        for mol_index, mol_results in enumerate(self.results):
-            for command_index, command_results in enumerate(mol_results):
-                yield MoleculeWrapper(command_results, mol_index, command_index)
-
-    def write(self):
-        for mol_result in self.results:
-            self.writer.write(mol_result)
-
-    def create_extra_tsv(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "extra.tab")
-        # create headers
-        # first row: cmd
-        format_strings = []
-        headers_arr_1 = []
-        headers_arr_2 = []
-
-        for line_index, command_result in enumerate(self.results[0]):
-            format_string = ""
-            for key in sorted(command_result.overall_statistics):
-                format_string += "%-" + str(len(key) + 2) + "s"
-                headers_arr_1.append(get_line_header(line_index, command_result))
-                headers_arr_2.append(key)
-            format_strings.append(format_string)
-        format_strings[-1] += "\n"
-
-        full_string = "".join(format_strings)
-
-        with open(filename, 'w') as f:
-            f.write("%-20s" % "#Molecule")
-            f.write(full_string % tuple(headers_arr_1))
-            f.write("%-10s" % " ")
-            f.write(full_string % tuple(headers_arr_2))
-            for mol_index, mol_results in enumerate(self.results):
-                f.write("%-20s" % mol_results[0].molecule.metadata.appellation())
-                for line_index, command_result in enumerate(mol_results):
-                    f.write(
-                        format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
-                                                            for key in sorted(command_result.overall_statistics)]))
-
-    def create_initial_mols(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "initial_normalized_coordinates." + self.format)
-        with open(filename, 'a') as file:
-            i=1
-            for mol_index, mol_results in enumerate(self.results):
-                molecule_wrapper= MoleculeWrapper(mol_results[0], mol_index)
-                molecule_wrapper.set_symmetric_title(symmetric=False)
-                mw = MoleculeWriter(molecule_wrapper)
-                mw.write_original(file, molecule_wrapper.result, consecutive=True,
-                                  model_number=i)
-                i+=1
-            if self.format == "pdb":
-                file.write("\nEND")
-
-    def create_symmetric_mols(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format)
-        with open(filename, 'w') as file:
-            i=1
-            for molecule_wrapper in self.result_molecule_iterator():
-                molecule_wrapper.set_symmetric_title(symmetric=True)
-                mw = MoleculeWriter(molecule_wrapper)
-                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
-                                   model_number=i)
-                i+=1
-            if self.format == "pdb":
-                file.write("\nEND")
-
-    def create_alternating_mols(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "resulting_mols." + self.format)
-        i = 1
-        with open(filename, 'w') as file:
-            for molecule_wrapper in self.result_molecule_iterator():
-                molecule_wrapper.set_symmetric_title(symmetric=False)
-                mw = MoleculeWriter(molecule_wrapper)
-                mw.write_original(file, molecule_wrapper.result, consecutive=True,
-                                  model_number=i)
-                i += 1
-                molecule_wrapper.set_symmetric_title(symmetric=True)
-                mw = MoleculeWriter(molecule_wrapper)
-
-                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
-                                   model_number=i)
-                i += 1
-            if self.format == "pdb":
-                file.write("\nEND")
 
 
 class ScriptWriter: #preserved to provide basis for comparison testing, to be deleted.
@@ -971,9 +861,11 @@ class ScriptContextWriter(ContextWriter):
 
     def write_extra_txt(self, mol_results):
         f=self.extra_file
-        for item in output_strings:
+        item=output_strings.fetch()
+        while item is not None:
             f.write(item)
             f.write("\n")
+            item = output_strings.fetch()
 
     def write_approx_file(self, mol_results):
         out_folder=self.approx_folder
@@ -1064,3 +956,111 @@ class ScriptContextWriter(ContextWriter):
         except: #no matter what, must close files
             pass
         self.close_files()
+
+
+class ConsolidatedScriptWriter():
+    def __init__(self, results, format=None, context_writer=ScriptContextWriter, **kwargs):
+        '''
+        :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
+        by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
+        a single array of results will be treated as multiple commands on one molecule
+        :param format: molecule format to output to
+        :param out_file_name: if none is provided, the current working directory/csm_results will be used
+        '''
+        try:
+            if not isinstance(results[0], list):  # results is a single array
+                results = [results]
+        except TypeError:  # results isn't an array at all
+            results = [[results]]
+        self.results = results
+
+        self.commands = []
+        for result in results[0]:
+            self.commands.append(result.operation)
+
+        if kwargs["out_format"]:
+            self.format = kwargs["out_format"]
+        elif kwargs["in_format"]:
+            self.format = kwargs["in_format"]
+        else:
+            self.format = self.results[0][0].molecule.metadata.format
+
+        self.kwargs = kwargs
+        self.context_writer = context_writer
+
+    def result_molecule_iterator(self):
+        for mol_index, mol_results in enumerate(self.results):
+            for command_index, command_results in enumerate(mol_results):
+                yield MoleculeWrapper(command_results, mol_index, command_index)
+
+    def write(self):
+        self.writer = self.context_writer(self.commands, self.format, **self.kwargs)
+        for mol_result in self.results:
+            self.writer.write(mol_result)
+
+    def create_extra_tsv(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "extra.tab")
+        # create headers
+        # first row: cmd
+        format_strings = []
+        headers_arr_1 = []
+        headers_arr_2 = []
+
+        for line_index, command_result in enumerate(self.results[0]):
+            format_string = ""
+            for key in sorted(command_result.overall_statistics):
+                format_string += "%-" + str(len(key) + 2) + "s"
+                headers_arr_1.append(get_line_header(line_index, command_result))
+                headers_arr_2.append(key)
+            format_strings.append(format_string)
+        format_strings[-1] += "\n"
+
+        full_string = "".join(format_strings)
+
+        with open(filename, 'w') as f:
+            f.write("%-20s" % "#Molecule")
+            f.write(full_string % tuple(headers_arr_1))
+            f.write("%-10s" % " ")
+            f.write(full_string % tuple(headers_arr_2))
+            for mol_index, mol_results in enumerate(self.results):
+                f.write("%-20s" % mol_results[0].molecule.metadata.appellation())
+                for line_index, command_result in enumerate(mol_results):
+                    f.write(
+                        format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
+                                                            for key in sorted(command_result.overall_statistics)]))
+
+    def create_perm_tsv(self, filename=None):
+        # preserved for csm-web
+        if not filename:
+            filename = os.path.join(self.folder, "permutation.txt")
+        # creates a tsv for permutations (needs to handle extra long permutations somehow)
+        with open(filename, 'w') as f:
+            f.write("%-20s%-10s%-10s\n" % ("#Molecule", "#Command", "#Permutation"))
+            for mol_index, mol_results in enumerate(self.results):
+                for line_index, command_result in enumerate(mol_results):
+                    f.write("%-20s" % (command_result.molecule.metadata.appellation()))
+                    f.write("%-10s" % (get_line_header(line_index, command_result)))
+                    write_array_to_file(f, command_result.perm, True)
+                    f.write("\n")
+
+    def create_alternating_mols(self, filename=None):
+        # preserved for csm web
+        if not filename:
+            filename = os.path.join(self.folder, "resulting_mols." + self.format)
+        i = 1
+        with open(filename, 'w') as file:
+            for molecule_wrapper in self.result_molecule_iterator():
+                molecule_wrapper.set_symmetric_title(symmetric=False)
+                mw = MoleculeWriter(molecule_wrapper)
+                mw.write_original(file, molecule_wrapper.result, consecutive=True,
+                                  model_number=i)
+                i += 1
+                molecule_wrapper.set_symmetric_title(symmetric=True)
+                mw = MoleculeWriter(molecule_wrapper)
+
+                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
+                                   model_number=i)
+                i += 1
+            if self.format == "pdb":
+                file.write("\nEND")
