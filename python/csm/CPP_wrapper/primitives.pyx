@@ -1,4 +1,4 @@
-rom cpython cimport array
+from cpython cimport array
 cimport numpy as np
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
