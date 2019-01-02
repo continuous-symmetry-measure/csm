@@ -1,5 +1,5 @@
 import logging
-from argparse import ArgumentParser, SUPPRESS
+from argparse import ArgumentParser, SUPPRESS, HelpFormatter
 from datetime import datetime
 
 import os
@@ -11,6 +11,13 @@ from csm.calculations.data_classes import Operation
 logger = logging.getLogger(__name__)
 import sys
 
+class SmartFormatter(HelpFormatter):
+    #from https://stackoverflow.com/a/22157136/5961793
+    def _split_lines(self, text, width):
+        if text.startswith('R|'):
+            return text[2:].splitlines()
+        # this is the RawTextHelpFormatter._split_lines
+        return HelpFormatter._split_lines(self, text, width)
 
 class OurParser(ArgumentParser):
     def error(self, message):
@@ -109,17 +116,26 @@ def _create_parser():
     parser = OurParser(allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
                                                  "example: csm exact c2 --input mymol.mol --output --keep-structure\n"
                                                  "for specific help with each subprogram and its available arguments, enter csm COMMAND -h\n"
-                                                 "e.g. csm exact -h")
+                                                 "e.g. csm exact -h",
+                      )
     timestamp = str(datetime.now().timestamp())[-11:].replace(".", "")
     parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
     parser.add_argument("--version", help="print version and exit", action='store_true', default=False)
     commands = parser.add_subparsers(title="Available commands", dest="command")
 
     # command
-    commands_args_ = commands.add_parser('comfile', help='provide a command file for running calculations')
+    commands_args_ = commands.add_parser('comfile', help='provide a command file for running calculations',  formatter_class=SmartFormatter)
     command_args = commands_args_.add_argument_group("Command args")
     command_args.add_argument('comfile', default=os.path.join(os.getcwd(), "cmd.txt"), nargs='?',
-                              help="the file that contains the commands, default is cmd.txt in current working directory")
+                              help="R|the file that contains the commands, default is cmd.txt in current working directory\n"
+                                   "the file is formatted as follows:\n"
+                                   "each line is a valid command to csm, from the commands exact/approx/trivial.\n"
+                                   "commandname symmetry --optional --additional --arguments\n"
+                                   "for example, the file contents could be:\n"
+                                   "\ttrivial c2\n"
+                                   "\tapprox c2 --fibonacci 60\n"
+                                   "\texact c2 --keep-structure --remove-hy\n"
+                                   "\texact c3")
     command_args.add_argument('--old-cmd', action='store_true', default=False,
                               help="the old format with csm sym __INPUT__ __OUTPUT__ --approx etc")
     command_args.add_argument("--verbose", action='store_true', default=False,
