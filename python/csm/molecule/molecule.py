@@ -886,11 +886,18 @@ class MoleculeReader:
             obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
             mol = MoleculeReader.mol_from_obm(obm, format, ignore_sym=ignore_sym, use_mass=use_mass,
                                               read_fragments=read_fragments)
-        return MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
+        mol= MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                        use_chains, babel_bond,
                                                        remove_hy, ignore_sym, use_mass,
                                                        read_fragments, use_sequence,
                                                        keep_structure, select_atoms, conn_file)
+        if not mol.bondset:
+            if keep_structure:
+                raise ValueError(
+                    "User input --keep-structure but input molecule has no bonds. Did you forget --babel-bond?")
+            else:
+                print("Warning: Input molecule has no bond information")
+        return mol
 
     @staticmethod
     def _process_single_molecule(mol, in_file_name, format, initialize=True,
@@ -918,13 +925,6 @@ class MoleculeReader:
             mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
-        if not mol.bondset:
-            if keep_structure:
-                raise ValueError(
-                    "User input --keep-structure but input molecule has no bonds. Did you forget --babel-bond?")
-            else:
-                print("Warning: Input molecule has no bond information")
-
         if initialize:
             mol._complete_initialization(use_chains, remove_hy, select_atoms)
             if len(mol.chains) < 2:
@@ -975,6 +975,12 @@ class MoleculeReader:
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             processed_mols.append(p_mol)
+        if not p_mol.bondset:
+            if keep_structure:
+                raise ValueError(
+                    "User input --keep-structure but input molecules have no bonds. Did you forget --babel-bond?")
+            else:
+                print("Warning: Input molecules have no bond information")
         return processed_mols
 
     @staticmethod
