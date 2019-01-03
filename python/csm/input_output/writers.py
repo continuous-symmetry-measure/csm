@@ -39,9 +39,20 @@ class LegacyFormatWriter:
         self.result = result
         self.format = format
 
+
+    #custom formatters so that even if changes are made elsewhere, legacy remains the same
+    def format_CSM(self, csm):
+        return "%.4lf" % (abs(csm))
+    def non_negative_zero(self, number):
+        import math
+        if math.fabs(number) < 0.00001:
+            return 0.0000
+        else:
+            return number
+
     def write(self, f, write_local=False):
-        f.write("%s: %s\n" % (self.result.operation.name, format_CSM(self.result.csm)))
-        f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(self.result.d_min))
+        f.write("%s: %s\n" % (self.result.operation.name, self.format_CSM(self.result.csm)))
+        f.write("SCALING FACTOR: %7lf\n" % self.non_negative_zero(self.result.d_min))
 
         molecule_writer = MoleculeWriter(MoleculeWrapper(self.result))
         if self.format == 'pdb':
@@ -58,8 +69,8 @@ class LegacyFormatWriter:
 
         f.write("\n DIRECTIONAL COSINES:\n\n")
         f.write("%lf %lf %lf\n" % (
-            non_negative_zero(self.result.dir[0]), non_negative_zero(self.result.dir[1]),
-            non_negative_zero(self.result.dir[2])))
+            self.non_negative_zero(self.result.dir[0]), non_negative_zero(self.result.dir[1]),
+            self.non_negative_zero(self.result.dir[2])))
 
         if write_local:
             self.write_local(f)
@@ -82,7 +93,7 @@ class LegacyFormatWriter:
         local_csm = self.result.local_csm
         for i in range(size):
             sum += local_csm[i]
-            f.write("%s %7lf\n" % (self.result.molecule.atoms[i].symbol, non_negative_zero(local_csm[i])))
+            f.write("%s %7lf\n" % (self.result.molecule.atoms[i].symbol, self.non_negative_zero(local_csm[i])))
         f.write("\nsum: %7lf\n" % sum)
 
     def write_json(self, f):
@@ -706,6 +717,7 @@ class ContextWriter:
 
     def __enter__(self):
         return self
+
     def write(self, mol_result):
         raise NotImplementedError
 
@@ -722,6 +734,8 @@ class PipeContextWriter(ContextWriter):
 
 class LegacyContextWriter(ContextWriter):
     called=False
+
+
     def write(self, mol_result):
         if not self.out_file_name:
             raise ValueError("must provide ouput file for legacy writing")
@@ -731,6 +745,9 @@ class LegacyContextWriter(ContextWriter):
         with open(self.out_file_name, 'w') as f:
             writer.write(f)
         self.called=True
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
 
 class SimpleContextWriter(ContextWriter):
     def write(self, mol_result):

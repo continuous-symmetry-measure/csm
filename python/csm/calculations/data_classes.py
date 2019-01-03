@@ -261,7 +261,7 @@ class CSMResult:
             local_csm[i] = sum * (100.0 / (2 * operation.order))
         return local_csm
 
-    def print_summary(self):
+    def print_summary(self, legacy=False):
         try:
             percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
             print("The permutation found maintains " +
@@ -291,9 +291,15 @@ class CSMResult:
         if self.operation.name == "CHIRALITY":
             print("Minimum chirality was found in", self.overall_statistics["best chirality"])
 
-        print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
+        if legacy:
+            print("%s: %.4lf" % (self.operation.name, abs(self.csm)))
+            print("CSM by formula: %.4lf" % (self.formula_csm))
 
-        print("CSM by formula: %.6lf" % (self.formula_csm))
+        else:
+            print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
+            print("CSM by formula: %.6lf" % (self.formula_csm))
+
+
 
     def to_dict(self):
         return {"Result":

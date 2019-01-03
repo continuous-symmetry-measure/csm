@@ -63,7 +63,7 @@ def single_calculation(dictionary_args):
     molecule.print_equivalence_class_summary(True)
     dictionary_args["molecule"] = molecule
     result = do_calculation(**dictionary_args)
-    result.print_summary()
+    result.print_summary(dictionary_args["legacy"])
     try:
         if len(dictionary_args['normalizations']) > 0:
             norm_calc(result, dictionary_args['normalizations'])
