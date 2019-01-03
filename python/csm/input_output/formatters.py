@@ -35,6 +35,7 @@ csm_out_pipe = sys.stdout
 class output_strings:
     vec=[]
     index=0
+    silent=False
     @staticmethod
     def append(s):
         output_strings.vec.append(s)
@@ -46,7 +47,15 @@ class output_strings:
         output_strings.index+=1
         return ret
 
+    @staticmethod
+    def silent_print(*strings, file=csm_out_pipe, **kwargs):
+        output_strings.append(" ".join(str(s) for s in strings))
+        if not output_strings.silent:
+            print(*strings, **kwargs, file=file)
 
 def csm_log(*strings, file=csm_out_pipe, **kwargs):
     output_strings.append(" ".join(str(s) for s in strings))
     print(*strings, **kwargs, file=file)
+
+def silent_print(*strings, file=csm_out_pipe, **kwargs):
+    output_strings.silent_print(*strings, **kwargs, file=file)

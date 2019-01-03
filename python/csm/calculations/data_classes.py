@@ -5,6 +5,7 @@ import numpy as np
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
     check_perm_structure_preservation
 from csm.input_output.formatters import csm_log as print
+from csm.input_output.formatters import silent_print
 from csm.molecule.molecule import Molecule
 from csm.molecule.normalizations import de_normalize_coords
 
@@ -264,15 +265,15 @@ class CSMResult:
     def print_summary(self, legacy=False):
         try:
             percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
-            print("The permutation found maintains " +
+            silent_print("The permutation found maintains " +
                   str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
 
         except ValueError:
-            print(
+            silent_print(
                 "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
         falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, self.operation)
-        print(
+        silent_print(
             "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
                 falsecount, "cycle" if falsecount == 1 else "cycles",
                 100 * (len(self.molecule) - num_invalid) / len(self.molecule)))
@@ -281,23 +282,23 @@ class CSMResult:
             valid = cycle_len == 1 or cycle_len == self.operation.order or (
                     cycle_len == 2 and self.operation.type == 'SN')
             count = cycle_counts[cycle_len]
-            print("There %s %d %s %s of length %d" % (
+            silent_print("There %s %d %s %s of length %d" % (
                 "is" if count == 1 else "are", count, "invalid" if not valid else "",
                 "cycle" if count == 1 else "cycles",
                 cycle_len))
         if len(self.molecule.chains) > 1:
-            print("\nChain perm: " + self.chain_perm_string)
+            silent_print("\nChain perm: " + self.chain_perm_string)
 
         if self.operation.name == "CHIRALITY":
-            print("Minimum chirality was found in", self.overall_statistics["best chirality"])
+            silent_print("Minimum chirality was found in", self.overall_statistics["best chirality"])
 
         if legacy:
-            print("%s: %.4lf" % (self.operation.name, abs(self.csm)))
-            print("CSM by formula: %.4lf" % (self.formula_csm))
+            silent_print("%s: %.4lf" % (self.operation.name, abs(self.csm)))
+            silent_print("CSM by formula: %.4lf" % (self.formula_csm))
 
         else:
-            print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
-            print("CSM by formula: %.6lf" % (self.formula_csm))
+            silent_print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
+            silent_print("CSM by formula: %.6lf" % (self.formula_csm))
 
 
 

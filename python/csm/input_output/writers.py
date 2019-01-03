@@ -877,6 +877,8 @@ class ScriptContextWriter(ContextWriter):
                 print("failed to write legacy file for" + file_name + ": " + str(e))
 
     def write_extra_txt(self, mol_results):
+        #molecule.print_equivalence_class_summary(True)
+        #result.print_summary(dictionary_args["legacy"])
         f=self.extra_file
         item=output_strings.fetch()
         while item is not None:

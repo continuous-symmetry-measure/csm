@@ -11,6 +11,7 @@ import os
 from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
 import openbabel as ob
 from csm.input_output.formatters import csm_log as print
+from csm.input_output.formatters import silent_print
 from csm.molecule.atom import Atom, GetAtomicSymbol
 from csm.molecule.normalizations import normalize_coords, de_normalize_coords, calculate_norm_factor
 
@@ -620,21 +621,21 @@ class Molecule:
             except KeyError:
                 lengths[len(group)] = 1
         for key in lengths:
-            print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
+            silent_print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
 
         if display_chains:
             if len(self.chains) > 1:
                 for chain in self.chains:
-                    print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
-                print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
+                    silent_print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
+                silent_print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
                 for chaingroup in self.chain_equivalences:
                     chainstring = "Group of length " + str(len(chaingroup)) + ":"
                     for index in chaingroup:
                         chainstring += " "
                         chainstring += str(self.chains._indexes_to_strings[index])
-                    print(str(chainstring))
+                    silent_print(str(chainstring))
             # else:
-            #    print("Molecule has no chains")
+            #    silent_print("Molecule has no chains")
 
     def _complete_initialization(self, use_chains, remove_hy, select_atoms=[]):
         """
