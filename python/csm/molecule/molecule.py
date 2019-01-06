@@ -173,6 +173,10 @@ class Molecule:
             self.metadata = MoleculeMetaData()
     def __str__(self):
         return self.metadata.appellation()
+
+
+
+
     def copy(self):
         # deepcopy is used only for atoms,
         # because atoms are the only property changed between runs of Directions that necessitated copying
@@ -181,6 +185,7 @@ class Molecule:
         m = Molecule(to_copy=True)
         m._atoms = copy.deepcopy(self.atoms)
         m._norm_factor = self.norm_factor
+        m.has_been_normalized=self.has_been_normalized
 
         m._deleted_atom_indices = self._deleted_atom_indices
         m.metadata = self.metadata
@@ -194,6 +199,7 @@ class Molecule:
         m._groups_with_internal_chains = self._groups_with_internal_chains
         m._chains_with_internal_groups = self._chains_with_internal_groups
         m._chain_equivalences = self._chain_equivalences
+
         return m
 
     def to_dict(self):
