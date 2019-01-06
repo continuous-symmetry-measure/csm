@@ -421,9 +421,7 @@ def format_result_CSM(result):
         return format_CSM(result.csm)
 
 
-
-
-
+molecule_format="%-40s"
 
 class ScriptWriter: #preserved to provide basis for comparison testing, to be deleted.
     def __init__(self, results, format, out_file_name=None, polar=False, verbose=False, print_local=False, argument_string="", **kwargs):
@@ -490,12 +488,12 @@ class ScriptWriter: #preserved to provide basis for comparison testing, to be de
             filename = os.path.join(self.folder, "csm.txt")
         # creates a tsv file with CSM per molecule
         with open(filename, 'w') as f:
-            f.write("%-20s" % "#Molecule")
+            f.write(molecule_format % "#Molecule")
             for index, res in enumerate(self.results[0]):
                 f.write("%-10s" % (get_line_header(index, res)))
             f.write("\n")
             for index, mol_results in enumerate(self.results):
-                f.write("%-20s" % mol_results[0].molecule.metadata.appellation())
+                f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
                 for result in mol_results:
                     f.write("%-10s" % format_result_CSM(result))
                 f.write("\n")
@@ -505,10 +503,11 @@ class ScriptWriter: #preserved to provide basis for comparison testing, to be de
             filename = os.path.join(self.folder, "permutation.txt")
         # creates a tsv for permutations (needs to handle extra long permutations somehow)
         with open(filename, 'w') as f:
-            f.write("%-20s%-10s%-10s\n" % ("#Molecule", "#Command", "#Permutation"))
+            format_string=molecule_format+"%-10s%-10s\n"
+            f.write(format_string % ("#Molecule", "#Command", "#Permutation"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write("%-20s" % (command_result.molecule.metadata.appellation()))
+                    f.write(molecule_format % (command_result.molecule.metadata.appellation()))
                     f.write("%-10s" % (get_line_header(line_index, command_result)))
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")
@@ -517,10 +516,11 @@ class ScriptWriter: #preserved to provide basis for comparison testing, to be de
         if not filename:
             filename = os.path.join(self.folder, "directional.txt")
         with open(filename, 'w') as f:
-            f.write("%-20s%-10s%10s%10s%10s\n" % ("#Molecule", "#Command", "X", "Y", "Z"))
+            format_line=molecule_format+"%-10s%10s%10s%10s\n"
+            f.write(format_line % ("#Molecule", "#Command", "X", "Y", "Z"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write("%-20s" % command_result.molecule.metadata.appellation())
+                    f.write(molecule_format % command_result.molecule.metadata.appellation())
                     f.write("%10s" % get_line_header(line_index, command_result))
                     write_array_to_file(f, command_result.dir, separator="%-10s")
                     f.write("\n")
@@ -546,12 +546,12 @@ class ScriptWriter: #preserved to provide basis for comparison testing, to be de
         full_string = "".join(format_strings)
 
         with open(filename, 'w') as f:
-            f.write("%-20s" % "#Molecule")
+            f.write(molecule_format % "#Molecule")
             f.write(full_string % tuple(headers_arr_1))
             f.write("%-10s" % " ")
             f.write(full_string % tuple(headers_arr_2))
             for mol_index, mol_results in enumerate(self.results):
-                f.write("%-20s" % mol_results[0].molecule.metadata.appellation())
+                f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
                 for line_index, command_result in enumerate(mol_results):
                     f.write(
                         format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
@@ -784,15 +784,18 @@ class ScriptContextWriter(ContextWriter):
         os.makedirs(self.folder, exist_ok=True)
 
         self.csm_file=open(os.path.join(self.folder, "csm.txt"), 'w')
-        self.csm_file.write("%-20s" % "#Molecule")
+        self.csm_file.write(molecule_format % "#Molecule")
         for index, operation in enumerate(self.commands):
             self.csm_file.write("%-10s" % (self.get_line_header(index, operation)))
+        self.csm_file.write("\n")
 
         self.dir_file=open(os.path.join(self.folder, "directional.txt"), 'w')
-        self.dir_file.write("%-20s%-10s%10s%10s%10s" % ("#Molecule", "#Command", "X", "Y", "Z"))
+        format_string=molecule_format + "%-10s%10s%10s%10s\n"
+        self.dir_file.write(format_string % ("#Molecule", "#Command", "X", "Y", "Z"))
 
         self.perm_file = open(os.path.join(self.folder, "permutation.txt"), 'w')
-        self.perm_file.write("%-20s%-10s%-10s" % ("#Molecule", "#Command", "#Permutation"))
+        format_string=molecule_format + "%-10s%-10s\n"
+        self.perm_file.write(format_string % ("#Molecule", "#Command", "#Permutation"))
 
         self.initial_mols_file= open(os.path.join(self.folder, "initial_normalized_coordinates." + self.out_format), 'w')
         self.symmetric_mols_file = open(os.path.join(self.folder, "resulting_symmetric_coordinates." + self.out_format), 'w')
@@ -826,23 +829,26 @@ class ScriptContextWriter(ContextWriter):
 
     def write_csm(self, mol_results):
         f=self.csm_file
-        f.write("\n%-20s" % mol_results[0].molecule.metadata.appellation())
+        f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
         for result in mol_results:
             f.write("%-10s" % format_result_CSM(result))
+        f.write("\n")
 
     def write_dir(self, mol_results):
         f=self.dir_file
         for line_index, command_result in enumerate(mol_results):
-            f.write("\n%-20s" % command_result.molecule.metadata.appellation())
+            f.write(molecule_format % command_result.molecule.metadata.appellation())
             f.write("%10s" % get_line_header(line_index, command_result))
             write_array_to_file(f, command_result.dir, separator="%-10s")
+            f.write("\n")
 
     def write_perm(self, mol_results):
         f=self.perm_file
         for line_index, command_result in enumerate(mol_results):
-            f.write("\n%-20s" % (command_result.molecule.metadata.appellation()))
+            f.write(molecule_format % (command_result.molecule.metadata.appellation()))
             f.write("%-10s" % (get_line_header(line_index, command_result)))
             write_array_to_file(f, command_result.perm, True)
+            f.write("\n")
 
     def write_initial_mols(self, mol_results):
         file=self.initial_mols_file
@@ -1038,12 +1044,12 @@ class ConsolidatedScriptWriter():
         full_string = "".join(format_strings)
 
         with open(filename, 'w') as f:
-            f.write("%-20s" % "#Molecule")
+            f.write(molecule_format % "#Molecule")
             f.write(full_string % tuple(headers_arr_1))
             f.write("%-10s" % " ")
             f.write(full_string % tuple(headers_arr_2))
             for mol_index, mol_results in enumerate(self.results):
-                f.write("%-20s" % mol_results[0].molecule.metadata.appellation())
+                f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
                 for line_index, command_result in enumerate(mol_results):
                     f.write(
                         format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
@@ -1055,10 +1061,11 @@ class ConsolidatedScriptWriter():
             filename = os.path.join(self.folder, "permutation.txt")
         # creates a tsv for permutations (needs to handle extra long permutations somehow)
         with open(filename, 'w') as f:
-            f.write("%-20s%-10s%-10s\n" % ("#Molecule", "#Command", "#Permutation"))
+            format_line=molecule_format+"%-10s%-10s\n"
+            f.write(format_line % ("#Molecule", "#Command", "#Permutation"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write("%-20s" % (command_result.molecule.metadata.appellation()))
+                    f.write(molecule_format % (command_result.molecule.metadata.appellation()))
                     f.write("%-10s" % (get_line_header(line_index, command_result)))
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")

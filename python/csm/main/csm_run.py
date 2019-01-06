@@ -168,8 +168,10 @@ def calc(dictionary_args):
     if len(molecules)>10:
         from csm.input_output.formatters import output_strings
         output_strings.silent=True
-        print("More than 10 molecules in folder. Molecule and result summaries can be found in extra.txt and will not be printed to screen")
+        print(len(molecules)," molecules in folder. Molecule and result summaries can be found in extra.txt and will not be printed to screen")
 
+
+    total_results=[]
     with context_writer(operation_array, **dictionary_args) as rw:
         for mol_index, molecule in enumerate(molecules):
             mol_results=[]
@@ -197,6 +199,8 @@ def calc(dictionary_args):
                 mol_results.append(result)
             #write the results for the molecule
             rw.write(mol_results)
+
+
 
 
 
