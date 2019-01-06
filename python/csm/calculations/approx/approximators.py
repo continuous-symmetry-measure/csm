@@ -610,6 +610,8 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
 class ApproxCalculation(_OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
+
+
         self.operation = operation
         self._molecule = molecule
 
@@ -636,14 +638,11 @@ class ApproxCalculation(_OptionalLogger):
         self.statistics = ApproxStatistics(self._initial_directions)
         self._max_iterations = 30
 
-    def handle_chirality(self):
-        pass
-
     def calculate(self, timeout=100, *args, **kwargs):
         self.start_time = now()
         self.timeout = timeout
         overall_stats = {}
-        if self.operation.type == "CH":  # Chirality
+        if self.operation.name == "CHIRALITY":  # Chirality
             # First CS
             best_op = Operation('cs')
             best_result = self._calculate(best_op)
@@ -657,8 +656,6 @@ class ApproxCalculation(_OptionalLogger):
                         best_op = op
                     if best_result.csm < MINDOUBLE:
                         break
-            self.operation.order = best_op.order
-            self.operation.type = best_op.type
         else:
             best_result = self._calculate(self.operation)
         overall_stats["runtime"] = run_time(self.start_time)
