@@ -1,5 +1,20 @@
 The Python CSM Package
 ======================
+
+Changes in version 0.22.0
+------------------------
+Major:
+* printing results takes place as the calculation is done, rather than at the end
+* added --parallel for parallezing across molecules, and changed existing parallel for approx to --parallel-dirs
+Minor:
+* renamed --legacy to --legacy-output, and added --legacy-files to toggle creation of legacy files in default output
+* if more than 10 molecules are being calculated, result summaries are not printed to screen
+* warning for missing connectivity is only printed for first molecule in a file containing many
+* added help for comfile command
+* additional bug fix in chirality
+* increase molecule title space in output files
+* change default result file when --output not specified, and change flag --not-unique to the clearer --overwrite
+
 Changes in version 0.21.2
 ------------------------
 * remove --print-local
