@@ -137,7 +137,7 @@ def write(**dictionary_args):
     less_raw_json = json.loads(raw_json)
     results = [[CSMResult.from_dict(result_dict) for result_dict in mol_arr] for mol_arr in less_raw_json]
     context_writer=get_context_writer(dictionary_args)
-    writer = ConsolidatedScriptWriter(results, context_writer=context_writer, **dictionary_args)
+    writer = context_writer(results, context_writer=context_writer, **dictionary_args)
     writer.write()
 
 def calc(dictionary_args):
