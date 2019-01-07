@@ -133,6 +133,8 @@ class MoleculeWriter:
             self.write_molecule = self._write_csm_molecule
 
     def write_symmetric(self, f, result, consecutive=False,  model_number=None):
+        if result.skipped:
+            return
         self.write_molecule(f, result.symmetric_structure, consecutive, model_number)
 
     def write_original(self, f, result, consecutive=False,  model_number=None):
@@ -423,7 +425,7 @@ def format_result_CSM(result):
 
 molecule_format="%-40s"
 
-class ScriptWriter: #preserved to provide basis for comparison testing, to be deleted.
+class ScriptWriter: #preserved to provide basis for comparison testing, to be deleted after version 0.21.3 has passed muster
     def __init__(self, results, format, out_file_name=None, polar=False, verbose=False, print_local=False, argument_string="", **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
@@ -760,7 +762,8 @@ class SimpleContextWriter(ContextWriter):
 class ScriptContextWriter(ContextWriter):
     def __init__(self, commands, out_format,
                  out_file_name=None,
-                 polar=False, verbose=False, print_local=False, argument_string="", **kwargs):
+                 polar=False, verbose=False, print_local=False, argument_string="",
+                 legacy_files=False, **kwargs):
         super().__init__(commands, out_format, out_file_name)
         self.molecule_index=0 #used for writing pdb files
         self.result_index=0 #used for writing pdb files
@@ -772,6 +775,7 @@ class ScriptContextWriter(ContextWriter):
         self.print_local = print_local
         self.argument_string = argument_string
         self.init_files()
+        self.create_legacy_files=legacy_files
 
     def get_line_header(self, index, operation):
         index_str = "%02d" % (index + 1)  # start from 1 instead of 0
@@ -810,8 +814,9 @@ class ScriptContextWriter(ContextWriter):
             os.makedirs(self.approx_folder, exist_ok=True)
 
         #legacy
-        self.legacy_folder = os.path.join(self.folder, 'old-csm-output')
-        os.makedirs(self.legacy_folder, exist_ok=True)
+        if self.create_legacy_files:
+            self.legacy_folder = os.path.join(self.folder, 'old-csm-output')
+            os.makedirs(self.legacy_folder, exist_ok=True)
 
 
 
@@ -838,6 +843,8 @@ class ScriptContextWriter(ContextWriter):
     def write_dir(self, mol_results):
         f=self.dir_file
         for line_index, command_result in enumerate(mol_results):
+            if command_result.skipped:
+                continue
             f.write(molecule_format % command_result.molecule.metadata.appellation())
             f.write("%10s" % get_line_header(line_index, command_result))
             write_array_to_file(f, command_result.dir, separator="%-10s")
@@ -846,6 +853,8 @@ class ScriptContextWriter(ContextWriter):
     def write_perm(self, mol_results):
         f=self.perm_file
         for line_index, command_result in enumerate(mol_results):
+            if command_result.skipped:
+                continue
             f.write(molecule_format % (command_result.molecule.metadata.appellation()))
             f.write("%-10s" % (get_line_header(line_index, command_result)))
             write_array_to_file(f, command_result.perm, True)
@@ -862,8 +871,10 @@ class ScriptContextWriter(ContextWriter):
 
     def write_symmetric_mols(self, mol_results):
         file=self.symmetric_mols_file
-        for command_index, command_results in enumerate(mol_results):
-            molecule_wrapper= MoleculeWrapper(command_results, self.molecule_index, command_index)
+        for command_index, command_result in enumerate(mol_results):
+            if command_result.skipped:
+                continue
+            molecule_wrapper= MoleculeWrapper(command_result, self.molecule_index, command_index)
             molecule_wrapper.set_symmetric_title(symmetric=True)
             mw = MoleculeWriter(molecule_wrapper)
             mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
@@ -872,6 +883,8 @@ class ScriptContextWriter(ContextWriter):
 
     def write_legacy_files(self, mol_results):
         for line_index, command_result in enumerate(mol_results):
+            if command_result.skipped:
+                continue
             name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(line_index,
                                                                                          command_result)
             file_name = name + "." + command_result.molecule.metadata.format
@@ -959,7 +972,8 @@ class ScriptContextWriter(ContextWriter):
         self.write_perm(molecule_results)
         self.write_initial_mols(molecule_results)
         self.write_symmetric_mols(molecule_results)
-        self.write_legacy_files(molecule_results)
+        if self.create_legacy_files:
+            self.write_legacy_files(molecule_results)
         self.write_extra_txt(molecule_results)
         if self.verbose:
             self.write_approx_file(molecule_results)

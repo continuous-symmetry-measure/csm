@@ -1,4 +1,5 @@
 import json
+import multiprocessing
 import sys
 import timeit
 
@@ -20,7 +21,7 @@ from csm.input_output.formatters import csm_log as print
 from csm.input_output.readers import read_perm, read_from_sys_std_in
 from csm.main.normcsm import norm_calc
 
-def do_calculation(command, perms_csv_name=None, parallel=False, print_approx=False, **dictionary_args):
+def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_approx=False, **dictionary_args):
     calc_type = command
     if calc_type == "exact":
         # get perm if it exists:
@@ -39,7 +40,7 @@ def do_calculation(command, perms_csv_name=None, parallel=False, print_approx=Fa
     if calc_type == "approx":
         dir_chooser = get_direction_chooser(**dictionary_args)
         dictionary_args["direction_chooser"] = dir_chooser
-        if parallel:
+        if parallel_dirs:
             calc = ParallelApprox(**dictionary_args)
         else:
             if print_approx:
@@ -59,11 +60,9 @@ def do_calculation(command, perms_csv_name=None, parallel=False, print_approx=Fa
 
 def single_calculation(dictionary_args):
     molecule=dictionary_args["molecule"]
-    print("Molecule:", molecule.metadata.appellation(no_leading_zeros=True))
-    molecule.print_equivalence_class_summary(True)
-    dictionary_args["molecule"] = molecule
+    if dictionary_args["skipped"]:
+        return(FailedResult("molecule not selected", molecule, skipped=True))
     result = do_calculation(**dictionary_args)
-    result.print_summary(dictionary_args["legacy"])
     try:
         if len(dictionary_args['normalizations']) > 0:
             norm_calc(result, dictionary_args['normalizations'])
@@ -126,7 +125,7 @@ def get_context_writer(dictionary_args):
         context_writer = SimpleContextWriter
     elif dictionary_args["pipe"]:
         context_writer = PipeContextWriter
-    elif dictionary_args["legacy"]:
+    elif dictionary_args["legacy_output"]:
         context_writer = LegacyContextWriter
     else:
         context_writer = ScriptContextWriter
@@ -139,6 +138,17 @@ def write(**dictionary_args):
     context_writer=get_context_writer(dictionary_args)
     writer = context_writer(results, context_writer=context_writer, **dictionary_args)
     writer.write()
+
+
+def parallel_calc(args_array, pool_size):
+    if pool_size==0:
+        pool_size=multiprocessing.cpu_count() - 1
+    pool = multiprocessing.Pool(processes=pool_size)
+    print("Parallelizing across {} processes".format(pool_size))
+    pool_outputs = pool.map(single_calculation, args_array)
+    pool.close()
+    pool.join()
+    return pool_outputs
 
 def calc(dictionary_args):
     # get molecules
@@ -162,35 +172,66 @@ def calc(dictionary_args):
     if not dictionary_args["out_format"]:
         dictionary_args["out_format"] = molecules[0].metadata.format
 
-    if len(molecules)>10:
+    #process arguments into flat and unflat arrays
+    total_args=[]
+    for mol_index, molecule in enumerate(molecules):
+        mol_args = []
+        for line, args_dict, modifies_molecule in args_array:
+            args_dict["molecule"] = molecule
+            args_dict["line"] = line
+            # handle select molecules:
+            selections = args_dict['select_mols']
+
+            args_dict["skipped"] = False
+            if len(selections) > 0 and mol_index not in selections:
+                args_dict["skipped"] = True
+
+            # handle modifying molecules:
+            if modifies_molecule:
+                new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)
+                new_molecule.metadata.index = mol_index
+                args_dict["molecule"] = new_molecule
+            mol_args.append(dict(args_dict))
+        total_args.append(mol_args)
+    flattened_args=[item for sublist in total_args for item in sublist]
+
+    #run the calculation, in parallel
+    if dictionary_args["parallel"]:
+        results= parallel_calc(flattened_args, dictionary_args["pool_size"])
+        unflattened_results=[
+            [results[m_index+command_index] for command_index in range(len(args_array))] for m_index in range(len(molecules))
+        ]
+        with context_writer(operation_array, **dictionary_args) as rw:
+            for mol_results in unflattened_results:
+                rw.write(mol_results)
+        return
+
+    if len(molecules) > 10:
         from csm.input_output.formatters import output_strings
-        output_strings.silent=True
-        print(len(molecules)," molecules in folder. Molecule and result summaries can be found in extra.txt and will not be printed to screen")
+        output_strings.silent = True
+        print(len(molecules),
+              " molecules in folder. Molecule and result summaries can be found in extra.txt and will not be printed to screen")
+
+    #run the calculation, in serial
     with context_writer(operation_array, **dictionary_args) as rw:
-        for mol_index, molecule in enumerate(molecules):
+        for mol_index, mol_args in enumerate(total_args):
             mol_results=[]
-            for line, args_dict, modifies_molecule in args_array:
-                print("-----")
-                args_dict["molecule"]=molecule
-                if line:
-                    print("**executing command:", line.rstrip(), "**")
+            for line_index, args_dict in enumerate(mol_args):
+                #print stuff
+                molecule=args_dict["molecule"]
 
-                #handle select molecules:
-                selections = args_dict['select_mols']
-                if len(selections)>0 and mol_index not in selections:
-                    mol_results.append(FailedResult("molecule not selected", molecule))
-                    continue
-                #handle modifying molecules:
-                if modifies_molecule:
-                    new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)
-                    new_molecule.metadata.index = mol_index
-                    args_dict["molecule"] = new_molecule
-
-                #run the calculation
+                if not args_dict["skipped"]:
+                    if args_dict["line"]:
+                        print("-----")
+                        print("**executing command:", args_dict["line"].rstrip(), "**")
+                    print("Molecule:", molecule.metadata.appellation(no_leading_zeros=True))
+                    molecule.print_equivalence_class_summary(True)
+                # run the calculation
                 try:
                     result = single_calculation(args_dict)
+                    result.print_summary(dictionary_args["legacy_output"])
                 except Exception as e:
-                    result=FailedResult(str(e), args_dict["molecule"])
+                    result=FailedResult(str(e), **args_dict)
                 mol_results.append(result)
             #write the results for the molecule
             rw.write(mol_results)

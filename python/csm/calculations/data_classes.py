@@ -120,6 +120,7 @@ class Operation:
 class CSMResult:
     def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
         self.failed = False
+        self.skipped=False
         # input
         self.molecule = state.molecule.copy()  # not yet denormalized
         self.normalized_molecule_coords = np.array(self.molecule.Q)
@@ -262,7 +263,7 @@ class CSMResult:
             local_csm[i] = sum * (100.0 / (2 * operation.order))
         return local_csm
 
-    def print_summary(self, legacy=False):
+    def print_summary(self, legacy_output=False):
         try:
             percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
             silent_print("The permutation found maintains " +
@@ -292,7 +293,7 @@ class CSMResult:
         if self.operation.name == "CHIRALITY":
             silent_print("Minimum chirality was found in", self.overall_statistics["best chirality"])
 
-        if legacy:
+        if legacy_output:
             silent_print("%s: %.4lf" % (self.operation.name, abs(self.csm)))
             silent_print("CSM by formula: %.4lf" % (self.formula_csm))
 
@@ -335,9 +336,12 @@ class CSMResult:
 
 
 class FailedResult:
-    def __init__(self, failed_reason, molecule, **kwargs):
+    def __init__(self, failed_reason, molecule, skipped=False, **kwargs):
         self.failed = True
         self.failed_reason = failed_reason
+        self.skipped=False
+        if skipped:
+            self.skipped=True
 
         self.molecule = molecule
         self.normalized_molecule_coords = []

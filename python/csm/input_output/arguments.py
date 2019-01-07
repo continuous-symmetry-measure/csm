@@ -52,13 +52,15 @@ def _create_parser():
 
     def output_utility_func(parser):
         parser.add_argument('--json-output', action='store_true', default=False,
-                            help='Print output in json format to a file. Only relevant with --legacy')
+                            help='Print output in json format to a file. Only relevant with --legacy-output')
         #parser.add_argument('--print-local', action='store_true', default=False,
         #                    help='Print the local CSM (csm for each atom) in the output file')
         parser.add_argument('--print-denorm', action='store_true', default=False,
                             help='when printing the original molecule, print the denormalized coordinates')
-        parser.add_argument("--legacy", action='store_true', default=False,
-                            help='print the old csm format')
+        parser.add_argument("--legacy-output", action='store_true', default=False,
+                            help='print the old csm format, for a single molecule+command only')
+        parser.add_argument("--legacy-files", action='store_true', default=False,
+                            help='create a folder of legacy-style files for each molecule and command')
         parser.add_argument("--simple", action='store_true', default=False,
                             help='only output is CSM to screen')
         parser.add_argument("--overwrite", action='store_true', default=False,
@@ -97,6 +99,8 @@ def _create_parser():
                             )
 
     def add_input_output_utility_func(parser):
+        parser.add_argument('--parallel', type=int, const=0, nargs='?',
+                            help='Run calculation on molecules in parallel. If no number of processors is specified, [cpu count - 1] will be used')
         parser_input_args = parser.add_argument_group("Args for input (requires --input)")
         parser_input_args.add_argument("--input", help="molecule file or folder, default is current working directory",
                                        const=os.getcwd(), nargs='?')
@@ -184,7 +188,7 @@ def _create_parser():
     # APPROX
     approx_args_ = commands.add_parser('approx', help="Approximate the CSM value", conflict_handler='resolve',
                                        usage='csm approx TYPE [optional args]\n'
-                                             'example: csm approx ch --input --output --detect-outliers --parallel 4 --sn-max 10')
+                                             'example: csm approx ch --input --output --detect-outliers --sn-max 10')
     approx_args = approx_args_.add_argument_group("Args for approx calculation")
     shared_calc_utility_func(approx_args)
     # choosing dir:
@@ -210,8 +214,8 @@ def _create_parser():
                                    help='Use keep-structure approximate algorithm')
     approx_args.add_argument('--selective', type=int,
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
-    approx_args.add_argument('--parallel', type=int, const=0, nargs='?',
-                             help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used')
+    approx_args.add_argument('--parallel-dirs', type=int, const=0, nargs='?',
+                             help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used. Cannot be used with --parallel')
     # outputs
     approx_args.add_argument("--verbose", action='store_true', default=False,
                              help='create a fixed width spreadsheet of information about each direction')
@@ -287,6 +291,10 @@ def _process_arguments(parse_res):
         parse_input(dictionary_args)
         parse_output(dictionary_args)
 
+        if parse_res.parallel is not None:
+            dictionary_args['pool_size'] = parse_res.parallel
+            dictionary_args['parallel'] = True  # doing this before previous line causes weird bug
+
         if parse_res.command == "comfile":
             dictionary_args["command_file"] = parse_res.comfile
             dictionary_args["old_command"] = parse_res.old_cmd
@@ -324,11 +332,13 @@ def _process_arguments(parse_res):
 
                 if parse_res.selective is not None:
                     dictionary_args["num_selected"] = parse_res.selective
-                    dictionary_args["selective"] = True  # likewise, weird bugs
+                    dictionary_args["selective"] = True  # doing this before previous line causes weird bug
 
-                if parse_res.parallel is not None:
-                    dictionary_args['pool_size'] = parse_res.parallel
-                    dictionary_args['parallel'] = True  # likewise, weird bugs
+                if parse_res.parallel_dirs is not None:
+                    if parse_res.parallel:
+                        raise ValueError("Cannot specify --parallel and --parallel-dirs at same time")
+                    dictionary_args['pool_size'] = parse_res.parallel_dirs
+                    dictionary_args['parallel_dirs'] = True  # doing this before previous line causes weird bug
 
                     # outputs:
                 # dictionary_args['print_approx'] = parse_res.print_approx
