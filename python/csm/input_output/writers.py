@@ -774,8 +774,9 @@ class ScriptContextWriter(ContextWriter):
         self.polar = polar
         self.print_local = print_local
         self.argument_string = argument_string
+        self.create_legacy_files = legacy_files
         self.init_files()
-        self.create_legacy_files=legacy_files
+
 
     def get_line_header(self, index, operation):
         index_str = "%02d" % (index + 1)  # start from 1 instead of 0
