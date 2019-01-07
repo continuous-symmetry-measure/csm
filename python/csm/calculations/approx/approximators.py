@@ -694,7 +694,6 @@ class ApproxCalculation(_OptionalLogger):
                 print("Direction: ", least_invalid.dir, " yields a CSM of", format_CSM(least_invalid.csm),
                       "\n", (1 - (least_invalid.num_invalid / len(self._molecule))) * 100,
                       "% of the molecule's atoms are in legal cycles)")
-                print("--------")
         return best_result
 
     def _calculate_for_directions(self, operation, dirs, max_iterations):

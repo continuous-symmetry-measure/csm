@@ -721,6 +721,9 @@ class ContextWriter:
     def write(self, mol_result):
         raise NotImplementedError
 
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
 class PipeContextWriter(ContextWriter):
     results_arr=[]
     def write(self, mol_result):
@@ -746,14 +749,12 @@ class LegacyContextWriter(ContextWriter):
             writer.write(f)
         self.called=True
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
 
 class SimpleContextWriter(ContextWriter):
     def write(self, mol_result):
             for lin_index, line_result in enumerate(mol_result):
                 print("mol", line_result.molecule.metadata.appellation(), "cmd", lin_index + 1, " CSM: ",
-                      format_result_CSM(line_result.csm))
+                      format_CSM(line_result.csm))
 
 
 class ScriptContextWriter(ContextWriter):

@@ -69,7 +69,6 @@ def single_calculation(dictionary_args):
             norm_calc(result, dictionary_args['normalizations'])
     except KeyError:
         pass
-    print("-----")
     return result
 
 def get_command_args(command_file, old_command=True):
@@ -150,8 +149,6 @@ def calc(dictionary_args):
     else:
         raise ValueError("No input for molecules specified")
 
-    print("----------")
-
     #get commands:
     if dictionary_args["command"] == "comfile":
         args_array, operation_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
@@ -169,16 +166,14 @@ def calc(dictionary_args):
         from csm.input_output.formatters import output_strings
         output_strings.silent=True
         print(len(molecules)," molecules in folder. Molecule and result summaries can be found in extra.txt and will not be printed to screen")
-
-
-    total_results=[]
     with context_writer(operation_array, **dictionary_args) as rw:
         for mol_index, molecule in enumerate(molecules):
             mol_results=[]
             for line, args_dict, modifies_molecule in args_array:
+                print("-----")
                 args_dict["molecule"]=molecule
                 if line:
-                    print("\n**executing command:", line.rstrip(), "**")
+                    print("**executing command:", line.rstrip(), "**")
 
                 #handle select molecules:
                 selections = args_dict['select_mols']
@@ -205,7 +200,6 @@ def calc(dictionary_args):
 
 
 
-
 def run_no_return(args=[]):
     csm_run(args)
 
@@ -213,4 +207,4 @@ def run_no_return(args=[]):
 if __name__ == '__main__':
     timer = timeit.Timer(lambda: csm_run(args=sys.argv[1:]))
     time = timer.timeit(number=1)
-    print("Runtime: " + str(time) + " seconds")
+    print("-----\nRuntime: " + str(time) + " seconds")
