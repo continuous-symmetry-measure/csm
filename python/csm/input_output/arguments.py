@@ -61,8 +61,8 @@ def _create_parser():
                             help='print the old csm format')
         parser.add_argument("--simple", action='store_true', default=False,
                             help='only output is CSM to screen')
-        parser.add_argument("--not-unique", action='store_true', default=False,
-                            help="don't ensure results folder is unique")
+        parser.add_argument("--overwrite", action='store_true', default=False,
+                            help="overwrite results folder if exists (rather than adding timestamp)")
 
     def shared_calc_utility_func(parser):
         parser.add_argument('type',
@@ -105,7 +105,7 @@ def _create_parser():
                                        default=None)
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output (requires --output)")
-        parser_output_args.add_argument("--output", const=os.path.join(os.getcwd(), 'csm_results', timestamp),
+        parser_output_args.add_argument("--output", default=os.path.join(os.getcwd(), 'csm_results', timestamp),
                                         nargs='?',
                                         help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
         parser_output_args.add_argument('--out-format',
@@ -126,6 +126,7 @@ def _create_parser():
     # command
     commands_args_ = commands.add_parser('comfile', help='provide a command file for running calculations',  formatter_class=SmartFormatter)
     command_args = commands_args_.add_argument_group("Command args")
+    #א this uses custom formatting so that there are newlines
     command_args.add_argument('comfile', default=os.path.join(os.getcwd(), "cmd.txt"), nargs='?',
                               help="R|the file that contains the commands, default is cmd.txt in current working directory\n"
                                    "the file is formatted as follows:\n"
@@ -339,7 +340,7 @@ def _process_arguments(parse_res):
     try:
         timestamp = str(parse_res.timestamp)
         out_file_name = dictionary_args['out_file_name']
-        if os.path.exists(out_file_name) and not parse_res.not_unique:
+        if os.path.exists(out_file_name) and not parse_res.overwrite:
             if not os.path.isfile(out_file_name):
                 head, tail = os.path.split(out_file_name)
                 dictionary_args['out_file_name'] = os.path.join(head, tail + timestamp)
