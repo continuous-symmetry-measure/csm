@@ -9,7 +9,7 @@ from csm import __version__
 from csm.calculations.data_classes import FailedResult, CSMResult
 from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
 from csm.input_output.formatters import csm_log as print
-from csm.input_output.read import read_molecules, read_mols_from_std_in, read
+from csm.input_output.readers import read_molecules, read_mols_from_std_in, read
 from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter, ConsolidatedScriptWriter
 from csm.molecule.molecule import MoleculeReader
 import csv
