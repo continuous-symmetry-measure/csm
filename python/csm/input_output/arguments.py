@@ -67,7 +67,7 @@ def _create_parser():
                             help="overwrite results folder if exists (rather than adding timestamp)")
 
     def shared_calc_utility_func(parser):
-        parser.add_argument('type',
+        parser.add_argument('symmetry',
                             # choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
                             help='The type of operation: cs, ci, ch, cN, sN', )
         # nargs="+")
@@ -228,7 +228,7 @@ def _create_parser():
 
     # TRIVIAL
     trivial_args_ = commands.add_parser('trivial', help="Calculate trivial (identity) CSM", conflict_handler='resolve',
-                                        usage='csm trivial TYPE [optional args]\n'
+                                        usage='csm trivial SYMM [optional args]\n'
                                               'example: csm trivial c4 --input --output --permute-chains')
     trivial_args = trivial_args_.add_argument_group("Args for trivial calculation")
     shared_calc_utility_func(trivial_args)
@@ -299,7 +299,7 @@ def _process_arguments(parse_res):
             dictionary_args["command_file"] = parse_res.comfile
             dictionary_args["old_command"] = parse_res.old_cmd
         else:
-            dictionary_args['operation'] = Operation(parse_res.type)
+            dictionary_args['operation'] = Operation(parse_res.symmetry)
             dictionary_args['normalizations'] = parse_res.normalize
 
             if parse_res.command == 'exact':
