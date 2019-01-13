@@ -110,8 +110,10 @@ def _create_parser():
                                        help='override guessing format from input file ending with provided format',
                                        default=None)
         input_utility_func(parser_input_args)
-        parser_output_args = parser.add_argument_group("Args for output (requires --output)")
-        parser_output_args.add_argument("--output", default=os.path.join(os.getcwd(), 'csm_results' + timestamp),
+        parser_output_args = parser.add_argument_group("Args for output")
+        parser_output_args.add_argument("--output",
+                                        default=os.path.join(os.getcwd(), 'csm_results' + timestamp),
+                                        const=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         nargs='?',
                                         help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
         parser_output_args.add_argument('--out-format',
