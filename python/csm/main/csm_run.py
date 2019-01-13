@@ -9,7 +9,7 @@ from shutil import copyfile
 from csm import __version__
 from csm.calculations.data_classes import FailedResult, CSMResult
 from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
-from csm.input_output.formatters import csm_log as print
+from csm.input_output.formatters import csm_log as print, silent_print
 from csm.input_output.readers import read_molecules, read_mols_from_std_in, read
 from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter, ConsolidatedScriptWriter
 from csm.molecule.molecule import MoleculeReader
@@ -222,9 +222,9 @@ def calc(dictionary_args):
 
                 if not args_dict["skipped"]:
                     if args_dict["line"]:
-                        print("-----")
-                        print("**executing command:", args_dict["line"].rstrip(), "**")
-                    print("Molecule:", molecule.metadata.appellation(no_leading_zeros=True))
+                        silent_print("-----")
+                        silent_print("**executing command:", args_dict["line"].rstrip(), "**")
+                    silent_print("Molecule:", molecule.metadata.appellation(no_leading_zeros=True))
                     molecule.print_equivalence_class_summary(True)
                 # run the calculation
                 try:
