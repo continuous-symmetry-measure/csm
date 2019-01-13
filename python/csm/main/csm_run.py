@@ -231,6 +231,7 @@ def calc(dictionary_args):
                     result = single_calculation(args_dict)
                     result.print_summary(dictionary_args["legacy_output"])
                 except Exception as e:
+                    print(e)
                     result=FailedResult(str(e), **args_dict)
                 mol_results.append(result)
             #write the results for the molecule
