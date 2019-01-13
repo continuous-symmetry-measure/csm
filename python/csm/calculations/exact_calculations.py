@@ -155,7 +155,7 @@ class ExactCalculation:
 
         if best_csm.csm == MAXDOUBLE:
             # failed to find csm value for any permutation
-            best_csm = best_csm._replace(csm=csm, dir=dir, perm=list(calc_state.perm))
+            #best_csm = best_csm._replace(csm=csm, dir=dir, perm=list(calc_state.perm))
             raise CSMValueError("Failed to calculate a csm value for %s %d" % (op_type, op_order), best_csm)
         return best_csm
 
