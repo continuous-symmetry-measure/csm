@@ -424,10 +424,6 @@ class Molecule:
     def _calculate_equivalency(self):
         """
         Preprocess a molecule based on the arguments passed to CSM
-        :param remove_hy: True if hydrogen atoms should be removed
-        :param ignore_hy: True when hydrogen atoms should be ignored when calculating the equivalence classes
-        :param kwargs: Place holder for all other csm_args.
-        You can call it by passing **csm_args
         """
 
         def is_similar(atoms_group_num, a, b):
@@ -554,7 +550,7 @@ class Molecule:
                     # however many atoms have been removed up to this index is the amount its index needs adjusting by
                     fixed_indexes[i] -= len(removed_atoms)
 
-        # adjust the indices before we do any popping whatsoever
+        # adjust the connectivity indices before we do any popping whatsoever
         for i, atom in enumerate(self._atoms):
             adjacent_new = []
             for adjacent in atom.adjacent:
@@ -568,6 +564,7 @@ class Molecule:
             # if remove_hy: #this is meant to affect print at end
             # self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
 
+        self._create_bondset()
         # logger.debug(len(removed_atoms), "atoms removed")
 
     def _calculate_center_of_mass(self):
