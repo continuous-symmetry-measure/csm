@@ -17,7 +17,7 @@ def calculate_norm_factor(coords, center_of_mass):
     norm = 0.0
     for i in range(size):
         tmp = (coords[i][0] - center_of_mass[0]) ** 2 + (coords[i][1] - center_of_mass[1]) ** 2 + (
-                    coords[i][2] - center_of_mass[2]) ** 2
+                coords[i][2] - center_of_mass[2]) ** 2
         norm += tmp
         # logger.debug("Norm: %lf i: %lf temp %lf" % (norm, i, tmp))
 

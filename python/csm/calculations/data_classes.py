@@ -4,7 +4,6 @@ import numpy as np
 
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
     check_perm_structure_preservation
-from csm.input_output.formatters import csm_log as print
 from csm.input_output.formatters import silent_print
 from csm.molecule.molecule import Molecule
 from csm.molecule.normalizations import de_normalize_coords
@@ -120,7 +119,7 @@ class Operation:
 class CSMResult:
     def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
         self.failed = False
-        self.skipped=False
+        self.skipped = False
         # input
         self.molecule = state.molecule.copy()  # not yet denormalized
         self.normalized_molecule_coords = np.array(self.molecule.Q)
@@ -267,7 +266,7 @@ class CSMResult:
         try:
             percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
             silent_print("The permutation found maintains " +
-                  str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
+                         str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
 
         except ValueError:
             silent_print(
@@ -300,8 +299,6 @@ class CSMResult:
         else:
             silent_print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
             silent_print("CSM by formula: %.6lf" % (self.formula_csm))
-
-
 
     def to_dict(self):
         return {"Result":
@@ -339,9 +336,9 @@ class FailedResult:
     def __init__(self, failed_reason, molecule, skipped=False, **kwargs):
         self.failed = True
         self.failed_reason = failed_reason
-        self.skipped=False
+        self.skipped = False
         if skipped:
-            self.skipped=True
+            self.skipped = True
 
         self.molecule = molecule
         self.normalized_molecule_coords = []

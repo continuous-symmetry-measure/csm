@@ -5,11 +5,12 @@ import json
 import logging
 from collections import OrderedDict
 from pathlib import Path
+
 import copy
 import numpy as np
 import os
 from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
-import openbabel as ob
+
 from csm.input_output.formatters import csm_log as print
 from csm.input_output.formatters import silent_print
 from csm.molecule.atom import Atom, GetAtomicSymbol
@@ -20,9 +21,6 @@ logger = logging.getLogger("csm")
 ob_debug = False
 if not ob_debug:
     obErrorLog.SetOutputLevel(obError)
-
-
-
 
 
 def get_format(format, filename):
@@ -89,6 +87,7 @@ class Chains(OrderedDict):
     def index_to_string(self, index):
         return self._indexes_to_strings[index]
 
+
 class MoleculeMetaData:
     '''
     This class is primarily used to store metadata needed to write results, although format+filecontent+babel_bond
@@ -99,7 +98,8 @@ class MoleculeMetaData:
     index is set in read_multiple_molecules, or, revoltingly, in do_commands after calling redo_molecule
     '''
 
-    def __init__(self, file_content=[], format=None, filename="", babel_bond=False, index=0, initial_title="", initial_comments="", use_filename=True):
+    def __init__(self, file_content=[], format=None, filename="", babel_bond=False, index=0, initial_title="",
+                 initial_comments="", use_filename=True):
         self.file_content = file_content
         self.format = format
         self.filename = filename
@@ -111,7 +111,7 @@ class MoleculeMetaData:
 
     @staticmethod
     def from_dict(self, dict):
-        m=MoleculeData(**dict)
+        m = MoleculeData(**dict)
         return m
 
     def to_dict(self):
@@ -171,11 +171,9 @@ class Molecule:
             self.has_been_normalized = None
 
             self.metadata = MoleculeMetaData()
+
     def __str__(self):
         return self.metadata.appellation()
-
-
-
 
     def copy(self):
         # deepcopy is used only for atoms,
@@ -185,7 +183,7 @@ class Molecule:
         m = Molecule(to_copy=True)
         m._atoms = copy.deepcopy(self.atoms)
         m._norm_factor = self.norm_factor
-        m.has_been_normalized=self.has_been_normalized
+        m.has_been_normalized = self.has_been_normalized
 
         m._deleted_atom_indices = self._deleted_atom_indices
         m.metadata = self.metadata
@@ -624,13 +622,16 @@ class Molecule:
             except KeyError:
                 lengths[len(group)] = 1
         for key in lengths:
-            silent_print("%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
+            silent_print(
+                "%d group%s of length %d" % (lengths[key], 's' if lengths[key] and lengths[key] > 1 else '', key))
 
         if display_chains:
             if len(self.chains) > 1:
                 for chain in self.chains:
-                    silent_print("Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
-                silent_print("%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
+                    silent_print(
+                        "Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
+                silent_print(
+                    "%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
                 for chaingroup in self.chain_equivalences:
                     chainstring = "Group of length " + str(len(chaingroup)) + ":"
                     for index in chaingroup:
@@ -890,11 +891,11 @@ class MoleculeReader:
             obm = MoleculeReader._obm_from_file(in_file_name, format, babel_bond)
             mol = MoleculeReader.mol_from_obm(obm, format, ignore_sym=ignore_sym, use_mass=use_mass,
                                               read_fragments=read_fragments)
-        mol= MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
-                                                       use_chains, babel_bond,
-                                                       remove_hy, ignore_sym, use_mass,
-                                                       read_fragments, use_sequence,
-                                                       keep_structure, select_atoms, conn_file)
+        mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
+                                                      use_chains, babel_bond,
+                                                      remove_hy, ignore_sym, use_mass,
+                                                      read_fragments, use_sequence,
+                                                      keep_structure, select_atoms, conn_file)
         if not mol.bondset:
             if keep_structure:
                 raise ValueError(
@@ -1044,7 +1045,6 @@ class MoleculeReader:
         :param args_dict: dictionary of processed command line arguments
         :return: A list of Atoms and a list of chains
         """
-        import openbabel
         if not read_fragments:
             obmols = obmols[:1]
         atoms = []

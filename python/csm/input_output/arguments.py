@@ -11,13 +11,15 @@ from csm.calculations.data_classes import Operation
 logger = logging.getLogger(__name__)
 import sys
 
+
 class SmartFormatter(HelpFormatter):
-    #from https://stackoverflow.com/a/22157136/5961793
+    # from https://stackoverflow.com/a/22157136/5961793
     def _split_lines(self, text, width):
         if text.startswith('R|'):
             return text[2:].splitlines()
         # this is the RawTextHelpFormatter._split_lines
         return HelpFormatter._split_lines(self, text, width)
+
 
 class OurParser(ArgumentParser):
     def error(self, message):
@@ -53,7 +55,7 @@ def _create_parser():
     def output_utility_func(parser):
         parser.add_argument('--json-output', action='store_true', default=False,
                             help='Print output in json format to a file. Only relevant with --legacy-output')
-        #parser.add_argument('--print-local', action='store_true', default=False,
+        # parser.add_argument('--print-local', action='store_true', default=False,
         #                    help='Print the local CSM (csm for each atom) in the output file')
         parser.add_argument('--print-denorm', action='store_true', default=False,
                             help='when printing the original molecule, print the denormalized coordinates')
@@ -109,7 +111,7 @@ def _create_parser():
                                        default=None)
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output (requires --output)")
-        parser_output_args.add_argument("--output", default=os.path.join(os.getcwd(), 'csm_results'+timestamp),
+        parser_output_args.add_argument("--output", default=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         nargs='?',
                                         help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
         parser_output_args.add_argument('--out-format',
@@ -121,16 +123,17 @@ def _create_parser():
                                                  "example: csm exact c2 --input mymol.mol --output --keep-structure\n"
                                                  "for specific help with each subprogram and its available arguments, enter csm COMMAND -h\n"
                                                  "e.g. csm exact -h",
-                      )
+                       )
     timestamp = str(datetime.now().timestamp())[-11:].replace(".", "")
     parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
     parser.add_argument("--version", help="print version and exit", action='store_true', default=False)
     commands = parser.add_subparsers(title="Available commands", dest="command")
 
     # command
-    commands_args_ = commands.add_parser('comfile', help='provide a command file for running calculations',  formatter_class=SmartFormatter)
+    commands_args_ = commands.add_parser('comfile', help='provide a command file for running calculations',
+                                         formatter_class=SmartFormatter)
     command_args = commands_args_.add_argument_group("Command args")
-    #א this uses custom formatting so that there are newlines
+    # א this uses custom formatting so that there are newlines
     command_args.add_argument('comfile', default=os.path.join(os.getcwd(), "cmd.txt"), nargs='?',
                               help="R|the file that contains the commands, default is cmd.txt in current working directory\n"
                                    "the file is formatted as follows:\n"
@@ -161,7 +164,7 @@ def _create_parser():
     out_args = commands.add_parser('write',
                                    help="Output the results of the calculation to a file- must be used with piped input",
                                    usage="csm write filename [optional args]")
-    out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results'+timestamp), nargs='?',
+    out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results' + timestamp), nargs='?',
                           help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
     out_args.add_argument('--format', help='override guessing format from file ending with provided format',
                           default=None)
@@ -274,6 +277,7 @@ def _process_arguments(parse_res):
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
+
     #    dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
     dictionary_args = dict(vars(parse_res))

@@ -1,25 +1,22 @@
+import csv
 import json
 import multiprocessing
 import sys
 import timeit
 
-import os
-from shutil import copyfile
-
 from csm import __version__
-from csm.calculations.data_classes import FailedResult, CSMResult
-from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
-from csm.input_output.formatters import csm_log as print, silent_print
-from csm.input_output.readers import read_molecules, read_mols_from_std_in, read
-from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter, ConsolidatedScriptWriter
-from csm.molecule.molecule import MoleculeReader
-import csv
-
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox
 from csm.calculations.approx.dirs import get_direction_chooser
+from csm.calculations.data_classes import FailedResult, CSMResult
+from csm.input_output.arguments import get_parsed_args, old_cmd_converter, check_modifies_molecule
 from csm.input_output.formatters import csm_log as print
+from csm.input_output.formatters import silent_print
+from csm.input_output.readers import read_molecules, read_mols_from_std_in, read
 from csm.input_output.readers import read_perm, read_from_sys_std_in
+from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter
 from csm.main.normcsm import norm_calc
+from csm.molecule.molecule import MoleculeReader
+
 
 def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_approx=False, **dictionary_args):
     calc_type = command
@@ -59,9 +56,9 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
 
 
 def single_calculation(dictionary_args):
-    molecule=dictionary_args["molecule"]
+    molecule = dictionary_args["molecule"]
     if dictionary_args["skipped"]:
-        return(FailedResult("molecule not selected", molecule, skipped=True))
+        return (FailedResult("molecule not selected", molecule, skipped=True))
     result = do_calculation(**dictionary_args)
     try:
         if len(dictionary_args['normalizations']) > 0:
@@ -70,9 +67,10 @@ def single_calculation(dictionary_args):
         pass
     return result
 
+
 def get_command_args(command_file, old_command=True):
     args_array = []
-    operation_array=[]
+    operation_array = []
     with open(command_file, 'r') as file:
         for line in file:
             if line[0] == "#":
@@ -91,15 +89,16 @@ def get_command_args(command_file, old_command=True):
             operation_array.append(args_dict["operation"])
     return args_array, operation_array
 
+
 def csm_run(args=[]):
-  # get command
+    # get command
     if not args:
         args = sys.argv[1:]
     print("CSM version %s" % __version__)
     print(" ".join(args))
 
     dictionary_args = get_parsed_args(args)
-    dictionary_args["argument_string"]= " ".join(args) + "\n"
+    dictionary_args["argument_string"] = " ".join(args) + "\n"
     if "global_timeout" in dictionary_args:
         from csm.calculations.constants import set_global_timeout
         set_global_timeout(dictionary_args["global_timeout"])
@@ -131,24 +130,26 @@ def get_context_writer(dictionary_args):
         context_writer = ScriptContextWriter
     return context_writer
 
+
 def write(**dictionary_args):
     raw_json = read_from_sys_std_in()
     less_raw_json = json.loads(raw_json)
     results = [[CSMResult.from_dict(result_dict) for result_dict in mol_arr] for mol_arr in less_raw_json]
-    context_writer=get_context_writer(dictionary_args)
+    context_writer = get_context_writer(dictionary_args)
     writer = context_writer(results, context_writer=context_writer, **dictionary_args)
     writer.write()
 
 
 def parallel_calc(args_array, pool_size):
-    if pool_size==0:
-        pool_size=multiprocessing.cpu_count() - 1
+    if pool_size == 0:
+        pool_size = multiprocessing.cpu_count() - 1
     pool = multiprocessing.Pool(processes=pool_size)
     print("Parallelizing across {} processes".format(pool_size))
     pool_outputs = pool.map(single_calculation, args_array)
     pool.close()
     pool.join()
     return pool_outputs
+
 
 def calc(dictionary_args):
     # get molecules
@@ -159,21 +160,21 @@ def calc(dictionary_args):
     else:
         raise ValueError("No input for molecules specified")
 
-    #get commands:
+    # get commands:
     if dictionary_args["command"] == "comfile":
         args_array, operation_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
     else:
         args_array = [(None, dictionary_args, False)]
-        operation_array=[dictionary_args["operation"]]
+        operation_array = [dictionary_args["operation"]]
 
     context_writer = get_context_writer(dictionary_args)
     if not dictionary_args["out_format"]:
-        dictionary_args["out_format"]=dictionary_args["in_format"]
+        dictionary_args["out_format"] = dictionary_args["in_format"]
     if not dictionary_args["out_format"]:
         dictionary_args["out_format"] = molecules[0].metadata.format
 
-    #process arguments into flat and unflat arrays
-    total_args=[]
+    # process arguments into flat and unflat arrays
+    total_args = []
     for mol_index, molecule in enumerate(molecules):
         mol_args = []
         for line, args_dict, modifies_molecule in args_array:
@@ -193,13 +194,14 @@ def calc(dictionary_args):
                 args_dict["molecule"] = new_molecule
             mol_args.append(dict(args_dict))
         total_args.append(mol_args)
-    flattened_args=[item for sublist in total_args for item in sublist]
+    flattened_args = [item for sublist in total_args for item in sublist]
 
-    #run the calculation, in parallel
+    # run the calculation, in parallel
     if dictionary_args["parallel"]:
-        results= parallel_calc(flattened_args, dictionary_args["pool_size"])
-        unflattened_results=[
-            [results[m_index+command_index] for command_index in range(len(args_array))] for m_index in range(len(molecules))
+        results = parallel_calc(flattened_args, dictionary_args["pool_size"])
+        unflattened_results = [
+            [results[m_index + command_index] for command_index in range(len(args_array))] for m_index in
+            range(len(molecules))
         ]
         with context_writer(operation_array, **dictionary_args) as rw:
             for mol_results in unflattened_results:
@@ -212,13 +214,13 @@ def calc(dictionary_args):
         print(len(molecules),
               " molecules in folder. Molecule and result summaries can be found in extra.txt and will not be printed to screen")
 
-    #run the calculation, in serial
+    # run the calculation, in serial
     with context_writer(operation_array, **dictionary_args) as rw:
         for mol_index, mol_args in enumerate(total_args):
-            mol_results=[]
+            mol_results = []
             for line_index, args_dict in enumerate(mol_args):
-                #print stuff
-                molecule=args_dict["molecule"]
+                # print stuff
+                molecule = args_dict["molecule"]
 
                 if not args_dict["skipped"]:
                     if args_dict["line"]:
@@ -232,14 +234,10 @@ def calc(dictionary_args):
                     result.print_summary(dictionary_args["legacy_output"])
                 except Exception as e:
                     print(e)
-                    result=FailedResult(str(e), **args_dict)
+                    result = FailedResult(str(e), **args_dict)
                 mol_results.append(result)
-            #write the results for the molecule
+            # write the results for the molecule
             rw.write(mol_results)
-
-
-
-
 
 
 def run_no_return(args=[]):
