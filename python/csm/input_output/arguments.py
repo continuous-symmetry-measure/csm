@@ -109,9 +109,9 @@ def _create_parser():
                                        default=None)
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output (requires --output)")
-        parser_output_args.add_argument("--output", default=os.path.join(os.getcwd(), 'csm_results', timestamp),
+        parser_output_args.add_argument("--output", default=os.path.join(os.getcwd(), 'csm_results'+timestamp),
                                         nargs='?',
-                                        help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
+                                        help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
         parser_output_args.add_argument('--out-format',
                                         help='override guessing format from output file ending with provided format',
                                         default=None)
@@ -161,7 +161,7 @@ def _create_parser():
     out_args = commands.add_parser('write',
                                    help="Output the results of the calculation to a file- must be used with piped input",
                                    usage="csm write filename [optional args]")
-    out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results', timestamp), nargs='?',
+    out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results'+timestamp), nargs='?',
                           help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
     out_args.add_argument('--format', help='override guessing format from file ending with provided format',
                           default=None)
