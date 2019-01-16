@@ -427,293 +427,6 @@ def format_result_CSM(result):
 
 molecule_format = "%-40s"
 
-
-class ScriptWriter:  # preserved to provide basis for comparison testing, to be deleted after version 0.21.3 has passed muster
-    def __init__(self, results, format, out_file_name=None, polar=False, verbose=False, print_local=False,
-                 argument_string="", **kwargs):
-        '''
-        :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
-        by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
-        a single array of results will be treated as multiple commands on one molecule
-        :param format: molecule format to output to
-        :param out_file_name: if none is provided, the current working directory/csm_results will be used
-        '''
-        try:
-            if not isinstance(results[0], list):  # results is a single array
-                results = [results]
-        except TypeError:  # results isn't an array at all
-            results = [[results]]
-
-        self.verbose = verbose
-        self.results = results
-        self.format = format
-        self.folder = out_file_name
-        if not self.folder:
-            self.folder = os.path.join(os.getcwd(), "csm_results")
-        self.polar = polar
-        self.print_local = print_local
-
-        self.inverted_results = [[] for i in range(len(self.results[0]))]
-        for mol_index, mol_result in enumerate(self.results):
-            for com_index, command_result in enumerate(mol_result):
-                self.inverted_results[com_index].append(mol_result)
-
-        self.argument_string = argument_string
-
-    def result_molecule_iterator(self):
-        for mol_index, mol_results in enumerate(self.results):
-            for command_index, command_results in enumerate(mol_results):
-                yield MoleculeWrapper(command_results, mol_index, command_index)
-
-    def write(self):
-        os.makedirs(self.folder, exist_ok=True)
-        self.create_CSM_tsv()
-        self.create_perm_tsv()
-        self.create_dir_tsv()
-        # self.create_extra_tsv()
-        self.create_extra_txt()
-        if self.verbose:
-            self.create_approx_statistics()
-        self.create_legacy_files()
-        self.create_initial_mols()
-        self.create_symmetric_mols()
-        self.write_version()
-
-    def write_version(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "version.txt")
-        with open(filename, 'w') as file:
-            file.write(self.argument_string)
-            file.write("CSM VERSION: " + str(__version__))
-
-    def create_CSM_tsv(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "csm.txt")
-        # creates a tsv file with CSM per molecule
-        with open(filename, 'w') as f:
-            f.write(molecule_format % "#Molecule")
-            for index, res in enumerate(self.results[0]):
-                f.write("%-10s" % (get_line_header(index, res)))
-            f.write("\n")
-            for index, mol_results in enumerate(self.results):
-                f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
-                for result in mol_results:
-                    f.write("%-10s" % format_result_CSM(result))
-                f.write("\n")
-
-    def create_perm_tsv(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "permutation.txt")
-        # creates a tsv for permutations (needs to handle extra long permutations somehow)
-        with open(filename, 'w') as f:
-            format_string = molecule_format + "%-10s%-10s\n"
-            f.write(format_string % ("#Molecule", "#Command", "#Permutation"))
-            for mol_index, mol_results in enumerate(self.results):
-                for line_index, command_result in enumerate(mol_results):
-                    f.write(molecule_format % (command_result.molecule.metadata.appellation()))
-                    f.write("%-10s" % (get_line_header(line_index, command_result)))
-                    write_array_to_file(f, command_result.perm, True)
-                    f.write("\n")
-
-    def create_dir_tsv(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "directional.txt")
-        with open(filename, 'w') as f:
-            format_line = molecule_format + "%-10s%10s%10s%10s\n"
-            f.write(format_line % ("#Molecule", "#Command", "X", "Y", "Z"))
-            for mol_index, mol_results in enumerate(self.results):
-                for line_index, command_result in enumerate(mol_results):
-                    f.write(molecule_format % command_result.molecule.metadata.appellation())
-                    f.write("%10s" % get_line_header(line_index, command_result))
-                    write_array_to_file(f, command_result.dir, separator="%-10s")
-                    f.write("\n")
-
-    def create_extra_tsv(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "extra.tab")
-        # create headers
-        # first row: cmd
-        format_strings = []
-        headers_arr_1 = []
-        headers_arr_2 = []
-
-        for line_index, command_result in enumerate(self.results[0]):
-            format_string = ""
-            for key in sorted(command_result.overall_statistics):
-                format_string += "%-" + str(len(key) + 2) + "s"
-                headers_arr_1.append(get_line_header(line_index, command_result))
-                headers_arr_2.append(key)
-            format_strings.append(format_string)
-        format_strings[-1] += "\n"
-
-        full_string = "".join(format_strings)
-
-        with open(filename, 'w') as f:
-            f.write(molecule_format % "#Molecule")
-            f.write(full_string % tuple(headers_arr_1))
-            f.write("%-10s" % " ")
-            f.write(full_string % tuple(headers_arr_2))
-            for mol_index, mol_results in enumerate(self.results):
-                f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
-                for line_index, command_result in enumerate(mol_results):
-                    f.write(
-                        format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
-                                                            for key in sorted(command_result.overall_statistics)]))
-
-    def create_approx_statistics(self, out_folder=None):
-        # (in approx there's also a table with initial direction, initial CSM, final direction, final CSM, number iterations, run time, and stop reason for each direction in approx)
-        # create headers
-        # first row: cmd
-
-        # first, check that at least one of the commands has running statistics:
-        if not out_folder:
-            out_folder = os.path.join(self.folder, 'approx')
-        has_ongoing = False
-        for command_result in self.results[0]:
-            if command_result.ongoing_statistics:
-                has_ongoing = True
-
-        if not has_ongoing:
-            return
-
-        os.makedirs(out_folder, exist_ok=True)
-
-        for mol_index, mol_results in enumerate(self.results):
-            for line_index, command_result in enumerate(mol_results):
-                name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(
-                    line_index,
-                    command_result)
-                filename = os.path.join(out_folder, name + ".tsv")
-                if command_result.ongoing_statistics:
-                    self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
-
-    def _write_approx_statistics(self, filename, stats):
-        with open(filename, 'w') as f:
-            if self.polar:
-                f.write("Dir Index"
-                        "\tr_i\tth_i\tph_i"
-                        "\tCSM_i"
-                        "\tr_f\tth_f\tph_f"
-                        "\tCSM_f"
-                        "\tRuntime"
-                        "\t # Iter"
-                        "\t Stop Reason"
-                        "\n")
-            else:
-                f.write("Dir Index"
-                        "\tx_i\ty_i\tz_i"
-                        "\tCSM_i"
-                        "\tx_f\ty_f\tz_f"
-                        "\tCSM_f"
-                        "\tRuntime"
-                        "\t # Iter"
-                        "\tStop Reason"
-                        "\n")
-
-            for direction_index, direction_dict in enumerate(stats):
-                dir = direction_dict['dir']
-                stat = direction_dict['stats']
-                start_str = str(direction_index) + "\t"
-                try:
-                    x, y, z = stat['start dir']
-                    start_str = start_str + format_CSM(x) + "\t" + format_CSM(y) + "\t" + format_CSM(z) + "\t"
-                    xf, yf, zf = stat['end dir']
-                    if self.polar:
-                        x, y, z = cart2sph(x, y, z)
-                        xf, yf, zf = cart2sph(xf, yf, zf)
-
-                    f.write(start_str
-                            + format_CSM(stat['start csm']) + "\t"
-                            + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
-                            + format_CSM(stat['end csm']) + "\t"
-                            + format_CSM(stat['run time']) + "\t"
-                            + str(stat['num iterations']) + "\t"
-                            + stat['stop reason'] + "\t"
-                                                    "\n")
-                except Exception as e:
-                    try:
-                        start_str = start_str + stat['stop reason'] + "\t"
-                    finally:
-                        f.write(start_str + "failed to read statistics\n")
-
-    def create_extra_txt(self, filename=None):
-        # 2. the equivalence class and chain information (number and length)
-        # 4. Cycle numbers and lengths
-        if not filename:
-            filename = os.path.join(self.folder, "extra.txt")
-        with open(filename, 'w') as f:
-            for item in output_strings:
-                f.write(item)
-                f.write("\n")
-
-    def create_legacy_files(self, out_folder=None):
-        if not out_folder:
-            out_folder = os.path.join(self.folder, 'old-csm-output')
-        os.makedirs(out_folder, exist_ok=True)
-        for mol_index, mol_results in enumerate(self.results):
-            for line_index, command_result in enumerate(mol_results):
-                name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(
-                    line_index,
-                    command_result)
-                file_name = name + "." + command_result.molecule.metadata.format
-                out_file_name = os.path.join(out_folder, file_name)
-                try:
-                    of = LegacyFormatWriter(command_result, self.format)
-                    with open(out_file_name, 'w', encoding='utf-8') as f:
-                        of.write(f)
-                except Exception as e:
-                    print("failed to write legacy file for" + file_name + ": " + str(e))
-
-    def create_initial_mols(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "initial_normalized_coordinates." + self.format)
-        with open(filename, 'a') as file:
-            i = 1
-            for mol_index, mol_results in enumerate(self.results):
-                molecule_wrapper = MoleculeWrapper(mol_results[0], mol_index)
-                molecule_wrapper.set_symmetric_title(symmetric=False)
-                mw = MoleculeWriter(molecule_wrapper)
-                mw.write_original(file, molecule_wrapper.result, consecutive=True,
-                                  model_number=i)
-                i += 1
-            if self.format == "pdb":
-                file.write("\nEND")
-
-    def create_symmetric_mols(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "resulting_symmetric_coordinates." + self.format)
-        with open(filename, 'w') as file:
-            i = 1
-            for molecule_wrapper in self.result_molecule_iterator():
-                molecule_wrapper.set_symmetric_title(symmetric=True)
-                mw = MoleculeWriter(molecule_wrapper)
-                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
-                                   model_number=i)
-                i += 1
-            if self.format == "pdb":
-                file.write("\nEND")
-
-    def create_alternating_mols(self, filename=None):
-        if not filename:
-            filename = os.path.join(self.folder, "resulting_mols." + self.format)
-        i = 1
-        with open(filename, 'w') as file:
-            for molecule_wrapper in self.result_molecule_iterator():
-                molecule_wrapper.set_symmetric_title(symmetric=False)
-                mw = MoleculeWriter(molecule_wrapper)
-                mw.write_original(file, molecule_wrapper.result, consecutive=True,
-                                  model_number=i)
-                i += 1
-                molecule_wrapper.set_symmetric_title(symmetric=True)
-                mw = MoleculeWriter(molecule_wrapper)
-
-                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
-                                   model_number=i)
-                i += 1
-            if self.format == "pdb":
-                file.write("\nEND")
-
-
 class ContextWriter:
     def __init__(self, commands, out_format, out_file_name=None, *args, **kwargs):
         self.commands = commands
@@ -1006,8 +719,12 @@ class ScriptContextWriter(ContextWriter):
         self.close_files()
 
 
-class ConsolidatedScriptWriter():
-    def __init__(self, results, format=None, context_writer=ScriptContextWriter, **kwargs):
+class WebWriter():
+    '''
+    receives results in an array of arrays, like the old ScriptWriter.
+    retained for web-csm
+    '''
+    def __init__(self, results, format=None, out_folder=None, context_writer=ScriptContextWriter, **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
@@ -1026,13 +743,19 @@ class ConsolidatedScriptWriter():
         for result in results[0]:
             self.commands.append(result.operation)
 
-        if kwargs["out_format"]:
+
+        if kwargs.get("out_format"):
             self.format = kwargs["out_format"]
-        elif kwargs["in_format"]:
+        elif kwargs.get("in_format"):
             self.format = kwargs["in_format"]
         else:
             self.format = self.results[0][0].molecule.metadata.format
-
+        self.folder=out_folder
+        if not out_folder:
+            if kwargs.get('out_file_name'):
+                self.folder=kwargs['out_file_name']
+            else:
+                self.folder = os.path.join(os.getcwd(), "csm_results")
         self.kwargs = kwargs
         self.context_writer = context_writer
 
