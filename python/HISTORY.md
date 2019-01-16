@@ -1,6 +1,13 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.22.1
+------------------------
+* bug fix select-atoms
+* change default out folder
+* change some error printouts
+* remove old ScriptWriter, add WebWriter
+
 Changes in version 0.22.0
 ------------------------
 Major:
@@ -11,9 +18,10 @@ Minor:
 * if more than 10 molecules are being calculated, result summaries are not printed to screen
 * warning for missing connectivity is only printed for first molecule in a file containing many
 * added help for comfile command
-* additional bug fix in chirality
 * increase molecule title space in output files
 * change default result file when --output not specified, and change flag --not-unique to the clearer --overwrite
+Bugs:
+* additional bug fix in chirality
 
 Changes in version 0.21.2
 ------------------------
