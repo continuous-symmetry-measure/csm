@@ -1,10 +1,8 @@
+from libcpp.vector cimport vector
+from cpython cimport array
+
 import numpy as np
-from cpython cimport
-
-array
-from libcpp.vector cimport
-
-vector
+cimport numpy as np
 
 DTYPE = np.float64
 ctypedef np.float64_t DTYPE_t
@@ -17,7 +15,7 @@ def ps(cs):
     """ Converts a C++ string to a Python string """
     return cs.decode('UTF8')
 
-cdef vector_double_to_list(const vector[double] & vec):
+cdef vector_double_to_list(const vector[double] &vec):
     cdef int i;
 
     lst = []
@@ -25,7 +23,7 @@ cdef vector_double_to_list(const vector[double] & vec):
         lst.append(vec[i])
     return lst
 
-cdef vector_int_to_list(const vector[int] & vec):
+cdef vector_int_to_list(const vector[int] &vec):
     cdef int i;
 
     lst = []
@@ -33,7 +31,7 @@ cdef vector_int_to_list(const vector[int] & vec):
         lst.append(vec[i])
     return lst
 
-cdef vector_double_to_tuple(const vector[double] & vec):
+cdef vector_double_to_tuple(const vector[double] &vec):
     return tuple(vector_double_to_list(vec))
 
 cdef vector[int] list_to_vector_int(lst):
