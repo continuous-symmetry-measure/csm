@@ -1,9 +1,10 @@
-import os
-import re
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools import setup
+from distutils.extension import Extension
+from Cython.Build import cythonize
 import sys
 import numpy
+import os
+from setuptools.command.build_ext import build_ext as _build_ext
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
     README = readme.read()
