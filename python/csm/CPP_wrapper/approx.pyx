@@ -1,12 +1,10 @@
 from libc.math cimport sqrt
 from libcpp.vector cimport vector
-cimport numpy as np
 import numpy as np
+cimport numpy as np
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.basic_calculations import create_rotation_matrix, check_timeout
 from cython_munkres import munkres
-from csm.calculations.basic_calculations import create_rotation_matrix, check_timeout
-from csm.calculations.constants import MAXDOUBLE
 
 cdef class Vector3D
 cdef class Matrix3D

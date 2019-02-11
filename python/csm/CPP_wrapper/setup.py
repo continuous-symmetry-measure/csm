@@ -1,12 +1,11 @@
 __author__ = 'zmbq'
 
-import sys
+from setuptools import setup
 from distutils.extension import Extension
-
+from Cython.Build import cythonize
+import sys
 import numpy
 import os
-from Cython.Build import cythonize
-from setuptools import setup
 
 FAST_CPPUTILS_DIR = "../../FastCPPUtils"
 EIGEN_INCLUDE_DIR = "../../../include"
