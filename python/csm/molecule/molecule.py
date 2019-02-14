@@ -99,15 +99,22 @@ class MoleculeMetaData:
     '''
 
     def __init__(self, file_content=[], format=None, filename="", babel_bond=False, index=0, initial_title="",
-                 initial_comments="", use_filename=True):
+                 initial_comments="", use_filename=True, out_format=None):
         self.file_content = file_content
         self.format = format
+        self._out_format=out_format
         self.filename = filename
         self.babel_bond = babel_bond
         self.index = index
         self.initial_title = initial_title
         self.initial_comments = initial_comments
         self.use_filename = use_filename
+
+    @property
+    def out_format(self):
+        if self._out_format:
+            return self._out_format
+        return self.format
 
     @staticmethod
     def from_dict(self, dict):
@@ -863,6 +870,7 @@ class MoleculeReader:
                   remove_hy=False, ignore_sym=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
                   keep_structure=False, select_atoms=[], conn_file=None,
+                  out_format=None,
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
@@ -895,7 +903,8 @@ class MoleculeReader:
                                                       use_chains, babel_bond,
                                                       remove_hy, ignore_sym, use_mass,
                                                       read_fragments, use_sequence,
-                                                      keep_structure, select_atoms, conn_file)
+                                                      keep_structure, select_atoms, conn_file,
+                                                      out_format)
         if not mol.bondset:
             if keep_structure:
                 raise ValueError(
@@ -909,9 +918,12 @@ class MoleculeReader:
                                  use_chains=False, babel_bond=False,
                                  remove_hy=False, ignore_sym=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
-                                 keep_structure=False, select_atoms=[], conn_file=None, **kwargs):
+                                 keep_structure=False, select_atoms=[], conn_file=None,
+                                 out_format=None, **kwargs):
 
         mol.metadata.format = format
+        if out_format:
+            mol.metadata._out_format=out_format
         mol.metadata.babel_bond = babel_bond
         mol.metadata.filename = os.path.basename(in_file_name)
 
@@ -946,6 +958,7 @@ class MoleculeReader:
                            remove_hy=False, ignore_sym=False, use_mass=False,
                            read_fragments=False, use_sequence=False,
                            keep_structure=False, select_atoms=[], conn_file=None,
+                           out_format=None,
                            *args, **kwargs):
         mols = []
         format = get_format(in_format, in_file_name)
@@ -976,7 +989,8 @@ class MoleculeReader:
                                                             use_chains, babel_bond,
                                                             remove_hy, ignore_sym, use_mass,
                                                             read_fragments, use_sequence,
-                                                            keep_structure, select_atoms, conn_file)
+                                                            keep_structure, select_atoms, conn_file,
+                                                            out_format)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             processed_mols.append(p_mol)

@@ -5,7 +5,6 @@ from datetime import datetime
 import os
 
 from csm import __version__
-from csm.calculations import permuters
 from csm.calculations.data_classes import Operation
 
 logger = logging.getLogger(__name__)
@@ -53,20 +52,28 @@ def _create_parser():
                             help='Read fragments from .mol or .pdb file as chains')
 
     def output_utility_func(parser):
-        parser.add_argument('--json-output', action='store_true', default=False,
-                            help='Print output in json format to a file. Only relevant with --legacy-output')
+        parser.add_argument("--overwrite", action='store_true', default=False,
+                            help="overwrite results folder if exists (rather than adding timestamp)")
         # parser.add_argument('--print-local', action='store_true', default=False,
         #                    help='Print the local CSM (csm for each atom) in the output file')
         parser.add_argument('--print-denorm', action='store_true', default=False,
                             help='when printing the original molecule, print the denormalized coordinates')
-        parser.add_argument("--legacy-output", action='store_true', default=False,
-                            help='print the old csm format, for a single molecule+command only')
+
+        parser.add_argument("--verbose", action='store_true', default=False,
+                            help='create a fixed width spreadsheet of information about each direction for any approx commands')
+        parser.add_argument('--polar', action='store_true', default=False,
+                            help="Print polar coordinates instead of cartesian coordinates in statistics created by --verbose")
+
         parser.add_argument("--legacy-files", action='store_true', default=False,
                             help='create a folder of legacy-style files for each molecule and command')
+
+        parser.add_argument("--legacy-output", action='store_true', default=False,
+                            help='print the old csm format, for a single molecule+command only')
+        parser.add_argument('--json-output', action='store_true', default=False,
+                            help='Print output in json format to a file. Only relevant with --legacy-output')
+
         parser.add_argument("--simple", action='store_true', default=False,
                             help='only output is CSM to screen')
-        parser.add_argument("--overwrite", action='store_true', default=False,
-                            help="overwrite results folder if exists (rather than adding timestamp)")
 
     def shared_calc_utility_func(parser):
         parser.add_argument('symmetry',
@@ -148,8 +155,6 @@ def _create_parser():
                                    "\texact c3")
     command_args.add_argument('--old-cmd', action='store_true', default=False,
                               help="the old format with csm sym __INPUT__ __OUTPUT__ --approx etc")
-    command_args.add_argument("--verbose", action='store_true', default=False,
-                              help='create a fixed width spreadsheet of information about each direction for ann approx commands')
     add_input_output_utility_func(commands_args_)
 
     # READ
@@ -183,8 +188,6 @@ def _create_parser():
                             help='Compute exact CSM for a single permutation, default is current directory/perm.txt')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
-    exact_args.add_argument('--output-branches', action='store_true', default=False,
-                            help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-perms', const="DEFAULT", nargs='?',
                             help='Writes all enumerated permutations to file. Default is OUTPUT_DIR/perms.csv, or working directory/perms.csv is --output not selected')
     shared_normalization_utility_func(exact_args)
@@ -198,13 +201,13 @@ def _create_parser():
     shared_calc_utility_func(approx_args)
     # choosing dir:
     approx_args.add_argument('--detect-outliers', action='store_true', default=False,
-                             help="Use outlier detection to improve guesses for initial directions in approx algorithm")
+                             help="Use outlier detection to improve guesses for initial directions in approx algorithm. Only activated for more than 10 equivalence groups.")
     approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
                              help="Don't add orthogonal directions to calculated directions")
+    approx_args.add_argument('--use-best-dir', action='store_true', default=False,
+                             help='Only use the best direction (ignored if --fibonacii is used)')
     approx_args.add_argument('--fibonacci', type=int,
                              help="Use fibonacci sphere to generate N starting directions")
-    approx_args.add_argument('--use-best-dir', action='store_true', default=False,
-                             help='Only use the best direction')
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
     # algorithm choice
@@ -222,10 +225,6 @@ def _create_parser():
     approx_args.add_argument('--parallel-dirs', type=int, const=0, nargs='?',
                              help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used. Cannot be used with --parallel')
     # outputs
-    approx_args.add_argument("--verbose", action='store_true', default=False,
-                             help='create a fixed width spreadsheet of information about each direction')
-    approx_args.add_argument('--polar', action='store_true', default=False,
-                             help="Print polar coordinates instead of cartesian coordinates in statistics")
     approx_args.add_argument('--print-approx', action='store_true', default=False,
                              help='print log to screen from approx')
     shared_normalization_utility_func(approx_args)
@@ -239,9 +238,9 @@ def _create_parser():
     shared_calc_utility_func(trivial_args)
     # this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
     # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
-    trivial_args.add_argument('--permute-chains', action='store_true', default=False,
-                              help="Permute the chains before calculating trivial calculation. "
-                                   "Will automatically activate --use-chains, and is automatically activated if --use-chains is provided")
+    trivial_args.add_argument('--dont-permute-chains', action='store_true', default=False,
+                              help="By default trivial activates --use-chains, which then runs the trivial calculation on each possible chain permutation"
+                                   "this flag overrides this behavior, so that trivial is performed only on the unchanged (1...n) chain permutation")
     shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
@@ -311,9 +310,6 @@ def _process_arguments(parse_res):
             if parse_res.command == 'exact':
                 if parse_res.use_perm:
                     dictionary_args['perm_file_name'] = parse_res.use_perm
-                dictionary_args['print_branches'] = parse_res.output_branches
-                permuters.print_branches = parse_res.output_branches
-
                 dictionary_args['perms_csv_name'] = parse_res.output_perms
                 if parse_res.output_perms == "DEFAULT":
                     try:
@@ -350,8 +346,10 @@ def _process_arguments(parse_res):
                 # dictionary_args['print_approx'] = parse_res.print_approx
                 # dictionary_args['polar'] = parse_res.polar
             if parse_res.command == 'trivial':
-                if parse_res.permute_chains or parse_res.use_chains:
-                    dictionary_args["use_chains"] = True
+                dictionary_args["use_chains"] = True
+                if parse_res.dont_permute_chains:
+                    dictionary_args["use_chains"] = False
+
 
     try:
         timestamp = str(parse_res.timestamp)

@@ -130,7 +130,7 @@ class LegacyFormatWriter:
 class MoleculeWriter:
     def __init__(self, molecule_wrapper):
         self.molecule_wrapper = molecule_wrapper
-        self.format = molecule_wrapper.molecule.metadata.format
+        self.format = molecule_wrapper.molecule.metadata.out_format
         self.write_molecule = self._write_obm_molecule
         if self.format == "csm":
             self.write_molecule = self._write_csm_molecule
@@ -140,8 +140,11 @@ class MoleculeWriter:
             return
         self.write_molecule(f, result.symmetric_structure, consecutive, model_number)
 
-    def write_original(self, f, result, consecutive=False, model_number=None):
-        self.write_molecule(f, result.molecule.atoms, consecutive, model_number)
+    def write_original(self, f, result, consecutive=False, model_number=None, print_denorm=False):
+        if print_denorm:
+            self.write_molecule(f, result.molecule.atoms, consecutive, model_number)
+        else:
+            self.write_molecule(f, result.normalized_molecule_coords, consecutive, model_number)
 
     def _write_csm_molecule(self, f, coordinates, *args, **kwargs):
         size = len(coordinates)
@@ -482,6 +485,7 @@ class ScriptContextWriter(ContextWriter):
     def __init__(self, commands, out_format,
                  out_file_name=None,
                  polar=False, verbose=False, print_local=False, argument_string="",
+                 print_denorm=False,
                  legacy_files=False, **kwargs):
         super().__init__(commands, out_format, out_file_name)
         self.molecule_index = 0  # used for writing pdb files
@@ -492,6 +496,7 @@ class ScriptContextWriter(ContextWriter):
             self.folder = os.path.join(os.getcwd(), "csm_results")
         self.polar = polar
         self.print_local = print_local
+        self.print_denorm=print_denorm
         self.argument_string = argument_string
         self.create_legacy_files = legacy_files
         self.init_files()
@@ -584,7 +589,7 @@ class ScriptContextWriter(ContextWriter):
         molecule_wrapper = MoleculeWrapper(mol_results[0], self.molecule_index)
         molecule_wrapper.set_symmetric_title(symmetric=False)
         mw = MoleculeWriter(molecule_wrapper)
-        mw.write_original(file, molecule_wrapper.result, consecutive=True,
+        mw.write_original(file, molecule_wrapper.result, consecutive=True, print_denorm=self.print_denorm,
                           model_number=self.molecule_index + 1)
 
     def write_symmetric_mols(self, mol_results):
