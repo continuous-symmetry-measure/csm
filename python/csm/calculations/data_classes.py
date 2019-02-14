@@ -116,7 +116,12 @@ class Operation:
         return o
 
 
-class CSMResult:
+class Result:
+    def __repr__(self):
+        return_string="{} CSM: {} Molecule: {}".format(self.__class__.__name__, self.csm, self.molecule.metadata.appellation())
+        return return_string
+
+class CSMResult(Result):
     def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
         self.failed = False
         self.skipped = False
@@ -332,7 +337,7 @@ class CSMResult:
         return result
 
 
-class FailedResult:
+class FailedResult(Result):
     def __init__(self, failed_reason, molecule, skipped=False, **kwargs):
         self.failed = True
         self.failed_reason = failed_reason
@@ -360,3 +365,6 @@ class FailedResult:
         }
 
         self.ongoing_statistics = {}
+
+    def __repr__(self):
+        return super(FailedResult, self).__repr__()+"\tFailure: "+self.failed_reason
