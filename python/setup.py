@@ -4,6 +4,7 @@ from Cython.Build import cythonize
 import sys
 import numpy
 import os
+import re
 from setuptools.command.build_ext import build_ext as _build_ext
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
