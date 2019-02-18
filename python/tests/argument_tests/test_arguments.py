@@ -22,7 +22,10 @@ class TestBasic(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    shutil.rmtree(results_folder)
+    try:
+        shutil.rmtree(results_folder)
+    except FileNotFoundError:
+        pass 
     os.mkdir(results_folder)
 
     def run_args(self, args_str):
