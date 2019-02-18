@@ -526,8 +526,13 @@ class ScriptContextWriter(ContextWriter):
         format_string = molecule_format + "%-10s%-10s\n"
         self.perm_file.write(format_string % ("#Molecule", "#Command", "#Permutation"))
 
-        self.initial_mols_file = open(os.path.join(self.folder, "initial_normalized_coordinates." + self.out_format),
+        self.initial_normalized_file = open(os.path.join(self.folder, "initial_normalized_coordinates." + self.out_format),
                                       'w')
+        if self.print_denorm:
+            self.initial_denormalized_file=open(os.path.join(self.folder, "initial_denormalized_coordinates." + self.out_format),
+                                      'w')
+        else:
+            self.initial_denormalized_file = None
         self.symmetric_mols_file = open(os.path.join(self.folder, "resulting_symmetric_coordinates." + self.out_format),
                                         'w')
 
@@ -553,7 +558,9 @@ class ScriptContextWriter(ContextWriter):
         self.csm_file.close()
         self.dir_file.close()
         self.perm_file.close()
-        self.initial_mols_file.close()
+        self.initial_normalized_file.close()
+        if self.initial_denormalized_file:
+            self.initial_denormalized_file.close()
         self.symmetric_mols_file.close()
         self.extra_file.close()
 
@@ -585,12 +592,15 @@ class ScriptContextWriter(ContextWriter):
             f.write("\n")
 
     def write_initial_mols(self, mol_results):
-        file = self.initial_mols_file
+
         molecule_wrapper = MoleculeWrapper(mol_results[0], self.molecule_index)
         molecule_wrapper.set_symmetric_title(symmetric=False)
         mw = MoleculeWriter(molecule_wrapper)
-        mw.write_original(file, molecule_wrapper.result, consecutive=True, print_denorm=self.print_denorm,
-                          model_number=self.molecule_index + 1)
+        file = self.initial_normalized_file
+        mw.write_original(file, molecule_wrapper.result, consecutive=True, model_number=self.molecule_index + 1)
+        if self.initial_denormalized_file:
+            mw.write_original(self.initial_denormalized_file, molecule_wrapper.result, consecutive=True,
+                              print_denorm=True, model_number=self.molecule_index + 1)
 
     def write_symmetric_mols(self, mol_results):
         file = self.symmetric_mols_file
@@ -718,7 +728,7 @@ class ScriptContextWriter(ContextWriter):
         try:
             if self.out_format == "pdb":
                 self.symmetric_mols_file.write("\nEND")
-                self.initial_mols_file.write("\nEND")
+                self.initial_normalized_file.write("\nEND")
         except:  # no matter what, must close files
             pass
         self.close_files()
