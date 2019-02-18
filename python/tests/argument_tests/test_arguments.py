@@ -10,131 +10,9 @@ import shutil
 
 from csm.main.csm_run import csm_run
 
-
-class Runner:
-    def run_args(self, args_str):
-        args = args_str.split()
-        results_arr = csm_run(args)
-        result = results_arr[0][0]
-        assert result.csm is not None
-
-
-class xTestExact(Runner):
-    def xtest_plain(self):
-        self.run_args(
-            r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt")
-
-    @pytest.mark.parametrize("run_str", [
-        r"exact ch --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --sn-max 6",
-        r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2RLA-3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --remove-hy",
-        r"exact c3 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --use-mass",
-        r"exact s8 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --ignore-sym",
-        r"exact s6 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --read-fragments",
-        r"exact s2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2RLA-3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --use-sequence",
-        r"exact ci --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --use-chains",
-        r"exact c4 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --babel-bond",
-    ])
-    def xtest_input_args(self, run_str):
-        self.run_args(run_str)
-
-    def xtest_exact_args(self):
-        self.run_args(
-            r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --keep-structure")
-
-    @pytest.mark.parametrize("run_str",
-                             [
-                                 r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --print-denorm --legacy",
-                                 r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --output-branches --legacy",
-                                 r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --output-perms perms.csv --legacy",
-                                 r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --print-local --legacy",
-                                 r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --json-output --legacy",
-                                 r"exact c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt --simple",
-                             ])
-    def xtest_output_args(self, run_str):
-        self.run_args(run_str)
-
-
-class xTestApprox(Runner):
-    def xtest_plain(self):
-        self.run_args(
-            r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt ")
-        self.run_args(
-            r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --print-approx")
-
-    @pytest.mark.parametrize("run_str",
-                             [
-
-                                 r"approx ch --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --sn-max 6",
-                                 r"approx ci --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --use-chains",
-                                 r"approx s2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --use-sequence",
-                                 r"approx s6 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --read-fragments",
-
-                             ])
-    def xtest_input_args(self, run_str):
-        self.run_args(run_str)
-
-    @pytest.mark.parametrize("run_str",
-                             [
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --detect-outliers",
-                                 r"approx c3 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --no-orthogonal",
-                                 r"approx c5 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --detect-outliers --no-orthogonal",
-                                 r"approx cs --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --fibonacci 20 --parallel 2",
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --use-best-dir",
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --many-chains",
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --greedy",
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --fibonacci 20 --selective 3",
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\csm_testoutput.txt  --polar",
-                             ])
-    def xtest_approx_args(self, run_str):
-        self.run_args(run_str)
-
-    @pytest.mark.parametrize("run_str",
-                             [
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\approx --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\multi  --use-best-dir",
-                                 r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\approx --output C:\Users\devora\Sources\temp\csm_argument_tests\approx\multi  --fibonacci 3",
-                             ])
-    def xtest_multi_mols(self, run_str):
-        self.run_args(run_str)
-
-    def xtest_output_args(self):
-        self.run_args(
-            r"approx c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --json-output --legacy")
-
-
-class xTestTrivial(Runner):
-    def xtest_plain(self):
-        self.run_args(
-            r"trivial c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\just-one-mol.mol --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt ")
-
-    @pytest.mark.parametrize("run_str", [
-
-        r"trivial ch --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --sn-max 6",
-        r"trivial c4 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --babel-bond",
-        r"trivial ci --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --use-chains",
-        r"trivial s2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --use-sequence",
-        r"trivial s6 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests\2m7w-q3.pdb --output C:\Users\devora\Sources\temp\csm_argument_tests\csm_testoutput.txt  --read-fragments",
-    ])
-    def xtest_input_args(self, run_str):
-        self.run_args(run_str)
-
-    @pytest.mark.parametrize("run_str", [
-
-        r"trivial ch --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --sn-max 6",
-        r"trivial c4 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --babel-bond",
-        r"trivial ci --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --use-chains",
-        r"trivial s2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --use-sequence",
-        r"trivial s6 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --read-fragments",
-        r"trivial c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --select-atoms 1,3,4-6",
-        r"trivial c2 --input C:\Users\devora\Sources\csm\python\tests\unit_tests\molecules_for_tests --output C:\Users\devora\Sources\temp\csm_argument_tests\multi_molecules  --select-mols 1,2",
-
-    ])
-    def xtest_multiple_mols(self, run_str):
-        self.run_args(run_str)
-
-
 class RunThings():
-    def run_args(self, args_str):
-        args_str += " --output csm_tests --overwrite"
+    def _run_args(self, args_str, results_folder):
+        args_str += " --output {} --overwrite".format(results_folder)
         args = args_str.split()
         results_arr = csm_run(args)
         return results_arr
@@ -143,21 +21,15 @@ class RunThings():
 class TestBasic(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
-    shutil.rmtree("csm_tests")
-    os.mkdir("csm_tests")
+    results_folder = "csm_tests"
+    shutil.rmtree(results_folder)
+    os.mkdir(results_folder)
 
-    # an option that is too complicated to test and will simply have to be checked by eye:
-    # 1. the default of writing results to a file with a timestamp (rather than with overwrite)
-    # 2. --pipe
-    # options that are difficult to test that they're working as expected:
-    # 3. --parallel
-    # 4. --parallel-approx
-    # 5. print-approx
-    # 6. simple
-    # 7. timeout, global-timeout
+    def run_args(self, args_str):
+        return super()._run_args(args_str, self.results_folder)
 
     # input
-    def xtest_connect(self):
+    def test_connect(self):
         # --connect reads xyz connectivity file, default connectivity.txt
 
         # baseline:
@@ -175,7 +47,7 @@ class TestBasic(RunThings):
         results = self.run_args(cmd)
         assert len(results[0][0].molecule.bondset) == 40
 
-    def xtest_remove_hy(self):
+    def test_remove_hy(self):
         # --remove-hy removes hy. can't be used with select-atoms
 
         # baseline:
@@ -188,18 +60,18 @@ class TestBasic(RunThings):
         assert len(results[0][0].molecule) == 18
 
         # test output
-        with open("csm_tests\\resulting_symmetric_coordinates.mol", 'r') as file:
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
             file.readline()
             file.readline()  # skip the openbabel line, which changes every time
             output_str = file.read()
-        with open("removehyexpected.mol", 'r') as file:
+        with open(os.path.join("expected", "removehyexpected.mol"), 'r') as file:
             file.readline()
             file.readline()  # skip the openbabel line, which changes every time
             expected_str = file.read()
 
         assert expected_str == output_str
 
-    def xtest_select_atoms(self):
+    def test_select_atoms(self):
         # --select-atoms removes sepcific atoms. cannot be used in conjunction with remove-hy
         # baseline:
         # cmd="exact c2 --input 4-helicene.mol --keep-structure"
@@ -211,18 +83,18 @@ class TestBasic(RunThings):
         assert len(results[0][0].molecule) == 7
 
         # test output
-        with open("csm_tests\\resulting_symmetric_coordinates.mol", 'r') as file:
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
             file.readline()
             file.readline()  # skip the openbabel line, which changes every time
             output_str = file.read()
-        with open("selectatomsexpected.mol", 'r') as file:
+        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
             file.readline()
             file.readline()  # skip the openbabel line, which changes every time
             expected_str = file.read()
 
         assert expected_str == output_str
 
-    def xtest_ignore_sym(self):
+    def test_ignore_sym(self):
         # --ignore-sym ignores atomic symbols
         cmd = "comfile ignore-sym/testcommand.txt --input ignore-sym"
         results = self.run_args(cmd)
@@ -233,7 +105,7 @@ class TestBasic(RunThings):
 
         # TODO add output test?
 
-    def xtest_use_mass(self):
+    def test_use_mass(self):
         # --use-mass uses atomic masses to define center of mass
         cmd = "trivial s8 --input ferrocene.xyz"
         result1 = self.run_args(cmd)
@@ -241,7 +113,7 @@ class TestBasic(RunThings):
         results = self.run_args(cmd)
         assert result1[0][0].molecule.center_of_mass != results[0][0].molecule.center_of_mass
 
-    def xtest_babel_bond(self):
+    def test_babel_bond(self):
         # --babel-bond computes bonding
         cmd = "trivial ch --input ferrocene.xyz"
         result1 = self.run_args(cmd)
@@ -249,95 +121,108 @@ class TestBasic(RunThings):
         results = self.run_args(cmd)
         assert len(result1[0][0].molecule.bondset) != len(results[0][0].molecule.bondset)
 
-    def xtest_use_sequence(self):
+    def test_use_sequence(self):
         # --use-sequence creates equivalence class based on sequence
         cmd = "approx c2 --use-sequence --input lig-4kem.pdb"
         result = self.run_args(cmd)
         assert result[0][0].csm == pytest.approx(0.0062574, abs=1e-5)
 
-    def todo_test_read_fragments(self):
-        # --read-fragments reads from .mol, .pdb as chains
-        assert False
-
-    def xtest_select_mols(self):
+    def test_select_mols(self):
         # --select-mols when given a folder or multi-mol file
-        #folder:
+        # folder:
         cmd = "trivial c2 --input ignore-sym"
         results = self.run_args(cmd)
-        assert len(results) ==4
+        assert len(results) == 4
 
         cmd = "trivial c2 --input ignore-sym --select-mols 1,3-4"
         results = self.run_args(cmd)
-        assert len(results) ==3
+        assert len(results) == 3
 
-        #file:
+        # file:
         cmd = "trivial c2 --input squarate.xyz"
         results = self.run_args(cmd)
-        assert len(results) ==5
+        assert len(results) == 5
 
         cmd = "trivial c2 --input squarate.xyz --select-mols 1,3-4"
         results = self.run_args(cmd)
-        assert len(results) ==3
+        assert len(results) == 3
 
-        #TODO: output tests
-
+        # TODO: output tests
 
     # output
-    def xtest_legacy(self):
+    def test_legacy(self):
         # --legacy-output prints old style csm format
-        cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output csm_tests/legacy.txt"
+        cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.txt".format(
+            self.results_folder)
         csm_run(cmd.split())
-        with open("csm_tests\legacy.txt", 'r') as ofile:
+        with open(os.path.join(self.results_folder, "legacy.txt"), 'r') as ofile:
             out = ofile.read()
-        with open("legacy.txt", 'r') as ofile:
+        with open(os.path.join("expected", "legacy.txt"), 'r') as ofile:
             exp = ofile.read()
         assert out == exp
 
-    def xtest_json_output(self):
+    def test_json_output(self):
         # --json-output. only works with --legacy-output
-        cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output csm_tests/legacy.json --json-output"
+        cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.json --json-output".format(
+            self.results_folder)
         csm_run(cmd.split())
-        with open("csm_tests\legacy.json", 'r') as ofile:
+        with open(os.path.join(self.results_folder, "legacy.json"), 'r') as ofile:
             out = ofile.read()
-        with open("legacy.json", 'r') as ofile:
+        with open(os.path.join("expected", "legacy.json"), 'r') as ofile:
             exp = ofile.read()
         assert out == exp
 
-    def xtest_print_denorm(self):
+    def test_print_denorm(self):
         # --print-denorm prints denormalized coordinates for original molecule instead of normalized
         cmd = "exact c2 --input squarate.xyz --select-mols 1 --print-denorm"
         self.run_args(cmd)
-        with open("csm_tests/initial_normalized_coordinates.xyz", "r") as file:
+        with open(os.path.join(self.results_folder, "initial_normalized_coordinates.xyz"), "r") as file:
             output2 = file.read()
 
         cmd = "exact c2 --input squarate.xyz --select-mols 1"
         self.run_args(cmd)
-        with open("csm_tests/initial_normalized_coordinates.xyz", "r") as file:
+        with open(os.path.join(self.results_folder, "initial_denormalized_coordinates.xyz"), "r") as file:
             output1 = file.read()
 
         assert output1 != output2
 
-    def todo_test_legacy_files(self):
+    def test_legacy_files(self):
         cmd = "exact c2 --input squarate.xyz --legacy-files"
-
+        self.run_args(cmd)
         # --legacy-files toggles whether we create a folder of legacy files or not
-        assert False
+        output_path = os.path.join(self.results_folder, "old-csm-output")
+        assert os.path.isdir(output_path)
+        with open(os.path.join(output_path, "0001_L01_c2.xyz"), "r") as file:
+            out = file.read()
+        with open(os.path.join("expected", "example-legacy-file.xyz"), "r") as file:
+            exp = file.read()
+        assert out == exp
 
-    def todo_test_verbose(self):
+    def test_verbose(self):
         # verbose-- approx only
-        assert False
+        cmd = "approx c2 --input squarate.xyz --verbose"
+        self.run_args(cmd)
+        output_path = os.path.join(self.results_folder, "approx")
+        assert os.path.isdir(output_path)
+        # todo: because the output contains a variable runtime, running a comparison is a bit tedious, leaving it for now
 
     # shared stuff
 
-    def todo_test_sn_max(self):
+    def test_sn_max(self):
         # --sn-max (relevant only for chirality)
-        assert False
+        cmd = "exact ch --input bis(dth)copper(I).mol"
+        result1 = self.run_args(cmd)
+        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2"
+        result2 = self.run_args(cmd)
+        assert result1[0][0].op_type == 'SN' and result1[0][0].op_order == 4
+        assert result2[0][0].op_type == 'CS' and result2[0][0].op_order == 2
 
-    def todo_test_normalize(self):
-        # --normalize
-        assert False
+    def test_normalize(self):
+        cmd = "approx c3 --fibonacci 1 --read-fragments --input reading-fragments\water-6.mol --normalize 0 1 2 3 4 5 6"
+        results = self.run_args(cmd)
+        hi = 1
 
-    def xtest_format(self):
+    def test_format(self):
         # --in-format
         cmd = "exact cs --input 4-helicene.ttxt --keep-structure --in-format mol"
         results = self.run_args(cmd)
@@ -345,32 +230,42 @@ class TestBasic(RunThings):
         # --out-format
         cmd = "exact cs --input 4-helicene.mol --keep-structure --out-format bs"
         results = self.run_args(cmd)
-        with open("csm_tests/resulting_symmetric_coordinates.bs", 'r') as ofile:
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.bs"), 'r') as ofile:
             out = ofile.read()
-        with open("testformatout.bs", 'r') as efile:
+        with open(os.path.join("expected", "testformatout.bs"), 'r') as efile:
             exp = efile.read()
         assert out == exp
 
-    def todo_test_old_cmd(self):
+    # comfile
+
+    def test_old_cmd(self):
         # old-cmd in comfile
-        assert False
+        cmd = "comfile comfile.txt --input reading-fragments"
+        results1 = self.run_args(cmd)
+        cmd = "comfile oldcomfile.txt --input reading-fragments --old-cmd"
+        results2 = self.run_args(cmd)
+        for r1, r2 in zip(results1, results2):
+            for rr1, rr2 in zip(r1, r2):
+                print(rr1.csm, rr2.csm)
+                print(round(rr1.csm), round(rr2.csm))
+                assert round(rr1.csm, 5) == round(rr2.csm, 5)
 
     # exact
-    def xtest_use_perm(self):
+    def test_use_perm(self):
         cmd = "exact c4 --input squarate.xyz --use-perm squarateperm.txt"
         results = self.run_args(cmd)
         assert results[0][0].perm == [0, 1, 2, 3, 4, 5, 6, 7]
 
-    def xtest_keep_structure(self):
+    def test_keep_structure(self):
         cmd = "exact cs --input 4-helicene.mol --keep-structure"
         results = self.run_args(cmd)
         assert results[0][0].csm == pytest.approx(0.793551, abs=1e-5)
 
-    def xtest_output_perms(self):
-        cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms csm_tests/perms.csv"
+    def test_output_perms(self):
+        cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms {}/perms.csv".format(self.results_folder)
         self.run_args(cmd)
         out_rows = []
-        with open("csm_tests/perms.csv", 'r') as file:
+        with open(os.path.join(self.results_folder, "perms.csv"), 'r') as file:
             reader = csv.reader(file)
             for row in reader:
                 out_rows.append(row)
@@ -385,24 +280,37 @@ class TestBasic(RunThings):
         ]
 
     # approx
-    def xtest_use_chains(self):
+    def test_use_chains(self):
         cmd = "approx c3 --input 2rla-s3.pdb --use-chains"
         results = self.run_args(cmd)
-        assert len(results[0][0].molecule.chains)==3
+        assert len(results[0][0].molecule.chains) == 3
         cmd = "approx c3 --input 2rla-s3.pdb"
         results = self.run_args(cmd)
-        assert len(results[0][0].molecule.chains)==1
+        assert len(results[0][0].molecule.chains) == 1
 
-    def todo_test_directions(self):
+    def test_selective(self):
+        cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 50 --selective 3"
+        results = self.run_args(cmd)
+
+    def test_dont_permute_chains(self):
+        cmd = "trivial c3 --input 2rla-s3.pdb"
+        results1 = self.run_args(cmd)
+        assert results1[0][0].csm == pytest.approx(0.009663, abs=1e-5)
+        # dont-permute-chains-- deactivate use-chains
+        cmd = "trivial c3 --input 2rla-s3.pdb --dont-permute-chains"
+        results2 = self.run_args(cmd)
+        assert results2[0][0].csm == pytest.approx(49.078986, abs=1e-5)
+
+    def test_directions(self):
         # TODO: refine detect-outliers test
         # default
-        cmd = "approx c3 --input crown21.xyz --connect crown21connectivity.txt"
+        cmd = "approx c3 --input 3alb-gkt4-h.pdb"
         results = self.run_args(cmd)
-        test1 = [item['dir'] for item in results[0][0].ongoing_statistics['approx']]
+        assert len(results[0][0].ongoing_statistics['approx']) == 9
         # detect-outliers
-        cmd = "approx c3 --input crown21.xyz --connect crown21connectivity.txt --detect-outliers"
+        cmd = "approx c3 --input 3alb-gkt4-h.pdb --detect-outliers"
         results = self.run_args(cmd)
-        test2 = [item['dir'] for item in results[0][0].ongoing_statistics['approx']]
+        assert len(results[0][0].ongoing_statistics['approx']) == 18
         # no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --no-orthogonal"
         results = self.run_args(cmd)
@@ -424,33 +332,93 @@ class TestBasic(RunThings):
         results = self.run_args(cmd)
         assert len(results[0][0].ongoing_statistics['approx']) == 1
 
-    def todo_test_algorithms(self):
+    def test_algorithms(self):
         # default
         cmd = "approx c3 --input 2rla-s3.pdb"
         results = self.run_args(cmd)
-        print("!!!!!!!!!!", results[0][0].csm)
+        assert round(results[0][0].csm, 6) == 0.009663
+        stats1 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
         # greedy
         cmd = "approx c3 --input 2rla-s3.pdb --greedy"
         results = self.run_args(cmd)
-        print("!!!!!!!!!!", results[0][0].csm)
+        assert round(results[0][0].csm, 6) == 0.009663
+        stats2 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
         # many-chains
-        cmd = "approx c3 --input 4a5k-467.pdb --many-chains"
+        cmd = "approx c3 --input 2rla-s3.pdb --many-chains"
         results = self.run_args(cmd)
-        print("!!!!!!!!!!", results[0][0].csm)
+        assert round(results[0][0].csm, 6) == 0.009663
+        stats3 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
         # keep-structure
         cmd = "approx c3 --input 2rla-s3.pdb --keep-structure"
         results = self.run_args(cmd)
-        print("!!!!!!!!!!", results[0][0].csm)
+        assert round(results[0][0].csm, 6) == 0.009663
+        stats4 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
 
-    def xtest_selective(self):
-        cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 50 --selective 3"
-        results = self.run_args(cmd)
+        test = set([stats1, stats2, stats3, stats4])
+        assert len(test) == 4
 
-    def xtest_dont_permute_chains(self):
-        cmd = "trivial c3 --input 2rla-s3.pdb"
-        results1 = self.run_args(cmd)
-        assert results1[0][0].csm == pytest.approx(0.009663, abs=1e-5)
-        # dont-permute-chains-- deactivate use-chains
-        cmd = "trivial c3 --input 2rla-s3.pdb --dont-permute-chains"
-        results2 = self.run_args(cmd)
-        assert results2[0][0].csm == pytest.approx(49.078986, abs=1e-5)
+
+class TestFragments(RunThings):
+    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
+    os.chdir(test_dir)
+    results_folder = "csm_tests"
+    shutil.rmtree(results_folder)
+    os.mkdir(results_folder)
+
+    def run_args(self, args_str):
+        return super()._run_args(args_str, self.results_folder)
+
+    def test_read_fragments_baseline(self):
+        # --read-fragments reads from .mol, .pdb as chains
+        filenames = ["model-endmdl-withIDS.pdb",
+                     "model-endmdl-withoutIDS.pdb",
+                     "water-6.mol",
+                     "water-6.pdb"]
+
+        for filename in filenames:
+            cmd = "approx c3 --fibonacci 1 --input reading-fragments"
+            cmd += "\\" + filename
+            results = self.run_args(cmd)
+            print(cmd, len(results[0][0].molecule.chains))
+            assert len(results[0][0].molecule.chains) == 1
+
+    def test_read_fragments_with_read_fragments(self):
+        # --read-fragments reads from .mol, .pdb as chains
+        filenames = [
+            "model-endmdl-withIDS.pdb",
+            "model-endmdl-withoutIDS.pdb",
+            "water-6.mol",
+            "water-6.pdb"]
+        for filename in filenames:
+            cmd = "approx c3 --fibonacci 1 --read-fragments --input reading-fragments"
+            cmd += "\\" + filename
+            results = self.run_args(cmd)
+            print(cmd)
+            assert len(results[0][0].molecule.chains) == 6
+
+    def test_read_fragments_with_read_fragments_and_use_chain(self):
+        # --read-fragments reads from .mol, .pdb as chains
+        filenames = ["model-endmdl-withIDS.pdb",
+                     "model-endmdl-withoutIDS.pdb",
+                     "water-6.mol",
+                     "water-6.pdb"]
+        for filename in filenames:
+            cmd = "approx c3 --fibonacci 1 --read-fragments --use-chains --input reading-fragments"
+            cmd += "\\" + filename
+            results = self.run_args(cmd)
+            print(cmd)
+            assert len(results[0][0].molecule.chains) == 6
+
+
+class xTestComplicated(RunThings):
+    def __init__(self):
+        # an option that is too complicated to test and will simply have to be checked by eye:
+        # 1. the default of writing results to a file with a timestamp (rather than with overwrite)
+        # 2. --pipe
+        # options that are difficult to test that they're working as expected:
+        # 3. --parallel
+        # 4. --parallel-approx
+        # 5. print-approx
+        # 6. simple
+        # 7. timeout, global-timeout
+        pass
