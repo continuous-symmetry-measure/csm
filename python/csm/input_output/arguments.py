@@ -238,9 +238,8 @@ def _create_parser():
     shared_calc_utility_func(trivial_args)
     # this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
     # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
-    trivial_args.add_argument('--dont-permute-chains', action='store_true', default=False,
-                              help="By default trivial activates --use-chains, which then runs the trivial calculation on each possible chain permutation"
-                                   "this flag overrides this behavior, so that trivial is performed only on the unchanged (1...n) chain permutation")
+    trivial_args.add_argument('--permute-chains', action='store_true', default=False,
+                              help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")
     shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
@@ -271,7 +270,8 @@ def _process_arguments(parse_res):
         dictionary_args["conn_file"] = parse_res.connect
         if parse_res.read_fragments:
             dictionary_args['use_chains'] = True
-            logger.warning("Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
+            logger.warning(
+                "Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
         dictionary_args['select_atoms'] = _parse_ranges_and_numbers(parse_res.select_atoms)
@@ -346,10 +346,8 @@ def _process_arguments(parse_res):
                 # dictionary_args['print_approx'] = parse_res.print_approx
                 # dictionary_args['polar'] = parse_res.polar
             if parse_res.command == 'trivial':
-                dictionary_args["use_chains"] = True
-                if parse_res.dont_permute_chains:
-                    dictionary_args["use_chains"] = False
-
+                if parse_res.permute_chains:
+                    dictionary_args["use_chains"] = True
 
     try:
         timestamp = str(parse_res.timestamp)

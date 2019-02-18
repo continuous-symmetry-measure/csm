@@ -295,14 +295,14 @@ class TestBasic(RunThings):
         cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 50 --selective 3"
         results = self.run_args(cmd)
 
-    def test_dont_permute_chains(self):
+    def test_permute_chains(self):
         cmd = "trivial c3 --input 2rla-s3.pdb"
         results1 = self.run_args(cmd)
-        assert results1[0][0].csm == pytest.approx(0.009663, abs=1e-5)
-        # dont-permute-chains-- deactivate use-chains
-        cmd = "trivial c3 --input 2rla-s3.pdb --dont-permute-chains"
+        assert results1[0][0].csm == pytest.approx(49.078986, abs=1e-5)
+
+        cmd = "trivial c3 --input 2rla-s3.pdb --permute-chains"
         results2 = self.run_args(cmd)
-        assert results2[0][0].csm == pytest.approx(49.078986, abs=1e-5)
+        assert results2[0][0].csm == pytest.approx(0.009663, abs=1e-5)
 
     def test_directions(self):
         # TODO: refine detect-outliers test
