@@ -1,5 +1,0 @@
-#Molecule           L01_c2    
-BF3.mol             0.3511    
-BF3.xyz             0.3511    
-BFClH.mol           0.3511    
-BFClH.xyz           0.3511    

@@ -1,2 +1,0 @@
-#Molecule           L01_s6    
-2a10-agi6.pdb       0.5060    

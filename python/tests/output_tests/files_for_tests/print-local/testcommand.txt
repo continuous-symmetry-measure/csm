@@ -1,1 +1,0 @@
-comfile cmd.txt --input --output __OUTPUT__ --print-local

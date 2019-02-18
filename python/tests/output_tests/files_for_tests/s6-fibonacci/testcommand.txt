@@ -1,1 +1,0 @@
-approx s6 --input 2a10-agi6.pdb --fibonacci 50 --output __OUTPUT__

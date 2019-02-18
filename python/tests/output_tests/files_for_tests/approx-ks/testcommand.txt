@@ -1,1 +1,0 @@
-approx c2 --input ferrocene.xyz --keep-structure --connect connectivity.txt --output __OUTPUT__

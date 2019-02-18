@@ -1,5 +1,0 @@
-exact c2 
-exact c3 
-exact cs 
-exact s4 
-exact ch 

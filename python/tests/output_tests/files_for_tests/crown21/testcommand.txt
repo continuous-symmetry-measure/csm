@@ -1,1 +1,0 @@
-approx c7 --input crown21.xyz --keep-structure   --connect connectivity.txt --detect-outliers --output __OUTPUT__

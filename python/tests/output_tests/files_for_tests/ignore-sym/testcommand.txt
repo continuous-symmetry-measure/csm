@@ -1,3 +1,0 @@
-exact c2 --input --output __OUTPUT__ --ignore-sym
-
-  

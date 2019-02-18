@@ -1,5 +1,0 @@
-#Molecule           #Command           X         Y         Z
-BF3.mol                 L01_c2    0.4958   -0.8684    0.0000
-BF3.xyz                 L01_c2    0.4958   -0.8684    0.0000
-BFClH.mol               L01_c2    0.4958   -0.8684    0.0000
-BFClH.xyz               L01_c2    0.4958   -0.8684    0.0000

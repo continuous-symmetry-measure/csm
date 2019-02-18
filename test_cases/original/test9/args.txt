@@ -1,1 +1,0 @@
-c3 h2o2.xyz --removeHy

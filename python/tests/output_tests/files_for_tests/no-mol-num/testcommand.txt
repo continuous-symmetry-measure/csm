@@ -1,1 +1,0 @@
-comfile cmd.txt --input crown12.xyz --output __OUTPUT__

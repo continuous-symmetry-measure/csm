@@ -1,2 +1,0 @@
-exact  c2 --connect connectivity.txt  --keep-structure  
-approx c2 --connect connectivity.txt  --keep-structure --timeout 600 
