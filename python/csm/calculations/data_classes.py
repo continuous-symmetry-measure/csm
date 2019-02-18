@@ -107,8 +107,10 @@ class Operation:
 
 class Result:
     def __repr__(self):
-        return_string="{} CSM: {} Molecule: {}".format(self.__class__.__name__, self.csm, self.molecule.metadata.appellation())
+        return_string = "{} CSM: {} Molecule: {}".format(self.__class__.__name__, self.csm,
+                                                         self.molecule.metadata.appellation())
         return return_string
+
 
 class CSMResult(Result):
     def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
@@ -153,7 +155,6 @@ class CSMResult(Result):
 
         self.overall_statistics["formula CSM"] = self.formula_csm
 
-
         self.get_chain_perm_string()
 
     @property
@@ -163,7 +164,6 @@ class CSMResult(Result):
     @property
     def local_csm(self):
         return self.compute_local_csm(self.molecule.Q, self.operation, self.dir)
-
 
     def get_chain_perm_string(self):
         molecule = self.molecule
@@ -186,7 +186,7 @@ class CSMResult(Result):
             to_chain = self.molecule.chains.index_to_string(to_index)
             chain_str += from_chain + "->" + to_chain + ", "
         chain_str = chain_str[:-2]  # remove final comma and space
-        self.chain_perm_string=chain_str
+        self.chain_perm_string = chain_str
 
     def create_symmetric_structure(self, molecule_coords, perm, dir, op_type, op_order):
         # print('create_symmetric_structure called')
@@ -359,4 +359,4 @@ class FailedResult(Result):
         self.ongoing_statistics = {}
 
     def __repr__(self):
-        return super(FailedResult, self).__repr__()+"\tFailure: "+self.failed_reason
+        return super(FailedResult, self).__repr__() + "\tFailure: " + self.failed_reason

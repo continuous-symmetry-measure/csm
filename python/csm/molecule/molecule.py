@@ -102,14 +102,13 @@ class MoleculeMetaData:
                  initial_comments="", use_filename=True, out_format=None):
         self.file_content = file_content
         self.format = format
-        self._out_format=out_format
-        self.filepath=filepath
+        self._out_format = out_format
+        self.filepath = filepath
         self.babel_bond = babel_bond
         self.index = index
         self.initial_title = initial_title
         self.initial_comments = initial_comments
         self.use_filename = use_filename
-
 
     @property
     def filename(self):
@@ -928,10 +927,9 @@ class MoleculeReader:
 
         mol.metadata.format = format
         if out_format:
-            mol.metadata._out_format=out_format
+            mol.metadata._out_format = out_format
         mol.metadata.babel_bond = babel_bond
-        mol.metadata.filepath=in_file_name
-
+        mol.metadata.filepath = in_file_name
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -1007,7 +1005,7 @@ class MoleculeReader:
             else:
                 print("Warning: Input molecules have no bond information")
 
-        processed_mols=select_mols(processed_mols, kwargs)
+        processed_mols = select_mols(processed_mols, kwargs)
         return processed_mols
 
     @staticmethod

@@ -215,7 +215,7 @@ def calc(dictionary_args):
               " molecules in folder. Molecule and result summaries can be found in extra.txt and will not be printed to screen")
 
     # run the calculation, in serial
-    all_results=[]
+    all_results = []
     with context_writer(operation_array, **dictionary_args) as rw:
         for mol_index, mol_args in enumerate(total_args):
             mol_results = []
@@ -241,7 +241,6 @@ def calc(dictionary_args):
             rw.write(mol_results)
             all_results.append(mol_results)
     return all_results
-
 
 
 def run_no_return(args=[]):

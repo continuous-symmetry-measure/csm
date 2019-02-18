@@ -611,7 +611,6 @@ class ApproxCalculation(_OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
 
-
         self.operation = operation
         self._molecule = molecule
 

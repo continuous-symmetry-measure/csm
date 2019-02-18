@@ -430,6 +430,7 @@ def format_result_CSM(result):
 
 molecule_format = "%-40s"
 
+
 class ContextWriter:
     def __init__(self, commands, out_format, out_file_name=None, *args, **kwargs):
         self.commands = commands
@@ -496,7 +497,7 @@ class ScriptContextWriter(ContextWriter):
             self.folder = os.path.join(os.getcwd(), "csm_results")
         self.polar = polar
         self.print_local = print_local
-        self.print_denorm=print_denorm
+        self.print_denorm = print_denorm
         self.argument_string = argument_string
         self.create_legacy_files = legacy_files
         self.init_files()
@@ -526,11 +527,13 @@ class ScriptContextWriter(ContextWriter):
         format_string = molecule_format + "%-10s%-10s\n"
         self.perm_file.write(format_string % ("#Molecule", "#Command", "#Permutation"))
 
-        self.initial_normalized_file = open(os.path.join(self.folder, "initial_normalized_coordinates." + self.out_format),
-                                      'w')
+        self.initial_normalized_file = open(
+            os.path.join(self.folder, "initial_normalized_coordinates." + self.out_format),
+            'w')
         if self.print_denorm:
-            self.initial_denormalized_file=open(os.path.join(self.folder, "initial_denormalized_coordinates." + self.out_format),
-                                      'w')
+            self.initial_denormalized_file = open(
+                os.path.join(self.folder, "initial_denormalized_coordinates." + self.out_format),
+                'w')
         else:
             self.initial_denormalized_file = None
         self.symmetric_mols_file = open(os.path.join(self.folder, "resulting_symmetric_coordinates." + self.out_format),
@@ -739,6 +742,7 @@ class WebWriter():
     receives results in an array of arrays, like the old ScriptWriter.
     retained for web-csm
     '''
+
     def __init__(self, results, format=None, out_folder=None, context_writer=ScriptContextWriter, **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
@@ -758,17 +762,16 @@ class WebWriter():
         for result in results[0]:
             self.commands.append(result.operation)
 
-
         if kwargs.get("out_format"):
             self.format = kwargs["out_format"]
         elif kwargs.get("in_format"):
             self.format = kwargs["in_format"]
         else:
             self.format = self.results[0][0].molecule.metadata.format
-        self.folder=out_folder
+        self.folder = out_folder
         if not out_folder:
             if kwargs.get('out_file_name'):
-                self.folder=kwargs['out_file_name']
+                self.folder = kwargs['out_file_name']
             else:
                 self.folder = os.path.join(os.getcwd(), "csm_results")
         self.kwargs = kwargs
