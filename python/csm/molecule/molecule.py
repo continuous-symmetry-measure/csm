@@ -98,17 +98,22 @@ class MoleculeMetaData:
     index is set in read_multiple_molecules, or, revoltingly, in do_commands after calling redo_molecule
     '''
 
-    def __init__(self, file_content=[], format=None, filename="", babel_bond=False, index=0, initial_title="",
+    def __init__(self, file_content=[], format=None, filepath="", babel_bond=False, index=0, initial_title="",
                  initial_comments="", use_filename=True, out_format=None):
         self.file_content = file_content
         self.format = format
         self._out_format=out_format
-        self.filename = filename
+        self.filepath=filepath
         self.babel_bond = babel_bond
         self.index = index
         self.initial_title = initial_title
         self.initial_comments = initial_comments
         self.use_filename = use_filename
+
+
+    @property
+    def filename(self):
+        return os.path.basename(self.filepath)
 
     @property
     def out_format(self):
@@ -710,7 +715,7 @@ class MoleculeFactory:
                 atoms.append(atom)
 
         mol = Molecule(atoms)
-        mol._calculate_equivalency(False, False)
+        mol._calculate_equivalency()
         mol.normalize()
         return mol
 
@@ -925,7 +930,8 @@ class MoleculeReader:
         if out_format:
             mol.metadata._out_format=out_format
         mol.metadata.babel_bond = babel_bond
-        mol.metadata.filename = os.path.basename(in_file_name)
+        mol.metadata.filepath=in_file_name
+
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -1000,6 +1006,8 @@ class MoleculeReader:
                     "User input --keep-structure but input molecules have no bonds. Did you forget --babel-bond?")
             else:
                 print("Warning: Input molecules have no bond information")
+
+        processed_mols=select_mols(processed_mols, kwargs)
         return processed_mols
 
     @staticmethod
@@ -1330,10 +1338,19 @@ class MoleculeReader:
 
         kwargs.pop("in_file_name")
 
-        out_mol = MoleculeReader._process_single_molecule(out_mol, in_mol.metadata.filename, format, **kwargs)
+        out_mol = MoleculeReader._process_single_molecule(out_mol, in_mol.metadata.filepath, format, **kwargs)
         out_mol.metadata = in_mol.metadata
         out_mol.metadata.babel_bond = babel_bond
         return out_mol
+
+
+def select_mols(mols, kwargs):
+    if kwargs['select_mols']:
+        try:
+            mols = [mols[i] for i in kwargs['select_mols']]
+        except IndexError:
+            raise IndexError("You have selected more molecules than you have input")
+    return mols
 
 
 def mol_string_from_obm(obmol, format):

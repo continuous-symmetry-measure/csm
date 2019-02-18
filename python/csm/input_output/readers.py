@@ -7,7 +7,7 @@ import os
 from csm.calculations.basic_calculations import check_perm_structure_preservation, check_perm_equivalence, \
     check_perm_cycles
 from csm.input_output.formatters import csm_log as print
-from csm.molecule.molecule import MoleculeReader, Molecule
+from csm.molecule.molecule import MoleculeReader, Molecule, select_mols
 
 
 def read_molecules(**kwargs):
@@ -51,17 +51,14 @@ def read_molecules(**kwargs):
                 # else:
                 #    print(file_name, "was not read")
 
+        mols=select_mols(mols, kwargs)
+
     elif not os.path.isfile(input_name):
         raise ValueError("invalid file/folder name for molecule")
     else:  # file
         mols = MoleculeReader.multiple_from_file(**kwargs)
     sys.stderr.flush()
 
-    if kwargs['select_mols']:
-        try:
-            mols = [mols[i] for i in kwargs['select_mols']]
-        except IndexError:
-            raise IndexError("You have selected more molecules than you have input")
     return mols
 
 
