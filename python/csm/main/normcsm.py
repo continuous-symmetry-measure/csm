@@ -11,9 +11,9 @@ from csm.input_output.readers import read_from_sys_std_in
 from csm.molecule.molecule import Molecule, MoleculeFactory
 
 
-def exact_calculation(op_type, op_order, molecule, sn_max=8, keep_structure=False, perm=None, no_constraint=False,
+def exact_calculation(operation, molecule, keep_structure=False, perm=None, no_constraint=False,
                       suppress_print=False, timeout=300, *args, **kwargs):
-    ec = ExactCalculation(Operation.placeholder(op_type, op_order, sn_max), molecule, keep_structure, perm,
+    ec = ExactCalculation(operation, molecule, keep_structure, perm,
                           no_constraint)
     ec.calculate(timeout)
     return ec.result
@@ -151,7 +151,7 @@ def normalize_csm(norm_type, result, file):
         # get chain permutation
         perm = result.chain_perm
         # run CSM using the perm
-        new_result = exact_calculation(result.op_type, result.op_order, dummy, perm=perm)
+        new_result = exact_calculation(result.operation, dummy, perm=perm)
         write_new_molecule(file, new_result)
         new_symm = new_result.symmetric_structure
         # find normalization factor based on the above step
@@ -167,7 +167,7 @@ def normalize_csm(norm_type, result, file):
         coordinates_array = [fragment_centers[chain] for chain in molecule.chains]
         dummy = MoleculeFactory.dummy_molecule_from_coords(coordinates_array, molecule.chain_equivalences)
         # run CSM
-        new_result = exact_calculation(result.op_type, result.op_order, dummy, suppress_print=True)
+        new_result = exact_calculation(result.operation, dummy, suppress_print=True)
         write_new_molecule(file, new_result)
         new_symm = new_result.symmetric_structure
         # (save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
