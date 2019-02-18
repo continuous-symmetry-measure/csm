@@ -1,6 +1,20 @@
 The Python CSM Package
 ======================
 
+Changes in version 0.22.2
+------------------------
+* initial_normalized_coordinates file are indeed normalized
+* fixed bug in --print-denorm, and changed file output name
+* fixed bug in --out-format
+* slight tidying of arguments
+* removed --print-branches
+* replace permute-chains with dont-permute-chains
+* added repr for CSMResult
+* fixed bug in reading files with comfile from a folder
+* fixed bug with --sn-max
+* fixed outdated code in normalizations
+* beautiful new test cases
+
 Changes in version 0.22.1
 ------------------------
 * bug fix select-atoms
