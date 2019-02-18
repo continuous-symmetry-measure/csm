@@ -87,17 +87,6 @@ class Operation:
             raise
         return OperationCode(type=data[0], order=data[1], name=data[2])
 
-    @staticmethod
-    def placeholder(op_type, op_order, sn_max=8):
-        # make an arbitrary operation
-        o = Operation("C2", init=False)
-        # overwrite values to match input
-        o.type = op_type
-        o.order = op_order
-        if op_type == "CH":
-            o.order = sn_max
-        return o
-
     def to_dict(self):
         return {
             "name": self.name,
@@ -164,6 +153,9 @@ class CSMResult(Result):
 
         self.overall_statistics["formula CSM"] = self.formula_csm
 
+
+        self.get_chain_perm_string()
+
     @property
     def d_min(self):
         return 1.0 - (self.csm / 100 * self.operation.order / (self.operation.order - 1))
@@ -172,8 +164,8 @@ class CSMResult(Result):
     def local_csm(self):
         return self.compute_local_csm(self.molecule.Q, self.operation, self.dir)
 
-    @property
-    def chain_perm_string(self):
+
+    def get_chain_perm_string(self):
         molecule = self.molecule
         perm = self.perm
         chain_perm_dict = {}
@@ -184,17 +176,17 @@ class CSMResult(Result):
                 if permuted_index in molecule.chains[chain2]:
                     chain_perm_dict[chain] = chain2
                     break
-        chain_perm = []
+        self.chain_perm = []
         for chain in molecule.chains:
             permuted_index = chain_perm_dict[chain]
-            chain_perm.append(permuted_index)
+            self.chain_perm.append(permuted_index)
         chain_str = ""
-        for from_index, to_index in enumerate(chain_perm):
+        for from_index, to_index in enumerate(self.chain_perm):
             from_chain = self.molecule.chains.index_to_string(from_index)
             to_chain = self.molecule.chains.index_to_string(to_index)
             chain_str += from_chain + "->" + to_chain + ", "
         chain_str = chain_str[:-2]  # remove final comma and space
-        return chain_str
+        self.chain_perm_string=chain_str
 
     def create_symmetric_structure(self, molecule_coords, perm, dir, op_type, op_order):
         # print('create_symmetric_structure called')
