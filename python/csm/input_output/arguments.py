@@ -271,7 +271,7 @@ def _process_arguments(parse_res):
         dictionary_args["conn_file"] = parse_res.connect
         if parse_res.read_fragments:
             dictionary_args['use_chains'] = True
-            # logger.warning("Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
+            logger.warning("Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
         dictionary_args['select_atoms'] = _parse_ranges_and_numbers(parse_res.select_atoms)
@@ -304,7 +304,7 @@ def _process_arguments(parse_res):
             dictionary_args["command_file"] = parse_res.comfile
             dictionary_args["old_command"] = parse_res.old_cmd
         else:
-            dictionary_args['operation'] = Operation(parse_res.symmetry)
+            dictionary_args['operation'] = Operation(parse_res.symmetry, parse_res.sn_max)
             dictionary_args['normalizations'] = parse_res.normalize
 
             if parse_res.command == 'exact':
