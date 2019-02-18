@@ -3,6 +3,7 @@ The Python CSM Package
 
 Changes in version 0.22.2
 ------------------------
+* fixed bug in pyx files
 * initial_normalized_coordinates file are indeed normalized
 * fixed bug in --print-denorm, and changed file output name
 * fixed bug in --out-format
