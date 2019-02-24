@@ -307,6 +307,8 @@ class MoleculeWrapper:
             self.set_initial_molecule_fields()
 
     def obms_from_molecule(self, molecule):
+        if self.format == "csm":
+            return []
         obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
                                                   molecule.metadata.format,
                                                   molecule.metadata.babel_bond)
@@ -325,6 +327,8 @@ class MoleculeWrapper:
         return obmols
 
     def set_obm_coordinates(self, coordinates):
+        if self.format == "csm":
+            return []
         num_atoms = len(self.molecule)
         for i in range(num_atoms):
             mol_index, atom_index = self._obm_atom_indices[i]
@@ -355,6 +359,8 @@ class MoleculeWrapper:
         return string_to_modify
 
     def append_description(self, description):
+        if self.format == "csm":
+            return
         if self.format in ["mol", "sdf"]:
             key = 'Comment'
             self.moleculedata[key] = description
@@ -390,6 +396,8 @@ class MoleculeWrapper:
             self.obmol.SetTitle(new_title)
 
     def clean_title(self, string_to_remove):
+        if self.format == "csm":
+            return
         original_title = self.obmol.GetTitle()
         if self.format == "pdb":
             original_title = self.moleculedata["TITLE"]
@@ -404,6 +412,8 @@ class MoleculeWrapper:
         self.obmol.SetTitle(new_title)
 
     def set_initial_molecule_fields(self):
+        if self.format == "csm":
+            return
         title = ""
         original_title = self.obmol.GetTitle()
         if self.metadata.appellation() not in original_title:
