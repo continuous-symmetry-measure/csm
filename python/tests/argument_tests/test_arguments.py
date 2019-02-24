@@ -10,6 +10,8 @@ import shutil
 
 from csm.main.csm_run import csm_run
 
+test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
+
 class RunThings():
     def _run_args(self, args_str, results_folder):
         args_str += " --output {} --overwrite".format(results_folder)
@@ -19,7 +21,6 @@ class RunThings():
 
 
 class TestBasic(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
     try:
@@ -362,7 +363,6 @@ class TestBasic(RunThings):
 
 
 class TestFragments(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
     shutil.rmtree(results_folder)
