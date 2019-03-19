@@ -1,6 +1,7 @@
 import logging
 from argparse import ArgumentParser, SUPPRESS, HelpFormatter
 from datetime import datetime
+from pathlib import Path
 
 import os
 
@@ -110,6 +111,9 @@ def _create_parser():
     def add_input_output_utility_func(parser):
         parser.add_argument('--parallel', type=int, const=0, nargs='?',
                             help='Run calculation on molecules in parallel. If no number of processors is specified, [cpu count - 1] will be used')
+        parser.add_argument('--chunk-size', type=int, const=0, nargs='?',
+                            help='Chunk size of molecules (actual chunk size = chunk molecules * num args) to use with --parallel')
+
         parser_input_args = parser.add_argument_group("Args for input (requires --input)")
         parser_input_args.add_argument("--input", help="molecule file or folder, default is current working directory",
                                        const=os.getcwd(), nargs='?')
@@ -188,8 +192,8 @@ def _create_parser():
                             help='Compute exact CSM for a single permutation, default is current directory/perm.txt')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
-    exact_args.add_argument('--output-perms', const="DEFAULT", nargs='?',
-                            help='Writes all enumerated permutations to file. Default is OUTPUT_DIR/perms.csv, or working directory/perms.csv is --output not selected')
+    exact_args.add_argument('--output-perms', action='store_true', default=False,
+                            help='Writes all enumerated permutations to file perms.csv')
     shared_normalization_utility_func(exact_args)
     add_input_output_utility_func(exact_args_)
 
@@ -310,13 +314,8 @@ def _process_arguments(parse_res):
             if parse_res.command == 'exact':
                 if parse_res.use_perm:
                     dictionary_args['perm_file_name'] = parse_res.use_perm
-                dictionary_args['perms_csv_name'] = parse_res.output_perms
-                if parse_res.output_perms == "DEFAULT":
-                    try:
-                        base_path = os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
-                        dictionary_args['perms_csv_name'] = os.path.join(base_path, "perms.csv")
-                    except:
-                        dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
+                if parse_res.output_perms:
+                    dictionary_args['perms_csv_name'] = os.path.join(parse_res.output, 'perms.csv')
             if parse_res.command == 'approx':
                 # choose dir:
                 # dictionary_args['detect_outliers'] = parse_res.detect_outliers
@@ -356,11 +355,14 @@ def _process_arguments(parse_res):
             if not os.path.isfile(out_file_name):
                 head, tail = os.path.split(out_file_name)
                 dictionary_args['out_file_name'] = os.path.join(head, tail + timestamp)
-            else:
-                filename = os.path.basename(out_file_name)
-                filename = filename[:-4] + timestamp + filename[-4:]
+                os.makedirs(out_file_name)
+            else: #for a file, rather than a folder-- only relevant for legacy
+                filename=Path.name(out_file_name)
+                fileext=Path.suffix(out_file_name)
+                filename=filename+timestamp+fileext
                 head, tail = os.path.split(out_file_name)
                 dictionary_args['out_file_name'] = os.path.join(head, filename)
+
 
     except (KeyError, TypeError, AttributeError) as e:
         # there is no output, eg in Read

@@ -140,12 +140,16 @@ def write(**dictionary_args):
     writer.write()
 
 
-def parallel_calc(args_array, pool_size):
+def parallel_calc(args_array, pool_size, chunk_size, rw):
     if pool_size == 0:
         pool_size = multiprocessing.cpu_count() - 1
+    pool_size=min(pool_size, multiprocessing.cpu_count()) #do not allow a pool size greater than the number of cpus
     pool = multiprocessing.Pool(processes=pool_size)
     print("Parallelizing across {} processes".format(pool_size))
-    pool_outputs = pool.map(single_calculation, args_array)
+
+
+    for results in pool.imap(single_calculation, args_array, chunksize=chunk_size):
+        hi=1
     pool.close()
     pool.join()
     return pool_outputs
@@ -198,12 +202,16 @@ def calc(dictionary_args):
 
     # run the calculation, in parallel
     if dictionary_args["parallel"]:
-        results = parallel_calc(flattened_args, dictionary_args["pool_size"])
-        unflattened_results = [
-            [results[m_index + command_index] for command_index in range(len(args_array))] for m_index in
-            range(len(molecules))
-        ]
         with context_writer(operation_array, **dictionary_args) as rw:
+            chunk_size = len(operation_array) * int(len(molecules)/10)
+            total_results=[]
+            for i in range(0, len(flattened_args), chunk_size):
+                results = parallel_calc(flattened_args, dictionary_args["pool_size"])
+                total_results=total_results+results
+            unflattened_results = [
+                [total_results[m_index + command_index] for command_index in range(len(args_array))] for m_index in
+                range(len(molecules))
+            ]
             for mol_results in unflattened_results:
                 rw.write(mol_results)
         return unflattened_results

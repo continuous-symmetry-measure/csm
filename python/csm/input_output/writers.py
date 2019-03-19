@@ -440,7 +440,7 @@ class ContextWriter:
     def __enter__(self):
         return self
 
-    def write(self, mol_result):
+    def write(self, mol_result, **kwargs):
         raise NotImplementedError
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -450,7 +450,7 @@ class ContextWriter:
 class PipeContextWriter(ContextWriter):
     results_arr = []
 
-    def write(self, mol_result):
+    def write(self, mol_result, **kwargs):
         self.results_arr.append(mol_result)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -464,7 +464,7 @@ class PipeContextWriter(ContextWriter):
 class LegacyContextWriter(ContextWriter):
     called = False
 
-    def write(self, mol_result):
+    def write(self, mol_result, **kwargs):
         if not self.out_file_name:
             raise ValueError("must provide ouput file for legacy writing")
         if len(mol_result) > 1 or self.called:
@@ -476,7 +476,7 @@ class LegacyContextWriter(ContextWriter):
 
 
 class SimpleContextWriter(ContextWriter):
-    def write(self, mol_result):
+    def write(self, mol_result, **kwargs):
         for lin_index, line_result in enumerate(mol_result):
             print("mol", line_result.molecule.metadata.appellation(), "cmd", lin_index + 1, " CSM: ",
                   format_CSM(line_result.csm))
@@ -705,18 +705,28 @@ class ScriptContextWriter(ContextWriter):
                     finally:
                         f.write(start_str + "failed to read statistics\n")
 
-    def write(self, molecule_results):
+    def write(self, molecule_results,
+              csm=True, dir=True, perm=True, initial=True, symmetric=True, legacy=True, extra=True, verbose=True,
+              **kwargs):
         # receives result array for single molecule, and appends to all the relevant files
-        self.write_csm(molecule_results)
-        self.write_dir(molecule_results)
-        self.write_perm(molecule_results)
-        self.write_initial_mols(molecule_results)
-        self.write_symmetric_mols(molecule_results)
-        if self.create_legacy_files:
-            self.write_legacy_files(molecule_results)
-        self.write_extra_txt(molecule_results)
-        if self.verbose:
-            self.write_approx_file(molecule_results)
+        if csm:
+            self.write_csm(molecule_results)
+        if dir:
+            self.write_dir(molecule_results)
+        if perm:
+            self.write_perm(molecule_results)
+        if initial:
+            self.write_initial_mols(molecule_results)
+        if symmetric:
+            self.write_symmetric_mols(molecule_results)
+        if legacy:
+            if self.create_legacy_files:
+                self.write_legacy_files(molecule_results)
+        if extra:
+            self.write_extra_txt(molecule_results)
+        if verbose:
+            if self.verbose:
+                self.write_approx_file(molecule_results)
         self.molecule_index += 1
 
     def __exit__(self, exc_type, exc_value, traceback):
