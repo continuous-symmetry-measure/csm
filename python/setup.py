@@ -1,5 +1,6 @@
+from setuptools import setup #if this import statement dooes not come first, weird errors happen
+#see: https://stackoverflow.com/questions/21594925/error-each-element-of-ext-modules-option-must-be-an-extension-instance-or-2-t
 from distutils.extension import Extension
-from distutils.core import setup
 import setuptools
 import sys
 import numpy
@@ -104,6 +105,30 @@ setup(
     author='The Research Software Company',
     author_email='itay@chelem.co.il',
 
+    # The csm command
+    entry_points={
+        'console_scripts': [
+            'csm = csm.main.csm_run:run_no_return',
+            'norm_csm = csm.main.normcsm:run_norm_no_return'
+            'csmsymm = csm.main.csmsymm:run_no_return'
+        ]
+    },
+
+    classifiers=[
+        'Development Status:: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: Science/Research',
+        'License :: Other/Proprietary License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3.5',
+        'Topic :: Scientific/Engineering :: Chemistry',
+    ],
+
+    cmdclass={
+        'prepare': PrepareCommand,
+    },
+
     # The Cython extension module
     # We do not use Cython itself but the Cython output files
     # Note that header files that are required by the compilation are specified in MANIFEST.in
@@ -127,27 +152,5 @@ setup(
             extra_link_args=extra_link_args),
     ],
 
-    # The csm command
-    entry_points={
-        'console_scripts': [
-            'csm = csm.main.csm_run:run_no_return',
-            'norm_csm = csm.main.normcsm:run_norm_no_return'
-            'csmsymm = csm.main.csmsymm:run_no_return'
-        ]
-    },
 
-    classifiers=[
-        'Development Status:: 4 - Beta',
-        'Environment :: Console',
-        'Intended Audience :: Science/Research',
-        'License :: Other/Proprietary License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.5',
-        'Topic :: Scientific/Engineering :: Chemistry',
-    ],
-
-    cmdclass={
-        'prepare': PrepareCommand,
-    }
 )
