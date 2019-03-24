@@ -27,7 +27,7 @@ class build_ext(_build_ext):
 
 # Cython definitions
 FAST_CPPUTILS_DIR = "FastCPPUtils"
-EIGEN_INCLUDE_DIR = "../include"
+EIGEN_INCLUDE_DIR = "./include"
 CPP_WRAPPER_DIR = "csm/CPP_wrapper"
 
 MUNKRES_DIR = "cython-munkres"
@@ -69,15 +69,14 @@ class PrepareCommand(setuptools.Command):
         self.convert_to_c()
 
     def copy_source_files(self):
-        #this may be used for copying openbabel and eigen files, eventually?
+        #this may be used for copying openbabel file eventually?
         pass
 
     def convert_to_c(self):
         #creates fast.h and fast.c in cpp_wrapper folder
-        print('Converting pyx files to C sources...')
-        pyx_files = glob.glob('./csm/CPP_wrapper/fast.pyx') #can be changed to not glob later, obviously
-        for pyx in pyx_files:
-            self.cython(pyx)
+        print('Converting pyx files to C++ sources...')
+        pyx = './csm/CPP_wrapper/fast.pyx'
+        self.cython(pyx)
 
     def cython(self, pyx):
         from Cython.Compiler.CmdLine import parse_command_line
@@ -85,9 +84,9 @@ class PrepareCommand(setuptools.Command):
         options, sources = parse_command_line(['-2', '--cplus', pyx])
         result = compile(sources, options)
         if result.num_errors > 0:
-            print('Errors converting %s to C' % pyx, file=sys.stderr)
-            raise Exception('Errors converting %s to C' % pyx)
-        self.announce('Converted %s to C' % pyx)
+            print('Errors converting %s to C++' % pyx, file=sys.stderr)
+            raise Exception('Errors converting %s to C++' % pyx)
+        self.announce('Converted %s to C++' % pyx)
 
 csm_version = get_version()
 print("Packaging CSM version %s" % csm_version)
