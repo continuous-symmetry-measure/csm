@@ -28,7 +28,8 @@ class build_ext(_build_ext):
 
 # Cython definitions
 FAST_CPPUTILS_DIR = "FastCPPUtils"
-EIGEN_INCLUDE_DIR = "./include/Eigen"
+EIGEN_INCLUDE_DIR_1 = "./include/Eigen"
+EIGEN_INCLUDE_DIR_2 = "./include/Eigen"
 CPP_WRAPPER_DIR = "csm/CPP_wrapper"
 
 MUNKRES_DIR = "cython-munkres"
@@ -150,7 +151,7 @@ setup(
              os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp"),
              ],
             language='c++',
-            include_dirs=[EIGEN_INCLUDE_DIR, FAST_CPPUTILS_DIR, numpy.get_include()],
+            include_dirs=[EIGEN_INCLUDE_DIR_1, EIGEN_INCLUDE_DIR_2, FAST_CPPUTILS_DIR, numpy.get_include()],
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args),
     ],
