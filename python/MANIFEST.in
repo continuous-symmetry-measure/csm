@@ -2,6 +2,5 @@ include README.md
 include FastCPPUtils/*
 include cython-munkres/src/cpp/*
 include include/Eigen/src/*/*
-include include/Eigen/src/Core/arch/*/*
-include include/Eigen/src/Core/util/*
-include include/Eigen/src/Core/products/*
+include include/Eigen/src/*/*/*
+include include/Eigen/src/*/*/*/*
