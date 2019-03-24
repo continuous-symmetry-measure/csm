@@ -85,7 +85,7 @@ class PrepareCommand(setuptools.Command):
     def cython(self, pyx):
         from Cython.Compiler.CmdLine import parse_command_line
         from Cython.Compiler.Main import compile
-        options, sources = parse_command_line(['-2', '-v', '--cplus', '--include-dir', numpy.get_include(), pyx])
+        options, sources = parse_command_line(['-2', '-v', '--cplus', pyx])
         result = compile(sources, options)
         if result.num_errors > 0:
             print('Errors converting %s to C++' % pyx, file=sys.stderr)
