@@ -28,7 +28,7 @@ class build_ext(_build_ext):
 
 # Cython definitions
 FAST_CPPUTILS_DIR = "FastCPPUtils"
-EIGEN_INCLUDE_DIR = "./include"
+EIGEN_INCLUDE_DIR = "./include/Eigen"
 CPP_WRAPPER_DIR = "csm/CPP_wrapper"
 
 MUNKRES_DIR = "cython-munkres"
