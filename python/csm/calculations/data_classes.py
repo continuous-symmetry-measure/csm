@@ -1,29 +1,38 @@
+from collections import namedtuple
+
 import numpy as np
 
-from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles
-from csm.calculations.constants import MINDOUBLE
-from csm.molecule.normalizations import de_normalize_coords, normalize_coords
-from collections import namedtuple
+from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
+    check_perm_structure_preservation
+from csm.input_output.formatters import silent_print
+from csm.molecule.molecule import Molecule
+from csm.molecule.normalizations import de_normalize_coords
+
+
 class CSMState(namedtuple('CSMState', ['molecule',
-                                   'op_order',
-                                   'op_type',
-                                   'csm',
-                                   'perm',
-                                   'dir',
-                                   'perm_count',
-                                    'num_invalid'])):
+                                       'op_order',
+                                       'op_type',
+                                       'csm',
+                                       'perm',
+                                       'dir',
+                                       'perm_count',
+                                       'num_invalid'])):
     pass
+
 
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
+
 class Operation:
-    def __init__(self, op, sn_max=8):
-        op=self._get_operation_data(op)
-        self.type= op.type
-        self.order = op.order
-        if op.type=="CH":
-            self.order=sn_max
-        self.name = op.name
+    def __init__(self, op, sn_max=8, init=True):
+        self.op_code = op
+        if init:
+            op = self._get_operation_data(op)
+            self.type = op.type
+            self.order = op.order
+            if op.type == "CH":
+                self.order = sn_max
+            self.name = op.name
 
     def _get_operation_data(self, opcode):
         """
@@ -78,111 +87,113 @@ class Operation:
             raise
         return OperationCode(type=data[0], order=data[1], name=data[2])
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "order": self.order,
+            "type": self.type
+        }
+
     @staticmethod
-    def placeholder(op_type, op_order, sn_max=8):
-        #make an arbitrary operation
-        o=Operation("C2")
-        #overwrite values to match input
-        o.type=op_type
-        o.order=op_order
-        if op_type=="CH":
-            o.order=sn_max
+    def from_dict(in_dict):
+        # make an arbitrary operation
+        o = Operation("C2", init=False)
+        # overwrite values
+        o.type = in_dict["type"]
+        o.name = in_dict["name"]
+        o.order = in_dict["order"]
         return o
 
-class Calculation:
-    def __init__(self, operation, molecule, timeout=300, *args, **kwargs):
-        self.operation=operation
-        self.molecule=molecule
-        self._timeout = timeout
 
-    def calculate(self):
-        pass
+class Result:
+    def __repr__(self):
+        return_string = "{} CSM: {} Molecule: {}".format(self.__class__.__name__, self.csm,
+                                                         self.molecule.metadata.appellation())
+        return return_string
+
+
+class CSMResult(Result):
+    def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
+        self.failed = False
+        self.skipped = False
+        # input
+        self.molecule = state.molecule.copy()  # not yet denormalized
+        self.normalized_molecule_coords = np.array(self.molecule.Q)
+        self.molecule.de_normalize()
+        self.operation = operation
+        self.op_type = state.op_type
+        self.op_order = state.op_order
+
+        # result
+        self.csm = state.csm
+        self.dir = state.dir
+        self.perm = state.perm
+        self.normalized_symmetric_structure = self.create_symmetric_structure(self.normalized_molecule_coords,
+                                                                              self.perm, self.dir, self.op_type,
+                                                                              self.op_order)
+        self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure),
+                                                       self.molecule.norm_factor)
+        self.formula_csm = self.get_CSM_by_formula(self.molecule, self.symmetric_structure)
+
+        # stats
+        self.overall_statistics = overall_stats
+        self.ongoing_statistics = ongoing_stats
+
+        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, operation)
+        self.overall_statistics["# bad cycles"] = falsecount
+        self.overall_statistics["% bad cycles"] = num_invalid / len(self.molecule)
+        try:
+            self.overall_statistics["% structure"] = check_perm_structure_preservation(self.molecule, self.perm)
+        except ValueError:
+            self.overall_statistics["% structure"] = "n/a"
+
+        if self.operation.name == "CHIRALITY":
+            if self.op_type == 'CS':
+                self.overall_statistics["best chirality"] = "CS"
+            else:
+                self.overall_statistics["best chirality"] = "S%d" % (self.op_order)
+
+        self.overall_statistics["formula CSM"] = self.formula_csm
+
+        self.get_chain_perm_string()
 
     @property
-    def result(self):
-        return self._csm_result
+    def d_min(self):
+        return 1.0 - (self.csm / 100 * self.operation.order / (self.operation.order - 1))
 
-class CSMResult:
-    """
-    Holds the results of a CSM calculation.
-    When initialized, it handles some final processing of the result like denormalization and calculating local CSM.
-    It is not intended to be initialized by an external user, but by the calculation.
-    Properties:
-    molecule: the original Molecule on which the calculation was called (denormalized)
-    op_order: the order of the symmetry operation the calculation used
-    op_type: the type of symmetry option (cs, cn, sn, ci, ch)
-    csm: The final result CSM value
-    perm: The final permutation that gave the result CSM value (a list of ints)
-    dir: The final axis of symmetry
-    perm_count: The number of permutations of the molecule
-    local_csm:
-    d_min:
-    symmetric_structure: the most symmetric structure when molecule permuted
-    normalized_symmetric_structure: the normalized symmetric structure
-    normalized_molecule_coords: the normalized molecule coordinates
-    formula_csm: a recalculation of the symmetry value using a formula to measure symmetry. Should be close to identical
-                    to algorithm result
-    chain_perm: the chain permutation (by index-- names can be accessed with chain_perm_string)
-    """
-    def __init__(self, state):
-        self.__CSMState=state
-        self.molecule=state.molecule.copy()
-        self.op_order=state.op_order
-        self.op_type=state.op_type
-        self.csm=state.csm
-        self.perm=state.perm
-        self.dir=state.dir
-        self.perm_count=state.perm_count
-        self.local_csm=""
-        self._process_results()
+    @property
+    def local_csm(self):
+        return self.compute_local_csm(self.molecule.Q, self.operation, self.dir)
 
+    def get_chain_perm_string(self):
+        molecule = self.molecule
+        perm = self.perm
+        chain_perm_dict = {}
+        for chain in molecule.chains:
+            index = molecule.chains[chain][0]
+            permuted_index = perm[index]
+            for chain2 in molecule.chains:
+                if permuted_index in molecule.chains[chain2]:
+                    chain_perm_dict[chain] = chain2
+                    break
+        self.chain_perm = []
+        for chain in molecule.chains:
+            permuted_index = chain_perm_dict[chain]
+            self.chain_perm.append(permuted_index)
+        chain_str = ""
+        for from_index, to_index in enumerate(self.chain_perm):
+            from_chain = self.molecule.chains.index_to_string(from_index)
+            to_chain = self.molecule.chains.index_to_string(to_index)
+            chain_str += from_chain + "->" + to_chain + ", "
+        chain_str = chain_str[:-2]  # remove final comma and space
+        self.chain_perm_string = chain_str
 
-    def _process_results(self):
-        self.d_min = 1.0 - (self.csm / 100 * self.op_order / (self.op_order - 1))  # this is the scaling factor
-
-
-        # save the normalized coords before we denormalize
-        self.normalized_symmetric_structure = self.create_symmetric_structure(self.molecule, self.perm, self.dir, self.op_type,
-                                                         self.op_order)
-        self.normalized_molecule_coords=np.array(self.molecule.Q)
-
-        #denormalize
-        self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure), self.molecule.norm_factor)
-        self.molecule.de_normalize()
-
-        # run and save the formula test
-        self.formula_csm = self._formula_test()
-
-        #get the chain perm
-        self.get_chain_perm()
-
-        self.falsecount, self.num_invalid, self.cycle_counts, self.bad_indices=check_perm_cycles(self.perm, self.op_order, self.op_type)
-
-    def _formula_test(self):
-        Q=self.molecule.Q
-        # step one: get average of all atoms
-        init_avg = np.mean(Q, axis=0)
-        # step two: distance between intial and actual: initial - actual, squared
-        # step three: normal: distance between initial and initial average, (x-x0)^2 + (y-y0)^2 + (z-z0)^2
-        # step four: sum of distances between initial and actual, and then sum of x-y-z
-        # step five: sum of normal
-        distance = np.array([0.0, 0.0, 0.0])
-        normal = 0.0
-        for i in range(len(Q)):
-            distance += (np.square(Q[i] - self.symmetric_structure[i]))  # square of difference
-            normal += (np.sum(np.square(Q[i] - init_avg)))
-        distance = np.sum(distance)
-        # print("yaffa normal =", normal)
-        # step six: 100 * step four / step five
-        result = 100 * distance / normal
-        return result
-
-    def create_symmetric_structure(self, molecule, perm, dir, op_type, op_order):
+    def create_symmetric_structure(self, molecule_coords, perm, dir, op_type, op_order):
         # print('create_symmetric_structure called')
 
         cur_perm = np.arange(len(perm))  # array of ints...
         size = len(perm)
-        m_pos = np.asarray([np.asarray(atom.pos) for atom in molecule.atoms])
+        m_pos = molecule_coords
         symmetric = np.copy(m_pos)
 
         normalization = 1 / op_order
@@ -209,14 +220,33 @@ class CSMResult:
 
         return symmetric
 
-    def compute_local_csm(self):
-        size = len(self.molecule)
+    def get_CSM_by_formula(self, molecule, symmetric_structure):
+        Q = molecule.Q
+        # step one: get average of all atoms
+        init_avg = np.mean(Q, axis=0)
+        # step two: distance between intial and actual: initial - actual, squared
+        # step three: normal: distance between initial and initial average, (x-x0)^2 + (y-y0)^2 + (z-z0)^2
+        # step four: sum of distances between initial and actual, and then sum of x-y-z
+        # step five: sum of normal
+        distance = np.array([0.0, 0.0, 0.0])
+        normal = 0.0
+        for i in range(len(Q)):
+            distance += (np.square(Q[i] - symmetric_structure[i]))  # square of difference
+            normal += (np.sum(np.square(Q[i] - init_avg)))
+        distance = np.sum(distance)
+        # print("yaffa normal =", normal)
+        # step six: 100 * step four / step five
+        result = 100 * distance / normal
+        return result
+
+    def compute_local_csm(self, molecule_coords, operation, dir):
+        size = len(molecule_coords)
         cur_perm = [i for i in range(size)]
         local_csm = np.zeros(size)
-        m_pos = np.asarray([np.asarray(atom.pos) for atom in self.molecule.atoms])
+        m_pos = molecule_coords
 
-        for i in range(self.op_order):
-            rot = create_rotation_matrix(i, self.op_type, self.op_order, self.dir)
+        for i in range(operation.order):
+            rot = create_rotation_matrix(i, operation.type, operation.order, dir)
 
             # set permutation
             cur_perm = [self.perm[cur_perm[j]] for j in range(size)]
@@ -226,46 +256,107 @@ class CSMResult:
             difference = rotated - m_pos[i]
             square = np.square(difference)
             sum = np.sum(square)
-            local_csm[i] = sum * (100.0 / (2 * self.op_order))
-        self.local_csm=local_csm
+            local_csm[i] = sum * (100.0 / (2 * operation.order))
         return local_csm
 
-    def get_chain_perm(self):
-        '''
-        finds the existing permutation between chains, in the result
-        :return:
-        '''
-        molecule=self.molecule
-        perm=self.perm
-        chain_perm_dict = {}
-        for chain in molecule.chains:
-            index = molecule.chains[chain][0]
-            permuted_index = perm[index]
-            for chain2 in molecule.chains:
-                if permuted_index in molecule.chains[chain2]:
-                    chain_perm_dict[chain] = chain2
-                    break
-        chain_perm = []
-        for chain in molecule.chains:
-            permuted_index = chain_perm_dict[chain]
-            chain_perm.append(permuted_index)
-        self.chain_perm=chain_perm
+    def print_summary(self, legacy_output=False):
+        try:
+            percent_structure = check_perm_structure_preservation(self.molecule, self.perm)
+            silent_print("The permutation found maintains " +
+                         str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
 
-    def chain_perm_string(self):
-        chain_str=""
-        for from_index, to_index in enumerate(self.chain_perm):
-            from_chain=self.molecule.chains.index_to_string(from_index)
-            to_chain=self.molecule.chains.index_to_string(to_index)
-            chain_str+=from_chain + "->" + to_chain + ", "
-        chain_str=chain_str[:-2] #remove final comma and space
-        return chain_str
+        except ValueError:
+            silent_print(
+                "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
 
-# TODO: replace all calls to this class with creation of Result class
-def process_results(results, calc_local=False):
-        """
-        retained for legacy purposes
-        """
-        r = CSMResult(results)
-        if calc_local:
-            r.compute_local_csm()
-        return r
+        falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, self.operation)
+        silent_print(
+            "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
+                falsecount, "cycle" if falsecount == 1 else "cycles",
+                100 * (len(self.molecule) - num_invalid) / len(self.molecule)))
+
+        for cycle_len in sorted(cycle_counts):
+            valid = cycle_len == 1 or cycle_len == self.operation.order or (
+                    cycle_len == 2 and self.operation.type == 'SN')
+            count = cycle_counts[cycle_len]
+            silent_print("There %s %d %s %s of length %d" % (
+                "is" if count == 1 else "are", count, "invalid" if not valid else "",
+                "cycle" if count == 1 else "cycles",
+                cycle_len))
+        if len(self.molecule.chains) > 1:
+            silent_print("\nChain perm: " + self.chain_perm_string)
+
+        if self.operation.name == "CHIRALITY":
+            silent_print("Minimum chirality was found in", self.overall_statistics["best chirality"])
+
+        if legacy_output:
+            silent_print("%s: %.4lf" % (self.operation.name, abs(self.csm)))
+            silent_print("CSM by formula: %.4lf" % (self.formula_csm))
+
+        else:
+            silent_print("%s: %.6lf" % (self.operation.name, abs(self.csm)))
+            silent_print("CSM by formula: %.6lf" % (self.formula_csm))
+
+    def to_dict(self):
+        return {"Result":
+            {
+                "molecule": self.molecule.to_dict(),
+                "normalized_molecule_coords": [list(i) for i in self.normalized_molecule_coords],
+                "operation": self.operation.to_dict(),
+
+                "csm": self.csm,
+                "perm": self.perm,
+                "dir": list(self.dir),
+
+                "normalized_symmetric_structure": [list(i) for i in self.normalized_symmetric_structure],
+                "symmetric_structure": [list(i) for i in self.symmetric_structure],
+                "formula_csm": self.formula_csm,
+
+                "overall stats": self.overall_statistics,
+                "ongoing stats": self.ongoing_statistics
+            }
+        }
+
+    @staticmethod
+    def from_dict():
+        result_dict = input["Result"]
+        molecule = Molecule.from_dict(result_dict["molecule"])
+        molecule.normalize()
+        operation = Operation.from_dict(result_dict["operation"])
+        state = CSMState(molecule, operation.order, operation.type, result_dict["csm"], result_dict["perm"],
+                         result_dict["dir"])
+        result = CSMResult(state, operation, result_dict["overall stats"], result_dict["ongoing stats"])
+        return result
+
+
+class FailedResult(Result):
+    def __init__(self, failed_reason, molecule, skipped=False, **kwargs):
+        self.failed = True
+        self.failed_reason = failed_reason
+        self.skipped = False
+        if skipped:
+            self.skipped = True
+
+        self.molecule = molecule
+        self.normalized_molecule_coords = []
+        self.operation = kwargs["operation"]
+        self.op_type = self.operation.type
+        self.op_order = self.operation.order
+
+        # result
+        self.csm = "n/a"
+        self.dir = ["n/a", "n/a", "n/a"]
+        self.perm = ["n/a"]
+        self.normalized_symmetric_structure = []  # [["n/a"] for i in range(len(molecule))]
+        self.symmetric_structure = []  # [[0,0,0] for i in range(len(molecule))]
+        self.formula_csm = "n/a"
+
+        self.overall_statistics = {
+            "failed": "FAILED",
+            "reason for failure": self.failed_reason
+        }
+
+        self.ongoing_statistics = {}
+
+    def __repr__(self):
+        return super(FailedResult, self).__repr__() + "\tFailure: " + self.failed_reason

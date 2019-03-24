@@ -1,368 +1,439 @@
-"""
-Parse the CSM command line arguments.
-"""
-from argparse import ArgumentParser
 import logging
+from argparse import ArgumentParser, SUPPRESS, HelpFormatter
+from datetime import datetime
 
-from csm.calculations import permuters
+import os
+
+from csm import __version__
 from csm.calculations.data_classes import Operation
 
 logger = logging.getLogger(__name__)
 import sys
 
-from collections import namedtuple
 
-__author__ = 'zmbq'
+class SmartFormatter(HelpFormatter):
+    # from https://stackoverflow.com/a/22157136/5961793
+    def _split_lines(self, text, width):
+        if text.startswith('R|'):
+            return text[2:].splitlines()
+        # this is the RawTextHelpFormatter._split_lines
+        return HelpFormatter._split_lines(self, text, width)
 
 
 class OurParser(ArgumentParser):
     def error(self, message):
-        print("Error: %s" % message, file=sys.stderr)
-        print("Enter csm --help for help", file=sys.stderr)
+        sys.stdout.write("Error: %s" % message)
+        sys.stdout.write("\nEnter csm --help for help, or csm [command] --help for help with a specific command")
         sys.exit(2)
 
 
 def _create_parser():
-    parser = OurParser(usage="\ncsm type input_molecule output_file [additional arguments]", allow_abbrev=False)
-
-    parser.add_argument('type',
-                        # choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
-                        help='The type of operation: cs, ci, ch, cN, sN')
-    parser.add_argument('input', help='Input molecule file')
-    parser.add_argument('output', default='output.txt', help='Output file')
-
-    # Optional arguments (their names start with --)
-
-    # types of calculations (default is exact):
-    calculation_type = parser.add_argument_group('Calculation Type (default is exact)')
-    calculation_type.add_argument('--approx', action='store_true', default=False,
-                                  help='use the approximate algorithm to estimate the CSM')
-    calculation_type.add_argument('--trivial', action='store_true', default=False,
-                                  help='CSM of identity perm, or, if chains, CSM of chain permutation with no atom permutation')
-
-
-    parser.add_argument('--timeout', default=300,
-                        help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
-    parser.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
-
-    # general input/calculation arguments:
-    # parser.add_argument('--ignore-hy', action='store_true', default=False, help='Ignore Hydrogen atoms in computations')
-    input_type = parser.add_argument_group('Input Arguments')
-    input_type.add_argument('--remove-hy', action='store_true', default=False,
-                            help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
-    input_type.add_argument('--ignore-sym', action='store_true', default=False,
+    def input_utility_func(parser):
+        parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?',
+                            help='xyz connectivity file, default is connectivity.txt in current working directory')
+        mutex_args = parser.add_mutually_exclusive_group()
+        mutex_args.add_argument('--remove-hy', action='store_true', default=False,
+                                help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
+        mutex_args.add_argument('--select-atoms', default=None,
+                                help='Select only some atoms, eg 1-20,15,17,19-21')
+        parser.add_argument('--select-mols', default=None,
+                            help='Select only some molecules, eg 1-20,15,17,19-21')
+        parser.add_argument('--ignore-sym', action='store_true', default=False,
                             help='Ignore all atomic symbols, performing a purely geometric operation')
-    input_type.add_argument('--use-mass', action='store_true', default=False,
+        parser.add_argument('--use-mass', action='store_true', default=False,
                             help='Use the atomic masses to define center of mass')
-    input_type.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
-    # parser.add_argument('--no-babel',  action='store_true', default=False, help='force suppress automatically using OpenBabel to compute bonds')
-    input_type.add_argument('--use-sequence', action='store_true', default=False,
-                            help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
-    input_type.add_argument('--use-chains', action='store_true', default=False,
+        parser.add_argument('--babel-bond', action='store_true', default=False,
+                            help='Let OpenBabel compute bonding')
+        parser.add_argument('--use-sequence', action='store_true', default=False,
+                            help='create equivalence class for pdb file using sequence information.')
+        parser.add_argument('--use-chains', action='store_true', default=False,
                             help='When a molecule has chains, use them (affects trivial, approx)')
-    input_type.add_argument('--read-fragments', action='store_true', default=False,
+        parser.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
 
+    def output_utility_func(parser):
+        parser.add_argument("--overwrite", action='store_true', default=False,
+                            help="overwrite results folder if exists (rather than adding timestamp)")
+        # parser.add_argument('--print-local', action='store_true', default=False,
+        #                    help='Print the local CSM (csm for each atom) in the output file')
+        parser.add_argument('--print-denorm', action='store_true', default=False,
+                            help='when printing the original molecule, print the denormalized coordinates')
 
-    # calculation arguments that only apply to exact:
-    exact_args = parser.add_argument_group('Arguments for Exact Algorithm')
-    exact_args.add_argument('--use-perm', type=str,
-                            help='EXACT ONLY: Compute exact CSM for a single permutation')
+        parser.add_argument("--verbose", action='store_true', default=False,
+                            help='create a fixed width spreadsheet of information about each direction for any approx commands')
+        parser.add_argument('--polar', action='store_true', default=False,
+                            help="Print polar coordinates instead of cartesian coordinates in statistics created by --verbose")
+
+        parser.add_argument("--legacy-files", action='store_true', default=False,
+                            help='create a folder of legacy-style files for each molecule and command')
+
+        parser.add_argument("--legacy-output", action='store_true', default=False,
+                            help='print the old csm format, for a single molecule+command only')
+        parser.add_argument('--json-output', action='store_true', default=False,
+                            help='Print output in json format to a file. Only relevant with --legacy-output')
+
+        parser.add_argument("--simple", action='store_true', default=False,
+                            help='only output is CSM to screen')
+
+    def shared_calc_utility_func(parser):
+        parser.add_argument('symmetry',
+                            # choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
+                            help='The type of operation: cs, ci, ch, cN, sN', )
+        # nargs="+")
+        parser.add_argument('--timeout', default=300,
+                            help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
+        parser.add_argument('--global-timeout', default=50000,
+                            help="Specify a global timeout for CSM in seconds. Default is 50000 seconds (over 13 hours)",
+                            type=int)
+        parser.add_argument('--sn-max', type=int, default=8,
+                            help='The maximal sn to try, relevant only for chirality')
+        parser.add_argument("--pipe", action='store_true', default=False,
+                            help="treat this program as a piped program (read from sys.stdin, write to sys.stdout)")
+
+    def shared_normalization_utility_func(
+            parser):  # I made this because having normalization stuck in the calc utility func was ugly
+        parser.add_argument('--normalize', default=[],
+                            help='Types of normalization available:\n'
+                                 '0: standard normalization, according to centers of mass (without scaling)\n'
+                                 '1: normalization according to the center of mass of each fragment\n'
+                                 '2: normalization according to an approximation of the symmetric structure of the centers '
+                                 'of mass of each fragment, based on the solution permutation\n'
+                                 '3: normalization according to an approximation of the symmetric structure of the centers '
+                                 'of mass of each fragment, without using the solution permutation\n'
+                                 '4: normalization according to averages of approximation to symmetry of fragments\n'
+                                 '5: normalization according to number of atoms\n'
+                                 '6: linear normalization',
+                            choices=['0', '1', '2', '3', '4', '5', '6'],
+                            nargs='+'
+                            )
+
+    def add_input_output_utility_func(parser):
+        parser.add_argument('--parallel', type=int, const=0, nargs='?',
+                            help='Run calculation on molecules in parallel. If no number of processors is specified, [cpu count - 1] will be used')
+        parser_input_args = parser.add_argument_group("Args for input (requires --input)")
+        parser_input_args.add_argument("--input", help="molecule file or folder, default is current working directory",
+                                       const=os.getcwd(), nargs='?')
+        parser_input_args.add_argument('--in-format',
+                                       help='override guessing format from input file ending with provided format',
+                                       default=None)
+        input_utility_func(parser_input_args)
+        parser_output_args = parser.add_argument_group("Args for output")
+        parser_output_args.add_argument("--output",
+                                        default=os.path.join(os.getcwd(), 'csm_results' + timestamp),
+                                        const=os.path.join(os.getcwd(), 'csm_results' + timestamp),
+                                        nargs='?',
+                                        help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
+        parser_output_args.add_argument('--out-format',
+                                        help='override guessing format from output file ending with provided format',
+                                        default=None)
+        output_utility_func(parser_output_args)
+
+    parser = OurParser(allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
+                                                 "example: csm exact c2 --input mymol.mol --output --keep-structure\n"
+                                                 "for specific help with each subprogram and its available arguments, enter csm COMMAND -h\n"
+                                                 "e.g. csm exact -h",
+                       )
+    timestamp = str(datetime.now().timestamp())[-11:].replace(".", "")
+    parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
+    parser.add_argument("--version", help="print version and exit", action='store_true', default=False)
+    commands = parser.add_subparsers(title="Available commands", dest="command")
+
+    # command
+    commands_args_ = commands.add_parser('comfile', help='provide a command file for running calculations',
+                                         formatter_class=SmartFormatter)
+    command_args = commands_args_.add_argument_group("Command args")
+    # א this uses custom formatting so that there are newlines
+    command_args.add_argument('comfile', default=os.path.join(os.getcwd(), "cmd.txt"), nargs='?',
+                              help="R|the file that contains the commands, default is cmd.txt in current working directory\n"
+                                   "the file is formatted as follows:\n"
+                                   "each line is a valid command to csm, from the commands exact/approx/trivial.\n"
+                                   "commandname symmetry --optional --additional --arguments\n"
+                                   "for example, the file contents could be:\n"
+                                   "\ttrivial c2\n"
+                                   "\tapprox c2 --fibonacci 60\n"
+                                   "\texact c2 --keep-structure --remove-hy\n"
+                                   "\texact c3")
+    command_args.add_argument('--old-cmd', action='store_true', default=False,
+                              help="the old format with csm sym __INPUT__ __OUTPUT__ --approx etc")
+    add_input_output_utility_func(commands_args_)
+
+    # READ
+    input_args = commands.add_parser('read', help="Read a molecule file into a json in CSM format",
+                                     usage="csm read filename [optional args]\n"
+                                           "example: csm read mymol.pdb --read-fragments --remove-hy --select-atoms 1-3")
+    input_args.add_argument('input', help='molecule file or folder, default is current working directory',
+                            default=os.getcwd(), nargs='?')
+    input_args.add_argument('--format', help='override guessing format from file ending with provided format',
+                            default=None)
+    input_utility_func(input_args)
+
+    # WRITE
+    out_args = commands.add_parser('write',
+                                   help="Output the results of the calculation to a file- must be used with piped input",
+                                   usage="csm write filename [optional args]")
+    out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results' + timestamp), nargs='?',
+                          help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
+    out_args.add_argument('--format', help='override guessing format from file ending with provided format',
+                          default=None)
+    output_utility_func(out_args)
+
+    # EXACT
+    exact_args_ = commands.add_parser('exact', help="Perform an exact CSM calculation", conflict_handler='resolve',
+                                      usage='csm exact TYPE [optional args]\n'
+                                            'example: csm exact s4 --input --output myresults/1 --keep-structure --timeout 500')
+    exact_args = exact_args_.add_argument_group("Args for exact calculation")
+    shared_calc_utility_func(exact_args)
+    exact_args.add_argument('--use-perm', nargs="?", type=str, default=None,
+                            const=os.path.join(os.getcwd(), "perm.txt"),
+                            help='Compute exact CSM for a single permutation, default is current directory/perm.txt')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
-                            help='EXACT ONLY: Maintain molecule structure from being distorted in the exact calculation')
-    exact_args.add_argument('--no-constraint', action='store_true', default=False,
-                            help='EXACT ONLY: Do not use the constraints algorithm to traverse the permutation tree')
+                            help="Don't allow permutations that break bonds")
+    exact_args.add_argument('--output-perms', const="DEFAULT", nargs='?',
+                            help='Writes all enumerated permutations to file. Default is OUTPUT_DIR/perms.csv, or working directory/perms.csv is --output not selected')
+    shared_normalization_utility_func(exact_args)
+    add_input_output_utility_func(exact_args_)
 
-    # calculation arguments that only apply to approx
-    # parser.add_argument('--use-dir', type=str,
-    #                    help='Run the approx algorithm using predefined axes as the starting point')
-    approx_args = parser.add_argument_group('Arguments for Approx Algorithm')
+    # APPROX
+    approx_args_ = commands.add_parser('approx', help="Approximate the CSM value", conflict_handler='resolve',
+                                       usage='csm approx TYPE [optional args]\n'
+                                             'example: csm approx ch --input --output --detect-outliers --sn-max 10')
+    approx_args = approx_args_.add_argument_group("Args for approx calculation")
+    shared_calc_utility_func(approx_args)
+    # choosing dir:
     approx_args.add_argument('--detect-outliers', action='store_true', default=False,
-                             help="APPROX ONLY:Use outlier detection to improve guesses for initial directions in approx algorithm")
+                             help="Use outlier detection to improve guesses for initial directions in approx algorithm. Only activated for more than 10 equivalence groups.")
     approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
-                             help="APPROX ONLY:Don't add orthogonal directions to calculated directions")
-    approx_args.add_argument('--fibonacci', type=int,
-                             help="APPROX ONLY: Use fibonacci sphere to generate 50 starting directions")
+                             help="Don't add orthogonal directions to calculated directions")
     approx_args.add_argument('--use-best-dir', action='store_true', default=False,
-                             help='APPROX ONLY:Only use the best direction')
-    approx_args.add_argument('--many-chains', action='store_true', default=False,
-                             help='APPROX ONLY: Use the new chains algorithm for many chains. Will automatically apply use-chains')
-    approx_args.add_argument('--greedy', action='store_true', default=False,
-                             help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
+                             help='Only use the best direction (ignored if --fibonacii is used)')
+    approx_args.add_argument('--fibonacci', type=int,
+                             help="Use fibonacci sphere to generate N starting directions")
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
+    # algorithm choice
+    mutex_approx_args = approx_args.add_mutually_exclusive_group()
+    mutex_approx_args.add_argument('--greedy', action='store_const', const='greedy', default='hungarian',
+                                   dest='approx_algorithm',
+                                   help='use the old greedy approx algorithm (no hungarian)')
+    mutex_approx_args.add_argument('--many-chains', action='store_const', const='many-chains', dest='approx_algorithm',
+                                   help='Use the new chains algorithm for many chains. Will automatically apply use-chains')
+    mutex_approx_args.add_argument('--keep-structure', action='store_const', const='structured',
+                                   dest='approx_algorithm',
+                                   help='Use keep-structure approximate algorithm')
     approx_args.add_argument('--selective', type=int,
-                        help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
-    approx_args.add_argument('--statistics', type=str,
-                        help='Print statistics about each direction to a file')
-    approx_args.add_argument('--polar', action='store_true', default=False,
-                        help="Print polar coordinates instead of cartesian coordinates")
+                             help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
+    approx_args.add_argument('--parallel-dirs', type=int, const=0, nargs='?',
+                             help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used. Cannot be used with --parallel')
+    # outputs
+    approx_args.add_argument('--print-approx', action='store_true', default=False,
+                             help='print log to screen from approx')
+    shared_normalization_utility_func(approx_args)
+    add_input_output_utility_func(approx_args_)
 
-    # output formatting and printing options
-    out_args = parser.add_argument_group("Output Arguments")
-    out_args.add_argument('--format', help='Use a specific input/output format')
-    out_args.add_argument('--json-output', action='store_true', default=False,
-                        help='Print output in json format to a file')
-    out_args.add_argument('--print-local', action='store_true', default=False,
-                        help='Print the local CSM (csm for each atom) in the output file')
-    out_args.add_argument('--output-perms', action='store', default=None,
-                        help='Writes all enumerated permutations to file')
-    out_args.add_argument('--output-branches', action='store_true', default=False,
-                        help='Writes all backtracking branches to the console')
-    out_args.add_argument('--print-approx', action='store_true', default=False,
-                        help='add some printouts to approx')
-    out_args.add_argument('--print-denorm', action='store_true', default=False,
-                        help='when printing the original molecule, print the denormalized coordinates')
-
-    # defunct: no longer applied in code
-    # parser.add_argument('--no-limit', action='store_true', default=False, help='Allows running program while ignoring computational complexity')
-    # parser.add_argument('--babel-test', action='store_true', default=False, help="Test if the molecule is legal or not")
-    # parser.add_argument('--time-only', action='store_true', default=False, help="Only print the time and exit")
-    # parser.add_argument('--write-openu', action='store_true', default=False,
-    #                    help='Write output in open university format')
-
-
+    # TRIVIAL
+    trivial_args_ = commands.add_parser('trivial', help="Calculate trivial (identity) CSM", conflict_handler='resolve',
+                                        usage='csm trivial SYMM [optional args]\n'
+                                              'example: csm trivial c4 --input --output --permute-chains')
+    trivial_args = trivial_args_.add_argument_group("Args for trivial calculation")
+    shared_calc_utility_func(trivial_args)
+    # this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
+    # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
+    trivial_args.add_argument('--permute-chains', action='store_true', default=False,
+                              help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")
+    shared_normalization_utility_func(trivial_args)
+    add_input_output_utility_func(trivial_args_)
     return parser
+
 
 def _process_arguments(parse_res):
-    """
-    Divides the parsed arguments (from argparse) into three dictionaries
-    Args:
-        parse_res: Result of argparse
+    def _parse_ranges_and_numbers(input):
+        '''
+        given a string such as '1-5,8,12-13', where 1 is the first index, returns an array of indices that matches
+        (but where 0 is the first index) (1-5 includes 5)
+        :param input: a string with number ranges and individual numbers, separated by commas
+        :return: [int, int, int..]
+        '''
+        selected = []
+        if input:
+            items = input.split(',')
+            for item in items:
+                if "-" in item:
+                    range_limits = item.split("-")
+                    for i in range(int(range_limits[0]), int(range_limits[1]) + 1):
+                        selected.append(i - 1)
+                else:
+                    selected.append(int(item) - 1)
+        return selected
 
-    Returns:
-        dictionary_args - input arguments, calculation arguments and output arguments
+    def parse_input(dictionary_args):
+        dictionary_args['in_file_name'] = parse_res.input
+        dictionary_args["conn_file"] = parse_res.connect
+        if parse_res.read_fragments:
+            dictionary_args['use_chains'] = True
+            logger.warning(
+                "Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
-    """
+        dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
+        dictionary_args['select_atoms'] = _parse_ranges_and_numbers(parse_res.select_atoms)
 
-    dictionary_args = {}
+    def parse_output(dictionary_args):
+        dictionary_args['out_file_name'] = parse_res.output
 
-    # the first three positional arguments
+    #    dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
-    op = Operation(parse_res.type)
+    dictionary_args = dict(vars(parse_res))
+    if "pipe" not in dictionary_args:
+        dictionary_args["pipe"] = False
 
-    dictionary_args['operation'] = op
-    dictionary_args['op_type'] = op.type
-    dictionary_args['op_order'] = op.order
-    dictionary_args['op_name'] = op.name
+    if parse_res.command == "read":
+        dictionary_args["in_format"] = parse_res.format
+        parse_input(dictionary_args)
+    elif parse_res.command == "write":
+        dictionary_args["out_format"] = parse_res.format
+        parse_output(dictionary_args)
+    else:
+        # get input/output if relevant
+        parse_input(dictionary_args)
+        parse_output(dictionary_args)
 
-    dictionary_args['in_file_name'] = parse_res.input
+        if parse_res.parallel is not None:
+            dictionary_args['pool_size'] = parse_res.parallel
+            dictionary_args['parallel'] = True  # doing this before previous line causes weird bug
 
-    dictionary_args['out_file_name'] = parse_res.output
+        if parse_res.command == "comfile":
+            dictionary_args["command_file"] = parse_res.comfile
+            dictionary_args["old_command"] = parse_res.old_cmd
+        else:
+            dictionary_args['operation'] = Operation(parse_res.symmetry, parse_res.sn_max)
+            dictionary_args['normalizations'] = parse_res.normalize
 
-    # optional arguments:
-    dictionary_args['timeout'] = parse_res.timeout
+            if parse_res.command == 'exact':
+                if parse_res.use_perm:
+                    dictionary_args['perm_file_name'] = parse_res.use_perm
+                dictionary_args['perms_csv_name'] = parse_res.output_perms
+                if parse_res.output_perms == "DEFAULT":
+                    try:
+                        base_path = os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
+                        dictionary_args['perms_csv_name'] = os.path.join(base_path, "perms.csv")
+                    except:
+                        dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
+            if parse_res.command == 'approx':
+                # choose dir:
+                # dictionary_args['detect_outliers'] = parse_res.detect_outliers
+                dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
+                if parse_res.fibonacci is not None:
+                    dictionary_args["num_dirs"] = parse_res.fibonacci
+                    dictionary_args["fibonacci"] = True  # doing this before previous line causes weird bug
+                dir = parse_res.dir
+                if dir:
+                    dictionary_args['dirs'] = [dir]
 
-    # types of calculations:
-    dictionary_args['calc_type'] = 'exact'
-    if parse_res.approx:
-        dictionary_args['calc_type'] = 'approx'
-    if parse_res.trivial:
-        if parse_res.approx:
-            raise ValueError("--approx and --trivial are mutually exclusive")
-        dictionary_args['calc_type'] = 'trivial'
+                # algorithm choice:
+                if parse_res.approx_algorithm == "many-chains":
+                    dictionary_args['use_chains'] = True
 
-    # general input/calculation arguments:
-    # dictionary_args['ignore_hy'] = parse_res.ignore_hy
-    dictionary_args['remove_hy'] = parse_res.remove_hy
-    dictionary_args['ignore_symm'] = parse_res.ignore_sym
-    dictionary_args['sn_max'] = parse_res.sn_max
-    dictionary_args['use_mass'] = parse_res.use_mass
-    dictionary_args['babel_bond'] = parse_res.babel_bond
-    dictionary_args['use_sequence'] = parse_res.use_sequence
+                if parse_res.selective is not None:
+                    dictionary_args["num_selected"] = parse_res.selective
+                    dictionary_args["selective"] = True  # doing this before previous line causes weird bug
 
-    # if parse_res.use_sequence and parse_res.keep_structure:
-    #    raise ValueError("--keep-structure and --use-sequence are mutually exclusive")
+                if parse_res.parallel_dirs is not None:
+                    if parse_res.parallel:
+                        raise ValueError("Cannot specify --parallel and --parallel-dirs at same time")
+                    dictionary_args['pool_size'] = parse_res.parallel_dirs
+                    dictionary_args['parallel_dirs'] = True  # doing this before previous line causes weird bug
 
+                    # outputs:
+                # dictionary_args['print_approx'] = parse_res.print_approx
+                # dictionary_args['polar'] = parse_res.polar
+            if parse_res.command == 'trivial':
+                if parse_res.permute_chains:
+                    dictionary_args["use_chains"] = True
 
+    try:
+        timestamp = str(parse_res.timestamp)
+        out_file_name = dictionary_args['out_file_name']
+        if os.path.exists(out_file_name) and not parse_res.overwrite:
+            if not os.path.isfile(out_file_name):
+                head, tail = os.path.split(out_file_name)
+                dictionary_args['out_file_name'] = os.path.join(head, tail + timestamp)
+            else:
+                filename = os.path.basename(out_file_name)
+                filename = filename[:-4] + timestamp + filename[-4:]
+                head, tail = os.path.split(out_file_name)
+                dictionary_args['out_file_name'] = os.path.join(head, filename)
 
-    # use chains and fragments
-    dictionary_args['use_chains'] = parse_res.use_chains
-    dictionary_args['read_fragments'] = parse_res.read_fragments
-
-    if not dictionary_args['use_chains'] and parse_res.read_fragments:
-        dictionary_args['use_chains'] = True
-        logger.warn(
-            "--read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
-
-    # calculation arguments for exact only:
-    if parse_res.use_perm:
-        if dictionary_args['calc_type'] != 'exact':
-            logger.warning("--use-perm applies only to exact calculation.")
-        dictionary_args['perm_file_name'] = parse_res.use_perm
-
-    dictionary_args['keep_structure'] = parse_res.keep_structure
-    #if dictionary_args['calc_type'] in ['approx', 'trivial'] and parse_res.keep_structure:
-    #    logger.warning("--keep-structure has no effect on approximate or trivial algorithms.")
-
-    dictionary_args['no_constraint'] = parse_res.no_constraint
-    if dictionary_args['calc_type'] in ['approx', 'trivial'] and parse_res.no_constraint:
-        logger.warning("--no-constraint has no effect on approximate or trivial algorithms.")
-
-    # calculation arguments for approx only:
-    dictionary_args['approx_algorithm'] = 'hungarian'
-    if parse_res.many_chains:
-        if dictionary_args['calc_type'] != 'approx':
-            logger.warning("--many-chains applies only to approx calculation. --many-chains will be ignored")
-        if parse_res.greedy:
-            raise ValueError("--many-chains and --greedy are mutually exclusive")
-        dictionary_args['use_chains'] = True
-        dictionary_args['approx_algorithm'] = 'many-chains'
-    if parse_res.greedy:
-        if dictionary_args['calc_type'] != 'approx':
-            logger.warning("--greedy applies only to approx calculation. --greedy will be ignored")
-        dictionary_args['approx_algorithm'] = 'greedy'
-
-    dictionary_args['detect_outliers'] = parse_res.detect_outliers
-    if dictionary_args['calc_type'] != 'approx' and parse_res.detect_outliers:
-        logger.warning("--detect-outliers applies only to approx calculation. --detect-outliers will be ignored")
-
-    dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
-    if dictionary_args['calc_type'] != 'approx' and parse_res.no_orthogonal:
-        logger.warning("--no-orthogonal applies only to approx calculation. --no-orthogonal will be ignored")
-
-    dictionary_args['use_best_dir'] = parse_res.use_best_dir
-    if dictionary_args['calc_type'] != 'approx' and parse_res.use_best_dir:
-        logger.warning("--use-best-dir applies only to approx calculation. --use-best-dir will be ignored")
-
-    if parse_res.fibonacci is not None:
-        dictionary_args["fibonacci"] = True
-        dictionary_args["num_dirs"] = parse_res.fibonacci
-
-    if parse_res.selective is not None:
-        if parse_res.fibonacci is None:
-            raise ValueError("For now --selective must be used with --fibonacci")
-        dictionary_args["selective"] = True
-        dictionary_args["num_selected"] = parse_res.selective
-
-    dir = parse_res.dir
-    if dir:
-        dictionary_args['dirs'] = [dir]
-    # if parse_res.use_dir:
-    #    if dictionary_args['calc_type'] != 'approx':
-    #        logger.warning("--use-dir applies only to approx calculation. --use-dir will be ignored")
-    #    dictionary_args['dir_file_name'] = parse_res.use_dir
-
-
-
-
-    # output arguments:
-    dictionary_args['json_output'] = parse_res.json_output
-    dictionary_args['print_approx'] = parse_res.print_approx
-    dictionary_args['print_perms'] = parse_res.output_perms
-    dictionary_args['print_branches'] = parse_res.output_branches
-    dictionary_args['print_denorm'] = parse_res.print_denorm
-    dictionary_args['format'] = parse_res.format
-    dictionary_args['useformat'] = dictionary_args['format'] is not None
-    if not dictionary_args['format']:
-        # get input file extension
-        dictionary_args['format'] = parse_res.input.split(".")[-1]
-
-    # dictionary_args['write_openu'] = parse_res.write_openu
-    dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
-
-    dictionary_args['perms_csv_name'] = parse_res.output_perms
-    dictionary_args['polar']=parse_res.polar
-    dictionary_args['stat_file_name']=parse_res.statistics
-
-    permuters.print_branches = parse_res.output_branches
+    except (KeyError, TypeError, AttributeError) as e:
+        # there is no output, eg in Read
+        # output is None, eg in a line of command
+        # parse_res doesn't have unique attribute
+        pass
 
     return dictionary_args
 
 
-def get_split_arguments(args):
-    """
-    :param args:
-    :return:
-    """
+def get_parsed_args(args):
     parser = _create_parser()
-    parsed_args=parser.parse_args(args)
-    #parsed_args, leftovers = parser.parse_known_args(args)
-    dictionary_args = _process_arguments(parsed_args)
-    return dictionary_args
+    parsed_args = parser.parse_args(args)
+    if parsed_args.version:
+        print("CSM version:", __version__)
+        sys.exit()
+    if parsed_args.command is None:
+        parser.error("You must select a command from: read, exact, approx, trivial, write")
+    processed_args = _process_arguments(parsed_args)
+    return processed_args
 
 
-
-def _create_parser_2():
-    parser = OurParser(allow_abbrev=False)
-
-    commands=parser.add_subparsers(title="Available commands")
-
-    input_type_=commands.add_parser('read', help="Read a molecule file into a json in CSM format")
-    input_type= input_type_.add_argument_group("Input args", description="Input a molecule")
-    input_type.add_argument('--remove-hy', action='store_true', default=False,
-                            help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
-    input_type.add_argument('--ignore-sym', action='store_true', default=False,
-                            help='Ignore all atomic symbols, performing a purely geometric operation')
-    input_type.add_argument('--use-mass', action='store_true', default=False,
-                            help='Use the atomic masses to define center of mass')
-    input_type.add_argument('--babel-bond', action='store_true', default=False, help='Let OpenBabel compute bonding')
-    input_type.add_argument('--use-sequence', action='store_true', default=False,
-                            help='create equivalence class for pdb file using sequence information. Can\'t be used with --use-chains')
-    input_type.add_argument('--ignore-chains', action='store_true', default=False,
-                            help='When a molecule has chains, ignore them (affects trivial, approx)')
-    input_type.add_argument('--read-fragments', action='store_true', default=False,
-                            help='Read fragments from .mol or .pdb file as chains')
-
-    # output formatting and printing options
-    out_args_ =commands.add_parser('write', help="Output the results of the calculation to a file")
-    out_args=out_args_.add_argument_group("Output args")
-    out_args.add_argument('--format', help='Use a specific input/output format')
-    out_args.add_argument('--json-output', action='store_true', default=False,
-                          help='Print output in json format to a file')
-    out_args.add_argument('--print-local', action='store_true', default=False,
-                          help='Print the local CSM (csm for each atom) in the output file')
-    out_args.add_argument('--output-perms', action='store', default=None,
-                          help='Writes all enumerated permutations to file')
-    out_args.add_argument('--output-branches', action='store_true', default=False,
-                          help='Writes all backtracking branches to the console')
-    out_args.add_argument('--print-approx', action='store_true', default=False,
-                          help='add some printouts to approx')
+def get_allowed_args_for_command(command):
+    parser = _create_parser()
+    commands = parser._subparsers._group_actions[0]._name_parser_map
+    allowed_args = commands[command]._option_string_actions
+    return allowed_args
 
 
-    exact_args_=commands.add_parser('exact', help="Perform an exact CSM calculation", parents=[input_type, out_args], conflict_handler='resolve')
-    exact_args=exact_args_.add_argument_group("group 1")
-    exact_args.add_argument('--use-perm', type=str,
-                            help='EXACT ONLY: Compute exact CSM for a single permutation')
-    exact_args.add_argument('--keep-structure', action='store_true', default=False,
-                            help='EXACT ONLY: Maintain molecule structure from being distorted in the exact calculation')
-    exact_args.add_argument('--no-constraint', action='store_true', default=False,
-                            help='EXACT ONLY: Do not use the constraints algorithm to traverse the permutation tree')
-    exact_argss=exact_args_.add_argument_group("group 2")
-    exact_argss.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
-    exact_argss.add_argument('--timeout', default=300,
-                             help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
+def check_modifies_molecule(cmd):
+    modifies_molecule = False
+    allowed_mol_args = get_allowed_args_for_command('read')
+    for arg in cmd.split():
+        if arg in allowed_mol_args:
+            modifies_molecule = True
+            break
+    return modifies_molecule
 
 
-    # calculation arguments that only apply to exact:
-    approx_args=commands.add_parser('approx', help="Approximate the CSM value")
-    approx_args.add_argument('--detect-outliers', action='store_true', default=False,
-                             help="APPROX ONLY:Use outlier detection to improve guesses for initial directions in approx algorithm")
-    approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
-                             help="APPROX ONLY:Don't add orthogonal directions to calculated directions")
-    approx_args.add_argument('--use-best-dir', action='store_true', default=False,
-                             help='APPROX ONLY:Only use the best direction')
-    approx_args.add_argument('--many-chains', action='store_true', default=False,
-                             help='APPROX ONLY: Use the new chains algorithm for many chains. Will automatically apply use-chains')
-    approx_args.add_argument('--greedy', action='store_true', default=False,
-                             help='APPROX ONLY: use the old greedy approx algorithm (no hungarian)')
-    approx_args.add_argument('--fibonacci', action='store_true', default=False,
-                             help='APPROX ONLY: use a fibonacci sphere to generate 50 starting directions')
-    approx_args.add_argument('--dir', nargs=3, type=float,
-                             help='run approximate algorithm using a specific starting direction')
-    approx_args.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
-    approx_args.add_argument('--timeout', default=300,
-                        help="Specify a timeout for CSM in seconds. Default is 5 minutes (300)", type=int)
+def old_cmd_converter(cmd):
+    '''
+    receives a command string. returns a valid (in the new args format) set of args.
+    used by --command to read lines from a file
+    :param cmd:
+    :return:
+    '''
 
-    trivial_args=commands.add_parser('trivial', help="Calculate trivial (identity) CSM")
-    trivial_args.add_argument('--sn-max', type=int, default=8, help='The maximal sn to try, relevant only for chirality')
-    trivial_args.add_argument('--permute-chains', action='store_true', default=False)
+    if cmd[:3] == "csm":
+        cmd = cmd[3:]
+    args = cmd.split()
+    symm = args[0]
+    input = args[1]
+    output = args[2]
+    command = "exact"
+    if "--trivial" in args:
+        command = "trivial"
+    if "--approx" in args:
+        command = "approx"
+
+    final_args = [command, symm]
+    allowed_args = get_allowed_args_for_command(command)
+
+    prev_arg_fine = False
+    for arg in args[3:]:
+        if arg[:2] != "--":
+            if prev_arg_fine:
+                final_args.append(arg)
+        if arg in allowed_args:
+            final_args.append(arg)
+            prev_arg_fine = True
 
 
+        else:
+            prev_arg_fine = False
 
-
-    return parser
-
-if __name__ == '__main__':
-    parser=_create_parser_2()
-    parser.parse_args(['exact', '-h'])
+    return final_args

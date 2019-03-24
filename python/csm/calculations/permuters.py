@@ -1,10 +1,11 @@
-import operator
-import sys
 import datetime
+import sys
+
 import numpy as np
 from csm.fast import PreCalcPIP, PermInProgress
 
-from csm.calculations.constants import start_time, CalculationTimeoutError
+from csm.calculations.basic_calculations import now, check_timeout
+from csm.input_output.formatters import csm_log as print
 
 __author__ = 'Devora'
 '''
@@ -166,7 +167,7 @@ class DictionaryConstraints(ConstraintsBase):
     def check(self):
         for key in self.constraints:
             if not self.constraints[key]:
-                #print("no constraints for", key)
+                # print("no constraints for", key)
                 return False
         return True
 
@@ -181,7 +182,7 @@ class DictionaryConstraints(ConstraintsBase):
             key_length = len(self.constraints[key])
             if key_length < min_length:
                 min_key, min_length = key, key_length
-                if key_length == 1: #can't get shorter than 1, no point searching further
+                if key_length == 1:  # can't get shorter than 1, no point searching further
                     break
 
         if min_key is not None:
@@ -236,6 +237,7 @@ class DictionaryConstraints(ConstraintsBase):
 
             instruction, params = self.pop_undo()
 
+
 class DistanceConstraints(DictionaryConstraints):
     def __init__(self, molecule, distances_dict):
         self.distances_dict = distances_dict
@@ -247,6 +249,7 @@ class DistanceConstraints(DictionaryConstraints):
         for index, atom in enumerate(molecule.atoms):
             def dict_lookup(ind):
                 return self.distances_dict[index][ind]
+
             constraints[index] = sorted(atom.equivalency, key=dict_lookup)
         return constraints
 
@@ -275,16 +278,19 @@ class DistanceConstraints(DictionaryConstraints):
                 for index in params[0]:
                     def dict_lookup(ind):
                         return self.distances_dict[index][ind]
+
                     self.constraints[index].append(constraint)
                     self.constraints[index].sort(key=dict_lookup)
             elif instruction == 'remove_constraint_from_index':
                 if params[0] not in self.constraints:
                     raise ValueError("Can't find %d in constraints!" % params[0])
-                index=params[0]
+                index = params[0]
                 constraint = self.constraints[index]
                 constraint.append(params[1])
+
                 def dict_lookup(ind):
                     return self.distances_dict[index][ind]
+
                 self.constraints[index].sort(key=dict_lookup)
                 # self.constraints[params[0]].add(params[1])
             elif instruction == 'remove_index':
@@ -294,19 +300,20 @@ class DistanceConstraints(DictionaryConstraints):
 
             instruction, params = self.pop_undo()
 
+
 class DistanceConstraintsWithSelection(DistanceConstraints):
     def choose(self):
         min_length = 1e40
         min_key = None
 
-        min_dist=1e40
-        min_dist_key=None
+        min_dist = 1e40
+        min_dist_key = None
 
         for key in self.constraints:
-            second_key=self.constraints[key][0]
-            dist=self.distances_dict[key][second_key]
-            if dist<min_dist:
-                min_dist_key, min_dist= key, dist
+            second_key = self.constraints[key][0]
+            dist = self.distances_dict[key][second_key]
+            if dist < min_dist:
+                min_dist_key, min_dist = key, dist
 
             key_length = len(self.constraints[key])
             if key_length < min_length:
@@ -315,7 +322,7 @@ class DistanceConstraintsWithSelection(DistanceConstraints):
                     break
 
         if min_key is not None:
-            if key_length==1:
+            if key_length == 1:
                 return min_key, list(self.constraints[min_key])
             else:
                 return min_dist_key, list(self.constraints[min_dist_key])
@@ -418,7 +425,6 @@ class ConstraintPropagator:
         return cycle_head, cycle_tail, cycle_length, cycle
 
 
-
 class ConstraintPermuter:
     def __init__(self, molecule, op_order, op_type, keep_structure, timeout=300, *args, **kwargs):
         self.molecule = molecule
@@ -430,19 +436,23 @@ class ConstraintPermuter:
         self.falsecount = 0
         self.cycle_lengths = [1, op_order]
         self.timeout = timeout
+        self.start_time = datetime.datetime.now()
         if op_type == 'SN':
             self.cycle_lengths.append(2)
         self.constraints_prop = ConstraintPropagator(self.molecule, self.op_order, self.op_type, keep_structure)
         self.constraints = DictionaryConstraints(self.molecule)
         self.print_branches = False
+        self._permute_start = datetime.datetime.now()
+
+    @property
+    def run_time(self):
+        now = datetime.datetime.now()
+        time_d = now - self._permute_start
+        return time_d.total_seconds()
 
     def check_timeout(self):
         # step zero: check if time out
-        now = datetime.datetime.now()
-        time_d = datetime.datetime.now() - start_time
-        if time_d.total_seconds() > self.timeout:
-            raise CalculationTimeoutError(time_d.total_seconds())
-        return now
+        check_timeout(self.start_time, self.timeout)
 
     def create_cycle(self, atom, pip):
         group = []
@@ -571,30 +581,22 @@ class ConstraintPermuter:
         self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
 
 
-
 class ConstraintsOrderedByDistancePermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_dict, perm_timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, keep_structure=True)
-        if len(molecule)>10000:
+        if len(molecule) > 10000:
             raise ValueError("Please don't use keep structure on molecules this big yet")
-        if len(molecule)>100:
+        if len(molecule) > 100:
             sys.setrecursionlimit(len(molecule))
-        self.constraints=DistanceConstraints(molecule, distances_dict)
-        #self.print_branches = True
-        self._permute_start = datetime.datetime.now()
+        self.constraints = DistanceConstraints(molecule, distances_dict)
+        # self.print_branches = True
+        self._permute_start = now()
         self._permute_timeout = perm_timeout
-        #print("start time", start_time)
-
-    @property
-    def run_time(self):
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        return time_d.total_seconds()
+        # print("start time", start_time)
 
     def check_timeout(self):
         # step zero: check if time out
-        if self.run_time > self._permute_timeout:
-            raise CalculationTimeoutError(self.run_time)
+        check_timeout(self._permute_start, self._permute_timeout)
 
     def permute(self):
         # step 1: create initial empty pip and qip
@@ -607,38 +609,29 @@ class ConstraintsOrderedByDistancePermuter(ConstraintPermuter):
             self.count += 1
             yield pip.state
 
+
 class ConstraintsSelectedByDistancePermuter(ConstraintsOrderedByDistancePermuter):
     def __init__(self, molecule, op_order, op_type, distances_dict, timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, distances_dict, keep_structure=True)
-        self.constraints=DistanceConstraintsWithSelection(molecule, distances_dict)
-        #self.print_branches = True
+        self.constraints = DistanceConstraintsWithSelection(molecule, distances_dict)
+        # self.print_branches = True
 
 
 class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_list, perm_timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, keep_structure=True)
-        if len(molecule)>10000:
+        if len(molecule) > 10000:
             raise ValueError("Please don't use approx keep structure on molecules this big yet")
-        if len(molecule)>100:
+        if len(molecule) > 100:
             sys.setrecursionlimit(len(molecule))
         self.distances = distances_list
-        #self.print_branches=True
-        self._permute_start = datetime.datetime.now()
+        # self.print_branches=True
         self._permute_timeout = perm_timeout
-
-    @property
-    def run_time(self):
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        return time_d.total_seconds()
 
     def check_timeout(self):
         # step zero: check if time out
-        #now = super().check_timeout()
-        now = datetime.datetime.now()
-        time_d = now - self._permute_start
-        if time_d.total_seconds() > self._permute_timeout:
-            raise CalculationTimeoutError(time_d.total_seconds())
+        # now = super().check_timeout()
+        check_timeout(self._permute_start, self._permute_timeout)
 
     def placement_generator(self, start_index):
         for distance_index in range(start_index, len(self.distances)):
@@ -691,14 +684,3 @@ class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
 
         # undo the handling of len ones
         self.unhandle_len_ones(pip, len_one_placements, len_one_old_states)
-
-
-if __name__ == "__main__":
-    import sys
-    from csm.input_output.arguments import get_split_arguments
-    from csm.input_output.readers import read_inputs
-
-    args = sys.argv[1:]
-    in_args, calc_args, out_args = get_split_arguments(args)
-    calc_args['molecule'], calc_args['perm'], calc_args['dirs'] = read_inputs(**in_args)
-    c = ConstraintPermuter(**calc_args)

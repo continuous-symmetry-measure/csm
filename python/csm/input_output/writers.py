@@ -1,351 +1,856 @@
-import json
-from csm.input_output.formatters import format_CSM, non_negative_zero
-import io
+import openbabel as ob
+import os
+import re
 from openbabel import OBConversion
-from csm.calculations.basic_calculations import check_perm_structure, check_perm_cycles, cart2sph
+
+from csm import __version__
+from csm.calculations.basic_calculations import cart2sph
+from csm.input_output.formatters import format_CSM, format_unknown_str, output_strings, non_negative_zero
 from csm.molecule.molecule import MoleculeReader
 
 
-# molwriters
-class CSMMolWriter:
-    def write(self, f, result, op_name, format="csm"):
-        self.print_output_csm(f, result, op_name)
+def write_array_to_file(f, arr, add_one=False, separator=" "):
+    '''
+    :param f: filestream being written to
+    :param arr: array being written
+    :param add_one: some arrays should be written with 1-index instead of 0 index, if so add_one=True
+    :param separator: default is " "
+    '''
+    for item in arr:
 
-    def print_output_csm(self, f, result, op_name):
-        """
-        Prints output in CSM format
-        :param f: File to print to
-        :param result: The result of the CSM calculation (a CSMState)
-        :param calc_args: Calculation arguments to CSM
-        """
-        size = len(result.molecule.atoms)
-
-        # print initial molecule
-
-        f.write("\nINITIAL STRUCTURE COORDINATES\n%i\n\n" % size)
-        for i in range(size):
-            f.write("%3s%10.5lf %10.5lf %10.5lf\n" %
-                    (result.molecule.atoms[i].symbol,
-                     non_negative_zero(result.molecule.atoms[i].pos[0]),
-                     non_negative_zero(result.molecule.atoms[i].pos[1]),
-                     non_negative_zero(result.molecule.atoms[i].pos[2])))
-
-        for i in range(size):
-            f.write("%d " % (i + 1))
-            for j in result.molecule.atoms[i].adjacent:
-                f.write("%d " % (j + 1))
-            f.write("\n")
-
-        # print resulting structure coordinates
-
-        f.write("\nMODEL 02 RESULTING STRUCTURE COORDINATES\n%i\n" % size)
-
-        for i in range(size):
-            f.write("%3s%10.5lf %10.5lf %10.5lf\n" %
-                    (result.molecule.atoms[i].symbol,
-                     non_negative_zero(result.symmetric_structure[i][0]),
-                     non_negative_zero(result.symmetric_structure[i][1]),
-                     non_negative_zero(result.symmetric_structure[i][2])))
-
-        for i in range(size):
-            f.write("%d " % (i + 1))
-            for j in result.molecule.atoms[i].adjacent:
-                f.write("%d " % (j + 1))
-            f.write("\n")
+        if add_one:
+            if item == "n/a":
+                pass
+            else:
+                item = item + 1
+            f.write(str(item) + separator)
+        else:
+            if item == "n/a":
+                f.write("%10s" % item)
+            else:
+                f.write("%10s" % ("%.4lf" % item))
 
 
-class OBMolWriter:
-    def write(self, f, result, op_name, format):
-        self.print_output_ob(f, result, format, op_name)
+def get_line_header(index, result):
+    index_str = "%02d" % (index + 1)  # start from 1 instead of 0
+    return "L" + index_str + "_" + result.operation.op_code
 
-    def print_output_ob(self, f, result, format, op_name):
-        """
-        Prints output using Open Babel
-        :param f: File to write to
-        :param result: The result of the CSM calculation (a CSMState)
-        :param in_args: Input arguments to CSM
-        :param calc_args: Calculation arguments to CSM
-        :param out_args: Output arguments to CSM
-        """
-        # print initial molecule
-        if format == 'pdb':
+
+class LegacyFormatWriter:
+    def __init__(self, result, format):
+        self.result = result
+        self.format = format
+
+    # custom formatters so that even if changes are made elsewhere, legacy remains the same
+    def format_CSM(self, csm):
+        return "%.4lf" % (abs(csm))
+
+    def non_negative_zero(self, number):
+        import math
+        if math.fabs(number) < 0.00001:
+            return 0.0000
+        else:
+            return number
+
+    def write(self, f, write_local=False):
+        f.write("%s: %s\n" % (self.result.operation.name, self.format_CSM(self.result.csm)))
+        f.write("SCALING FACTOR: %7lf\n" % self.non_negative_zero(self.result.d_min))
+
+        molecule_writer = MoleculeWriter(MoleculeWrapper(self.result))
+        if self.format == 'pdb':
             f.write("\nMODEL 01")
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
+        molecule_writer.write_original(f, self.result, consecutive=True)
 
-        obmol = MoleculeReader._obm_from_file(result.molecule._filename,
-                                              result.molecule._format,
-                                              result.molecule._babel_bond)[0]
-        for to_remove in result.molecule._deleted_atom_indices:
-            obmol.DeleteAtom(obmol.GetAtom(to_remove + 1))
-
-        num_atoms = obmol.NumAtoms()
-        # update coordinates
-        for i in range(num_atoms):
-            try:
-                atom = obmol.GetAtom(i + 1)
-                atom.SetVector(non_negative_zero(result.molecule.atoms[i].pos[0]),
-                               non_negative_zero(result.molecule.atoms[i].pos[1]),
-                               non_negative_zero(result.molecule.atoms[i].pos[2]))
-            except Exception as e:
-                pass
-
-        self.write_ob_molecule(obmol, format, f)
-
-        # print resulting structure coordinates
-
-        # update output coordinates to match symmetric structure
-        for i in range(num_atoms):
-            try:
-                a = obmol.GetAtom(i + 1)
-                a.SetVector(non_negative_zero(result.symmetric_structure[i][0]),
-                            non_negative_zero(result.symmetric_structure[i][1]),
-                            non_negative_zero(result.symmetric_structure[i][2]))
-            except Exception as e:
-                pass
-
-        if format == 'pdb':
+        if self.format == 'pdb':
             f.write("\nMODEL 02")
         f.write("\nRESULTING STRUCTURE COORDINATES\n")
-        self.write_ob_molecule(obmol, format, f)
-        if format == 'pdb':
+        molecule_writer.write_symmetric(f, self.result, consecutive=True)
+        if self.format == 'pdb':
             f.write("END\n")
 
-    def write_ob_molecule(self, mol, format, f):
-        """
-        Write an Open Babel molecule to file
-        :param mol: The molecule
-        :param format: The output format
-        :param f: The file to write output to
-        :param f_name: The file's name (for extension-finding purpose)
-        """
-        conv = OBConversion()
-        if not conv.SetOutFormat(format):
-            raise ValueError("Error setting output format to " + format)
-
-        # write to file
-
-        try:
-            s = conv.WriteString(mol)
-        except (TypeError, ValueError, IOError):
-            raise ValueError("Error writing data file using OpenBabel")
-        if str.lower(format) == 'pdb':
-            s = s.replace("END", "ENDMDL")
-        f.write(s)
-
-
-# resultwriters
-class ResultWriter:
-    """
-    A class for writing results. It can write molecules to various openbabel and CSM formats, 
-    can write headers, local csm, permutation, etc. Most functions prefixed write_ expect a filestream. 
-    The two print functions may be changed in the future but for now print to the screen
-    Inheriting classes are recommended to inherit a write() function that can be called from main()
-    """
-
-    def __init__(self, result, op_name, format, print_local=False, *args, **kwargs):
-        self.result = result
-        self.op_name = op_name
-        self.format = str.lower(format)
-        self.print_local = print_local
-        self.result_string = self.get_result_string()
-
-    def write(self):
-        raise NotImplementedError
-
-    def get_result_string(self):
-        result_io = io.StringIO()
-        self._write_results(result_io)
-        result_string = result_io.getvalue()
-        result_io.close()
-        return result_string
-
-    def to_json(self):
-        json_dict = {"Result":
-            {
-                "result_string": self.result_string,
-                "molecule": self.result.molecule.to_json(),
-                "op_order": self.result.op_order,
-                "op_type": self.result.op_type,
-                "csm": self.result.csm,
-                "perm": self.result.perm,
-                "dir": list(self.result.dir),
-                "d_min": self.result.d_min,
-                "symmetric_structure": [list(i) for i in self.result.symmetric_structure],
-                "local_csm": self.result.local_csm,
-                "perm_count": self.result.perm_count,
-                "formula_csm": self.result.formula_csm,
-                "normalized_molecule_coords": [list(i) for i in self.result.normalized_molecule_coords],
-                "normalized_symmetric_structure": [list(i) for i in self.result.normalized_symmetric_structure],
-            }
-        }
-        return json_dict
-
-    def _write_results(self, f):
-        self.write_header(f)
-        self.write_mol(f)
-        self.write_dir(f)
-
-        if self.print_local:
-            self.write_local_csm(f)
-
-        if self.op_name == "CHIRALITY":
-            self.write_chirality(f)
-
-        self.write_permutation(f)
-
-    def write_header(self, f):
-        f.write("%s: %s\n" % (self.op_name, format_CSM(self.result.csm)))
-        f.write("SCALING FACTOR: %7lf\n" % non_negative_zero(self.result.d_min))
-
-    def write_mol(self, f):
-        if self.format == "csm":
-            molwriter = CSMMolWriter()
-        else:
-            molwriter = OBMolWriter()
-
-        molwriter.write(f, self.result, self.op_name, self.format)
-
-    def write_dir(self, f):
         f.write("\n DIRECTIONAL COSINES:\n\n")
         f.write("%lf %lf %lf\n" % (
-            non_negative_zero(self.result.dir[0]), non_negative_zero(self.result.dir[1]),
-            non_negative_zero(self.result.dir[2])))
+            self.non_negative_zero(self.result.dir[0]), non_negative_zero(self.result.dir[1]),
+            self.non_negative_zero(self.result.dir[2])))
 
-    def write_local_csm(self, f):
-        sum = 0
-        f.write("\nLocal CSM: \n")
-        size = len(self.result.molecule.atoms)
-        for i in range(size):
-            sum += self.result.local_csm[i]
-            f.write("%s %7lf\n" % (self.result.molecule.atoms[i].symbol, non_negative_zero(self.result.local_csm[i])))
-        f.write("\nsum: %7lf\n" % sum)
+        if write_local:
+            self.write_local(f)
 
-    def write_chirality(self, f):
-        if self.result.op_type == 'CS':
-            f.write("\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n")
-        else:
-            f.write("\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n" % self.result.op_order)
+        if self.result.operation.name == "CHIRALITY":
+            if self.result.op_type == 'CS':
+                f.write("\n MINIMUM CHIRALITY WAS FOUND IN CS\n\n")
+            else:
+                f.write("\n MINIMUM CHIRALITY WAS FOUND IN S%d\n\n" % self.result.op_order)
 
-    def write_permutation(self, f):
         f.write("\n PERMUTATION:\n\n")
         for i in self.result.perm:
             f.write("%d " % (i + 1))
         f.write("\n")
 
-    def print_structure(self):
-        # print CSM, initial molecule, resulting structure and direction according to format specified
-        try:
-            percent_structure = check_perm_structure(self.result.molecule, self.result.perm)
-            print("The permutation found maintains",
-                  str(round(percent_structure * 100, 2)) + "% of the original molecule's structure")
+    def write_local(self, f):
+        sum = 0
+        f.write("\nLocal CSM: \n")
+        size = len(self.result.molecule.atoms)
+        local_csm = self.result.local_csm
+        for i in range(size):
+            sum += local_csm[i]
+            f.write("%s %7lf\n" % (self.result.molecule.atoms[i].symbol, self.non_negative_zero(local_csm[i])))
+        f.write("\nsum: %7lf\n" % sum)
 
-        except ValueError:
-            print(
-                "The input molecule does not have bond information and therefore conservation of structure cannot be measured")
+    def write_json(self, f):
+        import io
+        import json
+        result_io = io.StringIO()
+        self.write(result_io)
+        result_string = result_io.getvalue()
+        result_io.close()
 
-        if True:  # falsecount > 0 or self.dictionary_args['calc_type'] == 'approx':
-            print(
-                "The permutation found contains %d invalid %s. %.2lf%% of the molecule's atoms are in legal cycles" % (
-                    self.result.falsecount, "cycle" if self.result.falsecount == 1 else "cycles",
-                    100 * (len(self.result.molecule) - self.result.num_invalid) / len(self.result.molecule)))
-            for cycle_len in sorted(self.result.cycle_counts):
-                valid = cycle_len == 1 or cycle_len == self.result.op_order or (
-                    cycle_len == 2 and self.result.op_type == 'SN')
-                count = self.result.cycle_counts[cycle_len]
-                print("There %s %d %s %s of length %d" % (
-                    "is" if count == 1 else "are", count, "invalid" if not valid else "",
-                    "cycle" if count == 1 else "cycles",
-                    cycle_len))
+        json_dict = {"Result":
+            {
+                "result_string": result_string,
+                "molecule": self.result.molecule.to_dict(),
+                "op_order": self.result.operation.order,
+                "op_type": self.result.operation.type,
+                "csm": self.result.csm,
+                "perm": self.result.perm,
+                "dir": list(self.result.dir),
+                "d_min": self.result.d_min,
+                "symmetric_structure": [list(i) for i in self.result.symmetric_structure],
+                "local_csm": list(self.result.local_csm),
+                "formula_csm": self.result.formula_csm,
+                "normalized_molecule_coords": [list(i) for i in self.result.normalized_molecule_coords],
+                "normalized_symmetric_structure": [list(i) for i in self.result.normalized_symmetric_structure],
+            }
+        }
 
-    def print_result(self):
-        print("%s: %s" % (self.op_name, format_CSM(self.result.csm)))
-        print("CSM by formula: %s" % (format_CSM(self.result.formula_csm)))
-
-    def print_chain_perm(self):
-        if len(self.result.molecule.chains)>1:
-            print("Chain perm: ", self.result.chain_perm_string())
-
-class StatisticWriter:
-    def __init__(self, result, stat_file_name, polar):
-        try:
-            self.statistics=result.statistics
-        except:
-            self.statistics=None
-        self.file_name = stat_file_name
-        self.polar = polar
+        json.dump(json_dict, f)
 
 
-    def write(self):
-        if self.file_name:
-            if self.statistics:
-                with open(self.file_name, 'w') as file:
-                    if self.polar:
-                        file.write("Index"
-                                "\tr_i\tth_i\tph_i"
-                               "\tCSM_i"
-                               "\tr_f\tth_f\tph_f"
-                               "\tCSM_f"
-                                "\tRuntime"
-                                "\t No Iterations"
-                                "\n")
-                    else:
-                        file.write("Index"
-                                "\tx_i\ty_i\tz_i"
-                               "\tCSM_i"
-                               "\tx_f\ty_f\tz_f"
-                               "\tCSM_f"
-                                "\tRuntime"
-                                "\t No Iterations"
-                                "\n")
-                    for key in self.statistics:
-                        stat=self.statistics[key]
-                        x,y,z=stat.start_dir
-                        xf,yf,zf=stat.end_dir
-                        if self.polar:
-                            x,y,z=cart2sph(x,y,z)
-                            xf,yf,zf=cart2sph(xf,yf,zf)
+class MoleculeWriter:
+    def __init__(self, molecule_wrapper):
+        self.molecule_wrapper = molecule_wrapper
+        self.format = molecule_wrapper.molecule.metadata.out_format
+        self.write_molecule = self._write_obm_molecule
+        if self.format == "csm":
+            self.write_molecule = self._write_csm_molecule
 
-                        file.write(str(stat.index) +"\t"
-                                   + format_CSM(x)+ "\t"+format_CSM(y)+ "\t"+format_CSM(z)+ "\t"
-                                   + format_CSM(stat.start_csm)+"\t"
-                                   + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
-                                   + format_CSM(stat.end_csm) + "\t"
-                                   + str(stat.run_time) + "\t"
-                                   + str(stat.num_iterations) + "\n")
+    def write_symmetric(self, f, result, consecutive=False, model_number=None):
+        if result.skipped:
+            return
+        self.write_molecule(f, result.symmetric_structure, consecutive, model_number)
 
-class FileWriter(ResultWriter):
-    """
-    A ResultWriter class that writes to a file 
-    """
-
-    def __init__(self, result, out_file_name, op_name, format, print_local=False, json_output=False, stat_file_name=None, polar=False, *args, **kwargs):
-        self.out_file_name = out_file_name
-        self.json_output = json_output
-        self.statistic_writer=StatisticWriter(result, stat_file_name, polar)
-        super().__init__(result, op_name, format, print_local)
-
-    def write(self):
-        self.print_structure()
-        self.print_result()
-        self.print_chain_perm()
-        self.statistic_writer.write()
-        if self.json_output:
-            with open(self.out_file_name, 'w', encoding='utf-8') as f:
-                json.dump(self.to_json(), f)
+    def write_original(self, f, result, consecutive=False, model_number=None, print_denorm=False):
+        if print_denorm:
+            self.write_molecule(f, result.molecule.atoms, consecutive, model_number)
         else:
-            with open(self.out_file_name, 'w', encoding='utf-8') as f:
-                self._write_results(f)
+            self.write_molecule(f, result.normalized_molecule_coords, consecutive, model_number)
+
+    def _write_csm_molecule(self, f, coordinates, *args, **kwargs):
+        size = len(coordinates)
+        f.write("%i\n" % size)
+        for i in range(size):
+            f.write("%3s%10.5lf %10.5lf %10.5lf\n" %
+                    (self.molecule_wrapper.molecule.atoms[i].symbol,
+                     non_negative_zero(coordinates[i][0]),
+                     non_negative_zero(coordinates[i][1]),
+                     non_negative_zero(coordinates[i][2])))
+
+        for i in range(size):
+            f.write("%d " % (i + 1))
+            for j in self.molecule_wrapper.molecule.atoms[i].adjacent:
+                f.write("%d " % (j + 1))
+            f.write("\n")
+
+    def _write_obm_molecule(self, f, coordinates, consecutive=False, model_number=None):
+        """
+        Write an Open Babel molecule to file
+        :param obmol: The molecule
+        :param format: The output format
+        :param f: The file to write output to
+        :param legacy: replace end with endmdl
+        """
+        if model_number is not None and self.format == "pdb":
+            model_str = "MODEL     {}\n".format(model_number)
+            f.write(model_str)
+
+        obmols = self.molecule_wrapper.set_obm_coordinates(coordinates)
+
+        if len(obmols) > 1:
+            print("WARNING: result printing for fragments may have errors")
+
+        for obmol in obmols:
+            conv = OBConversion()
+            if not conv.SetOutFormat(self.format):
+                raise ValueError("Error setting output format to " + format)
+            # write to file
+            try:
+                s = conv.WriteString(obmol)
+            except (TypeError, ValueError, IOError):
+                raise ValueError("Error writing data file using OpenBabel")
+
+            if consecutive:
+                if str.lower(self.format) == 'pdb':
+                    s = re.sub("MODEL\s+\d+", "", s)
+                    s = s.replace("END", "ENDMDL")
+                if str.lower(self.format) in ['mol', 'sdf']:
+                    s += "\n$$$$\n"
+            f.write(s)
 
 
-class FolderWriter(ResultWriter):
-    pass
+class MoleculeWrapper:
+    class MoleculeData(object):
+        """
+        Taken from pybel https://github.com/openbabel/documentation/blob/master/pybel.py
+        Store molecule data in a dictionary-type object
+
+        Required parameters:
+          `obmol` -- an Open Babel :obapi:`OBMol`
+        Methods and accessor methods are like those of a dictionary except
+        that the data is retrieved on-the-fly from the underlying :obapi:`OBMol`.
+        Example:
+
+        >>> mol = readfile("sdf", 'head.sdf').next() # Python 2
+        >>> # mol = next(readfile("sdf", 'head.sdf')) # Python 3
+        >>> data = mol.data
+        >>> print data
+        {'Comment': 'CORINA 2.61 0041  25.10.2001', 'NSC': '1'}
+        >>> print len(data), data.keys(), data.has_key("NSC")
+        2 ['Comment', 'NSC'] True
+        >>> print data['Comment']
+        CORINA 2.61 0041  25.10.2001
+        >>> data['Comment'] = 'This is a new comment'
+        >>> for k,v in data.items():
+        ...    print k, "-->", v
+        Comment --> This is a new comment
+        NSC --> 1
+        >>> del data['NSC']
+        >>> print len(data), data.keys(), data.has_key("NSC")
+        1 ['Comment'] False
+        """
+
+        def __init__(self, obmol):
+            self._mol = obmol
+
+        def _data(self):
+            return [ob.toPairData(x) for x in self._mol.GetData() if
+                    x.GetDataType() == ob.PairData or x.GetDataType() == ob.CommentData]
+
+        def _testforkey(self, key):
+            if not key in self:
+                raise KeyError("'%s' is not a Key" % key)
+
+        def keys(self):
+            return [x.GetAttribute() for x in self._data()]
+
+        def values(self):
+            return [x.GetValue() for x in self._data()]
+
+        def items(self):
+            return zip(self.keys(), self.values())
+
+        def __iter__(self):
+            return iter(self.keys())
+
+        def iteritems(self):
+            return iter(self.items())
+
+        def __len__(self):
+            return len(self._data())
+
+        def __contains__(self, key):
+            return self._mol.HasData(key)
+
+        def __delitem__(self, key):
+            self._testforkey(key)
+            self._mol.DeleteData(self._mol.GetData(key))
+
+        def clear(self):
+            for key in self:
+                del self[key]
+
+        def has_key(self, key):
+            return key in self
+
+        def update(self, dictionary):
+            for k, v in dictionary.iteritems():
+                self[k] = v
+
+        def __getitem__(self, key):
+            self._testforkey(key)
+            return ob.toPairData(self._mol.GetData(key)).GetValue()
+
+        def __setitem__(self, key, value):
+            if key in self:
+                pairdata = ob.toPairData(self._mol.GetData(key))
+                pairdata.SetValue(str(value))
+            else:
+                pairdata = ob.OBPairData()
+                pairdata.SetAttribute(key)
+                pairdata.SetValue(str(value))
+                self._mol.CloneData(pairdata)
+
+        def __repr__(self):
+            return dict(self.iteritems()).__repr__()
+
+    def __init__(self, result, molecule_index=0, line_index=0):
+        self.result = result
+        self.molecule = result.molecule
+        self.molecule_index = molecule_index
+        self.line_index = line_index
+        self.metadata = result.molecule.metadata
+        self.format = self.metadata.format
+        if self.format != "csm":
+            self.obmols = self.obms_from_molecule(self.molecule)
+            self.obmol = self.obmols[0]
+            self.moleculedata = MoleculeWrapper.MoleculeData(self.obmol)
+            self.set_initial_molecule_fields()
+
+    def obms_from_molecule(self, molecule):
+        obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
+                                                  molecule.metadata.format,
+                                                  molecule.metadata.babel_bond)
+        self._obm_atom_indices = []
+
+        for mol_index, obmol in enumerate(obmols):
+            num_atoms = obmol.NumAtoms()
+            for atom_index in range(num_atoms):
+                self._obm_atom_indices.append((mol_index, atom_index))
+
+        for to_remove in molecule._deleted_atom_indices:
+            mol_index, atom_index = self._obm_atom_indices[to_remove]
+            obmol = obmols[mol_index]
+            obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
+
+        return obmols
+
+    def set_obm_coordinates(self, coordinates):
+        num_atoms = len(self.molecule)
+        for i in range(num_atoms):
+            mol_index, atom_index = self._obm_atom_indices[i]
+            obmol = self.obmols[mol_index]
+            try:
+                a = obmol.GetAtom(atom_index + 1)
+                a.SetVector(non_negative_zero(coordinates[i][0]),
+                            non_negative_zero(coordinates[i][1]),
+                            non_negative_zero(coordinates[i][2]))
+            except Exception as e:
+                print(e)
+        return self.obmols
+
+    def insert_pdb_new_lines(self, string_to_modify):
+        '''
+        pdb lines cannot be longer than 78 characters, openbabel will automatically add new lines with correct header,
+         if there's a newline
+        :param string_to_modify:
+        :return:
+        '''
+        if len(string_to_modify) < 77:
+            return string_to_modify
+        modified = ""
+        curr_index = 0
+        while len(string_to_modify[curr_index:]) > 77:
+            string_to_modify = modified + string_to_modify[:77] + "\n" + string_to_modify[77:]
+            curr_index = curr_index + 76
+        return string_to_modify
+
+    def append_description(self, description):
+        if self.format in ["mol", "sdf"]:
+            key = 'Comment'
+            self.moleculedata[key] = description
+        if self.format == "pdb":
+            key = 'REMARK'
+            description = "     " + description
+            description = self.insert_pdb_new_lines(description)
+
+            if key in self.moleculedata:
+                description = self.moleculedata[key] + "\n" + description
+
+            self.moleculedata[key] = description
+        if self.format == "xyz":
+            old_title = self.obmol.GetTitle()
+            new_title = old_title + "  " + description
+            self.obmol.SetTitle(new_title)
+
+    def append_title(self, title):
+        if self.format == "csm":
+            return
+        if self.format == "pdb":
+            key = "TITLE"
+            title = "     " + title
+            title = self.insert_pdb_new_lines(title)
+
+            if key in self.moleculedata:
+                title = self.moleculedata[key] + "\n" + title
+
+            self.moleculedata[key] = title
+        else:
+            old_title = self.obmol.GetTitle()
+            new_title = old_title + "  " + title
+            self.obmol.SetTitle(new_title)
+
+    def clean_title(self, string_to_remove):
+        original_title = self.obmol.GetTitle()
+        if self.format == "pdb":
+            original_title = self.moleculedata["TITLE"]
+
+        if string_to_remove in original_title:
+            new_title = original_title.replace(string_to_remove, "")
+        else:
+            return
+
+        if self.format == "pdb":
+            self.moleculedata["TITLE"] = new_title
+        self.obmol.SetTitle(new_title)
+
+    def set_initial_molecule_fields(self):
+        title = ""
+        original_title = self.obmol.GetTitle()
+        if self.metadata.appellation() not in original_title:
+            title += self.metadata.appellation() + " "
+        title = title + get_line_header(self.line_index, self.result)
+        self.append_title(title)
+        description = "index=" + str(self.metadata.index + 1) + ";" + "filename: " + self.metadata.filename
+        self.append_description(description)
+
+    def set_symmetric_title(self, symmetric=True):
+        self.clean_title("(Original)")
+        self.clean_title("(Symmetric)")
+        if symmetric:
+            self.append_title("(Symmetric)")
+        else:
+            self.append_title("(Original)")
 
 
-def print_results(result, dictionary_args):
-    """
-    Prints the CSM calculation results
-    :param result:
-    :param dictionary_args:
-    """
-    filewriter = FileWriter(result, **dictionary_args)
-    filewriter.write()
+def format_result_CSM(result):
+    if result.failed:
+        return "n/a"
+    return format_CSM(result.csm)
+
+
+molecule_format = "%-40s"
+
+
+class ContextWriter:
+    def __init__(self, commands, out_format, out_file_name=None, *args, **kwargs):
+        self.commands = commands
+        self.out_format = out_format
+        self.out_file_name = out_file_name
+
+    def __enter__(self):
+        return self
+
+    def write(self, mol_result):
+        raise NotImplementedError
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
+
+class PipeContextWriter(ContextWriter):
+    results_arr = []
+
+    def write(self, mol_result):
+        self.results_arr.append(mol_result)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        import sys
+        import json
+        sys.stdout.write(
+            json.dumps([[result.to_dict() for result in mol_results_arr] for mol_results_arr in self.results_arr],
+                       indent=4))
+
+
+class LegacyContextWriter(ContextWriter):
+    called = False
+
+    def write(self, mol_result):
+        if not self.out_file_name:
+            raise ValueError("must provide ouput file for legacy writing")
+        if len(mol_result) > 1 or self.called:
+            raise ValueError("Legacy result writing only works for a single molecule and single command")
+        writer = LegacyFormatWriter(mol_result[0], self.out_format)
+        with open(self.out_file_name, 'w') as f:
+            writer.write(f)
+        self.called = True
+
+
+class SimpleContextWriter(ContextWriter):
+    def write(self, mol_result):
+        for lin_index, line_result in enumerate(mol_result):
+            print("mol", line_result.molecule.metadata.appellation(), "cmd", lin_index + 1, " CSM: ",
+                  format_CSM(line_result.csm))
+
+
+class ScriptContextWriter(ContextWriter):
+    def __init__(self, commands, out_format,
+                 out_file_name=None,
+                 polar=False, verbose=False, print_local=False, argument_string="",
+                 print_denorm=False,
+                 legacy_files=False, **kwargs):
+        super().__init__(commands, out_format, out_file_name)
+        self.molecule_index = 0  # used for writing pdb files
+        self.result_index = 0  # used for writing pdb files
+        self.verbose = verbose
+        self.folder = out_file_name
+        if not self.folder:
+            self.folder = os.path.join(os.getcwd(), "csm_results")
+        self.polar = polar
+        self.print_local = print_local
+        self.print_denorm = print_denorm
+        self.argument_string = argument_string
+        self.create_legacy_files = legacy_files
+        self.init_files()
+
+    def get_line_header(self, index, operation):
+        index_str = "%02d" % (index + 1)  # start from 1 instead of 0
+        return "L" + index_str + "_" + operation.op_code
+
+    def init_files(self):
+        '''
+        creates the initial files and writes their headers
+        :return:
+        '''
+        os.makedirs(self.folder, exist_ok=True)
+
+        self.csm_file = open(os.path.join(self.folder, "csm.txt"), 'w')
+        self.csm_file.write(molecule_format % "#Molecule")
+        for index, operation in enumerate(self.commands):
+            self.csm_file.write("%-10s" % (self.get_line_header(index, operation)))
+        self.csm_file.write("\n")
+
+        self.dir_file = open(os.path.join(self.folder, "directional.txt"), 'w')
+        format_string = molecule_format + "%-10s%10s%10s%10s\n"
+        self.dir_file.write(format_string % ("#Molecule", "#Command", "X", "Y", "Z"))
+
+        self.perm_file = open(os.path.join(self.folder, "permutation.txt"), 'w')
+        format_string = molecule_format + "%-10s%-10s\n"
+        self.perm_file.write(format_string % ("#Molecule", "#Command", "#Permutation"))
+
+        self.initial_normalized_file = open(
+            os.path.join(self.folder, "initial_normalized_coordinates." + self.out_format),
+            'w')
+        if self.print_denorm:
+            self.initial_denormalized_file = open(
+                os.path.join(self.folder, "initial_denormalized_coordinates." + self.out_format),
+                'w')
+        else:
+            self.initial_denormalized_file = None
+        self.symmetric_mols_file = open(os.path.join(self.folder, "resulting_symmetric_coordinates." + self.out_format),
+                                        'w')
+
+        # extra
+        self.extra_file = open(os.path.join(self.folder, "extra.txt"), 'w')
+
+        # approx
+        if self.verbose:
+            self.approx_folder = os.path.join(self.folder, 'approx')
+            os.makedirs(self.approx_folder, exist_ok=True)
+
+        # legacy
+        if self.create_legacy_files:
+            self.legacy_folder = os.path.join(self.folder, 'old-csm-output')
+            os.makedirs(self.legacy_folder, exist_ok=True)
+
+        filename = os.path.join(self.folder, "version.txt")
+        with open(filename, 'w') as file:
+            file.write(self.argument_string)
+            file.write("CSM VERSION: " + str(__version__))
+
+    def close_files(self):
+        self.csm_file.close()
+        self.dir_file.close()
+        self.perm_file.close()
+        self.initial_normalized_file.close()
+        if self.initial_denormalized_file:
+            self.initial_denormalized_file.close()
+        self.symmetric_mols_file.close()
+        self.extra_file.close()
+
+    def write_csm(self, mol_results):
+        f = self.csm_file
+        f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
+        for result in mol_results:
+            f.write("%-10s" % format_result_CSM(result))
+        f.write("\n")
+
+    def write_dir(self, mol_results):
+        f = self.dir_file
+        for line_index, command_result in enumerate(mol_results):
+            if command_result.skipped:
+                continue
+            f.write(molecule_format % command_result.molecule.metadata.appellation())
+            f.write("%10s" % get_line_header(line_index, command_result))
+            write_array_to_file(f, command_result.dir, separator="%-10s")
+            f.write("\n")
+
+    def write_perm(self, mol_results):
+        f = self.perm_file
+        for line_index, command_result in enumerate(mol_results):
+            if command_result.skipped:
+                continue
+            f.write(molecule_format % (command_result.molecule.metadata.appellation()))
+            f.write("%-10s" % (get_line_header(line_index, command_result)))
+            write_array_to_file(f, command_result.perm, True)
+            f.write("\n")
+
+    def write_initial_mols(self, mol_results):
+
+        molecule_wrapper = MoleculeWrapper(mol_results[0], self.molecule_index)
+        molecule_wrapper.set_symmetric_title(symmetric=False)
+        mw = MoleculeWriter(molecule_wrapper)
+        file = self.initial_normalized_file
+        mw.write_original(file, molecule_wrapper.result, consecutive=True, model_number=self.molecule_index + 1)
+        if self.initial_denormalized_file:
+            mw.write_original(self.initial_denormalized_file, molecule_wrapper.result, consecutive=True,
+                              print_denorm=True, model_number=self.molecule_index + 1)
+
+    def write_symmetric_mols(self, mol_results):
+        file = self.symmetric_mols_file
+        for command_index, command_result in enumerate(mol_results):
+            if command_result.skipped:
+                continue
+            if command_result.failed:
+                print(command_result.molecule.metadata.appellation() + get_line_header(command_index,
+                                                                                       command_result) + " failed, not writing symmetric coordinates")
+                continue
+            molecule_wrapper = MoleculeWrapper(command_result, self.molecule_index, command_index)
+            molecule_wrapper.set_symmetric_title(symmetric=True)
+            mw = MoleculeWriter(molecule_wrapper)
+            mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
+                               model_number=self.result_index + 1)
+            self.result_index += 1
+
+    def write_legacy_files(self, mol_results):
+        for line_index, command_result in enumerate(mol_results):
+            if command_result.skipped:
+                continue
+            name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(line_index,
+                                                                                                             command_result)
+            file_name = name + "." + command_result.molecule.metadata.format
+            out_file_name = os.path.join(self.legacy_folder, file_name)
+            try:
+                of = LegacyFormatWriter(command_result, self.out_format)
+                with open(out_file_name, 'w', encoding='utf-8') as f:
+                    of.write(f)
+            except Exception as e:
+                print("failed to write legacy file for" + file_name + ": " + str(e))
+
+    def write_extra_txt(self, mol_results):
+        # molecule.print_equivalence_class_summary(True)
+        # result.print_summary(dictionary_args["legacy"])
+        f = self.extra_file
+        item = output_strings.fetch()
+        while item is not None:
+            f.write(item)
+            f.write("\n")
+            item = output_strings.fetch()
+
+    def write_approx_file(self, mol_results):
+        out_folder = self.approx_folder
+        for line_index, command_result in enumerate(mol_results):
+            name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(
+                line_index,
+                command_result)
+            filename = os.path.join(out_folder, name + ".tsv")
+            if command_result.ongoing_statistics:
+                self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
+
+    def _write_approx_statistics(self, filename, stats):
+        with open(filename, 'w') as f:
+            if self.polar:
+                f.write("Dir Index"
+                        "\tr_i\tth_i\tph_i"
+                        "\tCSM_i"
+                        "\tr_f\tth_f\tph_f"
+                        "\tCSM_f"
+                        "\tRuntime"
+                        "\t # Iter"
+                        "\t Stop Reason"
+                        "\n")
+            else:
+                f.write("Dir Index"
+                        "\tx_i\ty_i\tz_i"
+                        "\tCSM_i"
+                        "\tx_f\ty_f\tz_f"
+                        "\tCSM_f"
+                        "\tRuntime"
+                        "\t # Iter"
+                        "\tStop Reason"
+                        "\n")
+
+            for direction_index, direction_dict in enumerate(stats):
+                dir = direction_dict['dir']
+                stat = direction_dict['stats']
+                start_str = str(direction_index) + "\t"
+                try:
+                    x, y, z = stat['start dir']
+                    start_str = start_str + format_CSM(x) + "\t" + format_CSM(y) + "\t" + format_CSM(z) + "\t"
+                    xf, yf, zf = stat['end dir']
+                    if self.polar:
+                        x, y, z = cart2sph(x, y, z)
+                        xf, yf, zf = cart2sph(xf, yf, zf)
+
+                    f.write(start_str
+                            + format_CSM(stat['start csm']) + "\t"
+                            + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
+                            + format_CSM(stat['end csm']) + "\t"
+                            + format_CSM(stat['run time']) + "\t"
+                            + str(stat['num iterations']) + "\t"
+                            + stat['stop reason'] + "\t"
+                                                    "\n")
+                except Exception as e:
+                    try:
+                        start_str = start_str + stat['stop reason'] + "\t"
+                    finally:
+                        f.write(start_str + "failed to read statistics\n")
+
+    def write(self, molecule_results):
+        # receives result array for single molecule, and appends to all the relevant files
+        self.write_csm(molecule_results)
+        self.write_dir(molecule_results)
+        self.write_perm(molecule_results)
+        self.write_initial_mols(molecule_results)
+        self.write_symmetric_mols(molecule_results)
+        if self.create_legacy_files:
+            self.write_legacy_files(molecule_results)
+        self.write_extra_txt(molecule_results)
+        if self.verbose:
+            self.write_approx_file(molecule_results)
+        self.molecule_index += 1
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        '''
+        Exit the runtime context related to this object.
+        The parameters describe the exception that caused the context to be exited.
+        If the context was exited without an exception, all three arguments will be None.
+        If an exception is supplied, and the method wishes to suppress the exception (i.e., prevent it from being propagated), it should return a true value.
+        Otherwise, the exception will be processed normally upon exit from this method.
+
+        '''
+        try:
+            if self.out_format == "pdb":
+                self.symmetric_mols_file.write("\nEND")
+                self.initial_normalized_file.write("\nEND")
+        except:  # no matter what, must close files
+            pass
+        self.close_files()
+
+
+class WebWriter():
+    '''
+    receives results in an array of arrays, like the old ScriptWriter.
+    retained for web-csm
+    '''
+
+    def __init__(self, results, format=None, out_folder=None, context_writer=ScriptContextWriter, **kwargs):
+        '''
+        :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
+        by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
+        a single array of results will be treated as multiple commands on one molecule
+        :param format: molecule format to output to
+        :param out_file_name: if none is provided, the current working directory/csm_results will be used
+        '''
+        try:
+            if not isinstance(results[0], list):  # results is a single array
+                results = [results]
+        except TypeError:  # results isn't an array at all
+            results = [[results]]
+        self.results = results
+
+        self.commands = []
+        for result in results[0]:
+            self.commands.append(result.operation)
+
+        if kwargs.get("out_format"):
+            self.format = kwargs["out_format"]
+        elif kwargs.get("in_format"):
+            self.format = kwargs["in_format"]
+        else:
+            self.format = self.results[0][0].molecule.metadata.format
+        self.folder = out_folder
+        if not out_folder:
+            if kwargs.get('out_file_name'):
+                self.folder = kwargs['out_file_name']
+            else:
+                self.folder = os.path.join(os.getcwd(), "csm_results")
+        self.kwargs = kwargs
+        self.context_writer = context_writer
+
+    def result_molecule_iterator(self):
+        for mol_index, mol_results in enumerate(self.results):
+            for command_index, command_results in enumerate(mol_results):
+                yield MoleculeWrapper(command_results, mol_index, command_index)
+
+    def write(self):
+        self.writer = self.context_writer(self.commands, self.format, **self.kwargs)
+        for mol_result in self.results:
+            self.writer.write(mol_result)
+
+    def create_extra_tsv(self, filename=None):
+        if not filename:
+            filename = os.path.join(self.folder, "extra.tab")
+        # create headers
+        # first row: cmd
+        format_strings = []
+        headers_arr_1 = []
+        headers_arr_2 = []
+
+        for line_index, command_result in enumerate(self.results[0]):
+            format_string = ""
+            for key in sorted(command_result.overall_statistics):
+                format_string += "%-" + str(len(key) + 2) + "s"
+                headers_arr_1.append(get_line_header(line_index, command_result))
+                headers_arr_2.append(key)
+            format_strings.append(format_string)
+        format_strings[-1] += "\n"
+
+        full_string = "".join(format_strings)
+
+        with open(filename, 'w') as f:
+            f.write(molecule_format % "#Molecule")
+            f.write(full_string % tuple(headers_arr_1))
+            f.write("%-10s" % " ")
+            f.write(full_string % tuple(headers_arr_2))
+            for mol_index, mol_results in enumerate(self.results):
+                f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
+                for line_index, command_result in enumerate(mol_results):
+                    f.write(
+                        format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
+                                                            for key in sorted(command_result.overall_statistics)]))
+
+    def create_perm_tsv(self, filename=None):
+        # preserved for csm-web
+        if not filename:
+            filename = os.path.join(self.folder, "permutation.txt")
+        # creates a tsv for permutations (needs to handle extra long permutations somehow)
+        with open(filename, 'w') as f:
+            format_line = molecule_format + "%-10s%-10s\n"
+            f.write(format_line % ("#Molecule", "#Command", "#Permutation"))
+            for mol_index, mol_results in enumerate(self.results):
+                for line_index, command_result in enumerate(mol_results):
+                    f.write(molecule_format % (command_result.molecule.metadata.appellation()))
+                    f.write("%-10s" % (get_line_header(line_index, command_result)))
+                    write_array_to_file(f, command_result.perm, True)
+                    f.write("\n")
+
+    def create_alternating_mols(self, filename=None):
+        # preserved for csm web
+        if not filename:
+            filename = os.path.join(self.folder, "resulting_mols." + self.format)
+        i = 1
+        with open(filename, 'w') as file:
+            for molecule_wrapper in self.result_molecule_iterator():
+                molecule_wrapper.set_symmetric_title(symmetric=False)
+                mw = MoleculeWriter(molecule_wrapper)
+                mw.write_original(file, molecule_wrapper.result, consecutive=True,
+                                  model_number=i)
+                i += 1
+                molecule_wrapper.set_symmetric_title(symmetric=True)
+                mw = MoleculeWriter(molecule_wrapper)
+
+                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
+                                   model_number=i)
+                i += 1
+            if self.format == "pdb":
+                file.write("\nEND")

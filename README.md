@@ -1,17 +1,40 @@
 # CSM #
 
-This is the git repository for the CSM project, developed by the Professor Avnir group of the Hebrew University in Jerusalem. 
+This is the git repository for the CSM project, developed by the Professor Avnir group of the Hebrew University in Jerusalem, The Professor Tuvi-Arad group of the Open University,
+and The Research Software Company (chelem.co.il)
 
 ## Installation ##
-Get the repository and read docs/compilation instructions.odt for instructions on Windows, OS X and Linux.
+Installation instructions can be found in the python Readme
+
+## Citations ##
+
+Please cite CSM using the following:
+
+```
+Alon, G., and Tuvi-Arad, I. "Improved algorithms for symmetry analysis: Structure preserving permutations". J. Math. Chem., 56(1), 193–212 (2018).
+
+H. Zabrodsky, S. Peleg and D. Avnir "Continuous Symmetry Measures" J. Am. Chem. Soc., 114, 7843-7851 (1992) 
+
+Chaim Dryzun, Amir Zait and David Avnir “Quantitative Symmetry and Chirality—A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells” J. Comput. Chem., 32, 2526 – 2538, (2011) 
+```
 
 ## Contact ##
-With any questions or comments, please contact hadassah.elgavi@mail.huji.ac.il
 
-## Releae History ##
-2.0.1 - Using CMake to compile CSM on multiple platforms
-2.0 - The first open-source CSM version
-1.0 - Closed-source CSM version
+For questions related to the project, contact Professor Inbal Tuvi-Arad at inbaltu@openu.ac.il
+
+For bug reports, contact devora@chelem.co.il
+
+## Release History ##
+
+New CSM (Python based):
+
+See the Python Readme for a complete version history.
+
+Old CM (C++ based):
+
+* 2.0.1 - Using CMake to compile CSM on multiple platforms
+* 2.0 - The 1st open-source CSM version
+* 1.0 - Closed-source CSM version
 
 ## License ##
 This project is provided under the 3-clause BSD license:
