@@ -1,10 +1,11 @@
-from setuptools import setup
 from distutils.extension import Extension
-from Cython.Build import cythonize
+from distutils.core import setup
+import setuptools
 import sys
 import numpy
 import os
 import re
+import glob
 from setuptools.command.build_ext import build_ext as _build_ext
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
@@ -50,6 +51,43 @@ def get_version():
         raise ValueError("Version file must contain one line: __version__='...'")
     version = match.group("version")
     return version
+
+
+class PrepareCommand(setuptools.Command):
+    description = "Build fast.pyx so there's no cython dependence in installation"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        print("running prepare command")
+        self.copy_source_files()
+        self.convert_to_c()
+
+    def copy_source_files(self):
+        #this may be used for copying openbabel and eigen files, eventually?
+        pass
+
+    def convert_to_c(self):
+        #creates fast.h and fast.c in cpp_wrapper folder
+        print('Converting pyx files to C sources...')
+        pyx_files = glob.glob('./csm/CPP_wrapper/fast.pyx') #can be changed to not glob later, obviously
+        for pyx in pyx_files:
+            self.cython(pyx)
+
+    def cython(self, pyx):
+        from Cython.Compiler.CmdLine import parse_command_line
+        from Cython.Compiler.Main import compile
+        options, sources = parse_command_line(['-2', '--cplus', pyx])
+        result = compile(sources, options)
+        if result.num_errors > 0:
+            print('Errors converting %s to C' % pyx, file=sys.stderr)
+            raise Exception('Errors converting %s to C' % pyx)
+        self.announce('Converted %s to C' % pyx)
 
 csm_version = get_version()
 print("Packaging CSM version %s" % csm_version)
@@ -109,4 +147,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Topic :: Scientific/Engineering :: Chemistry',
     ],
+
+    cmdclass={
+        'prepare': PrepareCommand,
+    }
 )
