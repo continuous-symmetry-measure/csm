@@ -75,14 +75,17 @@ class PrepareCommand(setuptools.Command):
 
     def convert_to_c(self):
         #creates fast.h and fast.c in cpp_wrapper folder
-        print('Converting pyx files to C++ sources...')
+        print('Converting csm pyx files to C++ sources...')
         pyx = './csm/CPP_wrapper/fast.pyx'
+        self.cython(pyx)
+        print('Converting munkres pyx files to C++ sources...')
+        pyx = './cython-munkres/src/cython_munkres.pyx'
         self.cython(pyx)
 
     def cython(self, pyx):
         from Cython.Compiler.CmdLine import parse_command_line
         from Cython.Compiler.Main import compile
-        options, sources = parse_command_line(['-2', '--cplus', pyx])
+        options, sources = parse_command_line(['-2', '-v', '--cplus', '--include-dir', numpy.get_include(), pyx])
         result = compile(sources, options)
         if result.num_errors > 0:
             print('Errors converting %s to C++' % pyx, file=sys.stderr)
