@@ -46,19 +46,7 @@ detailed in the file API.md (including examples)
 
 ## Installation
 
-CSM can be installed on Windows and Linux machines.
-
-### Requirements
-Before installing CSM, you must first install Openbabel (http://openbabel.org/wiki/Category:Installation), 
-version 2.4.0 or later.
-
-You must also install openbabel's python bindings (`pip install openbabel`) and numpy (`pip install numpy`)
-
-### Installation
-
-CSM can be installed using:
-
-`pip install csm --extra-index-url=https://repo.fury.io/theresearchsoftwarecompany`
+Contact the developers for instructions regarding how to install csm
 
 
 ## Credits
