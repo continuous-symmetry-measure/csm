@@ -26,7 +26,7 @@ if not ob_debug:
 def get_format(format, filename):
     if not format:
         format =  Path(filename).suffix
-    if format.lower() == "csm":
+    if format.lower() == ".csm":
         return "csm"
     conv = OBConversion()
     if not conv.SetInFormat(format):
