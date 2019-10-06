@@ -6,6 +6,7 @@ import os
 
 from csm import __version__
 from csm.calculations.data_classes import Operation
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 import sys
@@ -351,9 +352,10 @@ def _process_arguments(parse_res):
             if not os.path.isfile(out_file_name):
                 head, tail = os.path.split(out_file_name)
                 dictionary_args['out_file_name'] = os.path.join(head, tail + timestamp)
-            else:
-                filename = os.path.basename(out_file_name)
-                filename = filename[:-4] + timestamp + filename[-4:]
+            else:  # for a file, rather than a folder-- only relevant for legacy
+                filename = Path.name(out_file_name)
+                fileext = Path.suffix(out_file_name)
+                filename = filename + timestamp + fileext
                 head, tail = os.path.split(out_file_name)
                 dictionary_args['out_file_name'] = os.path.join(head, filename)
 
