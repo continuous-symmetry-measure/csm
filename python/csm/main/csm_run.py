@@ -16,7 +16,7 @@ from csm.input_output.readers import read_perm, read_from_sys_std_in
 from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter
 from csm.main.normcsm import norm_calc
 from csm.molecule.molecule import MoleculeReader
-
+from datetime import datetime
 
 def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_approx=False, **dictionary_args):
     calc_type = command
@@ -140,17 +140,6 @@ def write(**dictionary_args):
     writer.write()
 
 
-def parallel_calc(args_array, pool_size):
-    if pool_size == 0:
-        pool_size = multiprocessing.cpu_count() - 1
-    pool = multiprocessing.Pool(processes=pool_size)
-    print("Parallelizing across {} processes".format(pool_size))
-    pool_outputs = pool.map(single_calculation, args_array)
-    pool.close()
-    pool.join()
-    return pool_outputs
-
-
 def calc(dictionary_args):
     # get commands:
     if dictionary_args["command"] == "comfile":
@@ -195,19 +184,42 @@ def calc(dictionary_args):
                 args_dict["molecule"] = new_molecule
             mol_args.append(dict(args_dict))
         total_args.append(mol_args)
-    flattened_args = [item for sublist in total_args for item in sublist]
 
     # run the calculation, in parallel
     if dictionary_args["parallel"]:
-        results = parallel_calc(flattened_args, dictionary_args["pool_size"])
-        unflattened_results = [
-            [results[m_index + command_index] for command_index in range(len(args_array))] for m_index in
-            range(len(molecules))
-        ]
-        with context_writer(operation_array, **dictionary_args) as rw:
-            for mol_results in unflattened_results:
-                rw.write(mol_results)
-        return unflattened_results
+        #TODO-deal with "skipped"
+        flattened_args = [item for sublist in total_args for item in sublist]
+
+        num_ops = len(operation_array)
+        chunk_mols= 100  # int(len(molecules)/10)
+        chunk_size = num_ops * chunk_mols #it needs to be divisible by length of operation array
+        total_results = []
+
+        try:
+            pool = multiprocessing.Pool(processes=dictionary_args["pool_size"])
+            with context_writer(operation_array, **dictionary_args) as rw:
+                for i in range(0, len(flattened_args), chunk_size):
+                    end_index=min(i+chunk_size, len(flattened_args))
+                    args_array=flattened_args[i:end_index]
+                    now=datetime.now()
+                    print("calculating partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
+                    partial_results = pool.map(single_calculation, args_array)
+                    #partial_results = parallel_calc(flattened_args[i:end_index], pool_size)
+
+
+                    unflattened_partial_results=[
+                    [partial_results[m_index * num_ops + command_index] for command_index in range(num_ops)] for m_index in
+                    range(chunk_mols)
+                ]
+                    #now=datetime.now()
+                    #print("outputting partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
+                    for mol_results in unflattened_partial_results:
+                        rw.write(mol_results)
+                    total_results=total_results+partial_results
+        finally:
+            pool.close()
+            pool.join()
+        return total_results #maybe should unflatten first?
 
     if len(molecules) > 10:
         from csm.input_output.formatters import output_strings
