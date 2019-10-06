@@ -265,7 +265,7 @@ class TestBasic(RunThings):
         assert results[0][0].csm == pytest.approx(0.793551, abs=1e-5)
 
     def test_output_perms(self):
-        cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms {}/perms.csv".format(self.results_folder)
+        cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms"
         self.run_args(cmd)
         out_rows = []
         with open(os.path.join(self.results_folder, "perms.csv"), 'r') as file:
