@@ -188,8 +188,8 @@ def _create_parser():
                             help='Compute exact CSM for a single permutation, default is current directory/perm.txt')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
-    exact_args.add_argument('--output-perms', const="DEFAULT", nargs='?',
-                            help='Writes all enumerated permutations to file. Default is OUTPUT_DIR/perms.csv, or working directory/perms.csv is --output not selected')
+    exact_args.add_argument('--output-perms', action='store_true', default=False,
+                            help = 'Writes all enumerated permutations to file perms.csv')
     shared_normalization_utility_func(exact_args)
     add_input_output_utility_func(exact_args_)
 
@@ -310,13 +310,8 @@ def _process_arguments(parse_res):
             if parse_res.command == 'exact':
                 if parse_res.use_perm:
                     dictionary_args['perm_file_name'] = parse_res.use_perm
-                dictionary_args['perms_csv_name'] = parse_res.output_perms
-                if parse_res.output_perms == "DEFAULT":
-                    try:
-                        base_path = os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
-                        dictionary_args['perms_csv_name'] = os.path.join(base_path, "perms.csv")
-                    except:
-                        dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
+                if parse_res.output_perms:
+                    dictionary_args['perms_csv_name'] = os.path.join(parse_res.output, 'perms.csv')
             if parse_res.command == 'approx':
                 # choose dir:
                 # dictionary_args['detect_outliers'] = parse_res.detect_outliers
