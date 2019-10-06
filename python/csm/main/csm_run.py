@@ -200,7 +200,7 @@ def calc(dictionary_args):
             with context_writer(operation_array, **dictionary_args) as rw:
                 for i in range(0, len(flattened_args), chunk_size):
                     end_index=min(i+chunk_size, len(flattened_args))
-                    args_array=flattened_args[i:end_index]
+                    args_array=flattened_args[i:end_index-1]
                     now=datetime.now()
                     print("calculating partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
                     partial_results = pool.map(single_calculation, args_array)
