@@ -964,6 +964,9 @@ class MoleculeReader:
                            keep_structure=False, select_atoms=[], conn_file=None,
                            out_format=None,
                            *args, **kwargs):
+        #although the name of this function is "multiple from file", it is used both for files with multiple molecules
+        #and for files with only a single molecule. it is used anytime the --input is a file, not a folder
+        #it is extremely similar to .from_file. the difference is mostly in metadata, like molecule indices
         mols = []
         format = get_format(in_format, in_file_name)
 
@@ -998,7 +1001,8 @@ class MoleculeReader:
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             processed_mols.append(p_mol)
-        if not p_mol.bondset:
+        if not p_mol.bondset: #this only checks for the final one,
+            # on the assumption that all molecules in the file have the same bond status and to avoid printing a million times
             if keep_structure:
                 raise ValueError(
                     "User input --keep-structure but input molecules have no bonds. Did you forget --babel-bond?")

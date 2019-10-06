@@ -1,6 +1,26 @@
 The Python CSM Package
 ======================
 
+Changes in version 1.0.0
+------------------------
+* check for cmd.txt before reading molecules
+* copy cmd.txt to results folder
+* --output-perms no longer receives a filename, it is a simple true/false flag that is saved to the results folder as perms.csv
+
+Changes in version 0.22.4
+------------------------
+* bug fixes to writing csm files
+* vast simplifcation of setup.py install process
+
+Changes in version 0.22.3
+------------------------
+* primarily: adding a test suite
+* clean up some of the arguments
+* write initial molecule normalized
+* bug fix: sn_max wasn't being used
+* added filepath to metadata
+* bug fixes to nromalization
+
 Changes in version 0.22.2
 ------------------------
 * fixed bug in pyx files
