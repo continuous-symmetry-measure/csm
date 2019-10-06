@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 from argparse import ArgumentParser, SUPPRESS, HelpFormatter
 from datetime import datetime
 
@@ -298,8 +299,13 @@ def _process_arguments(parse_res):
         parse_output(dictionary_args)
 
         if parse_res.parallel is not None:
-            dictionary_args['pool_size'] = parse_res.parallel
-            dictionary_args['parallel'] = True  # doing this before previous line causes weird bug
+            pool_size = parse_res.parallel
+            if pool_size == 0:
+                pool_size = multiprocessing.cpu_count() - 1
+            pool_size = min(pool_size,
+                            multiprocessing.cpu_count())  # do not allow a pool size greater than the number of cpus
+            dictionary_args['pool_size'] = pool_size
+            dictionary_args['parallel'] = True
 
         if parse_res.command == "comfile":
             dictionary_args["command_file"] = parse_res.comfile
