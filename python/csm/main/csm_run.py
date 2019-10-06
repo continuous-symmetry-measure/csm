@@ -191,7 +191,7 @@ def calc(dictionary_args):
         flattened_args = [item for sublist in total_args for item in sublist]
 
         num_ops = len(operation_array)
-        chunk_mols= 100  # int(len(molecules)/10)
+        chunk_mols= 50  # int(len(molecules)/10)
         chunk_size = num_ops * chunk_mols #it needs to be divisible by length of operation array
         total_results = []
 
@@ -200,22 +200,24 @@ def calc(dictionary_args):
             with context_writer(operation_array, **dictionary_args) as rw:
                 for i in range(0, len(flattened_args), chunk_size):
                     end_index=min(i+chunk_size, len(flattened_args))
-                    args_array=flattened_args[i:end_index-1]
+                    args_array=flattened_args[i:end_index]
                     now=datetime.now()
-                    print("calculating partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
+                    #print("calculating partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
                     partial_results = pool.map(single_calculation, args_array)
                     #partial_results = parallel_calc(flattened_args[i:end_index], pool_size)
 
-
+                    m_range=int((end_index-i)/num_ops)
                     unflattened_partial_results=[
                     [partial_results[m_index * num_ops + command_index] for command_index in range(num_ops)] for m_index in
-                    range(chunk_mols)
+                    range(m_range)
                 ]
                     #now=datetime.now()
                     #print("outputting partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
                     for mol_results in unflattened_partial_results:
                         rw.write(mol_results)
                     total_results=total_results+partial_results
+        except Exception as e:
+            print(e)
         finally:
             pool.close()
             pool.join()
