@@ -9,7 +9,7 @@ def format_perm_count(num):
 
 
 def format_CSM(num):
-    return "%.4lf" % (abs(num))
+    return "%.4f" % (abs(num))
 
 
 def non_negative_zero(number):

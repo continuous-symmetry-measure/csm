@@ -157,6 +157,13 @@ def calc(dictionary_args):
     else:
         raise ValueError("No input for molecules specified")
 
+    max_len_file_name = 0
+    for mol in molecules:
+        len_name = len(mol.metadata.filename)
+        if len_name > max_len_file_name:
+            max_len_file_name = len_name
+    dictionary_args["max_len_file_name"] = max_len_file_name
+
     context_writer = get_context_writer(dictionary_args)
     if not dictionary_args["out_format"]:
         dictionary_args["out_format"] = dictionary_args["in_format"]
