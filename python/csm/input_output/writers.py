@@ -7,7 +7,8 @@ from csm import __version__
 from csm.calculations.basic_calculations import cart2sph
 from csm.input_output.formatters import format_CSM, format_unknown_str, output_strings, non_negative_zero
 from csm.molecule.molecule import MoleculeReader
-
+from pathlib import Path
+import shutil
 
 def write_array_to_file(f, arr, add_one=False, separator=" "):
     '''
@@ -500,6 +501,7 @@ class ScriptContextWriter(ContextWriter):
         self.print_denorm = print_denorm
         self.argument_string = argument_string
         self.create_legacy_files = legacy_files
+        self.com_file=kwargs.get("command_file")
         self.init_files()
 
     def get_line_header(self, index, operation):
@@ -552,10 +554,18 @@ class ScriptContextWriter(ContextWriter):
             self.legacy_folder = os.path.join(self.folder, 'old-csm-output')
             os.makedirs(self.legacy_folder, exist_ok=True)
 
+        #version and commandline
         filename = os.path.join(self.folder, "version.txt")
         with open(filename, 'w') as file:
             file.write(self.argument_string)
             file.write("CSM VERSION: " + str(__version__))
+
+        #comfile
+        if self.com_file:
+            name=Path(self.com_file).name
+            filename=os.path.join(self.folder, name)
+            shutil.copy(self.com_file, filename)
+
 
     def close_files(self):
         self.csm_file.close()
