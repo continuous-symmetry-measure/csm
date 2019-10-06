@@ -152,6 +152,14 @@ def parallel_calc(args_array, pool_size):
 
 
 def calc(dictionary_args):
+    # get commands:
+    if dictionary_args["command"] == "comfile":
+        args_array, operation_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
+    else:
+        args_array = [(None, dictionary_args, False)]
+        operation_array = [dictionary_args["operation"]]
+
+
     # get molecules
     if dictionary_args["in_file_name"]:
         molecules = read_molecules(**dictionary_args)
@@ -159,13 +167,6 @@ def calc(dictionary_args):
         molecules = read_mols_from_std_in()
     else:
         raise ValueError("No input for molecules specified")
-
-    # get commands:
-    if dictionary_args["command"] == "comfile":
-        args_array, operation_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
-    else:
-        args_array = [(None, dictionary_args, False)]
-        operation_array = [dictionary_args["operation"]]
 
     context_writer = get_context_writer(dictionary_args)
     if not dictionary_args["out_format"]:
