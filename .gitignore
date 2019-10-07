@@ -14,6 +14,3 @@ build/
 *.sdf
 *.suo
 env/
-/python/tests/test_cases/t05_crown12/*.json
-/python/tests/test_cases/t05_crown12/molecules/*.xyz
-*.json
