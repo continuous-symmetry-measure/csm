@@ -22,11 +22,11 @@ class TestBasic(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    try:
-        shutil.rmtree(results_folder)
-    except FileNotFoundError:
-        pass 
-    os.mkdir(results_folder)
+    #try:
+    #    shutil.rmtree(results_folder)
+    #except FileNotFoundError:
+    #    pass
+    #os.mkdir(results_folder)
 
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
@@ -154,6 +154,7 @@ class TestBasic(RunThings):
 
     # output
     def test_legacy(self):
+        #why is it printing filename instead of index all of a sudden?
         # --legacy-output prints old style csm format
         cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.txt".format(
             self.results_folder)
@@ -165,6 +166,7 @@ class TestBasic(RunThings):
         assert out == exp
 
     def test_json_output(self):
+        #same problem as legacy
         # --json-output. only works with --legacy-output
         cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.json --json-output".format(
             self.results_folder)
@@ -360,13 +362,17 @@ class TestBasic(RunThings):
         test = set([stats1, stats2, stats3, stats4])
         assert len(test) == 4
 
+    #parallel
+    def test_parallel_mols_in_file(self):
+        #TODO
+        assert False
 
 class TestFragments(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    shutil.rmtree(results_folder)
-    os.mkdir(results_folder)
+    #shutil.rmtree(results_folder)
+    #os.mkdir(results_folder)
 
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
@@ -411,6 +417,36 @@ class TestFragments(RunThings):
             results = self.run_args(cmd)
             print(cmd)
             assert len(results[0][0].molecule.chains) == 6
+
+
+class TestChirality(RunThings):
+    def test_exact(self):
+        # --sn-max (relevant only for chirality)
+        cmd = "exact ch --input bis(dth)copper(I).mol"
+        result1 = self.run_args(cmd)
+        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2"
+        result2 = self.run_args(cmd)
+        assert result1[0][0].op_type == 'SN' and result1[0][0].op_order == 4
+        assert result2[0][0].op_type == 'CS' and result2[0][0].op_order == 2
+
+    def test_approx(self):
+        # --sn-max (relevant only for chirality)
+        cmd = "approx ch --input bis(dth)copper(I).mol"
+        result1 = self.run_args(cmd)
+        cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2"
+        result2 = self.run_args(cmd)
+        assert result1[0][0].op_type == 'SN' and result1[0][0].op_order == 4
+        assert result2[0][0].op_type == 'CS' and result2[0][0].op_order == 2
+
+    def test_trivial(self):
+        # --babel-bond computes bonding
+        cmd = "trivial ch --input ferrocene.xyz"
+        result1 = self.run_args(cmd)
+        cmd = "trivial ch --input ferrocene.xyz --babel-bond"
+        results = self.run_args(cmd)
+        assert len(result1[0][0].molecule.bondset) != len(results[0][0].molecule.bondset)
+
+
 
 
 class xTestComplicated(RunThings):
