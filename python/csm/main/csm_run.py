@@ -34,7 +34,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
                  state.csm, ])
         calc = Exact(**dictionary_args, callback_func=csm_state_tracer_func)
 
-    if calc_type == "approx":
+    elif calc_type == "approx":
         dir_chooser = get_direction_chooser(**dictionary_args)
         dictionary_args["direction_chooser"] = dir_chooser
         if parallel_dirs:
@@ -47,7 +47,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
                 dictionary_args["log_func"] = log
             calc = Approx(**dictionary_args)
 
-    if calc_type == "trivial":
+    elif calc_type == "trivial":
         calc = Trivial(**dictionary_args)
 
     # run the calculation
