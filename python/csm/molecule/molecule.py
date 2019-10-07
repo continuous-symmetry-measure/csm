@@ -982,6 +982,7 @@ class MoleculeReader:
                 mols.append(mol)
 
             else:
+                obms=select_mols(obms, kwargs) #save a little bit of time- only continue processing the molecules that were selected
                 for obm in obms:
                     mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_sym=ignore_sym,
                                                       use_mass=use_mass)
@@ -1009,7 +1010,6 @@ class MoleculeReader:
             else:
                 print("Warning: Input molecules have no bond information")
 
-        processed_mols = select_mols(processed_mols, kwargs)
         return processed_mols
 
     @staticmethod
