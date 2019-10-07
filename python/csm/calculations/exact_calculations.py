@@ -6,7 +6,7 @@ from csm.fast import calc_ref_plane
 
 from csm.calculations.basic_calculations import check_perm_cycles, now, run_time
 from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
-from csm.calculations.data_classes import CSMState, CSMResult
+from csm.calculations.data_classes import CSMState, CSMResult, Operation, BaseCalculation
 from csm.calculations.permuters import ConstraintPermuter
 from csm.input_output.formatters import csm_log as print
 from csm.input_output.formatters import format_perm_count
@@ -58,7 +58,7 @@ class ExactStatistics:
         return self._truecount
 
 
-class ExactCalculation:
+class ExactCalculation(BaseCalculation):
     def __init__(self, operation, molecule, keep_structure=False, perm=None, no_constraint=False, callback_func=None,
                  *args, **kwargs):
         """
@@ -74,52 +74,23 @@ class ExactCalculation:
         :param callback_func: default None, this function is called for every single permutation calculated with an argument of a single 
         CSMState, can be used for printing in-progress reports, outputting to an excel, etc.
         """
-        self.operation = operation
-        self.molecule = molecule
+        super().__init__(operation, molecule)
         self.keep_structure = keep_structure
         self.perm = perm
         self.no_constraint = no_constraint
         self.callback_func = callback_func
 
     def calculate(self, timeout=300, *args, **kwargs):
-        self.start_time = now()
-        op_type = self.operation.type
-        op_order = self.operation.order
-        molecule = self.molecule
-        keep_structure = self.keep_structure
-        perm = self.perm
-        no_constraint = self.no_constraint
-
-        if op_type == 'CH':  # Chirality
-            # sn_max = op_order
-            # First CS
-            best_result = self.csm_operation('CS', 2, molecule, keep_structure, perm, no_constraint, timeout=timeout)
-            best_result = best_result._replace(op_type='CS')  # unclear why this line isn't redundant
-            if best_result.csm > MINDOUBLE:
-                # Try the SN's
-                for op_order in range(2, self.operation.order + 1, 2):
-                    result = self.csm_operation('SN', op_order, molecule, keep_structure, perm, no_constraint,
-                                                timeout=timeout)
-                    if result.csm < best_result.csm:
-                        best_result = result._replace(op_type='SN', op_order=op_order)
-                    if best_result.csm < MINDOUBLE:
-                        break
-
-        else:
-            best_result = self.csm_operation(op_type, op_order, molecule, keep_structure, perm, no_constraint,
-                                             timeout=timeout)
-
+        best_result=super().calculate(timeout)
         overall_stats = self.statistics.to_dict()
         overall_stats["runtime"] = run_time(self.start_time)
         self._csm_result = CSMResult(best_result, self.operation, overall_stats=overall_stats)
         return self.result
 
-    def csm_operation(self, op_type, op_order, molecule, keep_structure=False, perm=None, no_constraint=False,
-                      timeout=300):
+    def _calculate(self, op, timeout):
         """
         Calculates minimal csm, directional cosines by applying permutations that keep the similar atoms within the group.
-        :param op_type: cannot be CH.
-        :param op_order:
+        :param operation: cannot be CH.
         :param molecule:
         :param keep_structure:
         :param perm:
@@ -128,6 +99,13 @@ class ExactCalculation:
         :param timeout:
         :return:
         """
+        op_type=op.type
+        op_order=op.order
+        molecule=self.molecule
+        keep_structure=self.keep_structure
+        perm=self.perm
+        no_constraint=self.no_constraint
+
         best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
         traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
@@ -161,20 +139,11 @@ class ExactCalculation:
 
     @staticmethod
     def exact_calculation_for_approx(operation, molecule, perm):
-        ec = ExactCalculation(operation, molecule)
+        ec = ExactCalculation(operation, molecule, perm=perm)
         if operation.type == 'CH':  # Chirality
-            best_result = ec.csm_operation('CS', 2, molecule, perm=perm)
-            if best_result.csm > MINDOUBLE:
-                # Try the SN's
-                for op_order in range(2, operation.order + 1, 2):
-                    result = ec.csm_operation('SN', op_order, molecule, perm=perm)
-                    if result.csm < best_result.csm:
-                        best_result = result._replace(op_type='SN', op_order=op_order)
-                    if best_result.csm < MINDOUBLE:
-                        break
-        else:
-            best_result = ec.csm_operation(operation.type, operation.order, molecule, perm=perm)
+            raise ValueError("How did you get here? Approx should be sending chirality broken down to cs, Sns")
 
+        best_result = ec._calculate(operation, molecule)
         falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(perm, operation)
         best_result = best_result._replace(num_invalid=num_invalid)
         return best_result

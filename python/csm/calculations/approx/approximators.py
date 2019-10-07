@@ -15,7 +15,7 @@ from csm.calculations.basic_calculations import create_rotation_matrix, array_di
     CalculationTimeoutError, check_timeout
 from csm.calculations.basic_calculations import now, run_time
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, MINDOUBLE
-from csm.calculations.data_classes import CSMState, Operation, CSMResult
+from csm.calculations.data_classes import CSMState, Operation, CSMResult, BaseCalculation
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter
 from csm.input_output.formatters import csm_log as print
@@ -607,12 +607,11 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
         return perm
 
 
-class ApproxCalculation(_OptionalLogger):
+class ApproxCalculation(BaseCalculation, _OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
                  log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
 
-        self.operation = operation
-        self._molecule = molecule
+        super().__init__(operation, molecule)
 
         self._log_func = log_func
 
@@ -638,31 +637,15 @@ class ApproxCalculation(_OptionalLogger):
         self._max_iterations = 30
 
     def calculate(self, timeout=100, *args, **kwargs):
-        self.start_time = now()
         self.timeout = timeout
         overall_stats = {}
-        if self.operation.name == "CHIRALITY":  # Chirality
-            # First CS
-            best_op = Operation('cs')
-            best_result = self._calculate(best_op)
-            if best_result.csm > MINDOUBLE:
-                # Try the SN's
-                for op_order in range(2, self.operation.order + 1, 2):
-                    op = Operation("S" + str(op_order))
-                    result = self._calculate(op)
-                    if result.csm < best_result.csm:
-                        best_result = result
-                        best_op = op
-                    if best_result.csm < MINDOUBLE:
-                        break
-        else:
-            best_result = self._calculate(self.operation)
+        best_result = super().calculate(timeout)
         overall_stats["runtime"] = run_time(self.start_time)
         self.result = CSMResult(best_result, self.operation, overall_stats=overall_stats,
                                 ongoing_stats={"approx": self.statistics.to_dict()})
         return self.result
 
-    def _calculate(self, operation):
+    def _calculate(self, operation, timeout):
         if operation.type == 'CI' or (operation.type == 'SN' and operation.order == 2):
             dir = [1.0, 0.0, 0.0]
             if operation.type == 'SN':
@@ -691,16 +674,16 @@ class ApproxCalculation(_OptionalLogger):
             else:
                 print("(A result with better preservation of integrity of cycle lengths was found")
                 print("Direction: ", least_invalid.dir, " yields a CSM of", format_CSM(least_invalid.csm),
-                      "\n", (1 - (least_invalid.num_invalid / len(self._molecule))) * 100,
+                      "\n", (1 - (least_invalid.num_invalid / len(self.molecule))) * 100,
                       "% of the molecule's atoms are in legal cycles)")
         return best_result
 
     def _calculate_for_directions(self, operation, dirs, max_iterations):
-        best = CSMState(molecule=self._molecule, op_type=operation.type, op_order=operation.order, csm=MAXDOUBLE,
+        best = CSMState(molecule=self.molecule, op_type=operation.type, op_order=operation.order, csm=MAXDOUBLE,
                         num_invalid=MAXDOUBLE)
-        least_invalid = CSMState(molecule=self._molecule, op_type=operation.type, op_order=operation.order,
+        least_invalid = CSMState(molecule=self.molecule, op_type=operation.type, op_order=operation.order,
                                  csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
-        single_dir_approximator = SingleDirApproximator(operation, self._molecule,
+        single_dir_approximator = SingleDirApproximator(operation, self.molecule,
                                                         self.perm_builder, self._log,
                                                         self.timeout, max_iterations=max_iterations)
         for dir in dirs:
@@ -752,7 +735,7 @@ class ParallelApprox(ApproxCalculation):
     def _calculate_for_directions(self, operation, dirs):
         pool = multiprocessing.Pool(processes=self.pool_size)
         print("Approximating across {} processes".format(self.pool_size))
-        single_dir_approximator = SingleDirApproximator(operation, self._molecule,
+        single_dir_approximator = SingleDirApproximator(operation, self.molecule,
                                                         self.perm_builder, self._log,
                                                         self.timeout, max_iterations=self.max_iterations)
         pool_outputs = pool.map(single_dir_approximator.calculate, dirs)

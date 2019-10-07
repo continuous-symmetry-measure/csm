@@ -1,9 +1,10 @@
 from collections import namedtuple
-
+from datetime import datetime
 import numpy as np
 
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
     check_perm_structure_preservation
+from csm.calculations.constants import MINDOUBLE
 from csm.input_output.formatters import silent_print
 from csm.molecule.molecule import Molecule
 from csm.molecule.normalizations import de_normalize_coords
@@ -360,3 +361,39 @@ class FailedResult(Result):
 
     def __repr__(self):
         return super(FailedResult, self).__repr__() + "\tFailure: " + self.failed_reason
+
+class BaseCalculation:
+    '''
+    A base class for calculations that handles some shared logic, particularly chirality
+    '''
+    def __init__(self, operation, molecule, **kwargs):
+        self.operation=operation
+        self.molecule=molecule
+
+    def chirality(self, timeout):
+        # First CS
+        op = Operation('cs')
+        best_result = self._calculate(op, timeout)
+        if best_result.csm > MINDOUBLE:
+            # Try the SN's
+            for op_order in range(2, self.operation.order + 1, 2):
+                op = Operation("S" + str(op_order))
+                result = self._calculate(op, timeout)
+                if result.csm < best_result.csm:
+                    best_result = result
+                if best_result.csm < MINDOUBLE:
+                    break
+        return best_result
+    def calculate(self, timeout=300):
+        self.start_time = datetime.now()
+        if self.operation.type == 'CH':  # Chirality
+            # sn_max = op_order
+            # First CS
+            best_result=self.chirality(timeout)
+        else:
+            best_result = self._calculate(self.operation, timeout=timeout)
+        return best_result
+
+    def _calculate(self, operation, timeout):
+        raise NotImplementedError
+
