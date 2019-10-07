@@ -198,15 +198,16 @@ def calc(dictionary_args):
         flattened_args = [item for sublist in total_args for item in sublist]
 
         num_ops = len(operation_array)
-        chunk_mols= 50  # int(len(molecules)/10)
-        chunk_size = num_ops * chunk_mols #it needs to be divisible by length of operation array
+        batch_mols= 50  # int(len(molecules)/10)
+        batch_size = num_ops * batch_mols #it needs to be divisible by length of operation array
         total_results = []
-
+        pool_size=dictionary_args["pool_size"]
+        print("Parallelizing {} calculations across {} processes with batch size {}".format(len(flattened_args), pool_size, batch_size))
         try:
-            pool = multiprocessing.Pool(processes=dictionary_args["pool_size"])
+            pool = multiprocessing.Pool(processes=pool_size)
             with context_writer(operation_array, **dictionary_args) as rw:
-                for i in range(0, len(flattened_args), chunk_size):
-                    end_index=min(i+chunk_size, len(flattened_args))
+                for i in range(0, len(flattened_args), batch_size):
+                    end_index=min(i+batch_size, len(flattened_args))
                     args_array=flattened_args[i:end_index]
                     now=datetime.now()
                     #print("calculating partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
