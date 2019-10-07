@@ -29,7 +29,7 @@ def write_array_to_file(f, arr, add_one=False, separator=" "):
             if item == "n/a":
                 f.write("%10s" % item)
             else:
-                f.write("%10s" % ("%.4lf" % item))
+                f.write("%s" % ("%10.4lf" % item))
 
 
 def get_line_header(index, result):
@@ -488,7 +488,8 @@ class ScriptContextWriter(ContextWriter):
                  out_file_name=None,
                  polar=False, verbose=False, print_local=False, argument_string="",
                  print_denorm=False,
-                 legacy_files=False, **kwargs):
+                 legacy_files=False,
+                 max_len_file_name=10, **kwargs):
         super().__init__(commands, out_format, out_file_name)
         self.molecule_index = 0  # used for writing pdb files
         self.result_index = 0  # used for writing pdb files
@@ -501,6 +502,8 @@ class ScriptContextWriter(ContextWriter):
         self.print_denorm = print_denorm
         self.argument_string = argument_string
         self.create_legacy_files = legacy_files
+        self.max_len_file_name = max_len_file_name + 4
+        self.molecule_format = '%-' + str(self.max_len_file_name) + 's'
         self.com_file=kwargs.get("command_file")
         self.init_files()
 
@@ -516,17 +519,17 @@ class ScriptContextWriter(ContextWriter):
         os.makedirs(self.folder, exist_ok=True)
 
         self.csm_file = open(os.path.join(self.folder, "csm.txt"), 'w')
-        self.csm_file.write(molecule_format % "#Molecule")
+        self.csm_file.write(self.molecule_format % "#Molecule")
         for index, operation in enumerate(self.commands):
-            self.csm_file.write("%-10s" % (self.get_line_header(index, operation)))
+            self.csm_file.write("%10s" % (self.get_line_header(index, operation)))
         self.csm_file.write("\n")
 
         self.dir_file = open(os.path.join(self.folder, "directional.txt"), 'w')
-        format_string = molecule_format + "%-10s%10s%10s%10s\n"
+        format_string = self.molecule_format + "%-10s%10s%10s%10s\n"
         self.dir_file.write(format_string % ("#Molecule", "#Command", "X", "Y", "Z"))
 
         self.perm_file = open(os.path.join(self.folder, "permutation.txt"), 'w')
-        format_string = molecule_format + "%-10s%-10s\n"
+        format_string = self.molecule_format + "%-10s%-10s\n"
         self.perm_file.write(format_string % ("#Molecule", "#Command", "#Permutation"))
 
         self.initial_normalized_file = open(
@@ -579,9 +582,9 @@ class ScriptContextWriter(ContextWriter):
 
     def write_csm(self, mol_results):
         f = self.csm_file
-        f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
+        f.write(self.molecule_format % mol_results[0].molecule.metadata.appellation())
         for result in mol_results:
-            f.write("%-10s" % format_result_CSM(result))
+            f.write("%10s" % format_result_CSM(result))
         f.write("\n")
 
     def write_dir(self, mol_results):
@@ -589,8 +592,8 @@ class ScriptContextWriter(ContextWriter):
         for line_index, command_result in enumerate(mol_results):
             if command_result.skipped:
                 continue
-            f.write(molecule_format % command_result.molecule.metadata.appellation())
-            f.write("%10s" % get_line_header(line_index, command_result))
+            f.write(self.molecule_format % command_result.molecule.metadata.appellation())
+            f.write("%-10s" % get_line_header(line_index, command_result))
             write_array_to_file(f, command_result.dir, separator="%-10s")
             f.write("\n")
 
@@ -599,7 +602,7 @@ class ScriptContextWriter(ContextWriter):
         for line_index, command_result in enumerate(mol_results):
             if command_result.skipped:
                 continue
-            f.write(molecule_format % (command_result.molecule.metadata.appellation()))
+            f.write(self.molecule_format % (command_result.molecule.metadata.appellation()))
             f.write("%-10s" % (get_line_header(line_index, command_result)))
             write_array_to_file(f, command_result.perm, True)
             f.write("\n")
