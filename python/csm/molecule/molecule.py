@@ -1347,7 +1347,7 @@ class MoleculeReader:
 
 
 def select_mols(mols, kwargs):
-    if kwargs['select_mols']:
+    if kwargs.get('select_mols'):
         try:
             mols = [mols[i] for i in kwargs['select_mols']]
         except IndexError:
