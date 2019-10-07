@@ -18,7 +18,7 @@ class RunThings():
         return results_arr
 
 
-class TestBasic(RunThings):
+class xTestBasic(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
@@ -367,7 +367,7 @@ class TestBasic(RunThings):
         #TODO
         assert False
 
-class TestFragments(RunThings):
+class xTestFragments(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
@@ -420,31 +420,48 @@ class TestFragments(RunThings):
 
 
 class TestChirality(RunThings):
-    def test_exact(self):
-        # --sn-max (relevant only for chirality)
-        cmd = "exact ch --input bis(dth)copper(I).mol"
-        result1 = self.run_args(cmd)
-        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2"
-        result2 = self.run_args(cmd)
-        assert result1[0][0].op_type == 'SN' and result1[0][0].op_order == 4
-        assert result2[0][0].op_type == 'CS' and result2[0][0].op_order == 2
-
-    def test_approx(self):
-        # --sn-max (relevant only for chirality)
-        cmd = "approx ch --input bis(dth)copper(I).mol"
-        result1 = self.run_args(cmd)
-        cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2"
-        result2 = self.run_args(cmd)
-        assert result1[0][0].op_type == 'SN' and result1[0][0].op_order == 4
-        assert result2[0][0].op_type == 'CS' and result2[0][0].op_order == 2
-
+    results_folder = "csm_tests"
+    def run_args(self, args_str):
+        return super()._run_args(args_str, self.results_folder)
     def test_trivial(self):
         # --babel-bond computes bonding
         cmd = "trivial ch --input ferrocene.xyz"
         result1 = self.run_args(cmd)
+        print("************",cmd, result1[0][0].csm)
         cmd = "trivial ch --input ferrocene.xyz --babel-bond"
         results = self.run_args(cmd)
-        assert len(result1[0][0].molecule.bondset) != len(results[0][0].molecule.bondset)
+        print("************",cmd, results[0][0].csm)
+
+
+
+        cmd = "trivial ch --input 2rla-s3.pdb"
+        results1 = self.run_args(cmd)
+        print("************",cmd, results1[0][0].csm)
+
+        cmd = "trivial ch --input 2rla-s3.pdb --permute-chains"
+        results2 = self.run_args(cmd)
+        print("************",cmd, results2[0][0].csm)
+    def test_exact(self):
+        # --sn-max (relevant only for chirality)
+        cmd = "exact ch --input bis(dth)copper(I).mol" #matches
+        result1 = self.run_args(cmd)
+        print("************", cmd, result1[0][0].csm)
+        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2" #matches
+        result2 = self.run_args(cmd)
+        print("************", cmd, result2[0][0].csm)
+
+    def test_approx(self):
+        cmd = "approx ch --input ferrocene.xyz --babel-bond" #matches
+        results = self.run_args(cmd)
+        print("************",cmd, results[0][0].csm)
+
+        cmd = "approx ch --input bis(dth)copper(I).mol" #matches
+        result1 = self.run_args(cmd)
+        print("************", cmd, result1[0][0].csm)
+        cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2" #matches
+        result2 = self.run_args(cmd)
+        print("************", cmd, result2[0][0].csm)
+
 
 
 
