@@ -429,9 +429,6 @@ def format_result_CSM(result):
     return format_CSM(result.csm)
 
 
-molecule_format = "%-40s"
-
-
 class ContextWriter:
     def __init__(self, commands, out_format, out_file_name=None, *args, **kwargs):
         self.commands = commands
@@ -489,7 +486,7 @@ class ScriptContextWriter(ContextWriter):
                  polar=False, verbose=False, print_local=False, argument_string="",
                  print_denorm=False,
                  legacy_files=False,
-                 max_len_file_name=10, **kwargs):
+                 max_len_file_name=36, **kwargs):
         super().__init__(commands, out_format, out_file_name)
         self.molecule_index = 0  # used for writing pdb files
         self.result_index = 0  # used for writing pdb files
@@ -756,7 +753,7 @@ class WebWriter():
     retained for web-csm
     '''
 
-    def __init__(self, results, format=None, out_folder=None, context_writer=ScriptContextWriter, **kwargs):
+    def __init__(self, results, format=None, out_folder=None, max_len_file_name=36, context_writer=ScriptContextWriter, **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
@@ -770,6 +767,9 @@ class WebWriter():
         except TypeError:  # results isn't an array at all
             results = [[results]]
         self.results = results
+        self.max_len_file_name = max_len_file_name + 4
+        self.molecule_format = '%-' + str(self.max_len_file_name) + 's'
+
 
         self.commands = []
         for result in results[0]:
@@ -821,12 +821,12 @@ class WebWriter():
         full_string = "".join(format_strings)
 
         with open(filename, 'w') as f:
-            f.write(molecule_format % "#Molecule")
+            f.write(self.molecule_format % "#Molecule")
             f.write(full_string % tuple(headers_arr_1))
             f.write("%-10s" % " ")
             f.write(full_string % tuple(headers_arr_2))
             for mol_index, mol_results in enumerate(self.results):
-                f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
+                f.write(self.molecule_format % mol_results[0].molecule.metadata.appellation())
                 for line_index, command_result in enumerate(mol_results):
                     f.write(
                         format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
@@ -838,11 +838,11 @@ class WebWriter():
             filename = os.path.join(self.folder, "permutation.txt")
         # creates a tsv for permutations (needs to handle extra long permutations somehow)
         with open(filename, 'w') as f:
-            format_line = molecule_format + "%-10s%-10s\n"
+            format_line = self.molecule_format + "%-10s%-10s\n"
             f.write(format_line % ("#Molecule", "#Command", "#Permutation"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write(molecule_format % (command_result.molecule.metadata.appellation()))
+                    f.write(self.molecule_format % (command_result.molecule.metadata.appellation()))
                     f.write("%-10s" % (get_line_header(line_index, command_result)))
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")
