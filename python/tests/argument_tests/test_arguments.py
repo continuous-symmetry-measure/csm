@@ -18,7 +18,7 @@ class RunThings():
         return results_arr
 
 
-class xTestBasic(RunThings):
+class TestBasic(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
@@ -367,7 +367,7 @@ class xTestBasic(RunThings):
         #TODO
         assert False
 
-class xTestFragments(RunThings):
+class TestFragments(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
@@ -427,40 +427,52 @@ class TestChirality(RunThings):
         # --babel-bond computes bonding
         cmd = "trivial ch --input ferrocene.xyz"
         result1 = self.run_args(cmd)
-        print("************",cmd, result1[0][0].csm)
+        assert result1[0][0].csm == pytest.approx(17.371558, abs=1e-5)
+        assert result1[0][0].overall_statistics["best chirality"] == "CS"
+
         cmd = "trivial ch --input ferrocene.xyz --babel-bond"
         results = self.run_args(cmd)
-        print("************",cmd, results[0][0].csm)
+        assert results[0][0].csm == pytest.approx(17.371558, abs=1e-5)
+        assert results[0][0].overall_statistics["best chirality"] == "CS"
 
 
 
         cmd = "trivial ch --input 2rla-s3.pdb"
-        results1 = self.run_args(cmd)
-        print("************",cmd, results1[0][0].csm)
+        result1 = self.run_args(cmd)
+        assert result1[0][0].csm == pytest.approx(0.111737, abs=1e-5)
+        assert result1[0][0].overall_statistics["best chirality"] == "CS"
 
         cmd = "trivial ch --input 2rla-s3.pdb --permute-chains"
-        results2 = self.run_args(cmd)
-        print("************",cmd, results2[0][0].csm)
+        result2 = self.run_args(cmd)
+        assert result2[0][0].csm == pytest.approx(0.111737, abs=1e-5)
+        assert result2[0][0].overall_statistics["best chirality"] == "CS"
+
     def test_exact(self):
         # --sn-max (relevant only for chirality)
         cmd = "exact ch --input bis(dth)copper(I).mol" #matches
         result1 = self.run_args(cmd)
-        print("************", cmd, result1[0][0].csm)
+        assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
+        assert result1[0][0].overall_statistics["best chirality"] == "S4"
         cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2" #matches
         result2 = self.run_args(cmd)
-        print("************", cmd, result2[0][0].csm)
+        assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
+        assert result2[0][0].overall_statistics["best chirality"] == "CS"
 
     def test_approx(self):
         cmd = "approx ch --input ferrocene.xyz --babel-bond" #matches
         results = self.run_args(cmd)
-        print("************",cmd, results[0][0].csm)
+        assert results[0][0].csm == pytest.approx(0.726234, abs=1e-5)
+        assert results[0][0].overall_statistics["best chirality"] == "CS"
 
         cmd = "approx ch --input bis(dth)copper(I).mol" #matches
         result1 = self.run_args(cmd)
-        print("************", cmd, result1[0][0].csm)
+        assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
+        assert result1[0][0].overall_statistics["best chirality"] == "S4"
+
         cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2" #matches
         result2 = self.run_args(cmd)
-        print("************", cmd, result2[0][0].csm)
+        assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
+        assert result2[0][0].overall_statistics["best chirality"] == "CS"
 
 
 
