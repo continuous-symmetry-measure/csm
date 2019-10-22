@@ -427,21 +427,22 @@ class TestChirality(RunThings):
         # --babel-bond computes bonding
         cmd = "trivial ch --input ferrocene.xyz"
         result1 = self.run_args(cmd)
-        assert result1[0][0].csm == pytest.approx(17.371558, abs=1e-5)
+        assert result1[0][0].csm == pytest.approx(17.152493, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "CS"
 
+    def test_trivial_2(self):
         cmd = "trivial ch --input ferrocene.xyz --babel-bond"
         results = self.run_args(cmd)
-        assert results[0][0].csm == pytest.approx(17.371558, abs=1e-5)
+        assert results[0][0].csm == pytest.approx(17.152493, abs=1e-5)
         assert results[0][0].overall_statistics["best chirality"] == "CS"
 
-
-
+    def test_trivial_3(self):
         cmd = "trivial ch --input 2rla-s3.pdb"
         result1 = self.run_args(cmd)
         assert result1[0][0].csm == pytest.approx(0.111737, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "CS"
 
+    def test_trivial_4(self):
         cmd = "trivial ch --input 2rla-s3.pdb --permute-chains"
         result2 = self.run_args(cmd)
         assert result2[0][0].csm == pytest.approx(0.111737, abs=1e-5)
@@ -453,6 +454,8 @@ class TestChirality(RunThings):
         result1 = self.run_args(cmd)
         assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "S4"
+
+    def test_exact_2(self):
         cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2" #matches
         result2 = self.run_args(cmd)
         assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
@@ -461,14 +464,16 @@ class TestChirality(RunThings):
     def test_approx(self):
         cmd = "approx ch --input ferrocene.xyz --babel-bond" #matches
         results = self.run_args(cmd)
-        assert results[0][0].csm == pytest.approx(0.726234, abs=1e-5)
+        assert results[0][0].csm == pytest.approx(0.241361, abs=1e-5)
         assert results[0][0].overall_statistics["best chirality"] == "CS"
 
+    def test_approx_2(self):
         cmd = "approx ch --input bis(dth)copper(I).mol" #matches
         result1 = self.run_args(cmd)
         assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "S4"
 
+    def test_approx_3(self):
         cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2" #matches
         result2 = self.run_args(cmd)
         assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
