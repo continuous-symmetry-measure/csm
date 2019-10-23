@@ -3,14 +3,17 @@ The Python CSM Package
 
 Changes in version 1.0.0
 ------------------------
+* parallel calculations with --parallel, with output during calculations
 * check for cmd.txt before reading molecules
 * copy cmd.txt to results folder
 * --output-perms no longer receives a filename, it is a simple true/false flag that is saved to the results folder as perms.csv
+* fixes to spacing in output
+* cleaning up of chirality code for future easier debugging
 
 Changes in version 0.22.4
 ------------------------
 * bug fixes to writing csm files
-* vast simplifcation of setup.py install process
+* vast simplification of setup.py install process
 
 Changes in version 0.22.3
 ------------------------
