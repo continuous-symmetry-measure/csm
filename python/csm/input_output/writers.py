@@ -677,6 +677,7 @@ class ScriptContextWriter(ContextWriter):
                         "\tRuntime"
                         "\t # Iter"
                         "\t Stop Reason"
+                        "\tchain_perm"
                         "\n")
             else:
                 f.write("Dir Index"
@@ -687,6 +688,7 @@ class ScriptContextWriter(ContextWriter):
                         "\tRuntime"
                         "\t # Iter"
                         "\tStop Reason"
+                        "\tchain_perm"
                         "\n")
 
             for direction_index, direction_dict in enumerate(stats):
@@ -701,6 +703,8 @@ class ScriptContextWriter(ContextWriter):
                         x, y, z = cart2sph(x, y, z)
                         xf, yf, zf = cart2sph(xf, yf, zf)
 
+                    chain_perm = '0'  # stat[???]
+
                     f.write(start_str
                             + format_CSM(stat['start csm']) + "\t"
                             + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
@@ -708,6 +712,7 @@ class ScriptContextWriter(ContextWriter):
                             + format_CSM(stat['run time']) + "\t"
                             + str(stat['num iterations']) + "\t"
                             + stat['stop reason'] + "\t"
+                            + chain_perm + "\t"  # stat[???]
                                                     "\n")
                 except Exception as e:
                     try:

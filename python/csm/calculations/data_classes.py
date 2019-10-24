@@ -171,9 +171,9 @@ class CSMResult(Result):
         perm = self.perm
         chain_perm_dict = {}
         for chain in molecule.chains:
-            index = molecule.chains[chain][0]
-            permuted_index = perm[index]
-            for chain2 in molecule.chains:
+            index = molecule.chains[chain][0] #first atom in the chain
+            permuted_index = perm[index] #location of that first atom in the overall permutation
+            for chain2 in molecule.chains: #check which chain the location belonged to
                 if permuted_index in molecule.chains[chain2]:
                     chain_perm_dict[chain] = chain2
                     break
