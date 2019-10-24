@@ -84,7 +84,7 @@ class Chains(OrderedDict):
         for key, val in arr_of_tuples:
             self.__setitem__(key, val)
 
-    def index_to_string(self, index):
+    def index_to_name(self, index):
         return self._indexes_to_strings[index]
 
 
