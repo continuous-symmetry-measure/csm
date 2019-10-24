@@ -43,21 +43,28 @@ class _SingleDirectionStatistics:
     # 3. runtime
     def __init__(self, dir):
         self.start_dir = dir
-        self.dirs = []
-        self.csms = []
-        self.cycle_stats = []
+        self.results=[]
+
+        #self.dirs = []
+        #self.csms = []
+        #self.cycle_stats = []
         self._stop_reason = ""
         self.least_invalid = CSMState(csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
-        self.chain_perms=[]
+        #self.chain_perms=[]
 
     def append_sub_direction(self, result):
-        self.dirs.append(result.dir)
-        self.csms.append(result.csm)
-        self.cycle_stats.append(result.num_invalid)
+        self.results.append(result)
         if result.num_invalid < self.least_invalid.num_invalid or \
                 (result.num_invalid == self.least_invalid.num_invalid
                  and result.csm < self.least_invalid.csm):
             self.least_invalid = result
+
+        return
+
+        self.dirs.append(result.dir)
+        self.csms.append(result.csm)
+        self.cycle_stats.append(result.num_invalid)
+
         chain_perm, chain_str=get_chain_perm_string(result.molecule, result.perm)
         self.chain_perms.append(chain_str)
 
@@ -78,6 +85,7 @@ class _SingleDirectionStatistics:
         self.run_time = time_d.total_seconds()
 
     def __repr__(self):
+        return "stats for dir"+str(self.start_dir)
         return str({
             "dirs": self.dirs,
             "csms": self.csms
@@ -85,22 +93,47 @@ class _SingleDirectionStatistics:
 
     @property
     def end_dir(self):
-        return self.dirs[-1]
+        return self.results[-1].dir
 
     @property
     def start_csm(self):
-        return self.csms[0]
+        return self.results[0].csm
 
     @property
     def end_csm(self):
-        return self.csms[-1]
+        return self.results[-1].csm
 
     @property
     def num_iterations(self):
-        return len(self.dirs)
+        return len(self.results)
+
+    @property
+    def chain_perm(self):
+        arr, st= get_chain_perm_string(self.results[-1].molecule, self.results[-1].perm)
+        return st
+
+    @property
+    def validity_dict(self):
+        valid_struc= (1 - (self.results[-1].num_invalid / len(self.least_invalid.molecule))) * 100
+        best_valid=(1 - (self.least_invalid.num_invalid / len(self.least_invalid.molecule))) * 100
+        if best_valid > valid_struc:
+            return {
+            "res valid": valid_struc,
+            "dir": self.least_invalid.dir,
+            "csm": self.least_invalid.csm,
+            "per": best_valid
+            }
+        else:
+            return {
+                "res valid": valid_struc,
+                "dir": "n/a",
+                "csm": "n/a",
+                "per": "n/a"
+            }
+
 
     def __lt__(self, other):
-        try:  # iof other doesn't have csm, we are less than them
+        try:  # if other doesn't have csm, we are less than them
             that_one = other.end_csm
         except:
             return True
@@ -121,14 +154,9 @@ class _SingleDirectionStatistics:
                 "end dir": list(self.end_dir),
                 "end csm": self.end_csm,
                 "num iterations": self.num_iterations,
-                "dirs": [list(dir) for dir in self.dirs],
-                "csms": self.csms,
-                "cycle stats": self.cycle_stats,
                 "run time": self.run_time,
-                "valid dir":self.least_invalid.dir,
-                "valid csm":self.least_invalid.csm,
-                "valid per":(1 - (self.least_invalid.num_invalid / len(self.least_invalid.molecule))) * 100,
-                "chain perm":self.chain_perms[-1]
+                "chain perm":self.chain_perm,
+                "validity":self.validity_dict
             }
             return return_dict
         except:
@@ -660,7 +688,7 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
             else:
                 op_msg = 'CI'
             self._log("Operation %s - using just one direction: %s" % (op_msg, dir))
-            best_results = self._calculate_for_directions(operation, [dir], 1)
+            best_result = self._calculate_for_directions(operation, [dir], 1)
         else:
             if self.selective:
                 self._calculate_for_directions(operation, self._initial_directions, 1)

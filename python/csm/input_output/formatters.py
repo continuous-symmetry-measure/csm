@@ -9,6 +9,8 @@ def format_perm_count(num):
 
 
 def format_CSM(num):
+    if num=="n/a":
+        return num
     return "%.4f" % (abs(num))
 
 

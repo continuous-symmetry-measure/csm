@@ -680,7 +680,7 @@ class ScriptContextWriter(ContextWriter):
                 header_string+="\tx_f\ty_f\tz_f"
             header_string+="\tCSM_f\tRuntime\t# Iter\tStop Reason"
             header_string+="\tChain Perm"
-            header_string+="\tbest valid dir\tbest valid csm\tbest valid %"
+            header_string+="\tresult validity\tbest valid dir\tbest valid csm\tbest valid %"
             header_string+="\n"
             f.write(header_string)
 
@@ -706,7 +706,8 @@ class ScriptContextWriter(ContextWriter):
                             + stat['stop reason'] + "\t"
 
                     interim_str+=stat["chain perm"]+"\t"
-                    interim_str=interim_str+str(stat["valid dir"])+"\t"+format_CSM(stat["valid csm"])+"\t"+str(stat["valid per"])
+                    interim_str=interim_str+str(stat["validity"]["res valid"])+"\t"+str(stat["validity"]["dir"])+\
+                                "\t"+format_CSM(stat["validity"]["csm"])+"\t"+str(stat["validity"]["per"])
                     end_str=interim_str+"\n"
                     f.write(end_str)
 
