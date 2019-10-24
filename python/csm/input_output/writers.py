@@ -194,7 +194,7 @@ class MoleculeWriter:
                 if str.lower(self.format) == 'pdb':
                     s = re.sub("MODEL\s+\d+", "", s)
                     s = s.replace("END", "ENDMDL")
-                if str.lower(self.format) in ['mol', 'sdf']:
+                if str.lower(self.format) in ['mol']:  # 'sdf'
                     s += "\n$$$$\n"
             f.write(s)
 
