@@ -48,6 +48,7 @@ class _SingleDirectionStatistics:
         self.cycle_stats = []
         self._stop_reason = ""
         self.least_invalid = CSMState(csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
+        self.chain_perms=[]
 
     def append_sub_direction(self, result):
         self.dirs.append(result.dir)
@@ -57,6 +58,8 @@ class _SingleDirectionStatistics:
                 (result.num_invalid == self.least_invalid.num_invalid
                  and result.csm < self.least_invalid.csm):
             self.least_invalid = result
+        chain_perm, chain_str=get_chain_perm_string(result.molecule, result.perm)
+        self.chain_perms.append(chain_str)
 
     @property
     def stop_reason(self):
@@ -124,7 +127,8 @@ class _SingleDirectionStatistics:
                 "run time": self.run_time,
                 "valid dir":self.least_invalid.dir,
                 "valid csm":self.least_invalid.csm,
-                "valid per":(1 - (self.least_invalid.num_invalid / len(self.least_invalid.molecule))) * 100
+                "valid per":(1 - (self.least_invalid.num_invalid / len(self.least_invalid.molecule))) * 100,
+                "chain perm":self.chain_perms[-1]
             }
             return return_dict
         except:
