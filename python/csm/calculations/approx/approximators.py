@@ -15,7 +15,7 @@ from csm.calculations.basic_calculations import create_rotation_matrix, array_di
     CalculationTimeoutError, check_timeout
 from csm.calculations.basic_calculations import now, run_time
 from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD, MINDOUBLE
-from csm.calculations.data_classes import CSMState, Operation, CSMResult, BaseCalculation
+from csm.calculations.data_classes import CSMState, Operation, CSMResult, BaseCalculation, get_chain_perm_string
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter
 from csm.input_output.formatters import csm_log as print
@@ -47,11 +47,16 @@ class _SingleDirectionStatistics:
         self.csms = []
         self.cycle_stats = []
         self._stop_reason = ""
+        self.least_invalid = CSMState(csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
 
     def append_sub_direction(self, result):
         self.dirs.append(result.dir)
         self.csms.append(result.csm)
         self.cycle_stats.append(result.num_invalid)
+        if result.num_invalid < self.least_invalid.num_invalid or \
+                (result.num_invalid == self.least_invalid.num_invalid
+                 and result.csm < self.least_invalid.csm):
+            self.least_invalid = result
 
     @property
     def stop_reason(self):
@@ -116,7 +121,10 @@ class _SingleDirectionStatistics:
                 "dirs": [list(dir) for dir in self.dirs],
                 "csms": self.csms,
                 "cycle stats": self.cycle_stats,
-                "run time": self.run_time
+                "run time": self.run_time,
+                "valid dir":self.least_invalid.dir,
+                "valid csm":self.least_invalid.csm,
+                "valid per":(1 - (self.least_invalid.num_invalid / len(self.least_invalid.molecule))) * 100
             }
             return return_dict
         except:
@@ -150,6 +158,7 @@ class DirectionStatisticsContainer:
         return [{"dir": dir, "stats": self.directions_dict[dir].to_dict()} for dir in self.directions_dict]
 
 
+
 class ApproxStatistics(DirectionStatisticsContainer):
     pass
 
@@ -175,8 +184,6 @@ class SingleDirApproximator(_OptionalLogger):
         statistics = _SingleDirectionStatistics(dir)
         statistics.start_clock()
         best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
-        self.least_invalid = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order,
-                                      csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
         self._log("Calculating for initial direction: ", dir)
         for chainperm in self._chain_permutations:
             if len(self._chain_permutations) > 1:
@@ -199,10 +206,6 @@ class SingleDirApproximator(_OptionalLogger):
                     self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
                     break
 
-                if interim_results.num_invalid < self.least_invalid.num_invalid or \
-                        (interim_results.num_invalid == self.least_invalid.num_invalid
-                         and interim_results.csm < self.least_invalid.csm):
-                    self.least_invalid = interim_results
                 statistics.append_sub_direction(interim_results)
                 # self._log("\t\t\tfound a permutation using dir", old_results.dir, "...")
                 if i > 1:
@@ -662,43 +665,30 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
                 for item in sorted_csms[:self.num_selected]:
                     best_dirs.append(item.start_dir)
                     self._log("Running again on the", self.num_selected, "best directions")
-                best_results = self._calculate_for_directions(operation, best_dirs, self._max_iterations)
+                best_result = self._calculate_for_directions(operation, best_dirs, self._max_iterations)
 
             else:
-                best_results = self._calculate_for_directions(operation, self._initial_directions, self._max_iterations)
-
-        best_result, least_invalid = best_results
-        if least_invalid.num_invalid < best_result.num_invalid:
-            if least_invalid.csm <= best_result.csm:
-                best_result = least_invalid
-            else:
-                print("(A result with better preservation of integrity of cycle lengths was found")
-                print("Direction: ", least_invalid.dir, " yields a CSM of", format_CSM(least_invalid.csm),
-                      "\n", (1 - (least_invalid.num_invalid / len(self.molecule))) * 100,
-                      "% of the molecule's atoms are in legal cycles)")
+                best_result = self._calculate_for_directions(operation, self._initial_directions, self._max_iterations)
         return best_result
 
     def _calculate_for_directions(self, operation, dirs, max_iterations):
         best = CSMState(molecule=self.molecule, op_type=operation.type, op_order=operation.order, csm=MAXDOUBLE,
                         num_invalid=MAXDOUBLE)
-        least_invalid = CSMState(molecule=self.molecule, op_type=operation.type, op_order=operation.order,
-                                 csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
         single_dir_approximator = SingleDirApproximator(operation, self.molecule,
                                                         self.perm_builder, self._log,
                                                         self.timeout, max_iterations=max_iterations)
         for dir in dirs:
             best_result_for_dir, statistics = single_dir_approximator.calculate(dir)
             self.statistics[dir] = statistics
-            least_invalid_for_dir = single_dir_approximator.least_invalid
-            if least_invalid_for_dir.num_invalid < least_invalid.num_invalid or \
-                    (
-                            least_invalid_for_dir.num_invalid == least_invalid.num_invalid and least_invalid_for_dir.csm < least_invalid.csm):
-                least_invalid = least_invalid_for_dir
+
             if best_result_for_dir.csm < best.csm:
                 best = best_result_for_dir
-                if best.csm < CSM_THRESHOLD:
+            elif best_result_for_dir.csm == best.csm and best_result_for_dir.num_invalid<best.num_invalid:
+                best = best_result_for_dir
+
+            if best.csm < CSM_THRESHOLD:
                     break
-        return best, least_invalid
+        return best
 
 
 class ParallelApprox(ApproxCalculation):
