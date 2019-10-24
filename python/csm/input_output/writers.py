@@ -194,7 +194,7 @@ class MoleculeWriter:
                 if str.lower(self.format) == 'pdb':
                     s = re.sub("MODEL\s+\d+", "", s)
                     s = s.replace("END", "ENDMDL")
-                if str.lower(self.format) in ['mol']:  # 'sdf'
+                if str.lower(self.format) in ['mol', 'sdf']:
                     s += "\n$$$$\n"
             f.write(s)
 
@@ -668,28 +668,21 @@ class ScriptContextWriter(ContextWriter):
 
     def _write_approx_statistics(self, filename, stats):
         with open(filename, 'w') as f:
+            header_string="Dir Index"
             if self.polar:
-                f.write("Dir Index"
-                        "\tr_i\tth_i\tph_i"
-                        "\tCSM_i"
-                        "\tr_f\tth_f\tph_f"
-                        "\tCSM_f"
-                        "\tRuntime"
-                        "\t # Iter"
-                        "\t Stop Reason"
-                        "\tchain_perm"
-                        "\n")
+                header_string+="\tr_i\tth_i\tph_i"
             else:
-                f.write("Dir Index"
-                        "\tx_i\ty_i\tz_i"
-                        "\tCSM_i"
-                        "\tx_f\ty_f\tz_f"
-                        "\tCSM_f"
-                        "\tRuntime"
-                        "\t # Iter"
-                        "\tStop Reason"
-                        "\tchain_perm"
-                        "\n")
+                header_string+="\tx_i\ty_i\tz_i"
+            header_string+="\tCSM_i"
+            if self.polar:
+                header_string+="\tr_f\tth_f\tph_f"
+            else:
+                header_string+="\tx_f\ty_f\tz_f"
+            header_string+="\tCSM_f\tRuntime\t# Iter\tStop Reason"
+            header_string+="\tbest valid dir\tbest valid csm\tbest valid %"
+            header_string+="\n"
+            f.write(header_string)
+
 
             for direction_index, direction_dict in enumerate(stats):
                 dir = direction_dict['dir']
@@ -697,28 +690,29 @@ class ScriptContextWriter(ContextWriter):
                 start_str = str(direction_index) + "\t"
                 try:
                     x, y, z = stat['start dir']
-                    start_str = start_str + format_CSM(x) + "\t" + format_CSM(y) + "\t" + format_CSM(z) + "\t"
                     xf, yf, zf = stat['end dir']
                     if self.polar:
                         x, y, z = cart2sph(x, y, z)
                         xf, yf, zf = cart2sph(xf, yf, zf)
+                    start_str = start_str + format_CSM(x) + "\t" + format_CSM(y) + "\t" + format_CSM(z) + "\t"
 
-                    chain_perm = '0'  # stat[???]
-
-                    f.write(start_str
-                            + format_CSM(stat['start csm']) + "\t"
-                            + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
-                            + format_CSM(stat['end csm']) + "\t"
-                            + format_CSM(stat['run time']) + "\t"
-                            + str(stat['num iterations']) + "\t"
+                    interim_str= start_str \
+                            + format_CSM(stat['start csm']) + "\t" \
+                            + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t" \
+                            + format_CSM(stat['end csm']) + "\t" \
+                            + format_CSM(stat['run time']) + "\t" \
+                            + str(stat['num iterations']) + "\t" \
                             + stat['stop reason'] + "\t"
-                            + chain_perm + "\t"  # stat[???]
-                                                    "\n")
+
+                    interim_str=interim_str+str(stat["valid dir"])+"\t"+format_CSM(stat["valid csm"])+"\t"+str(stat["valid per"])
+                    end_str=interim_str+"\n"
+                    f.write(end_str)
+
                 except Exception as e:
                     try:
                         start_str = start_str + stat['stop reason'] + "\t"
                     finally:
-                        f.write(start_str + "failed to read statistics\n")
+                        f.write(start_str + "failed to read statistics:"+str(e)+"\n")
 
     def write(self, molecule_results):
         # receives result array for single molecule, and appends to all the relevant files

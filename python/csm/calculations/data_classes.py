@@ -24,6 +24,21 @@ class CSMState(namedtuple('CSMState', ['molecule',
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
 
+def get_chain_perm_string(molecule, perm):
+    chain_perm = []
+    chain_str = ""
+    for origin_chain in molecule.chains:
+        sample_atom = molecule.chains[origin_chain][0]
+        permuted_index = perm[sample_atom]
+        destination_chain = molecule.atoms[permuted_index].chain
+        chain_perm.append(destination_chain)
+        origin_name = molecule.chains.index_to_name(origin_chain)
+        destination_name = molecule.chains.index_to_name(destination_chain)
+        chain_str += origin_name + "->" + destination_name + ", "
+
+    chain_str = chain_str[:-2]  # remove final comma and space
+    return chain_perm, chain_str
+
 class Operation:
     def __init__(self, op, sn_max=8, init=True):
         self.op_code = op
@@ -156,7 +171,7 @@ class CSMResult(Result):
 
         self.overall_statistics["formula CSM"] = self.formula_csm
 
-        self.get_chain_perm_string()
+        self.chain_perm, self.chain_perm_string=get_chain_perm_string(self.molecule, self.perm)
 
     @property
     def d_min(self):
@@ -165,23 +180,6 @@ class CSMResult(Result):
     @property
     def local_csm(self):
         return self.compute_local_csm(self.molecule.Q, self.operation, self.dir)
-
-    def get_chain_perm_string(self):
-        molecule = self.molecule
-        perm = self.perm
-        self.chain_perm = []
-        chain_str = ""
-        for origin_chain in molecule.chains:
-            sample_atom = molecule.chains[origin_chain][0]
-            permuted_index = perm[sample_atom]
-            destination_chain= molecule.atoms[permuted_index].chain
-            self.chain_perm.append(destination_chain)
-            origin_name = molecule.chains.index_to_name(origin_chain)
-            destination_name = molecule.chains.index_to_name(destination_chain)
-            chain_str += origin_name + "->" + destination_name + ", "
-
-        chain_str = chain_str[:-2]  # remove final comma and space
-        self.chain_perm_string = chain_str
 
     def create_symmetric_structure(self, molecule_coords, perm, dir, op_type, op_order):
         # print('create_symmetric_structure called')
