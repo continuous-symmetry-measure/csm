@@ -545,6 +545,8 @@ class Molecule:
         for i in range(len(self._atoms)):
             if remove_hy:
                 if self._atoms[i].symbol == "H":
+                    if i in select_atoms:
+                        raise ValueError("Error - You aren't allowed to select hydrogen's index {} with the flag --remove-hy".format(i))
                     removed_atoms.append(i)
                     fixed_indexes[i] = None
                 else:
@@ -553,8 +555,9 @@ class Molecule:
 
             if select_atoms:
                 if i not in select_atoms:
-                    removed_atoms.append(i)
-                    fixed_indexes[i] = None
+                    if i not in removed_atoms:
+                        removed_atoms.append(i)
+                        fixed_indexes[i] = None
                 else:
                     # however many atoms have been removed up to this index is the amount its index needs adjusting by
                     fixed_indexes[i] -= len(removed_atoms)

@@ -33,10 +33,9 @@ def _create_parser():
     def input_utility_func(parser):
         parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?',
                             help='xyz connectivity file, default is connectivity.txt in current working directory')
-        mutex_args = parser.add_mutually_exclusive_group()
-        mutex_args.add_argument('--remove-hy', action='store_true', default=False,
+        parser.add_argument('--remove-hy', action='store_true', default=False,
                                 help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
-        mutex_args.add_argument('--select-atoms', default=None,
+        parser.add_argument('--select-atoms', default=None,
                                 help='Select only some atoms, eg 1-20,15,17,19-21')
         parser.add_argument('--select-mols', default=None,
                             help='Select only some molecules, eg 1-20,15,17,19-21')
