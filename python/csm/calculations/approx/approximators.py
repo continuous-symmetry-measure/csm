@@ -45,15 +45,13 @@ class _SingleDirectionStatistics:
         self.start_dir = dir
         self.results=[]
 
-        #self.dirs = []
-        #self.csms = []
-        #self.cycle_stats = []
+        self.dirs = [] #kept for tests to prove algorithms different
         self._stop_reason = ""
         self.least_invalid = CSMState(csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
-        #self.chain_perms=[]
 
     def append_sub_direction(self, result):
         self.results.append(result)
+        self.dirs.append(result.dir)
         if result.num_invalid < self.least_invalid.num_invalid or \
                 (result.num_invalid == self.least_invalid.num_invalid
                  and result.csm < self.least_invalid.csm):
@@ -144,7 +142,8 @@ class _SingleDirectionStatistics:
                 "num iterations": self.num_iterations,
                 "run time": self.run_time,
                 "chain perm":self.chain_perm,
-                "validity":self.validity_dict
+                "validity":self.validity_dict,
+                "dirs":self.dirs
             }
             return return_dict
         except:

@@ -240,7 +240,11 @@ class TestShared(RunThings):
     def test_parallel_mols_in_file(self):
         cmd = "comfile comfile.txt --input many-mols.xyz --parallel"
         result1 = self.run_args(cmd)
-        assert False
+        with open(os.path.join(self.results_folder, "csm.txt"), "r") as file:
+            out = file.read()
+        with open(os.path.join("parallel-out", "csm.txt"), "r") as file:
+            exp = file.read()
+        assert out == exp
 
     def test_sn_max(self):
         # --sn-max (relevant only for chirality)
