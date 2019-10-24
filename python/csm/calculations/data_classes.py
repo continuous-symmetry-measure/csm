@@ -169,23 +169,17 @@ class CSMResult(Result):
     def get_chain_perm_string(self):
         molecule = self.molecule
         perm = self.perm
-        chain_perm_dict = {}
-        for chain in molecule.chains:
-            index = molecule.chains[chain][0] #first atom in the chain
-            permuted_index = perm[index] #location of that first atom in the overall permutation
-            for chain2 in molecule.chains: #check which chain the location belonged to
-                if permuted_index in molecule.chains[chain2]:
-                    chain_perm_dict[chain] = chain2
-                    break
         self.chain_perm = []
-        for chain in molecule.chains:
-            permuted_index = chain_perm_dict[chain]
-            self.chain_perm.append(permuted_index)
         chain_str = ""
-        for from_index, to_index in enumerate(self.chain_perm):
-            from_chain = self.molecule.chains.index_to_string(from_index)
-            to_chain = self.molecule.chains.index_to_string(to_index)
-            chain_str += from_chain + "->" + to_chain + ", "
+        for origin_chain in molecule.chains:
+            sample_atom = molecule.chains[origin_chain][0]
+            permuted_index = perm[sample_atom]
+            destination_chain= molecule.atoms[permuted_index].chain
+            self.chain_perm.append(destination_chain)
+            origin_name = molecule.chains.index_to_name(origin_chain)
+            destination_name = molecule.chains.index_to_name(destination_chain)
+            chain_str += origin_name + "->" + destination_name + ", "
+
         chain_str = chain_str[:-2]  # remove final comma and space
         self.chain_perm_string = chain_str
 
