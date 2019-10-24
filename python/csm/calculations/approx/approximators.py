@@ -59,15 +59,6 @@ class _SingleDirectionStatistics:
                  and result.csm < self.least_invalid.csm):
             self.least_invalid = result
 
-        return
-
-        self.dirs.append(result.dir)
-        self.csms.append(result.csm)
-        self.cycle_stats.append(result.num_invalid)
-
-        chain_perm, chain_str=get_chain_perm_string(result.molecule, result.perm)
-        self.chain_perms.append(chain_str)
-
     @property
     def stop_reason(self):
         return self._stop_reason
@@ -86,10 +77,6 @@ class _SingleDirectionStatistics:
 
     def __repr__(self):
         return "stats for dir"+str(self.start_dir)
-        return str({
-            "dirs": self.dirs,
-            "csms": self.csms
-        })
 
     @property
     def end_dir(self):
@@ -116,6 +103,7 @@ class _SingleDirectionStatistics:
     def validity_dict(self):
         valid_struc= (1 - (self.results[-1].num_invalid / len(self.least_invalid.molecule))) * 100
         best_valid=(1 - (self.least_invalid.num_invalid / len(self.least_invalid.molecule))) * 100
+
         if best_valid > valid_struc:
             return {
             "res valid": valid_struc,
