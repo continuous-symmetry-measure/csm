@@ -548,6 +548,8 @@ class ScriptContextWriter(ContextWriter):
         if self.verbose:
             self.approx_folder = os.path.join(self.folder, 'approx')
             os.makedirs(self.approx_folder, exist_ok=True)
+            self.trivial_folder = os.path.join(self.folder, 'trivial')
+            os.makedirs(self.trivial_folder, exist_ok=True)
 
         # legacy
         if self.create_legacy_files:
@@ -663,7 +665,7 @@ class ScriptContextWriter(ContextWriter):
                 line_index,
                 command_result)
             filename = os.path.join(out_folder, name + ".tsv")
-            if command_result.ongoing_statistics:
+            if "approx" in command_result.ongoing_statistics:
                 self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
 
     def _write_approx_statistics(self, filename, stats):
@@ -717,6 +719,21 @@ class ScriptContextWriter(ContextWriter):
                     finally:
                         f.write(start_str + "failed to read statistics:"+str(e)+"\n")
 
+    def write_trivial_file(self, mol_results):
+        out_folder = self.trivial_folder
+        for line_index, command_result in enumerate(mol_results):
+            name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(
+                line_index,
+                command_result)
+            filename = os.path.join(out_folder, name + ".tsv")
+            if "trivial" in command_result.ongoing_statistics:
+                stats=command_result.ongoing_statistics["trivial"]
+                if "n/a" not in stats:
+                    with open(filename, 'w') as f:
+                        f.write("chain perm\tcsm")
+                        for chain_perm in stats:
+                            f.write("\n"+chain_perm+"\t"+format_CSM(stats[chain_perm]["csm"]))
+
     def write(self, molecule_results):
         # receives result array for single molecule, and appends to all the relevant files
         self.write_csm(molecule_results)
@@ -729,6 +746,7 @@ class ScriptContextWriter(ContextWriter):
         self.write_extra_txt(molecule_results)
         if self.verbose:
             self.write_approx_file(molecule_results)
+            self.write_trivial_file(molecule_results)
         self.molecule_index += 1
 
     def __exit__(self, exc_type, exc_value, traceback):

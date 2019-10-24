@@ -45,7 +45,9 @@ class TrivialCalculation(BaseCalculation):
                 chain_permutations.append(list(state.perm))
             self.chain_permutations=chain_permutations
         best=super().calculate(self.timeout)
-        self._csm_result = CSMResult(best, self.operation, overall_stats={"runtime": run_time(self.start_time)})
+        self._csm_result = CSMResult(best, self.operation,
+                                     overall_stats={"runtime": run_time(self.start_time)},
+                                     ongoing_stats = {"trivial": self.statistics})
         return self.result
 
 
@@ -65,10 +67,16 @@ class TrivialCalculation(BaseCalculation):
                 result = ExactCalculation.exact_calculation_for_approx(operation, molecule, perm=perm)
                 if result.csm < best.csm:
                     best = result
+                self.statistics[str(chainperm)]={
+                    "csm":result.csm
+                }
 
         else:
             perm = [i for i in range(len(molecule))]
             best = ExactCalculation.exact_calculation_for_approx(operation, molecule, perm=perm)
+            self.statistics["n/a"] = {
+                "csm":"n/a"
+            }
         return best
 
 
