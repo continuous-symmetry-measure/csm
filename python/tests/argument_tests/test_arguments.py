@@ -9,6 +9,8 @@ import pytest
 import shutil
 
 from csm.main.csm_run import csm_run
+from tests.argument_tests.files_for_tests.local_settings import test_dir
+
 
 class RunThings():
     def _run_args(self, args_str, results_folder):
@@ -18,8 +20,8 @@ class RunThings():
         return results_arr
 
 
-class TestInput(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
+class TestBasic(RunThings):
+
     os.chdir(test_dir)
     results_folder = "csm_tests"
     #try:
@@ -31,6 +33,7 @@ class TestInput(RunThings):
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
 
+    # input
     def test_connect(self):
         # --connect reads xyz connectivity file, default connectivity.txt
 
@@ -74,13 +77,54 @@ class TestInput(RunThings):
         assert expected_str == output_str
 
     def test_select_atoms(self):
-        # --select-atoms removes sepcific atoms. cannot be used in conjunction with remove-hy
+        # --select-atoms removes specific atoms.
         # baseline:
         # cmd="exact c2 --input 4-helicene.mol --keep-structure"
         # results=self.run_args(cmd)
         # assert len(results[0][0].molecule) == 30
 
         cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2"
+        results = self.run_args(cmd)
+        assert len(results[0][0].molecule) == 7
+
+        # test output
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            output_str = file.read()
+        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            expected_str = file.read()
+
+        assert expected_str == output_str
+
+    def test_select_atoms_remove_hy(self):
+        # --select-atoms removes specific atoms.
+        # --remove-hy removes 'H' atoms.
+
+        cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2 --remove-hy"
+        results = self.run_args(cmd)
+        assert len(results[0][0].molecule) == 7
+
+        # test output
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            output_str = file.read()
+        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            expected_str = file.read()
+
+        assert expected_str == output_str
+
+    def test_ignore_atoms(self):
+        # --ignore-atoms removes specific atoms.
+        # The test checks that the result is identical to the result by use --select-atoms
+
+        # cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2"  # len(_atoms) = 30
+        cmd = "exact c2 --input 4-helicene.mol --ignore-atoms 3-14,20-30"
         results = self.run_args(cmd)
         assert len(results[0][0].molecule) == 7
 
@@ -151,19 +195,7 @@ class TestInput(RunThings):
 
         # TODO: output tests
 
-class TestOutput(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
-    os.chdir(test_dir)
-    results_folder = "csm_tests"
-
-    # try:
-    #    shutil.rmtree(results_folder)
-    # except FileNotFoundError:
-    #    pass
-    # os.mkdir(results_folder)
-
-    def run_args(self, args_str):
-            return super()._run_args(args_str, self.results_folder)
+    # output
     def test_legacy(self):
         #why is it printing filename instead of index all of a sudden?
         # --legacy-output prints old style csm format
@@ -222,10 +254,7 @@ class TestOutput(RunThings):
         assert os.path.isdir(output_path)
         # todo: because the output contains a variable runtime, running a comparison is a bit tedious, leaving it for now
 
-class TestShared(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
-    os.chdir(test_dir)
-    results_folder = "csm_tests"
+    # shared stuff
 
     # try:
     #    shutil.rmtree(results_folder)
@@ -274,19 +303,7 @@ class TestShared(RunThings):
             exp = efile.read()
         assert out == exp
 
-class TestCalculationCommands(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
-    os.chdir(test_dir)
-    results_folder = "csm_tests"
-
-    # try:
-    #    shutil.rmtree(results_folder)
-    # except FileNotFoundError:
-    #    pass
-    # os.mkdir(results_folder)
-
-    def run_args(self, args_str):
-        return super()._run_args(args_str, self.results_folder)
+    # comfile
 
     def test_old_cmd(self):
         # old-cmd in comfile
@@ -305,6 +322,10 @@ class TestCalculationCommands(RunThings):
         cmd = "exact c4 --input squarate.xyz --use-perm squarateperm.txt"
         results = self.run_args(cmd)
         assert results[0][0].perm == [0, 1, 2, 3, 4, 5, 6, 7]
+        cmd = "exact cs --input cryptands-no-metal.sdf --use-perm perm_select_atoms.txt" \
+              " --select-atoms 7,11-14 --select-mol 1"
+        results = self.run_args(cmd)
+        assert results[0][0].perm == [4, 3, 2, 1, 0]
 
     def test_keep_structure(self):
         cmd = "exact cs --input 4-helicene.mol --keep-structure"
@@ -411,9 +432,7 @@ class TestCalculationCommands(RunThings):
         assert len(test) == 4
 
 
-
 class TestFragments(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
     #shutil.rmtree(results_folder)
