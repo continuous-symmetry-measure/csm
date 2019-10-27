@@ -18,7 +18,7 @@ class RunThings():
         return results_arr
 
 
-class TestInput(RunThings):
+class TestBasic(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
@@ -31,6 +31,7 @@ class TestInput(RunThings):
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
 
+    # input
     def test_connect(self):
         # --connect reads xyz connectivity file, default connectivity.txt
 
@@ -74,13 +75,54 @@ class TestInput(RunThings):
         assert expected_str == output_str
 
     def test_select_atoms(self):
-        # --select-atoms removes sepcific atoms. cannot be used in conjunction with remove-hy
+        # --select-atoms removes specific atoms.
         # baseline:
         # cmd="exact c2 --input 4-helicene.mol --keep-structure"
         # results=self.run_args(cmd)
         # assert len(results[0][0].molecule) == 30
 
         cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2"
+        results = self.run_args(cmd)
+        assert len(results[0][0].molecule) == 7
+
+        # test output
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            output_str = file.read()
+        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            expected_str = file.read()
+
+        assert expected_str == output_str
+
+    def test_select_atoms_remove_hy(self):
+        # --select-atoms removes specific atoms.
+        # --remove-hy removes 'H' atoms.
+
+        cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2 --remove-hy"
+        results = self.run_args(cmd)
+        assert len(results[0][0].molecule) == 7
+
+        # test output
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            output_str = file.read()
+        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            expected_str = file.read()
+
+        assert expected_str == output_str
+
+    def test_ignore_atoms(self):
+        # --ignore-atoms removes specific atoms.
+        # The test checks that the result is identical to the result by use --select-atoms
+
+        # cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2"  # len(_atoms) = 30
+        cmd = "exact c2 --input 4-helicene.mol --ignore-atoms 3-14,20-30"
         results = self.run_args(cmd)
         assert len(results[0][0].molecule) == 7
 
@@ -151,19 +193,7 @@ class TestInput(RunThings):
 
         # TODO: output tests
 
-class TestOutput(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
-    os.chdir(test_dir)
-    results_folder = "csm_tests"
-
-    # try:
-    #    shutil.rmtree(results_folder)
-    # except FileNotFoundError:
-    #    pass
-    # os.mkdir(results_folder)
-
-    def run_args(self, args_str):
-            return super()._run_args(args_str, self.results_folder)
+    # output
     def test_legacy(self):
         #why is it printing filename instead of index all of a sudden?
         # --legacy-output prints old style csm format
@@ -222,25 +252,7 @@ class TestOutput(RunThings):
         assert os.path.isdir(output_path)
         # todo: because the output contains a variable runtime, running a comparison is a bit tedious, leaving it for now
 
-class TestShared(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
-    os.chdir(test_dir)
-    results_folder = "csm_tests"
-
-    # try:
-    #    shutil.rmtree(results_folder)
-    # except FileNotFoundError:
-    #    pass
-    # os.mkdir(results_folder)
-
-    def run_args(self, args_str):
-        return super()._run_args(args_str, self.results_folder)
-
-    #parallel
-    def test_parallel_mols_in_file(self):
-        cmd = "comfile comfile.txt --input many-mols.xyz --parallel"
-        result1 = self.run_args(cmd)
-        assert False
+    # shared stuff
 
     def test_sn_max(self):
         # --sn-max (relevant only for chirality)
@@ -270,19 +282,7 @@ class TestShared(RunThings):
             exp = efile.read()
         assert out == exp
 
-class TestCalculationCommands(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
-    os.chdir(test_dir)
-    results_folder = "csm_tests"
-
-    # try:
-    #    shutil.rmtree(results_folder)
-    # except FileNotFoundError:
-    #    pass
-    # os.mkdir(results_folder)
-
-    def run_args(self, args_str):
-        return super()._run_args(args_str, self.results_folder)
+    # comfile
 
     def test_old_cmd(self):
         # old-cmd in comfile
@@ -403,7 +403,10 @@ class TestCalculationCommands(RunThings):
         test = set([stats1, stats2, stats3, stats4])
         assert len(test) == 4
 
-
+    #parallel
+    def test_parallel_mols_in_file(self):
+        #TODO
+        assert False
 
 class TestFragments(RunThings):
     test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
