@@ -9,6 +9,8 @@ import pytest
 import shutil
 
 from csm.main.csm_run import csm_run
+from tests.argument_tests.files_for_tests.local_settings import test_dir
+
 
 class RunThings():
     def _run_args(self, args_str, results_folder):
@@ -19,7 +21,7 @@ class RunThings():
 
 
 class TestBasic(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
+
     os.chdir(test_dir)
     results_folder = "csm_tests"
     #try:
@@ -254,6 +256,25 @@ class TestBasic(RunThings):
 
     # shared stuff
 
+    # try:
+    #    shutil.rmtree(results_folder)
+    # except FileNotFoundError:
+    #    pass
+    # os.mkdir(results_folder)
+
+    def run_args(self, args_str):
+        return super()._run_args(args_str, self.results_folder)
+
+    #parallel
+    def test_parallel_mols_in_file(self):
+        cmd = "comfile comfile.txt --input many-mols.xyz --parallel"
+        result1 = self.run_args(cmd)
+        with open(os.path.join(self.results_folder, "csm.txt"), "r") as file:
+            out = file.read()
+        with open(os.path.join("parallel-out", "csm.txt"), "r") as file:
+            exp = file.read()
+        assert out == exp
+
     def test_sn_max(self):
         # --sn-max (relevant only for chirality)
         cmd = "exact ch --input bis(dth)copper(I).mol"
@@ -409,7 +430,6 @@ class TestBasic(RunThings):
         assert False
 
 class TestFragments(RunThings):
-    test_dir = r"C:\Users\devora\Sources\csm\csm\python\tests\argument_tests\files_for_tests"
     os.chdir(test_dir)
     results_folder = "csm_tests"
     #shutil.rmtree(results_folder)
