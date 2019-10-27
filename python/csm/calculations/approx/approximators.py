@@ -655,7 +655,8 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
 
         self.selective = selective
         self.num_selected = num_selected
-        self.statistics = ApproxStatistics(self._initial_directions)
+        self._single_statistics = ApproxStatistics(self._initial_directions)
+        self.statistics={}
         self._max_iterations = 30
 
     def calculate(self, timeout=100, *args, **kwargs):
@@ -664,7 +665,7 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
         best_result = super().calculate(timeout)
         overall_stats["runtime"] = run_time(self.start_time)
         self.result = CSMResult(best_result, self.operation, overall_stats=overall_stats,
-                                ongoing_stats={"approx": self.statistics.to_dict()})
+                                ongoing_stats={"approx": self.statistics})
         return self.result
 
     def _calculate(self, operation, timeout):
@@ -680,7 +681,7 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
             if self.selective:
                 self._calculate_for_directions(operation, self._initial_directions, 1)
                 best_dirs = []
-                sorted_csms = sorted(self.statistics.directions_arr)
+                sorted_csms = sorted(self._single_statistics.directions_arr)
                 for item in sorted_csms[:self.num_selected]:
                     best_dirs.append(item.start_dir)
                     self._log("Running again on the", self.num_selected, "best directions")
@@ -688,6 +689,7 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
 
             else:
                 best_result = self._calculate_for_directions(operation, self._initial_directions, self._max_iterations)
+        self.statistics[operation.name]=self._single_statistics.to_dict()
         return best_result
 
     def _calculate_for_directions(self, operation, dirs, max_iterations):
@@ -698,7 +700,7 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
                                                         self.timeout, max_iterations=max_iterations)
         for dir in dirs:
             best_result_for_dir, statistics = single_dir_approximator.calculate(dir)
-            self.statistics[dir] = statistics
+            self._single_statistics[dir] = statistics
 
             if best_result_for_dir.csm < best.csm:
                 best = best_result_for_dir

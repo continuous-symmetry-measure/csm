@@ -668,9 +668,9 @@ class ScriptContextWriter(ContextWriter):
             if "approx" in command_result.ongoing_statistics:
                 self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
 
-    def _write_approx_statistics(self, filename, stats):
+    def _write_approx_statistics(self, filename, stats_dict):
         with open(filename, 'w') as f:
-            header_string="Dir Index"
+            header_string="Op\tDir Index"
             if self.polar:
                 header_string+="\tr_i\tth_i\tph_i"
             else:
@@ -686,38 +686,39 @@ class ScriptContextWriter(ContextWriter):
             header_string+="\n"
             f.write(header_string)
 
-
-            for direction_index, direction_dict in enumerate(stats):
-                dir = direction_dict['dir']
-                stat = direction_dict['stats']
-                start_str = str(direction_index) + "\t"
-                try:
-                    x, y, z = stat['start dir']
-                    xf, yf, zf = stat['end dir']
-                    if self.polar:
-                        x, y, z = cart2sph(x, y, z)
-                        xf, yf, zf = cart2sph(xf, yf, zf)
-                    start_str = start_str + format_CSM(x) + "\t" + format_CSM(y) + "\t" + format_CSM(z) + "\t"
-
-                    interim_str= start_str \
-                            + format_CSM(stat['start csm']) + "\t" \
-                            + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t" \
-                            + format_CSM(stat['end csm']) + "\t" \
-                            + format_CSM(stat['run time']) + "\t" \
-                            + str(stat['num iterations']) + "\t" \
-                            + stat['stop reason'] + "\t"
-
-                    interim_str+=stat["chain perm"]+"\t"
-                    interim_str=interim_str+str(stat["validity"]["res valid"])+"\t"+str(stat["validity"]["dir"])+\
-                                "\t"+format_CSM(stat["validity"]["csm"])+"\t"+str(stat["validity"]["per"])
-                    end_str=interim_str+"\n"
-                    f.write(end_str)
-
-                except Exception as e:
+            for op in stats_dict:
+                stats=stats_dict[op]
+                for direction_index, direction_dict in enumerate(stats):
+                    dir = direction_dict['dir']
+                    stat = direction_dict['stats']
+                    start_str = op+"\t" + str(direction_index) + "\t"
                     try:
-                        start_str = start_str + stat['stop reason'] + "\t"
-                    finally:
-                        f.write(start_str + "failed to read statistics:"+str(e)+"\n")
+                        x, y, z = stat['start dir']
+                        xf, yf, zf = stat['end dir']
+                        if self.polar:
+                            x, y, z = cart2sph(x, y, z)
+                            xf, yf, zf = cart2sph(xf, yf, zf)
+                        start_str = start_str + format_CSM(x) + "\t" + format_CSM(y) + "\t" + format_CSM(z) + "\t"
+
+                        interim_str= start_str \
+                                + format_CSM(stat['start csm']) + "\t" \
+                                + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t" \
+                                + format_CSM(stat['end csm']) + "\t" \
+                                + format_CSM(stat['run time']) + "\t" \
+                                + str(stat['num iterations']) + "\t" \
+                                + stat['stop reason'] + "\t"
+
+                        interim_str+=stat["chain perm"]+"\t"
+                        interim_str=interim_str+str(stat["validity"]["res valid"])+"\t"+str(stat["validity"]["dir"])+\
+                                    "\t"+format_CSM(stat["validity"]["csm"])+"\t"+str(stat["validity"]["per"])
+                        end_str=interim_str+"\n"
+                        f.write(end_str)
+
+                    except Exception as e:
+                        try:
+                            start_str = start_str + stat['stop reason'] + "\t"
+                        finally:
+                            f.write(start_str + "failed to read statistics:"+str(e)+"\n")
 
     def write_trivial_file(self, mol_results):
         out_folder = self.trivial_folder
@@ -730,10 +731,11 @@ class ScriptContextWriter(ContextWriter):
                 stats=command_result.ongoing_statistics["trivial"]
                 if "n/a" not in stats:
                     with open(filename, 'w') as f:
-                        f.write("chain perm\tcsm\tdir")
-                        for chain_perm in stats:
-                            chain_stats=stats[chain_perm]
-                            f.write("\n"+chain_perm+"\t"+format_CSM(chain_stats["csm"])+"\t"+str(chain_stats["dir"]))
+                        f.write("op\tchain perm\tcsm\tdir")
+                        for op in stats:
+                            for chain_perm in stats[op]:
+                                chain_stats=stats[op][chain_perm]
+                                f.write("\n"+op+"\t"+chain_perm+"\t"+format_CSM(chain_stats["csm"])+"\t"+str(chain_stats["dir"]))
 
     def write(self, molecule_results):
         # receives result array for single molecule, and appends to all the relevant files

@@ -33,17 +33,19 @@ class TrivialCalculation(BaseCalculation):
         self.start_time = datetime.datetime.now()
         self.timeout = timeout
 
-    def calculate(self, *args, **kwargs):
-        molecule = self.molecule
+    def get_chain_perms(self, operation):
+        molecule=self.molecule
         if molecule.chains and self.use_chains:
             chain_permutations = []
             dummy = MoleculeFactory.dummy_molecule_from_size(len(molecule.chains), molecule.chain_equivalences)
-            permuter = CythonPermuter(dummy, self.operation.order, self.operation.type, keep_structure=False,
+            permuter = CythonPermuter(dummy, operation.order, operation.type, keep_structure=False,
                                       precalculate=False)
             for i, state in enumerate(permuter.permute()):
                 check_timeout(self.start_time, self.timeout)
                 chain_permutations.append(list(state.perm))
             self.chain_permutations=chain_permutations
+
+    def calculate(self, *args, **kwargs):
         best=super().calculate(self.timeout)
         self._csm_result = CSMResult(best, self.operation,
                                      overall_stats={"runtime": run_time(self.start_time)},
@@ -52,7 +54,9 @@ class TrivialCalculation(BaseCalculation):
 
 
     def _calculate(self, operation, timeout=300):
+        self.get_chain_perms(operation)
         molecule = self.molecule
+        self.statistics[operation.name]={}
         if molecule.chains and self.use_chains:
             best = CSMState(molecule=molecule, op_type=self.operation.type, op_order=self.operation.order,
                             csm=MAXDOUBLE)
@@ -67,7 +71,7 @@ class TrivialCalculation(BaseCalculation):
                 result = ExactCalculation.exact_calculation_for_approx(operation, molecule, perm=perm)
                 if result.csm < best.csm:
                     best = result
-                self.statistics[str(chainperm)]={
+                self.statistics[operation.name][str(chainperm)]={
                     "csm":result.csm,
                     "dir":result.dir
                 }
