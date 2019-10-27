@@ -532,7 +532,7 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-    def strip_atoms(self, remove_hy=False, select_atoms=[]):
+    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[]):
         """
             Creates a new Molecule from m by removing atoms who's symbol is in the remove list
             :param csm_args:
@@ -542,25 +542,45 @@ class Molecule:
         removed_atoms = []
         fixed_indexes = [i for i in range(len(self))]
 
+        if ignore_atoms and select_atoms:  # Unnecessary
+            raise ValueError("Error: argument --ignore-atoms: not allowed with argument --select-atoms")
+
+        for a in ignore_atoms:  # checks if the user want remove atom that not exists
+            if a >= len(self._atoms):
+                raise ValueError("ERROR - You try removed not exist atom")
+        for a in select_atoms:  # checks if the user want remove atom that not exists
+            if a >= len(self._atoms) or a < 0:
+                raise ValueError("ERROR - You try select not exist atom")
+
         for i in range(len(self._atoms)):
             if remove_hy:
                 if self._atoms[i].symbol == "H":
                     if i in select_atoms:
                         raise ValueError("Error - You aren't allowed to select hydrogen's index {} with the flag --remove-hy".format(i))
-                    removed_atoms.append(i)
-                    fixed_indexes[i] = None
+                    if i not in removed_atoms:  # checks if i is removed by --select-atoms / --ignore-atoms
+                        removed_atoms.append(i)
+                        fixed_indexes[i] = None
                 else:
                     # however many atoms have been removed up to this index is the amount its index needs adjusting by
                     fixed_indexes[i] -= len(removed_atoms)
 
             if select_atoms:
                 if i not in select_atoms:
-                    if i not in removed_atoms:
+                    if i not in removed_atoms:  # checks if i is removed by --remove-hy
                         removed_atoms.append(i)
                         fixed_indexes[i] = None
-                else:
+                elif not remove_hy:
                     # however many atoms have been removed up to this index is the amount its index needs adjusting by
                     fixed_indexes[i] -= len(removed_atoms)
+            elif ignore_atoms:
+                if i in ignore_atoms:
+                    if i not in removed_atoms:  # checks if i is removed by --remove-hy
+                        removed_atoms.append(i)
+                        fixed_indexes[i] = None
+                elif not remove_hy:
+                    # however many atoms have been removed up to this index is the amount its index needs adjusting by
+                    fixed_indexes[i] -= len(removed_atoms)
+
 
         # adjust the connectivity indices before we do any popping whatsoever
         for i, atom in enumerate(self._atoms):
@@ -655,11 +675,11 @@ class Molecule:
             # else:
             #    silent_print("Molecule has no chains")
 
-    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[]):
+    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[]):
         """
         Finish creating the molecule after reading the raw data
         """
-        self.strip_atoms(remove_hy, select_atoms)
+        self.strip_atoms(remove_hy, select_atoms, ignore_atoms)
         self._calculate_equivalency()
         self._initialize_chains(use_chains)
         self.normalize()
@@ -847,7 +867,7 @@ class MoleculeReader:
         return l
 
     @staticmethod
-    def from_string(string, format, initialize=True,
+    def from_string(string, format, initialize=True,  # Never used, Chana
                     use_chains=False, babel_bond=False,
                     remove_hy=False, ignore_sym=False, use_mass=False):
         """
@@ -877,7 +897,7 @@ class MoleculeReader:
                   remove_hy=False, ignore_sym=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
                   keep_structure=False, select_atoms=[], conn_file=None,
-                  out_format=None,
+                  out_format=None, ignore_atoms = [],
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
@@ -911,7 +931,7 @@ class MoleculeReader:
                                                       remove_hy, ignore_sym, use_mass,
                                                       read_fragments, use_sequence,
                                                       keep_structure, select_atoms, conn_file,
-                                                      out_format)
+                                                      out_format, ignore_atoms)
         if not mol.bondset:
             if keep_structure:
                 raise ValueError(
@@ -926,7 +946,7 @@ class MoleculeReader:
                                  remove_hy=False, ignore_sym=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
                                  keep_structure=False, select_atoms=[], conn_file=None,
-                                 out_format=None, **kwargs):
+                                 out_format=None, ignore_atoms=[], **kwargs):
 
         mol.metadata.format = format
         if out_format:
@@ -950,7 +970,7 @@ class MoleculeReader:
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
         if initialize:
-            mol._complete_initialization(use_chains, remove_hy, select_atoms)
+            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms)
             if len(mol.chains) < 2:
                 if read_fragments:
                     print("Warning: Although you input --read-fragments, no fragments were found in file. "
@@ -965,7 +985,7 @@ class MoleculeReader:
                            remove_hy=False, ignore_sym=False, use_mass=False,
                            read_fragments=False, use_sequence=False,
                            keep_structure=False, select_atoms=[], conn_file=None,
-                           out_format=None,
+                           out_format=None, ignore_atoms=[],
                            *args, **kwargs):
         #although the name of this function is "multiple from file", it is used both for files with multiple molecules
         #and for files with only a single molecule. it is used anytime the --input is a file, not a folder
@@ -1001,7 +1021,7 @@ class MoleculeReader:
                                                             remove_hy, ignore_sym, use_mass,
                                                             read_fragments, use_sequence,
                                                             keep_structure, select_atoms, conn_file,
-                                                            out_format)
+                                                            out_format, ignore_atoms)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             processed_mols.append(p_mol)
