@@ -1013,7 +1013,7 @@ class MoleculeReader:
 
         processed_mols = []
         use_filename = True
-        if len(mols) > 1:
+        if len(mols) > 1 or kwargs.get("legacy_output"):
             use_filename = False
         for index, mol in enumerate(mols):
             p_mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
