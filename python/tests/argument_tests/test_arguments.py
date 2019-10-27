@@ -322,10 +322,10 @@ class TestBasic(RunThings):
         cmd = "exact c4 --input squarate.xyz --use-perm squarateperm.txt"
         results = self.run_args(cmd)
         assert results[0][0].perm == [0, 1, 2, 3, 4, 5, 6, 7]
-        cmd = "exact cs --input cryptands-no-metal.sdf --use-perm perm_select_atoms.txt " \
-              "--select-atoms 11-14 --select-mol 1"
+        cmd = "exact cs --input cryptands-no-metal.sdf --use-perm perm_select_atoms.txt" \
+              " --select-atoms 7,11-14 --select-mol 1"
         results = self.run_args(cmd)
-        assert results[0][0].perm == [0, 1, 2, 3]
+        assert results[0][0].perm == [4, 3, 2, 1, 0]
 
     def test_keep_structure(self):
         cmd = "exact cs --input 4-helicene.mol --keep-structure"

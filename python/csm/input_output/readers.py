@@ -94,7 +94,7 @@ def check_perm_validity(mol, perm, **kwargs):
         pass
 
 
-def read_perm_file(filename):
+def read_perm_file(molecule, filename):
     """
     Reads a permutation
     :param filename: Name of perm file
@@ -112,7 +112,7 @@ def read_perm_file(filename):
                 num = int(num_str)
             except ValueError:
                 raise ValueError("Invalid permutation %s - only numbers are allowed" % line)
-            if num < 1 or num > len(line):
+            if num < 1 or num > len(molecule.fixed_indexes) or molecule.fixed_indexes[num - 1] is None:
                 raise ValueError("Invalid permutation %s - out of range" % line)
             num -= 1
             if num in used:
@@ -130,14 +130,16 @@ def read_perm(molecule, perm_file_name=None, **kwargs):
     :return: permutation- a list of permuted indexes (starting with 0) (can be None)
     '''
     if perm_file_name:
-        perm = read_perm_file(perm_file_name)
+        perm = read_perm_file(molecule, perm_file_name)
         if len(perm) != len(molecule):
             raise ValueError("Invalid permutation - permutation is of size %d but molecule has %d atoms" %
                              (len(perm), len(molecule)))
-        check_perm_validity(molecule, perm, **kwargs)
+        fixed_perm = [molecule.fixed_indexes[i] for i in perm]
+        check_perm_validity(molecule, fixed_perm, **kwargs)
     else:
-        perm = None
-    return perm
+        fixed_perm = None
+    print(fixed_perm)
+    return fixed_perm
 
 
 def read_dir_file(filename):
