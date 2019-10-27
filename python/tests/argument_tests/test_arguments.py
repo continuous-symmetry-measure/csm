@@ -312,6 +312,9 @@ class TestCalculationCommands(RunThings):
         assert results[0][0].csm == pytest.approx(0.793551, abs=1e-5)
 
     def test_output_perms(self):
+        with open(os.path.join(self.results_folder, "perms.csv"), 'w') as file:
+            #reset perms.csv
+            pass
         cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms"
         self.run_args(cmd)
         out_rows = []
@@ -320,12 +323,12 @@ class TestCalculationCommands(RunThings):
             for row in reader:
                 out_rows.append(row)
         assert out_rows == [
-            ['Permutation', 'Direction', 'CSM'],
+            ['Molecule', 'op','Permutation', 'Direction', 'CSM'],
             [
-                '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
+                '4-helicene.mol', 'CS2', '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
                 '[0.042475 0.020727 0.998883]', '0.7935529301987154'],
             [
-                '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
+                '4-helicene.mol', 'CS2', '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
                 '[-0.514303 -0.856692  0.039646]', '0.7935519339113517']
         ]
 
@@ -356,53 +359,53 @@ class TestCalculationCommands(RunThings):
         # default
         cmd = "approx c3 --input 3alb-gkt4-h.pdb"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 9
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 9
         # detect-outliers
         cmd = "approx c3 --input 3alb-gkt4-h.pdb --detect-outliers"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 18
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 18
         # no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --no-orthogonal"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 3
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 3
         # use-best-dir
         cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 3
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 3
         # use-best-dir + --no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir --no-orthogonal"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 1
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 1
         # fibonacci
         cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 20"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 20
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 20
         # dir
         cmd = "approx c3 --input 2rla-s3.pdb --dir 1 0 0"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 1
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 1
 
     def test_algorithms(self):
         # default
         cmd = "approx c3 --input 2rla-s3.pdb"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats1 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
+        stats1 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
         # greedy
         cmd = "approx c3 --input 2rla-s3.pdb --greedy"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats2 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
+        stats2 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
         # many-chains
         cmd = "approx c3 --input 2rla-s3.pdb --many-chains"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats3 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
+        stats3 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
         # keep-structure
         cmd = "approx c3 --input 2rla-s3.pdb --keep-structure"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats4 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
+        stats4 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
 
         test = set([stats1, stats2, stats3, stats4])
         assert len(test) == 4
