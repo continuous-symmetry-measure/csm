@@ -1,0 +1,4 @@
+CSM version 1.0.0
+comfile comfile.txt --input many-mols.xyz --parallel --output csm_tests --overwrite
+Warning: Input molecules have no bond information
+Parallelizing 195 calculations across 7 processes with batch size 150
