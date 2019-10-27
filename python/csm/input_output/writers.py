@@ -730,9 +730,10 @@ class ScriptContextWriter(ContextWriter):
                 stats=command_result.ongoing_statistics["trivial"]
                 if "n/a" not in stats:
                     with open(filename, 'w') as f:
-                        f.write("chain perm\tcsm")
+                        f.write("chain perm\tcsm\tdir")
                         for chain_perm in stats:
-                            f.write("\n"+chain_perm+"\t"+format_CSM(stats[chain_perm]["csm"]))
+                            chain_stats=stats[chain_perm]
+                            f.write("\n"+chain_perm+"\t"+format_CSM(chain_stats["csm"])+"\t"+str(chain_stats["dir"]))
 
     def write(self, molecule_results):
         # receives result array for single molecule, and appends to all the relevant files

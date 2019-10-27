@@ -68,14 +68,16 @@ class TrivialCalculation(BaseCalculation):
                 if result.csm < best.csm:
                     best = result
                 self.statistics[str(chainperm)]={
-                    "csm":result.csm
+                    "csm":result.csm,
+                    "dir":result.dir
                 }
 
         else:
             perm = [i for i in range(len(molecule))]
             best = ExactCalculation.exact_calculation_for_approx(operation, molecule, perm=perm)
             self.statistics["n/a"] = {
-                "csm":"n/a"
+                "csm":"n/a",
+                "dir":"n/a"
             }
         return best
 
