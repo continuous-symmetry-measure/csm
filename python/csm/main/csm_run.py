@@ -25,11 +25,13 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
         dictionary_args['perm'] = read_perm(**dictionary_args)
         csm_state_tracer_func = None
         if perms_csv_name:
-            csv_file = open(perms_csv_name, 'w')
+            csv_file = open(perms_csv_name, 'a')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
-            perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
+            perm_writer.writerow(['Molecule', 'op', 'Permutation', 'Direction', 'CSM'])
             csm_state_tracer_func = lambda state: perm_writer.writerow(
-                [[p + 1 for p in state.perm],
+                [state.molecule.metadata.appellation(),
+                 state.op_type+str(state.op_order),
+                [p + 1 for p in state.perm],
                  state.dir,
                  state.csm, ])
         calc = Exact(**dictionary_args, callback_func=csm_state_tracer_func)
