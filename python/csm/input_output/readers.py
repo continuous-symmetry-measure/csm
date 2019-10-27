@@ -22,7 +22,7 @@ def read_molecules(**kwargs):
 
         files.sort()
 
-        supported_formats = [".mol", ".pdb", ".sdf", ".xyz", ".csm", ".cif"]
+        supported_formats = [".mol", ".pdb", ".sdf", ".xyz", ".csm", ".cif", ".sd", ".mmcif"]
 
         have_warned = False
         i = 0
@@ -138,7 +138,6 @@ def read_perm(molecule, perm_file_name=None, **kwargs):
         check_perm_validity(molecule, fixed_perm, **kwargs)
     else:
         fixed_perm = None
-    print(fixed_perm)
     return fixed_perm
 
 
