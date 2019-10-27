@@ -595,7 +595,7 @@ class Molecule:
             self._deleted_atom_indices.append(to_remove)
             # if remove_hy: #this is meant to affect print at end
             # self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
-
+        self.fixed_indexes = fixed_indexes
         self._create_bondset()
         # logger.debug(len(removed_atoms), "atoms removed")
 

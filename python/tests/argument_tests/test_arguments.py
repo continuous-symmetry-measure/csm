@@ -322,6 +322,10 @@ class TestBasic(RunThings):
         cmd = "exact c4 --input squarate.xyz --use-perm squarateperm.txt"
         results = self.run_args(cmd)
         assert results[0][0].perm == [0, 1, 2, 3, 4, 5, 6, 7]
+        cmd = "exact cs --input cryptands-no-metal.sdf --use-perm perm_select_atoms.txt " \
+              "--select-atoms 11-14 --select-mol 1"
+        results = self.run_args(cmd)
+        assert results[0][0].perm == [0, 1, 2, 3]
 
     def test_keep_structure(self):
         cmd = "exact cs --input 4-helicene.mol --keep-structure"
@@ -424,10 +428,6 @@ class TestBasic(RunThings):
         test = set([stats1, stats2, stats3, stats4])
         assert len(test) == 4
 
-    #parallel
-    def test_parallel_mols_in_file(self):
-        #TODO
-        assert False
 
 class TestFragments(RunThings):
     os.chdir(test_dir)
