@@ -1,6 +1,21 @@
 The Python CSM Package
 ======================
 
+Changes in version 1.1.0
+------------------------
+* allow remove-hy + select-atoms
+* add flag ignore-atoms
+* allow use of --use-perm with remove-hy, ignore-atoms,or  select-atoms using the original indices
+* output chain perms in csvs created with --verbose in approx
+* enable use of  --verbose flag with trivial as well
+* fix bug in output to both verbose csvs and perms.csv when running chirality calculation
+* fix bug in perms.csv when running on multiple molecules
+* add additional fields to csvs created for approx in verbose regarding structure preservation
+* enable reading .sd files
+* fix bug in chanining of multiple sdf files in results
+
+
+
 Changes in version 1.0.0
 ------------------------
 * parallel calculations with --parallel, with output during calculations
