@@ -27,7 +27,6 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
         if perms_csv_name:
             csv_file = open(perms_csv_name, 'a')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
-            perm_writer.writerow(['Molecule', 'op', 'Permutation', 'Direction', 'CSM'])
             csm_state_tracer_func = lambda state: perm_writer.writerow(
                 [state.molecule.metadata.appellation(),
                  state.op_type+str(state.op_order),
@@ -143,6 +142,12 @@ def write(**dictionary_args):
 
 
 def calc(dictionary_args):
+    perms_csv_name=dictionary_args.get("perms_csv_name")
+    if perms_csv_name:
+        csv_file = open(perms_csv_name, 'w')
+        perm_writer = csv.writer(csv_file, lineterminator='\n')
+        perm_writer.writerow(['Molecule', 'op', 'Permutation', 'Direction', 'CSM'])
+
     # get commands:
     if dictionary_args["command"] == "comfile":
         args_array, operation_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
