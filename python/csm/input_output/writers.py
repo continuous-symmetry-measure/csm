@@ -1,3 +1,5 @@
+import csv
+
 import openbabel as ob
 import os
 import re
@@ -502,6 +504,9 @@ class ScriptContextWriter(ContextWriter):
         self.max_len_file_name = max_len_file_name + 4
         self.molecule_format = '%-' + str(self.max_len_file_name) + 's'
         self.com_file=kwargs.get("command_file")
+        self._kwargs=dict(kwargs)
+
+        
         self.init_files()
 
     def get_line_header(self, index, operation):
@@ -514,6 +519,13 @@ class ScriptContextWriter(ContextWriter):
         :return:
         '''
         os.makedirs(self.folder, exist_ok=True)
+
+        # create perms.csv if relevant
+        perms_csv_name = self._kwargs.get("perms_csv_name")
+        if perms_csv_name:
+            csv_file = open(perms_csv_name, 'w')
+            perm_writer = csv.writer(csv_file, lineterminator='\n')
+            perm_writer.writerow(['Molecule', 'op', 'Permutation', 'Direction', 'CSM'])
 
         self.csm_file = open(os.path.join(self.folder, "csm.txt"), 'w')
         self.csm_file.write(self.molecule_format % "#Molecule")

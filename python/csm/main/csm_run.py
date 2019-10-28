@@ -142,12 +142,6 @@ def write(**dictionary_args):
 
 
 def calc(dictionary_args):
-    perms_csv_name=dictionary_args.get("perms_csv_name")
-    if perms_csv_name:
-        csv_file = open(perms_csv_name, 'w')
-        perm_writer = csv.writer(csv_file, lineterminator='\n')
-        perm_writer.writerow(['Molecule', 'op', 'Permutation', 'Direction', 'CSM'])
-
     # get commands:
     if dictionary_args["command"] == "comfile":
         args_array, operation_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
@@ -246,7 +240,7 @@ def calc(dictionary_args):
 
     # run the calculation, in serial
     all_results = []
-    with context_writer(operation_array, **dictionary_args) as rw:
+    with context_writer(operation_array, **dictionary_args) as rw:  #this is the line of code where the results folder is created
         for mol_index, mol_args in enumerate(total_args):
             mol_results = []
             for line_index, args_dict in enumerate(mol_args):
