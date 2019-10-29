@@ -689,7 +689,7 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
 
             else:
                 best_result = self._calculate_for_directions(operation, self._initial_directions, self._max_iterations)
-        self.statistics[operation.name]=self._single_statistics.to_dict()
+        self.statistics[operation.op_code]=self._single_statistics.to_dict()
         return best_result
 
     def _calculate_for_directions(self, operation, dirs, max_iterations):

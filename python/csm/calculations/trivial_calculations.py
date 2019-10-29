@@ -56,7 +56,7 @@ class TrivialCalculation(BaseCalculation):
     def _calculate(self, operation, timeout=300):
         self.get_chain_perms(operation)
         molecule = self.molecule
-        self.statistics[operation.name]={}
+        self.statistics[operation.op_code]={}
         if molecule.chains and self.use_chains:
             best = CSMState(molecule=molecule, op_type=self.operation.type, op_order=self.operation.order,
                             csm=MAXDOUBLE)
@@ -71,7 +71,7 @@ class TrivialCalculation(BaseCalculation):
                 result = ExactCalculation.exact_calculation_for_approx(operation, molecule, perm=perm)
                 if result.csm < best.csm:
                     best = result
-                self.statistics[operation.name][str(chainperm)]={
+                self.statistics[operation.op_code][str(chainperm)]={
                     "csm":result.csm,
                     "dir":result.dir
                 }
