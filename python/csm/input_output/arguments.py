@@ -193,7 +193,7 @@ def _create_parser():
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-perms', action='store_true', default=False,
-                            help = 'Writes all enumerated permutations to file perms.csv')
+                            help = 'Writes all enumerated permutations to files in folder exact in results-- does not work with parallel')
     shared_normalization_utility_func(exact_args)
     add_input_output_utility_func(exact_args_)
 
@@ -320,8 +320,6 @@ def _process_arguments(parse_res):
             if parse_res.command == 'exact':
                 if parse_res.use_perm:
                     dictionary_args['perm_file_name'] = parse_res.use_perm
-                if parse_res.output_perms:
-                    dictionary_args['perms_csv_name'] = os.path.join(parse_res.output, 'perms.csv')
             if parse_res.command == 'approx':
                 # choose dir:
                 # dictionary_args['detect_outliers'] = parse_res.detect_outliers

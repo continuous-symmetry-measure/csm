@@ -1,6 +1,7 @@
 import csv
 import json
 import multiprocessing
+import os
 import sys
 import timeit
 
@@ -13,7 +14,8 @@ from csm.input_output.formatters import csm_log as print
 from csm.input_output.formatters import silent_print
 from csm.input_output.readers import read_molecules, read_mols_from_std_in, read
 from csm.input_output.readers import read_perm, read_from_sys_std_in
-from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter
+from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter, \
+    get_line_header
 from csm.main.normcsm import norm_calc
 from csm.molecule.molecule import MoleculeReader
 from datetime import datetime
@@ -28,8 +30,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
             csv_file = open(perms_csv_name, 'a')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
             csm_state_tracer_func = lambda state: perm_writer.writerow(
-                [state.molecule.metadata.appellation(),
-                 state.op_type+str(state.op_order),
+                [state.op_type+str(state.op_order),
                 [p + 1 for p in state.perm],
                  state.dir,
                  state.csm, ])
@@ -69,7 +70,7 @@ def single_calculation(dictionary_args):
     return result
 
 
-def get_command_args(command_file, old_command=True):
+def get_command_args(command_file, old_command=True, **dictionary_args):
     args_array = []
     operation_array = []
     with open(command_file, 'r') as file:
@@ -82,7 +83,8 @@ def get_command_args(command_file, old_command=True):
             else:
                 fixed_args = line.split()
             try:
-                args_dict = get_parsed_args(fixed_args)
+                in_args = get_parsed_args(fixed_args)
+                args_dict={**dictionary_args, **in_args}
             except:  # want to be able to run even if some lines are invalid
                 print("failed to read args from line", line)
                 continue
@@ -144,7 +146,7 @@ def write(**dictionary_args):
 def calc(dictionary_args):
     # get commands:
     if dictionary_args["command"] == "comfile":
-        args_array, operation_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
+        args_array, operation_array = get_command_args(**dictionary_args)
     else:
         args_array = [(None, dictionary_args, False)]
         operation_array = [dictionary_args["operation"]]
@@ -195,9 +197,8 @@ def calc(dictionary_args):
 
     # run the calculation, in parallel
     if dictionary_args["parallel"]:
-        #TODO-deal with "skipped"
+        #TODO-deal with "skipped"-- edit: think this is handled in single_calculation... so TODO: check
         flattened_args = [item for sublist in total_args for item in sublist]
-
         num_ops = len(operation_array)
         batch_mols= 50  # int(len(molecules)/10)
         batch_size = num_ops * batch_mols #it needs to be divisible by length of operation array
@@ -244,6 +245,9 @@ def calc(dictionary_args):
         for mol_index, mol_args in enumerate(total_args):
             mol_results = []
             for line_index, args_dict in enumerate(mol_args):
+                # create perms.csv if relevant
+                args_dict["perms_csv_name"]=create_perms_csv(args_dict, line_index, rw)
+
                 # print stuff
                 molecule = args_dict["molecule"]
 
@@ -266,6 +270,17 @@ def calc(dictionary_args):
             all_results.append(mol_results)
     return all_results
 
+def create_perms_csv(args_dict, line_index, rw):
+    perms_csv_name=None
+    output_perms = args_dict.get("output_perms")
+    if output_perms:
+        filename = args_dict["molecule"].metadata.appellation(no_file_format=True) + "_" + get_line_header(line_index,
+                                                                                        args_dict["operation"]) + ".csv"
+        perms_csv_name = os.path.join(rw.folder, 'exact', filename)
+        csv_file = open(perms_csv_name, 'w')
+        perm_writer = csv.writer(csv_file, lineterminator='\n')
+        perm_writer.writerow(['op', 'Permutation', 'Direction', 'CSM'])
+    return perms_csv_name
 
 def run_no_return(args=[]):
     csm_run(args)

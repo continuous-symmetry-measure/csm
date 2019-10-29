@@ -34,9 +34,9 @@ def write_array_to_file(f, arr, add_one=False, separator=" "):
                 f.write("%s" % ("%10.4lf" % item))
 
 
-def get_line_header(index, result):
+def get_line_header(index, operation):
     index_str = "%02d" % (index + 1)  # start from 1 instead of 0
-    return "L" + index_str + "_" + result.operation.op_code
+    return "L" + index_str + "_" + operation.op_code
 
 
 class LegacyFormatWriter:
@@ -411,7 +411,7 @@ class MoleculeWrapper:
         original_title = self.obmol.GetTitle()
         if self.metadata.appellation() not in original_title:
             title += self.metadata.appellation() + " "
-        title = title + get_line_header(self.line_index, self.result)
+        title = title + get_line_header(self.line_index, self.result.operation)
         self.append_title(title)
         description = "index=" + str(self.metadata.index + 1) + ";" + "filename: " + self.metadata.filename
         self.append_description(description)
@@ -506,7 +506,7 @@ class ScriptContextWriter(ContextWriter):
         self.com_file=kwargs.get("command_file")
         self._kwargs=dict(kwargs)
 
-        
+
         self.init_files()
 
     def get_line_header(self, index, operation):
@@ -520,12 +520,8 @@ class ScriptContextWriter(ContextWriter):
         '''
         os.makedirs(self.folder, exist_ok=True)
 
-        # create perms.csv if relevant
-        perms_csv_name = self._kwargs.get("perms_csv_name")
-        if perms_csv_name:
-            csv_file = open(perms_csv_name, 'w')
-            perm_writer = csv.writer(csv_file, lineterminator='\n')
-            perm_writer.writerow(['Molecule', 'op', 'Permutation', 'Direction', 'CSM'])
+        exact_folder = os.path.join(self.folder, 'exact')
+        os.makedirs(exact_folder, exist_ok=True)
 
         self.csm_file = open(os.path.join(self.folder, "csm.txt"), 'w')
         self.csm_file.write(self.molecule_format % "#Molecule")
@@ -604,7 +600,7 @@ class ScriptContextWriter(ContextWriter):
             if command_result.skipped:
                 continue
             f.write(self.molecule_format % command_result.molecule.metadata.appellation())
-            f.write("%-10s" % get_line_header(line_index, command_result))
+            f.write("%-10s" % get_line_header(line_index, command_result.operation))
             write_array_to_file(f, command_result.dir, separator="%-10s")
             f.write("\n")
 
@@ -614,7 +610,7 @@ class ScriptContextWriter(ContextWriter):
             if command_result.skipped:
                 continue
             f.write(self.molecule_format % (command_result.molecule.metadata.appellation()))
-            f.write("%-10s" % (get_line_header(line_index, command_result)))
+            f.write("%-10s" % (get_line_header(line_index, command_result.operation)))
             write_array_to_file(f, command_result.perm, True)
             f.write("\n")
 
@@ -636,7 +632,7 @@ class ScriptContextWriter(ContextWriter):
                 continue
             if command_result.failed:
                 print(command_result.molecule.metadata.appellation() + get_line_header(command_index,
-                                                                                       command_result) + " failed, not writing symmetric coordinates")
+                                                                                       command_result.operation) + " failed, not writing symmetric coordinates")
                 continue
             molecule_wrapper = MoleculeWrapper(command_result, self.molecule_index, command_index)
             molecule_wrapper.set_symmetric_title(symmetric=True)
@@ -650,7 +646,7 @@ class ScriptContextWriter(ContextWriter):
             if command_result.skipped:
                 continue
             name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(line_index,
-                                                                                                             command_result)
+                                                                                                             command_result.operation)
             file_name = name + "." + command_result.molecule.metadata.format
             out_file_name = os.path.join(self.legacy_folder, file_name)
             try:
@@ -675,7 +671,7 @@ class ScriptContextWriter(ContextWriter):
         for line_index, command_result in enumerate(mol_results):
             name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(
                 line_index,
-                command_result)
+                command_result.operation)
             filename = os.path.join(out_folder, name + ".tsv")
             if "approx" in command_result.ongoing_statistics:
                 self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
@@ -737,7 +733,7 @@ class ScriptContextWriter(ContextWriter):
         for line_index, command_result in enumerate(mol_results):
             name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(
                 line_index,
-                command_result)
+                command_result.operation)
             filename = os.path.join(out_folder, name + ".tsv")
             if "trivial" in command_result.ongoing_statistics:
                 stats=command_result.ongoing_statistics["trivial"]
@@ -848,7 +844,7 @@ class WebWriter():
             format_string = ""
             for key in sorted(command_result.overall_statistics):
                 format_string += "%-" + str(len(key) + 2) + "s"
-                headers_arr_1.append(get_line_header(line_index, command_result))
+                headers_arr_1.append(get_line_header(line_index, command_result.operation))
                 headers_arr_2.append(key)
             format_strings.append(format_string)
         format_strings[-1] += "\n"
@@ -878,7 +874,7 @@ class WebWriter():
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
                     f.write(self.molecule_format % (command_result.molecule.metadata.appellation()))
-                    f.write("%-10s" % (get_line_header(line_index, command_result)))
+                    f.write("%-10s" % (get_line_header(line_index, command_result.operation)))
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")
 
