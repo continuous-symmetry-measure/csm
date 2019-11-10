@@ -1,9 +1,10 @@
 from collections import namedtuple
-
+from datetime import datetime
 import numpy as np
 
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
     check_perm_structure_preservation
+from csm.calculations.constants import MINDOUBLE
 from csm.input_output.formatters import silent_print
 from csm.molecule.molecule import Molecule
 from csm.molecule.normalizations import de_normalize_coords
@@ -22,6 +23,21 @@ class CSMState(namedtuple('CSMState', ['molecule',
 
 CSMState.__new__.__defaults__ = (None,) * len(CSMState._fields)
 
+
+def get_chain_perm_string(molecule, perm):
+    chain_perm = []
+    chain_str = ""
+    for origin_chain in molecule.chains:
+        sample_atom = molecule.chains[origin_chain][0]
+        permuted_index = perm[sample_atom]
+        destination_chain = molecule.atoms[permuted_index].chain
+        chain_perm.append(destination_chain)
+        origin_name = molecule.chains.index_to_name(origin_chain)
+        destination_name = molecule.chains.index_to_name(destination_chain)
+        chain_str += origin_name + "->" + destination_name + ", "
+
+    chain_str = chain_str[:-2]  # remove final comma and space
+    return chain_perm, chain_str
 
 class Operation:
     def __init__(self, op, sn_max=8, init=True):
@@ -155,7 +171,7 @@ class CSMResult(Result):
 
         self.overall_statistics["formula CSM"] = self.formula_csm
 
-        self.get_chain_perm_string()
+        self.chain_perm, self.chain_perm_string=get_chain_perm_string(self.molecule, self.perm)
 
     @property
     def d_min(self):
@@ -164,29 +180,6 @@ class CSMResult(Result):
     @property
     def local_csm(self):
         return self.compute_local_csm(self.molecule.Q, self.operation, self.dir)
-
-    def get_chain_perm_string(self):
-        molecule = self.molecule
-        perm = self.perm
-        chain_perm_dict = {}
-        for chain in molecule.chains:
-            index = molecule.chains[chain][0]
-            permuted_index = perm[index]
-            for chain2 in molecule.chains:
-                if permuted_index in molecule.chains[chain2]:
-                    chain_perm_dict[chain] = chain2
-                    break
-        self.chain_perm = []
-        for chain in molecule.chains:
-            permuted_index = chain_perm_dict[chain]
-            self.chain_perm.append(permuted_index)
-        chain_str = ""
-        for from_index, to_index in enumerate(self.chain_perm):
-            from_chain = self.molecule.chains.index_to_string(from_index)
-            to_chain = self.molecule.chains.index_to_string(to_index)
-            chain_str += from_chain + "->" + to_chain + ", "
-        chain_str = chain_str[:-2]  # remove final comma and space
-        self.chain_perm_string = chain_str
 
     def create_symmetric_structure(self, molecule_coords, perm, dir, op_type, op_order):
         # print('create_symmetric_structure called')
@@ -360,3 +353,39 @@ class FailedResult(Result):
 
     def __repr__(self):
         return super(FailedResult, self).__repr__() + "\tFailure: " + self.failed_reason
+
+class BaseCalculation:
+    '''
+    A base class for calculations that handles some shared logic, particularly chirality
+    '''
+    def __init__(self, operation, molecule, **kwargs):
+        self.operation=operation
+        self.molecule=molecule
+
+    def chirality(self, timeout):
+        # First CS
+        op = Operation('cs')
+        best_result = self._calculate(op, timeout)
+        if best_result.csm > MINDOUBLE:
+            # Try the SN's
+            for op_order in range(2, self.operation.order + 1, 2):
+                op = Operation("S" + str(op_order))
+                result = self._calculate(op, timeout)
+                if result.csm < best_result.csm:
+                    best_result = result
+                if best_result.csm < MINDOUBLE:
+                    break
+        return best_result
+    def calculate(self, timeout=300):
+        self.start_time = datetime.now()
+        if self.operation.type == 'CH':  # Chirality
+            # sn_max = op_order
+            # First CS
+            best_result=self.chirality(timeout)
+        else:
+            best_result = self._calculate(self.operation, timeout=timeout)
+        return best_result
+
+    def _calculate(self, operation, timeout):
+        raise NotImplementedError
+

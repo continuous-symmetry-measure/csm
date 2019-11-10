@@ -1,4 +1,4 @@
-README v0.1 / 15 March 2018
+README v0.2 / 28 March 2019
 
 # CSM
 
@@ -46,42 +46,59 @@ detailed in the file API.md (including examples)
 
 ## Installation
 
-CSM can be installed on Windows and Linux machines.
-
-### Requirements
-Before installing CSM, you must first install Openbabel (http://openbabel.org/wiki/Category:Installation), 
-version 2.4.0 or later.
-
-You must also install openbabel's python bindings (`pip install openbabel`) and numpy (`pip install numpy`)
-
-### Installation
-
-CSM can be installed using:
-
-`pip install csm --extra-index-url=https://repo.fury.io/theresearchsoftwarecompany`
+Contact the developers for instructions regarding how to install csm
 
 
-## Credits
+## CITATIONS 
 
-[to be added-- citation instructions]
+Please cite CSM using the following:
 
-Science/Math:
+proteincsm:
 
-David Avnir (david.avnir@mail.huji.ac.il)
+> Tuvi-Arad I. and Alon G., "Improved Algorithms for Quantifying the Near Symmetry of Proteins: Complete Side Chains Analysis" (submitted). 
+> Dryzun C., Zait A. and Avnir D., "Quantitative Symmetry and Chirality - A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells", J. Comput. Chem., 32, 2526-2538 (2011). 
 
-Inbal Tuvi-Arad (inbaltu@openu.ac.il)
 
-Gil Alon (gil.alon@gmail.com)
+Exact Algorithm for calculating the CSM of molecules:
 
-Programming:
+> Alon G. and Tuvi-Arad I., "Improved algorithms for symmetry analysis: Structure preserving permutations", J. Math. Chem., 56(1), 193-212 (2018).
+
+Original Code by Avnir and coworkers:
+
+> Pinsky M., Dryzun C., Casanova D., Alemany P., Avnir D., "Analytical Methods for Calculating Continuous Symmetry Measures and the Chirality Measure", Journal of Computational Chemistry 29(16): 2712-2721 (2008).
+
+> Zabrodsky H., Peleg S., Avnir D., "Continuous symmetry measures", Journal of the American Chemical Society 114(20): 7843-7851 (1992).
+
+
+
+## CREDITS
+
+**Science/Math:**
+
+Dr. Inbal Tuvi-Arad, Department of Natural Sciences, The Open University of Israel
+
+Dr. Gil Alon, Department of Mathematics and Computer Science, The Open University of Israel
+
+Prof. David Avnir, Institute of Chemistry, The Hebrew University of Jerusalem
+
+**Programming:**
 
 The Research Software Company (chelem.co.il)
 
-Testing, scripts, additional technical support:
+**Testing, scripts and additional technical support:**
 
-Sagiv
+Sagiv Barhoom,The Open University of Israel
 
-## Contact
+**Intensive testing:**
+
+Yaffa Shalit, The Open University of Israel
+
+The code for the hungarian algorithm is copyright (c) 2012, Jacob Frelinger
+
+
+## CONTACT
+
+Dr. Inbal Tuvi-Arad, Department of Natural Sciences, The Open University of Israel, E-mail: inbaltu@openu.ac.il
 
 
 ### Contributing

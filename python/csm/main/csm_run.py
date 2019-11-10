@@ -1,6 +1,7 @@
 import csv
 import json
 import multiprocessing
+import os
 import sys
 import timeit
 
@@ -13,10 +14,11 @@ from csm.input_output.formatters import csm_log as print
 from csm.input_output.formatters import silent_print
 from csm.input_output.readers import read_molecules, read_mols_from_std_in, read
 from csm.input_output.readers import read_perm, read_from_sys_std_in
-from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter
+from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter, \
+    get_line_header
 from csm.main.normcsm import norm_calc
 from csm.molecule.molecule import MoleculeReader
-
+from datetime import datetime
 
 def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_approx=False, **dictionary_args):
     calc_type = command
@@ -25,16 +27,16 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
         dictionary_args['perm'] = read_perm(**dictionary_args)
         csm_state_tracer_func = None
         if perms_csv_name:
-            csv_file = open(perms_csv_name, 'w')
+            csv_file = open(perms_csv_name, 'a')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
-            perm_writer.writerow(['Permutation', 'Direction', 'CSM'])
             csm_state_tracer_func = lambda state: perm_writer.writerow(
-                [[p + 1 for p in state.perm],
+                [state.op_type+str(state.op_order),
+                [p + 1 for p in state.perm],
                  state.dir,
                  state.csm, ])
         calc = Exact(**dictionary_args, callback_func=csm_state_tracer_func)
 
-    if calc_type == "approx":
+    elif calc_type == "approx":
         dir_chooser = get_direction_chooser(**dictionary_args)
         dictionary_args["direction_chooser"] = dir_chooser
         if parallel_dirs:
@@ -47,7 +49,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
                 dictionary_args["log_func"] = log
             calc = Approx(**dictionary_args)
 
-    if calc_type == "trivial":
+    elif calc_type == "trivial":
         calc = Trivial(**dictionary_args)
 
     # run the calculation
@@ -68,7 +70,7 @@ def single_calculation(dictionary_args):
     return result
 
 
-def get_command_args(command_file, old_command=True):
+def get_command_args(command_file, old_command=True, **dictionary_args):
     args_array = []
     operation_array = []
     with open(command_file, 'r') as file:
@@ -81,7 +83,8 @@ def get_command_args(command_file, old_command=True):
             else:
                 fixed_args = line.split()
             try:
-                args_dict = get_parsed_args(fixed_args)
+                in_args = get_parsed_args(fixed_args)
+                args_dict={**dictionary_args, **in_args}
             except:  # want to be able to run even if some lines are invalid
                 print("failed to read args from line", line)
                 continue
@@ -140,18 +143,15 @@ def write(**dictionary_args):
     writer.write()
 
 
-def parallel_calc(args_array, pool_size):
-    if pool_size == 0:
-        pool_size = multiprocessing.cpu_count() - 1
-    pool = multiprocessing.Pool(processes=pool_size)
-    print("Parallelizing across {} processes".format(pool_size))
-    pool_outputs = pool.map(single_calculation, args_array)
-    pool.close()
-    pool.join()
-    return pool_outputs
-
-
 def calc(dictionary_args):
+    # get commands:
+    if dictionary_args["command"] == "comfile":
+        args_array, operation_array = get_command_args(**dictionary_args)
+    else:
+        args_array = [(None, dictionary_args, False)]
+        operation_array = [dictionary_args["operation"]]
+
+
     # get molecules
     if dictionary_args["in_file_name"]:
         molecules = read_molecules(**dictionary_args)
@@ -160,12 +160,12 @@ def calc(dictionary_args):
     else:
         raise ValueError("No input for molecules specified")
 
-    # get commands:
-    if dictionary_args["command"] == "comfile":
-        args_array, operation_array = get_command_args(dictionary_args["command_file"], dictionary_args["old_command"])
-    else:
-        args_array = [(None, dictionary_args, False)]
-        operation_array = [dictionary_args["operation"]]
+    max_len_file_name = 0
+    for mol in molecules:
+        len_name = len(mol.metadata.filename)
+        if len_name > max_len_file_name:
+            max_len_file_name = len_name
+    dictionary_args["max_len_file_name"] = max_len_file_name
 
     context_writer = get_context_writer(dictionary_args)
     if not dictionary_args["out_format"]:
@@ -194,19 +194,45 @@ def calc(dictionary_args):
                 args_dict["molecule"] = new_molecule
             mol_args.append(dict(args_dict))
         total_args.append(mol_args)
-    flattened_args = [item for sublist in total_args for item in sublist]
 
     # run the calculation, in parallel
     if dictionary_args["parallel"]:
-        results = parallel_calc(flattened_args, dictionary_args["pool_size"])
-        unflattened_results = [
-            [results[m_index + command_index] for command_index in range(len(args_array))] for m_index in
-            range(len(molecules))
-        ]
-        with context_writer(operation_array, **dictionary_args) as rw:
-            for mol_results in unflattened_results:
-                rw.write(mol_results)
-        return unflattened_results
+        #TODO-deal with "skipped"-- edit: think this is handled in single_calculation... so TODO: check
+        flattened_args = [item for sublist in total_args for item in sublist]
+        num_ops = len(operation_array)
+        batch_mols= 50  # int(len(molecules)/10)
+        batch_size = num_ops * batch_mols #it needs to be divisible by length of operation array
+        total_results = []
+        pool_size=dictionary_args["pool_size"]
+        print("Parallelizing {} calculations across {} processes with batch size {}".format(len(flattened_args), pool_size, batch_size))
+        try:
+            pool = multiprocessing.Pool(processes=pool_size)
+            with context_writer(operation_array, **dictionary_args) as rw:
+                for i in range(0, len(flattened_args), batch_size):
+                    end_index=min(i+batch_size, len(flattened_args))
+                    args_array=flattened_args[i:end_index]
+                    now=datetime.now()
+                    #print("calculating partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
+                    partial_results = pool.map(single_calculation, args_array)
+
+
+
+                    m_range=int((end_index-i)/num_ops)
+                    unflattened_partial_results=[
+                    [partial_results[m_index * num_ops + command_index] for command_index in range(num_ops)] for m_index in
+                    range(m_range)
+                ]
+                    #now=datetime.now()
+                    #print("outputting partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
+                    for mol_results in unflattened_partial_results:
+                        rw.write(mol_results)
+                    total_results=total_results+partial_results
+        except Exception as e:
+            print(e)
+        finally:
+            pool.close()
+            pool.join()
+        return total_results #maybe should unflatten first?
 
     if len(molecules) > 10:
         from csm.input_output.formatters import output_strings
@@ -216,10 +242,13 @@ def calc(dictionary_args):
 
     # run the calculation, in serial
     all_results = []
-    with context_writer(operation_array, **dictionary_args) as rw:
+    with context_writer(operation_array, **dictionary_args) as rw:  #this is the line of code where the results folder is created
         for mol_index, mol_args in enumerate(total_args):
             mol_results = []
             for line_index, args_dict in enumerate(mol_args):
+                # create perms.csv if relevant
+                args_dict["perms_csv_name"]=create_perms_csv(args_dict, line_index, rw)
+
                 # print stuff
                 molecule = args_dict["molecule"]
 
@@ -242,6 +271,17 @@ def calc(dictionary_args):
             all_results.append(mol_results)
     return all_results
 
+def create_perms_csv(args_dict, line_index, rw):
+    perms_csv_name=None
+    output_perms = args_dict.get("output_perms")
+    if output_perms:
+        filename = args_dict["molecule"].metadata.appellation(no_file_format=True) + "_" + get_line_header(line_index,
+                                                                                        args_dict["operation"]) + ".csv"
+        perms_csv_name = os.path.join(rw.folder, 'exact', filename)
+        csv_file = open(perms_csv_name, 'w')
+        perm_writer = csv.writer(csv_file, lineterminator='\n')
+        perm_writer.writerow(['op', 'Permutation', 'Direction', 'CSM'])
+    return perms_csv_name
 
 def run_no_return(args=[]):
     csm_run(args)

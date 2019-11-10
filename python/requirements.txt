@@ -1,7 +1,6 @@
 apipkg==1.4
 colorama==0.3.7
 Cython==0.27.3
-cython-munkres==1.0
 execnet==1.4.1
 numpy==1.14.0
 openbabel==2.4.1

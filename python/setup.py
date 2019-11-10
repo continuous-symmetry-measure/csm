@@ -1,10 +1,12 @@
-from setuptools import setup
+from setuptools import setup #if this import statement dooes not come first, weird errors happen
+#see: https://stackoverflow.com/questions/21594925/error-each-element-of-ext-modules-option-must-be-an-extension-instance-or-2-t
 from distutils.extension import Extension
-from Cython.Build import cythonize
+import setuptools
 import sys
 import numpy
 import os
 import re
+import glob
 from setuptools.command.build_ext import build_ext as _build_ext
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
@@ -26,7 +28,9 @@ class build_ext(_build_ext):
 
 # Cython definitions
 FAST_CPPUTILS_DIR = "FastCPPUtils"
-EIGEN_INCLUDE_DIR = "../include"
+EIGEN_INCLUDE_DIR_1 = "include"
+EIGEN_INCLUDE_DIR_2 = "include/Eigen"
+
 CPP_WRAPPER_DIR = "csm/CPP_wrapper"
 
 MUNKRES_DIR = "cython-munkres"
@@ -51,6 +55,45 @@ def get_version():
     version = match.group("version")
     return version
 
+
+class PrepareCommand(setuptools.Command):
+    description = "Build fast.pyx so there's no cython dependence in installation"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        print("running prepare command")
+        self.copy_source_files()
+        self.convert_to_c()
+
+    def copy_source_files(self):
+        #this may be used for copying openbabel file eventually?
+        pass
+
+    def convert_to_c(self):
+        #creates fast.h and fast.c in cpp_wrapper folder
+        print('Converting csm pyx files to C++ sources...')
+        pyx = './csm/CPP_wrapper/fast.pyx'
+        self.cython(pyx)
+        print('Converting munkres pyx files to C++ sources...')
+        pyx = './cython-munkres/src/cython_munkres.pyx'
+        self.cython(pyx)
+
+    def cython(self, pyx):
+        from Cython.Compiler.CmdLine import parse_command_line
+        from Cython.Compiler.Main import compile
+        options, sources = parse_command_line(['-2', '-v', '--cplus', pyx])
+        result = compile(sources, options)
+        if result.num_errors > 0:
+            print('Errors converting %s to C++' % pyx, file=sys.stderr)
+            raise Exception('Errors converting %s to C++' % pyx)
+        self.announce('Converted %s to C++' % pyx)
+
 csm_version = get_version()
 print("Packaging CSM version %s" % csm_version)
 setup(
@@ -66,6 +109,30 @@ setup(
     url='http://www.csm.huji.ac.il/new/',
     author='The Research Software Company',
     author_email='itay@chelem.co.il',
+
+    # The csm command
+    entry_points={
+        'console_scripts': [
+            'csm = csm.main.csm_run:run_no_return',
+            'norm_csm = csm.main.normcsm:run_norm_no_return',
+            'csmsymm = csm.main.csmsymm:run_no_return'
+        ]
+    },
+
+    classifiers=[
+        'Development Status:: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: Science/Research',
+        'License :: Other/Proprietary License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3.5',
+        'Topic :: Scientific/Engineering :: Chemistry',
+    ],
+
+    cmdclass={
+        'prepare': PrepareCommand,
+    },
 
     # The Cython extension module
     # We do not use Cython itself but the Cython output files
@@ -85,28 +152,10 @@ setup(
              os.path.join(FAST_CPPUTILS_DIR, "math_wrappers.cpp"),
              ],
             language='c++',
-            include_dirs=[EIGEN_INCLUDE_DIR, FAST_CPPUTILS_DIR, numpy.get_include()],
+            include_dirs=[EIGEN_INCLUDE_DIR_1, EIGEN_INCLUDE_DIR_2, FAST_CPPUTILS_DIR, numpy.get_include()],
             extra_compile_args=extra_compile_args,
             extra_link_args=extra_link_args),
     ],
 
-    # The csm command
-    entry_points={
-        'console_scripts': [
-            'csm = csm.main.csm_run:run_no_return',
-            'norm_csm = csm.main.normcsm:run_norm_no_return'
-            'csmsymm = csm.main.csmsymm:run_no_return'
-        ]
-    },
 
-    classifiers=[
-        'Development Status:: 4 - Beta',
-        'Environment :: Console',
-        'Intended Audience :: Science/Research',
-        'License :: Other/Proprietary License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.5',
-        'Topic :: Scientific/Engineering :: Chemistry',
-    ],
 )

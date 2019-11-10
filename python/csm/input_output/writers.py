@@ -1,3 +1,5 @@
+import csv
+
 import openbabel as ob
 import os
 import re
@@ -7,7 +9,8 @@ from csm import __version__
 from csm.calculations.basic_calculations import cart2sph
 from csm.input_output.formatters import format_CSM, format_unknown_str, output_strings, non_negative_zero
 from csm.molecule.molecule import MoleculeReader
-
+from pathlib import Path
+import shutil
 
 def write_array_to_file(f, arr, add_one=False, separator=" "):
     '''
@@ -28,12 +31,12 @@ def write_array_to_file(f, arr, add_one=False, separator=" "):
             if item == "n/a":
                 f.write("%10s" % item)
             else:
-                f.write("%10s" % ("%.4lf" % item))
+                f.write("%s" % ("%10.4lf" % item))
 
 
-def get_line_header(index, result):
+def get_line_header(index, operation):
     index_str = "%02d" % (index + 1)  # start from 1 instead of 0
-    return "L" + index_str + "_" + result.operation.op_code
+    return "L" + index_str + "_" + operation.op_code
 
 
 class LegacyFormatWriter:
@@ -193,7 +196,7 @@ class MoleculeWriter:
                 if str.lower(self.format) == 'pdb':
                     s = re.sub("MODEL\s+\d+", "", s)
                     s = s.replace("END", "ENDMDL")
-                if str.lower(self.format) in ['mol', 'sdf']:
+                if str.lower(self.format) in ['mol']:
                     s += "\n$$$$\n"
             f.write(s)
 
@@ -418,7 +421,7 @@ class MoleculeWrapper:
         original_title = self.obmol.GetTitle()
         if self.metadata.appellation() not in original_title:
             title += self.metadata.appellation() + " "
-        title = title + get_line_header(self.line_index, self.result)
+        title = title + get_line_header(self.line_index, self.result.operation)
         self.append_title(title)
         description = "index=" + str(self.metadata.index + 1) + ";" + "filename: " + self.metadata.filename
         self.append_description(description)
@@ -436,9 +439,6 @@ def format_result_CSM(result):
     if result.failed:
         return "n/a"
     return format_CSM(result.csm)
-
-
-molecule_format = "%-40s"
 
 
 class ContextWriter:
@@ -497,7 +497,8 @@ class ScriptContextWriter(ContextWriter):
                  out_file_name=None,
                  polar=False, verbose=False, print_local=False, argument_string="",
                  print_denorm=False,
-                 legacy_files=False, **kwargs):
+                 legacy_files=False,
+                 max_len_file_name=36, **kwargs):
         super().__init__(commands, out_format, out_file_name)
         self.molecule_index = 0  # used for writing pdb files
         self.result_index = 0  # used for writing pdb files
@@ -510,6 +511,12 @@ class ScriptContextWriter(ContextWriter):
         self.print_denorm = print_denorm
         self.argument_string = argument_string
         self.create_legacy_files = legacy_files
+        self.max_len_file_name = max_len_file_name + 4
+        self.molecule_format = '%-' + str(self.max_len_file_name) + 's'
+        self.com_file=kwargs.get("command_file")
+        self._kwargs=dict(kwargs)
+
+
         self.init_files()
 
     def get_line_header(self, index, operation):
@@ -523,18 +530,21 @@ class ScriptContextWriter(ContextWriter):
         '''
         os.makedirs(self.folder, exist_ok=True)
 
+        exact_folder = os.path.join(self.folder, 'exact')
+        os.makedirs(exact_folder, exist_ok=True)
+
         self.csm_file = open(os.path.join(self.folder, "csm.txt"), 'w')
-        self.csm_file.write(molecule_format % "#Molecule")
+        self.csm_file.write(self.molecule_format % "#Molecule")
         for index, operation in enumerate(self.commands):
-            self.csm_file.write("%-10s" % (self.get_line_header(index, operation)))
+            self.csm_file.write("%10s" % (self.get_line_header(index, operation)))
         self.csm_file.write("\n")
 
         self.dir_file = open(os.path.join(self.folder, "directional.txt"), 'w')
-        format_string = molecule_format + "%-10s%10s%10s%10s\n"
+        format_string = self.molecule_format + "%-10s%10s%10s%10s\n"
         self.dir_file.write(format_string % ("#Molecule", "#Command", "X", "Y", "Z"))
 
         self.perm_file = open(os.path.join(self.folder, "permutation.txt"), 'w')
-        format_string = molecule_format + "%-10s%-10s\n"
+        format_string = self.molecule_format + "%-10s%-10s\n"
         self.perm_file.write(format_string % ("#Molecule", "#Command", "#Permutation"))
 
         self.initial_normalized_file = open(
@@ -556,16 +566,26 @@ class ScriptContextWriter(ContextWriter):
         if self.verbose:
             self.approx_folder = os.path.join(self.folder, 'approx')
             os.makedirs(self.approx_folder, exist_ok=True)
+            self.trivial_folder = os.path.join(self.folder, 'trivial')
+            os.makedirs(self.trivial_folder, exist_ok=True)
 
         # legacy
         if self.create_legacy_files:
             self.legacy_folder = os.path.join(self.folder, 'old-csm-output')
             os.makedirs(self.legacy_folder, exist_ok=True)
 
+        #version and commandline
         filename = os.path.join(self.folder, "version.txt")
         with open(filename, 'w') as file:
             file.write(self.argument_string)
             file.write("CSM VERSION: " + str(__version__))
+
+        #comfile
+        if self.com_file:
+            name=Path(self.com_file).name
+            filename=os.path.join(self.folder, name)
+            shutil.copy(self.com_file, filename)
+
 
     def close_files(self):
         self.csm_file.close()
@@ -579,9 +599,9 @@ class ScriptContextWriter(ContextWriter):
 
     def write_csm(self, mol_results):
         f = self.csm_file
-        f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
+        f.write(self.molecule_format % mol_results[0].molecule.metadata.appellation())
         for result in mol_results:
-            f.write("%-10s" % format_result_CSM(result))
+            f.write("%10s" % format_result_CSM(result))
         f.write("\n")
 
     def write_dir(self, mol_results):
@@ -589,8 +609,8 @@ class ScriptContextWriter(ContextWriter):
         for line_index, command_result in enumerate(mol_results):
             if command_result.skipped:
                 continue
-            f.write(molecule_format % command_result.molecule.metadata.appellation())
-            f.write("%10s" % get_line_header(line_index, command_result))
+            f.write(self.molecule_format % command_result.molecule.metadata.appellation())
+            f.write("%-10s" % get_line_header(line_index, command_result.operation))
             write_array_to_file(f, command_result.dir, separator="%-10s")
             f.write("\n")
 
@@ -599,8 +619,8 @@ class ScriptContextWriter(ContextWriter):
         for line_index, command_result in enumerate(mol_results):
             if command_result.skipped:
                 continue
-            f.write(molecule_format % (command_result.molecule.metadata.appellation()))
-            f.write("%-10s" % (get_line_header(line_index, command_result)))
+            f.write(self.molecule_format % (command_result.molecule.metadata.appellation()))
+            f.write("%-10s" % (get_line_header(line_index, command_result.operation)))
             write_array_to_file(f, command_result.perm, True)
             f.write("\n")
 
@@ -622,7 +642,7 @@ class ScriptContextWriter(ContextWriter):
                 continue
             if command_result.failed:
                 print(command_result.molecule.metadata.appellation() + get_line_header(command_index,
-                                                                                       command_result) + " failed, not writing symmetric coordinates")
+                                                                                       command_result.operation) + " failed, not writing symmetric coordinates")
                 continue
             molecule_wrapper = MoleculeWrapper(command_result, self.molecule_index, command_index)
             molecule_wrapper.set_symmetric_title(symmetric=True)
@@ -636,7 +656,7 @@ class ScriptContextWriter(ContextWriter):
             if command_result.skipped:
                 continue
             name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(line_index,
-                                                                                                             command_result)
+                                                                                                             command_result.operation)
             file_name = name + "." + command_result.molecule.metadata.format
             out_file_name = os.path.join(self.legacy_folder, file_name)
             try:
@@ -661,62 +681,83 @@ class ScriptContextWriter(ContextWriter):
         for line_index, command_result in enumerate(mol_results):
             name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(
                 line_index,
-                command_result)
+                command_result.operation)
             filename = os.path.join(out_folder, name + ".tsv")
-            if command_result.ongoing_statistics:
+            if "approx" in command_result.ongoing_statistics:
                 self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
 
-    def _write_approx_statistics(self, filename, stats):
+    def _write_approx_statistics(self, filename, stats_dict):
         with open(filename, 'w') as f:
+            header_string="Op\tDir Index"
             if self.polar:
-                f.write("Dir Index"
-                        "\tr_i\tth_i\tph_i"
-                        "\tCSM_i"
-                        "\tr_f\tth_f\tph_f"
-                        "\tCSM_f"
-                        "\tRuntime"
-                        "\t # Iter"
-                        "\t Stop Reason"
-                        "\n")
+                header_string+="\tr_i\tth_i\tph_i"
             else:
-                f.write("Dir Index"
-                        "\tx_i\ty_i\tz_i"
-                        "\tCSM_i"
-                        "\tx_f\ty_f\tz_f"
-                        "\tCSM_f"
-                        "\tRuntime"
-                        "\t # Iter"
-                        "\tStop Reason"
-                        "\n")
+                header_string+="\tx_i\ty_i\tz_i"
+            header_string+="\tCSM_i"
+            if self.polar:
+                header_string+="\tr_f\tth_f\tph_f"
+            else:
+                header_string+="\tx_f\ty_f\tz_f"
+            header_string+="\tCSM_f\tRuntime\t# Iter\tStop Reason"
+            header_string+="\tChain Perm"
+            header_string+="\tresult validity\tbest valid dir\tbest valid csm\tbest valid %"
+            header_string+="\n"
+            f.write(header_string)
 
-            for direction_index, direction_dict in enumerate(stats):
-                dir = direction_dict['dir']
-                stat = direction_dict['stats']
-                start_str = str(direction_index) + "\t"
-                try:
-                    x, y, z = stat['start dir']
-                    start_str = start_str + format_CSM(x) + "\t" + format_CSM(y) + "\t" + format_CSM(z) + "\t"
-                    xf, yf, zf = stat['end dir']
-                    if self.polar:
-                        x, y, z = cart2sph(x, y, z)
-                        xf, yf, zf = cart2sph(xf, yf, zf)
-
-                    f.write(start_str
-                            + format_CSM(stat['start csm']) + "\t"
-                            + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t"
-                            + format_CSM(stat['end csm']) + "\t"
-                            + format_CSM(stat['run time']) + "\t"
-                            + str(stat['num iterations']) + "\t"
-                            + stat['stop reason'] + "\t"
-                                                    "\n")
-                except Exception as e:
+            for op in stats_dict:
+                stats=stats_dict[op]
+                for direction_index, direction_dict in enumerate(stats):
+                    dir = direction_dict['dir']
+                    stat = direction_dict['stats']
+                    start_str = op+"\t" + str(direction_index) + "\t"
                     try:
-                        start_str = start_str + stat['stop reason'] + "\t"
-                    finally:
-                        f.write(start_str + "failed to read statistics\n")
+                        x, y, z = stat['start dir']
+                        xf, yf, zf = stat['end dir']
+                        if self.polar:
+                            x, y, z = cart2sph(x, y, z)
+                            xf, yf, zf = cart2sph(xf, yf, zf)
+                        start_str = start_str + format_CSM(x) + "\t" + format_CSM(y) + "\t" + format_CSM(z) + "\t"
+
+                        interim_str= start_str \
+                                + format_CSM(stat['start csm']) + "\t" \
+                                + format_CSM(xf) + "\t" + format_CSM(yf) + "\t" + format_CSM(zf) + "\t" \
+                                + format_CSM(stat['end csm']) + "\t" \
+                                + format_CSM(stat['run time']) + "\t" \
+                                + str(stat['num iterations']) + "\t" \
+                                + stat['stop reason'] + "\t"
+
+                        interim_str+=stat["chain perm"]+"\t"
+                        interim_str=interim_str+str(stat["validity"]["res valid"])+"\t"+str(stat["validity"]["dir"])+\
+                                    "\t"+format_CSM(stat["validity"]["csm"])+"\t"+str(stat["validity"]["per"])
+                        end_str=interim_str+"\n"
+                        f.write(end_str)
+
+                    except Exception as e:
+                        try:
+                            start_str = start_str + stat['stop reason'] + "\t"
+                        finally:
+                            f.write(start_str + "failed to read statistics:"+str(e)+"\n")
+
+    def write_trivial_file(self, mol_results):
+        out_folder = self.trivial_folder
+        for line_index, command_result in enumerate(mol_results):
+            name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(
+                line_index,
+                command_result.operation)
+            filename = os.path.join(out_folder, name + ".tsv")
+            if "trivial" in command_result.ongoing_statistics:
+                stats=command_result.ongoing_statistics["trivial"]
+                if "n/a" not in stats:
+                    with open(filename, 'w') as f:
+                        f.write("op\tchain perm\tcsm\tdir")
+                        for op in stats:
+                            for chain_perm in stats[op]:
+                                chain_stats=stats[op][chain_perm]
+                                f.write("\n"+op+"\t"+chain_perm+"\t"+format_CSM(chain_stats["csm"])+"\t"+str(chain_stats["dir"]))
 
     def write(self, molecule_results):
         # receives result array for single molecule, and appends to all the relevant files
+        #print(self.folder)
         self.write_csm(molecule_results)
         self.write_dir(molecule_results)
         self.write_perm(molecule_results)
@@ -727,6 +768,7 @@ class ScriptContextWriter(ContextWriter):
         self.write_extra_txt(molecule_results)
         if self.verbose:
             self.write_approx_file(molecule_results)
+            self.write_trivial_file(molecule_results)
         self.molecule_index += 1
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -753,7 +795,7 @@ class WebWriter():
     retained for web-csm
     '''
 
-    def __init__(self, results, format=None, out_folder=None, context_writer=ScriptContextWriter, **kwargs):
+    def __init__(self, results, format=None, out_folder=None, max_len_file_name=36, context_writer=ScriptContextWriter, **kwargs):
         '''
         :param results: expects an array of arrays of CSMResults, with the internal arrays by command and the external
         by molecule. if you send a single CSM result or a single array of CSMResults, it will automatically wrap in arrays.
@@ -767,6 +809,9 @@ class WebWriter():
         except TypeError:  # results isn't an array at all
             results = [[results]]
         self.results = results
+        self.max_len_file_name = max_len_file_name + 4
+        self.molecule_format = '%-' + str(self.max_len_file_name) + 's'
+
 
         self.commands = []
         for result in results[0]:
@@ -810,7 +855,7 @@ class WebWriter():
             format_string = ""
             for key in sorted(command_result.overall_statistics):
                 format_string += "%-" + str(len(key) + 2) + "s"
-                headers_arr_1.append(get_line_header(line_index, command_result))
+                headers_arr_1.append(get_line_header(line_index, command_result.operation))
                 headers_arr_2.append(key)
             format_strings.append(format_string)
         format_strings[-1] += "\n"
@@ -818,12 +863,12 @@ class WebWriter():
         full_string = "".join(format_strings)
 
         with open(filename, 'w') as f:
-            f.write(molecule_format % "#Molecule")
+            f.write(self.molecule_format % "#Molecule")
             f.write(full_string % tuple(headers_arr_1))
             f.write("%-10s" % " ")
             f.write(full_string % tuple(headers_arr_2))
             for mol_index, mol_results in enumerate(self.results):
-                f.write(molecule_format % mol_results[0].molecule.metadata.appellation())
+                f.write(self.molecule_format % mol_results[0].molecule.metadata.appellation())
                 for line_index, command_result in enumerate(mol_results):
                     f.write(
                         format_strings[line_index] % tuple([format_unknown_str(command_result.overall_statistics[key])
@@ -835,12 +880,12 @@ class WebWriter():
             filename = os.path.join(self.folder, "permutation.txt")
         # creates a tsv for permutations (needs to handle extra long permutations somehow)
         with open(filename, 'w') as f:
-            format_line = molecule_format + "%-10s%-10s\n"
+            format_line = self.molecule_format + "%-10s%-10s\n"
             f.write(format_line % ("#Molecule", "#Command", "#Permutation"))
             for mol_index, mol_results in enumerate(self.results):
                 for line_index, command_result in enumerate(mol_results):
-                    f.write(molecule_format % (command_result.molecule.metadata.appellation()))
-                    f.write("%-10s" % (get_line_header(line_index, command_result)))
+                    f.write(self.molecule_format % (command_result.molecule.metadata.appellation()))
+                    f.write("%-10s" % (get_line_header(line_index, command_result.operation)))
                     write_array_to_file(f, command_result.perm, True)
                     f.write("\n")
 

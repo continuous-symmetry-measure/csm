@@ -1,6 +1,49 @@
 The Python CSM Package
 ======================
 
+Changes in version 1.1.1
+------------------------
+* change --output-perms to output to folder instead of single file
+* change from op name to op code
+
+Changes in version 1.1.0
+------------------------
+* allow remove-hy + select-atoms
+* add flag ignore-atoms
+* allow use of --use-perm with remove-hy, ignore-atoms,or  select-atoms using the original indices
+* output chain perms in csvs created with --verbose in approx
+* enable use of  --verbose flag with trivial as well
+* fix bug in output to both verbose csvs and perms.csv when running chirality calculation
+* fix bug in perms.csv when running on multiple molecules
+* add additional fields to csvs created for approx in verbose regarding structure preservation
+* enable reading .sd files
+* fix bug in chaining of multiple sdf files in results
+
+
+
+Changes in version 1.0.0
+------------------------
+* parallel calculations with --parallel, with output during calculations
+* check for cmd.txt before reading molecules
+* copy cmd.txt to results folder
+* --output-perms no longer receives a filename, it is a simple true/false flag that is saved to the results folder as perms.csv
+* fixes to spacing in output
+* cleaning up of chirality code for future easier debugging
+
+Changes in version 0.22.4
+------------------------
+* bug fixes to writing csm files
+* vast simplification of setup.py install process
+
+Changes in version 0.22.3
+------------------------
+* primarily: adding a test suite
+* clean up some of the arguments
+* write initial molecule normalized
+* bug fix: sn_max wasn't being used
+* added filepath to metadata
+* bug fixes to nromalization
+
 Changes in version 0.22.2
 ------------------------
 * fixed bug in pyx files

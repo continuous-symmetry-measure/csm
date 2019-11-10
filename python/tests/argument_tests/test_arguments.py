@@ -9,8 +9,9 @@ import pytest
 import shutil
 
 from csm.main.csm_run import csm_run
+from tests.argument_tests.files_for_tests.local_settings import test_dir
 
-test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
+#test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
 
 class RunThings():
     def _run_args(self, args_str, results_folder):
@@ -23,11 +24,11 @@ class RunThings():
 class TestBasic(RunThings):
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    try:
-        shutil.rmtree(results_folder)
-    except FileNotFoundError:
-        pass 
-    os.mkdir(results_folder)
+    #try:
+    #    shutil.rmtree(results_folder)
+    #except FileNotFoundError:
+    #    pass
+    #os.mkdir(results_folder)
 
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
@@ -76,13 +77,54 @@ class TestBasic(RunThings):
         assert expected_str == output_str
 
     def test_select_atoms(self):
-        # --select-atoms removes sepcific atoms. cannot be used in conjunction with remove-hy
+        # --select-atoms removes specific atoms.
         # baseline:
         # cmd="exact c2 --input 4-helicene.mol --keep-structure"
         # results=self.run_args(cmd)
         # assert len(results[0][0].molecule) == 30
 
         cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2"
+        results = self.run_args(cmd)
+        assert len(results[0][0].molecule) == 7
+
+        # test output
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            output_str = file.read()
+        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            expected_str = file.read()
+
+        assert expected_str == output_str
+
+    def test_select_atoms_remove_hy(self):
+        # --select-atoms removes specific atoms.
+        # --remove-hy removes 'H' atoms.
+
+        cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2 --remove-hy"
+        results = self.run_args(cmd)
+        assert len(results[0][0].molecule) == 7
+
+        # test output
+        with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            output_str = file.read()
+        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
+            file.readline()
+            file.readline()  # skip the openbabel line, which changes every time
+            expected_str = file.read()
+
+        assert expected_str == output_str
+
+    def test_ignore_atoms(self):
+        # --ignore-atoms removes specific atoms.
+        # The test checks that the result is identical to the result by use --select-atoms
+
+        # cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2"  # len(_atoms) = 30
+        cmd = "exact c2 --input 4-helicene.mol --ignore-atoms 3-14,20-30"
         results = self.run_args(cmd)
         assert len(results[0][0].molecule) == 7
 
@@ -155,6 +197,7 @@ class TestBasic(RunThings):
 
     # output
     def test_legacy(self):
+        #why is it printing filename instead of index all of a sudden?
         # --legacy-output prints old style csm format
         cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.txt".format(
             self.results_folder)
@@ -166,6 +209,7 @@ class TestBasic(RunThings):
         assert out == exp
 
     def test_json_output(self):
+        #same problem as legacy
         # --json-output. only works with --legacy-output
         cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.json --json-output".format(
             self.results_folder)
@@ -211,6 +255,25 @@ class TestBasic(RunThings):
         # todo: because the output contains a variable runtime, running a comparison is a bit tedious, leaving it for now
 
     # shared stuff
+
+    # try:
+    #    shutil.rmtree(results_folder)
+    # except FileNotFoundError:
+    #    pass
+    # os.mkdir(results_folder)
+
+    def run_args(self, args_str):
+        return super()._run_args(args_str, self.results_folder)
+
+    #parallel
+    def test_parallel_mols_in_file(self):
+        cmd = "comfile comfile.txt --input many-mols.xyz --parallel"
+        result1 = self.run_args(cmd)
+        with open(os.path.join(self.results_folder, "csm.txt"), "r") as file:
+            out = file.read()
+        with open(os.path.join("parallel-out", "csm.txt"), "r") as file:
+            exp = file.read()
+        assert out == exp
 
     def test_sn_max(self):
         # --sn-max (relevant only for chirality)
@@ -259,6 +322,10 @@ class TestBasic(RunThings):
         cmd = "exact c4 --input squarate.xyz --use-perm squarateperm.txt"
         results = self.run_args(cmd)
         assert results[0][0].perm == [0, 1, 2, 3, 4, 5, 6, 7]
+        cmd = "exact cs --input cryptands-no-metal.sdf --use-perm perm_select_atoms.txt" \
+              " --select-atoms 7,11-14 --select-mol 1"
+        results = self.run_args(cmd)
+        assert results[0][0].perm == [4, 3, 2, 1, 0]
 
     def test_keep_structure(self):
         cmd = "exact cs --input 4-helicene.mol --keep-structure"
@@ -266,7 +333,10 @@ class TestBasic(RunThings):
         assert results[0][0].csm == pytest.approx(0.793551, abs=1e-5)
 
     def test_output_perms(self):
-        cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms {}/perms.csv".format(self.results_folder)
+        with open(os.path.join(self.results_folder, "perms.csv"), 'w') as file:
+            #reset perms.csv
+            pass
+        cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms"
         self.run_args(cmd)
         out_rows = []
         with open(os.path.join(self.results_folder, "perms.csv"), 'r') as file:
@@ -274,12 +344,12 @@ class TestBasic(RunThings):
             for row in reader:
                 out_rows.append(row)
         assert out_rows == [
-            ['Permutation', 'Direction', 'CSM'],
+            ['Molecule', 'op','Permutation', 'Direction', 'CSM'],
             [
-                '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
+                '4-helicene.mol', 'CS2', '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
                 '[0.042475 0.020727 0.998883]', '0.7935529301987154'],
             [
-                '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
+                '4-helicene.mol', 'CS2', '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
                 '[-0.514303 -0.856692  0.039646]', '0.7935519339113517']
         ]
 
@@ -310,53 +380,53 @@ class TestBasic(RunThings):
         # default
         cmd = "approx c3 --input 3alb-gkt4-h.pdb"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 9
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 9
         # detect-outliers
         cmd = "approx c3 --input 3alb-gkt4-h.pdb --detect-outliers"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 18
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 18
         # no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --no-orthogonal"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 3
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 3
         # use-best-dir
         cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 3
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 3
         # use-best-dir + --no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir --no-orthogonal"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 1
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 1
         # fibonacci
         cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 20"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 20
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 20
         # dir
         cmd = "approx c3 --input 2rla-s3.pdb --dir 1 0 0"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']) == 1
+        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 1
 
     def test_algorithms(self):
         # default
         cmd = "approx c3 --input 2rla-s3.pdb"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats1 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
+        stats1 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
         # greedy
         cmd = "approx c3 --input 2rla-s3.pdb --greedy"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats2 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
+        stats2 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
         # many-chains
         cmd = "approx c3 --input 2rla-s3.pdb --many-chains"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats3 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
+        stats3 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
         # keep-structure
         cmd = "approx c3 --input 2rla-s3.pdb --keep-structure"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats4 = tuple(results[0][0].ongoing_statistics['approx'][3]['stats']['dirs'][0])
+        stats4 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
 
         test = set([stats1, stats2, stats3, stats4])
         assert len(test) == 4
@@ -365,8 +435,8 @@ class TestBasic(RunThings):
 class TestFragments(RunThings):
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    shutil.rmtree(results_folder)
-    os.mkdir(results_folder)
+    #shutil.rmtree(results_folder)
+    #os.mkdir(results_folder)
 
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
@@ -411,6 +481,70 @@ class TestFragments(RunThings):
             results = self.run_args(cmd)
             print(cmd)
             assert len(results[0][0].molecule.chains) == 6
+
+
+class TestChirality(RunThings):
+    results_folder = "csm_tests"
+    def run_args(self, args_str):
+        return super()._run_args(args_str, self.results_folder)
+    def test_trivial(self):
+        # --babel-bond computes bonding
+        cmd = "trivial ch --input ferrocene.xyz"
+        result1 = self.run_args(cmd)
+        assert result1[0][0].csm == pytest.approx(17.152493, abs=1e-5)
+        assert result1[0][0].overall_statistics["best chirality"] == "CS"
+
+    def test_trivial_2(self):
+        cmd = "trivial ch --input ferrocene.xyz --babel-bond"
+        results = self.run_args(cmd)
+        assert results[0][0].csm == pytest.approx(17.152493, abs=1e-5)
+        assert results[0][0].overall_statistics["best chirality"] == "CS"
+
+    def test_trivial_3(self):
+        cmd = "trivial ch --input 2rla-s3.pdb"
+        result1 = self.run_args(cmd)
+        assert result1[0][0].csm == pytest.approx(0.111737, abs=1e-5)
+        assert result1[0][0].overall_statistics["best chirality"] == "CS"
+
+    def test_trivial_4(self):
+        cmd = "trivial ch --input 2rla-s3.pdb --permute-chains"
+        result2 = self.run_args(cmd)
+        assert result2[0][0].csm == pytest.approx(0.111737, abs=1e-5)
+        assert result2[0][0].overall_statistics["best chirality"] == "CS"
+
+    def test_exact(self):
+        # --sn-max (relevant only for chirality)
+        cmd = "exact ch --input bis(dth)copper(I).mol" #matches
+        result1 = self.run_args(cmd)
+        assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
+        assert result1[0][0].overall_statistics["best chirality"] == "S4"
+
+    def test_exact_2(self):
+        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2" #matches
+        result2 = self.run_args(cmd)
+        assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
+        assert result2[0][0].overall_statistics["best chirality"] == "CS"
+
+    def test_approx(self):
+        cmd = "approx ch --input ferrocene.xyz --babel-bond" #matches
+        results = self.run_args(cmd)
+        assert results[0][0].csm == pytest.approx(0.241361, abs=1e-5)
+        assert results[0][0].overall_statistics["best chirality"] == "CS"
+
+    def test_approx_2(self):
+        cmd = "approx ch --input bis(dth)copper(I).mol" #matches
+        result1 = self.run_args(cmd)
+        assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
+        assert result1[0][0].overall_statistics["best chirality"] == "S4"
+
+    def test_approx_3(self):
+        cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2" #matches
+        result2 = self.run_args(cmd)
+        assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
+        assert result2[0][0].overall_statistics["best chirality"] == "CS"
+
+
+
 
 
 class xTestComplicated(RunThings):

@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 from argparse import ArgumentParser, SUPPRESS, HelpFormatter
 from datetime import datetime
 
@@ -6,6 +7,7 @@ import os
 
 from csm import __version__
 from csm.calculations.data_classes import Operation
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 import sys
@@ -32,10 +34,12 @@ def _create_parser():
         parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?',
                             help='xyz connectivity file, default is connectivity.txt in current working directory')
         mutex_args = parser.add_mutually_exclusive_group()
-        mutex_args.add_argument('--remove-hy', action='store_true', default=False,
-                                help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
         mutex_args.add_argument('--select-atoms', default=None,
-                                help='Select only some atoms, eg 1-20,15,17,19-21')
+                                 help='Select only some atoms, eg 1-20,15,17,19-21')
+        mutex_args.add_argument('--ignore-atoms', default=None,
+                                help='Ignore some atoms, eg 1-20,15,17,19-21')
+        parser.add_argument('--remove-hy', action='store_true', default=False,
+                                help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
         parser.add_argument('--select-mols', default=None,
                             help='Select only some molecules, eg 1-20,15,17,19-21')
         parser.add_argument('--ignore-sym', action='store_true', default=False,
@@ -188,8 +192,8 @@ def _create_parser():
                             help='Compute exact CSM for a single permutation, default is current directory/perm.txt')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
-    exact_args.add_argument('--output-perms', const="DEFAULT", nargs='?',
-                            help='Writes all enumerated permutations to file. Default is OUTPUT_DIR/perms.csv, or working directory/perms.csv is --output not selected')
+    exact_args.add_argument('--output-perms', action='store_true', default=False,
+                            help = 'Writes all enumerated permutations to files in folder exact in results-- does not work with parallel')
     shared_normalization_utility_func(exact_args)
     add_input_output_utility_func(exact_args_)
 
@@ -275,6 +279,7 @@ def _process_arguments(parse_res):
 
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
         dictionary_args['select_atoms'] = _parse_ranges_and_numbers(parse_res.select_atoms)
+        dictionary_args['ignore_atoms'] = _parse_ranges_and_numbers(parse_res.ignore_atoms)
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
@@ -297,8 +302,13 @@ def _process_arguments(parse_res):
         parse_output(dictionary_args)
 
         if parse_res.parallel is not None:
-            dictionary_args['pool_size'] = parse_res.parallel
-            dictionary_args['parallel'] = True  # doing this before previous line causes weird bug
+            pool_size = parse_res.parallel
+            if pool_size == 0:
+                pool_size = multiprocessing.cpu_count() - 1
+            pool_size = min(pool_size,
+                            multiprocessing.cpu_count())  # do not allow a pool size greater than the number of cpus
+            dictionary_args['pool_size'] = pool_size
+            dictionary_args['parallel'] = True
 
         if parse_res.command == "comfile":
             dictionary_args["command_file"] = parse_res.comfile
@@ -310,13 +320,9 @@ def _process_arguments(parse_res):
             if parse_res.command == 'exact':
                 if parse_res.use_perm:
                     dictionary_args['perm_file_name'] = parse_res.use_perm
-                dictionary_args['perms_csv_name'] = parse_res.output_perms
-                if parse_res.output_perms == "DEFAULT":
-                    try:
-                        base_path = os.path.dirname(os.path.abspath(dictionary_args["out_file_name"]))
-                        dictionary_args['perms_csv_name'] = os.path.join(base_path, "perms.csv")
-                    except:
-                        dictionary_args['perms_csv_name'] = os.path.join("perms.csv")
+                if parse_res.output_perms and parse_res.parallel:
+                    logger.warning("cannot output perms while running a calculation in parallel")
+
             if parse_res.command == 'approx':
                 # choose dir:
                 # dictionary_args['detect_outliers'] = parse_res.detect_outliers
@@ -356,9 +362,10 @@ def _process_arguments(parse_res):
             if not os.path.isfile(out_file_name):
                 head, tail = os.path.split(out_file_name)
                 dictionary_args['out_file_name'] = os.path.join(head, tail + timestamp)
-            else:
-                filename = os.path.basename(out_file_name)
-                filename = filename[:-4] + timestamp + filename[-4:]
+            else:  # for a file, rather than a folder-- only relevant for legacy
+                filename = Path.name(out_file_name)
+                fileext = Path.suffix(out_file_name)
+                filename = filename + timestamp + fileext
                 head, tail = os.path.split(out_file_name)
                 dictionary_args['out_file_name'] = os.path.join(head, filename)
 
