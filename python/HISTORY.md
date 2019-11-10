@@ -1,6 +1,11 @@
 The Python CSM Package
 ======================
 
+Changes in version 1.1.1
+------------------------
+* change --output-perms to output to folder instead of single file
+* change from op name to op code
+
 Changes in version 1.1.0
 ------------------------
 * allow remove-hy + select-atoms
@@ -12,7 +17,7 @@ Changes in version 1.1.0
 * fix bug in perms.csv when running on multiple molecules
 * add additional fields to csvs created for approx in verbose regarding structure preservation
 * enable reading .sd files
-* fix bug in chanining of multiple sdf files in results
+* fix bug in chaining of multiple sdf files in results
 
 
 
