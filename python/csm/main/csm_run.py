@@ -214,7 +214,8 @@ def calc(dictionary_args):
                     now=datetime.now()
                     #print("calculating partial results for chunk{}-{} - {}".format(i, end_index, now.strftime("%d/%m/%Y %H:%M:%S")))
                     partial_results = pool.map(single_calculation, args_array)
-                    #partial_results = parallel_calc(flattened_args[i:end_index], pool_size)
+
+
 
                     m_range=int((end_index-i)/num_ops)
                     unflattened_partial_results=[

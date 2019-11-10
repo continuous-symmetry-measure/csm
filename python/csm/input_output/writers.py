@@ -747,6 +747,7 @@ class ScriptContextWriter(ContextWriter):
 
     def write(self, molecule_results):
         # receives result array for single molecule, and appends to all the relevant files
+        #print(self.folder)
         self.write_csm(molecule_results)
         self.write_dir(molecule_results)
         self.write_perm(molecule_results)

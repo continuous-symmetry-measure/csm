@@ -320,6 +320,9 @@ def _process_arguments(parse_res):
             if parse_res.command == 'exact':
                 if parse_res.use_perm:
                     dictionary_args['perm_file_name'] = parse_res.use_perm
+                if parse_res.output_perms and parse_res.parallel:
+                    logger.warning("cannot output perms while running a calculation in parallel")
+
             if parse_res.command == 'approx':
                 # choose dir:
                 # dictionary_args['detect_outliers'] = parse_res.detect_outliers
