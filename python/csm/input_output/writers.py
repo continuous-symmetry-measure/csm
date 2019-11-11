@@ -324,8 +324,8 @@ class MoleculeWrapper:
         self.symmetric=symmetric
         self.normalized=normalized
         self._molecule_coords=self.result.get_coords(symmetric, normalized)
-        self.set_symmetric_title(symmetric)
-        self.set_normalized_title(normalized)
+        self._set_symmetric_title(symmetric)
+        self._set_normalized_title(normalized)
 
     def obms_from_molecule(self, molecule):
         obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
@@ -434,7 +434,7 @@ class MoleculeWrapper:
         description = "index=" + str(self.metadata.index + 1) + ";" + "filename: " + self.metadata.filename
         self.append_description(description)
 
-    def set_symmetric_title(self, symmetric=True):
+    def _set_symmetric_title(self, symmetric=True):
         self.clean_title("(Original)")
         self.clean_title("(Symmetric)")
         if symmetric:
@@ -442,7 +442,7 @@ class MoleculeWrapper:
         else:
             self.append_title("(Original)")
 
-    def set_normalized_title(self, normalized=True):
+    def _set_normalized_title(self, normalized=True):
         self.clean_title("Denormalized")
         self.clean_title("Normalized")
         if normalized:
