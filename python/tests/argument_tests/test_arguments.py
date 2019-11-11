@@ -74,7 +74,7 @@ class TestBasic(RunThings):
             file.readline()  # skip the openbabel line, which changes every time
             expected_str = file.read()
 
-        assert expected_str == output_str
+        assert expected_str.strip() == output_str.strip()
 
     def test_select_atoms(self):
         # --select-atoms removes specific atoms.
@@ -97,7 +97,7 @@ class TestBasic(RunThings):
             file.readline()  # skip the openbabel line, which changes every time
             expected_str = file.read()
 
-        assert expected_str == output_str
+        assert expected_str.strip() == output_str.strip()
 
     def test_select_atoms_remove_hy(self):
         # --select-atoms removes specific atoms.
@@ -117,7 +117,7 @@ class TestBasic(RunThings):
             file.readline()  # skip the openbabel line, which changes every time
             expected_str = file.read()
 
-        assert expected_str == output_str
+        assert expected_str.strip() == output_str.strip()
 
     def test_ignore_atoms(self):
         # --ignore-atoms removes specific atoms.
@@ -138,7 +138,7 @@ class TestBasic(RunThings):
             file.readline()  # skip the openbabel line, which changes every time
             expected_str = file.read()
 
-        assert expected_str == output_str
+        assert expected_str.strip() == output_str.strip()
 
     def test_ignore_sym(self):
         # --ignore-sym ignores atomic symbols
@@ -206,7 +206,7 @@ class TestBasic(RunThings):
             out = ofile.read()
         with open(os.path.join("expected", "legacy.txt"), 'r') as ofile:
             exp = ofile.read()
-        assert out == exp
+        assert out.strip() == exp.strip()
 
     def test_json_output(self):
         #same problem as legacy
@@ -218,7 +218,7 @@ class TestBasic(RunThings):
             out = ofile.read()
         with open(os.path.join("expected", "legacy.json"), 'r') as ofile:
             exp = ofile.read()
-        assert out == exp
+        assert out.strip() == exp.strip()
 
     def test_print_denorm(self):
         # --print-denorm prints denormalized coordinates for original molecule instead of normalized
@@ -244,7 +244,7 @@ class TestBasic(RunThings):
             out = file.read()
         with open(os.path.join("expected", "example-legacy-file.xyz"), "r") as file:
             exp = file.read()
-        assert out == exp
+        assert out.strip() == exp.strip()
 
     def test_verbose(self):
         # verbose-- approx only
@@ -380,53 +380,53 @@ class TestBasic(RunThings):
         # default
         cmd = "approx c3 --input 3alb-gkt4-h.pdb"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 9
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 9
         # detect-outliers
         cmd = "approx c3 --input 3alb-gkt4-h.pdb --detect-outliers"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 18
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 18
         # no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --no-orthogonal"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 3
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 3
         # use-best-dir
         cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 3
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 3
         # use-best-dir + --no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir --no-orthogonal"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 1
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 1
         # fibonacci
         cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 20"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 20
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 20
         # dir
         cmd = "approx c3 --input 2rla-s3.pdb --dir 1 0 0"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 1
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 1
 
     def test_algorithms(self):
         # default
         cmd = "approx c3 --input 2rla-s3.pdb"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats1 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
+        stats1 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # greedy
         cmd = "approx c3 --input 2rla-s3.pdb --greedy"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats2 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
+        stats2 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # many-chains
         cmd = "approx c3 --input 2rla-s3.pdb --many-chains"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats3 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
+        stats3 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # keep-structure
         cmd = "approx c3 --input 2rla-s3.pdb --keep-structure"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats4 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
+        stats4 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
 
         test = set([stats1, stats2, stats3, stats4])
         assert len(test) == 4
