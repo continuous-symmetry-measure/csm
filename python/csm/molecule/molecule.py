@@ -539,47 +539,44 @@ class Molecule:
             :param removeList: atomic symbols to remove
         """
 
-        removed_atoms = []
-        fixed_indexes = [i for i in range(len(self))]
+        indices_to_remove=[]
+        if select_atoms:
+            indices_to_remove=[i for i in range(len(self._atoms)) if i not in select_atoms]
+        elif ignore_atoms:
+            indices_to_remove = ignore_atoms
+        indices_to_remove=set(indices_to_remove)
 
-        if ignore_atoms and select_atoms:  # Unnecessary
-            raise ValueError("Error: argument --ignore-atoms: not allowed with argument --select-atoms")
+        #check for bad input 1: index provided that doesnt exist:
+        set_of_all_atoms = set(range(len(self._atoms)))
+        if len(set_of_all_atoms.union(indices_to_remove))!=len(set_of_all_atoms):
+            raise ValueError("An atom index you have input to --select-atoms or --ignore-atoms does not exist in the molecule")
 
-        for a in ignore_atoms:  # checks if the user want remove atom that not exists
-            if a >= len(self._atoms):
-                raise ValueError("ERROR - You try removed not exist atom")
-        for a in select_atoms:  # checks if the user want remove atom that not exists
-            if a >= len(self._atoms) or a < 0:
-                raise ValueError("ERROR - You try select not exist atom")
-
-        for i in range(len(self._atoms)):
-            if remove_hy:
-                if self._atoms[i].symbol == "H":
-                    if i in select_atoms:
-                        raise ValueError("Error - You aren't allowed to select hydrogen's index {} with the flag --remove-hy".format(i))
-                    if i not in removed_atoms:  # checks if i is removed by --select-atoms / --ignore-atoms
-                        removed_atoms.append(i)
-                        fixed_indexes[i] = None
-                else:
-                    # however many atoms have been removed up to this index is the amount its index needs adjusting by
-                    fixed_indexes[i] -= len(removed_atoms)
-
+        #add remove hy:
+        if remove_hy:
+            hy_atoms_indices=set([i for i in range(len(self._atoms)) if self._atoms[i].symbol =="H"])
+            #check for bad input 2:
             if select_atoms:
-                if i not in select_atoms:
-                    if i not in removed_atoms:  # checks if i is removed by --remove-hy
-                        removed_atoms.append(i)
-                        fixed_indexes[i] = None
-                elif not remove_hy:
-                    # however many atoms have been removed up to this index is the amount its index needs adjusting by
-                    fixed_indexes[i] -= len(removed_atoms)
-            elif ignore_atoms:
-                if i in ignore_atoms:
-                    if i not in removed_atoms:  # checks if i is removed by --remove-hy
-                        removed_atoms.append(i)
-                        fixed_indexes[i] = None
-                elif not remove_hy:
-                    # however many atoms have been removed up to this index is the amount its index needs adjusting by
-                    fixed_indexes[i] -= len(removed_atoms)
+                if hy_atoms_indices.intersection(set(select_atoms)):
+                    raise ValueError("Cannot use --remove-hy and then select a hydrogen atom with --select-atoms")
+            #add the hydrogens
+            indices_to_remove=indices_to_remove.union(hy_atoms_indices)
+
+        indices_to_remove=sorted(indices_to_remove)
+
+        self._deleted_atom_indices=indices_to_remove #needed when writing output of molecule to file via openbabel
+        self.fixed_indexes = fixed_indexes= [i for i in range(len(self))] #initializing here before the return because we use it when reading permutation
+        if not indices_to_remove: #relevant if remove-hy was selected but no hydrogen in molecule (may as well save time)
+            return
+
+        #we now store a mapping of each atom to its new index once all relevant atoms have been removed, in order to update connectivity
+        num_removed_atoms=0
+        for i in range(len(self._atoms)):
+            if i in indices_to_remove:
+                num_removed_atoms+=1
+                fixed_indexes[i] = None
+            else:
+                # however many atoms have been removed up to this index is the amount its index needs adjusting by
+                fixed_indexes[i] -= num_removed_atoms
 
 
         # adjust the connectivity indices before we do any popping whatsoever
@@ -590,13 +587,13 @@ class Molecule:
                     adjacent_new.append(fixed_indexes[adjacent])
             atom.adjacent = adjacent_new
 
-        for to_remove in reversed(removed_atoms):  # reversed order because popping changes indexes after
+        for to_remove in reversed(indices_to_remove):  # reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
-            self._deleted_atom_indices.append(to_remove)
-            # if remove_hy: #this is meant to affect print at end
-            # self._obmol.DeleteAtom(self._obmol.GetAtom(to_remove + 1))
-        self.fixed_indexes = fixed_indexes
+
+        self.fixed_indexes = fixed_indexes #overwrite default value
         self._create_bondset()
+
+        print(self._deleted_atom_indices)
         # logger.debug(len(removed_atoms), "atoms removed")
 
     def _calculate_center_of_mass(self):

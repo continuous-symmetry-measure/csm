@@ -85,6 +85,7 @@ def get_command_args(command_file, old_command=True, **dictionary_args):
             try:
                 in_args = get_parsed_args(fixed_args)
                 args_dict={**dictionary_args, **in_args}
+                args_dict["line_command"]=line
             except:  # want to be able to run even if some lines are invalid
                 print("failed to read args from line", line)
                 continue
@@ -246,6 +247,7 @@ def calc(dictionary_args):
         for mol_index, mol_args in enumerate(total_args):
             mol_results = []
             for line_index, args_dict in enumerate(mol_args):
+                
                 # create perms.csv if relevant
                 args_dict["perms_csv_name"]=create_perms_csv(args_dict, line_index, rw)
 

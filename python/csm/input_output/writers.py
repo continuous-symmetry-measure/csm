@@ -320,7 +320,7 @@ class MoleculeWrapper:
             for atom_index in range(num_atoms):
                 self._obm_atom_indices.append((mol_index, atom_index))
 
-        for to_remove in molecule._deleted_atom_indices:
+        for to_remove in reversed(molecule._deleted_atom_indices):
             mol_index, atom_index = self._obm_atom_indices[to_remove]
             obmol = obmols[mol_index]
             obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
