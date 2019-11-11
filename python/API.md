@@ -252,14 +252,19 @@ This is a class returned from the program representing the results of the CSM ca
     perm_count: The number of permutations of the molecule
     local_csm: 
     d_min:
-    symmetric_structure: the most symmetric structure when molecule permuted
-    normalized_symmetric_structure: the normalized symmetric structure
-    normalized_molecule_coords: the normalized molecule coordinates
     formula_csm: a recalculation of the symmetry value using a formula to measure symmetry. Should be close to identical
                     to algorithm result
     """
 
 ###methods
+
+####symmetric_structure
+can be called with normalized=True/False, and will return symmetric structure coordinates (centered at origin), either
+normalized or not
+
+####molecule_coords
+can be called with normalized=True/False, and will return molecule coordinates (centered at origin), either
+normalized or not
 
 ####create_symmetric_structure
 

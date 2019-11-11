@@ -134,7 +134,7 @@ class CSMResult(Result):
         self.skipped = False
         # input
         self.molecule = state.molecule.copy()  # not yet denormalized
-        self.normalized_molecule_coords = np.array(self.molecule.Q)
+        self._normalized_molecule_coords = np.array(self.molecule.Q)
         self.molecule.de_normalize()
         self.operation = operation
         self.op_type = state.op_type
@@ -144,12 +144,12 @@ class CSMResult(Result):
         self.csm = state.csm
         self.dir = state.dir
         self.perm = state.perm
-        self.normalized_symmetric_structure = self.create_symmetric_structure(self.normalized_molecule_coords,
+        self._normalized_symmetric_structure = self.create_symmetric_structure(self.molecule_coords(normalized=True),
                                                                               self.perm, self.dir, self.op_type,
                                                                               self.op_order)
-        self.symmetric_structure = de_normalize_coords(list(self.normalized_symmetric_structure),
+        self._symmetric_structure = de_normalize_coords(list(self._normalized_symmetric_structure),
                                                        self.molecule.norm_factor)
-        self.formula_csm = self.get_CSM_by_formula(self.molecule, self.symmetric_structure)
+        self.formula_csm = self.get_CSM_by_formula(self.molecule, self._symmetric_structure)
 
         # stats
         self.overall_statistics = overall_stats
@@ -172,6 +172,24 @@ class CSMResult(Result):
         self.overall_statistics["formula CSM"] = self.formula_csm
 
         self.chain_perm, self.chain_perm_string=get_chain_perm_string(self.molecule, self.perm)
+
+    def symmetric_structure(self, normalized=False):
+        if normalized:
+            return self._normalized_symmetric_structure
+        else:
+            return self._symmetric_structure
+
+    def molecule_coords(self, normalized=False):
+        if normalized:
+            return self._normalized_molecule_coords
+        else:
+            return np.array(self.molecule.Q)
+
+    def get_coords(self, symmetric=False, normalized=False):
+        if symmetric:
+            return self.symmetric_structure(normalized)
+        else:
+            return self.molecule_coords(normalized)
 
     @property
     def d_min(self):
@@ -294,15 +312,15 @@ class CSMResult(Result):
         return {"Result":
             {
                 "molecule": self.molecule.to_dict(),
-                "normalized_molecule_coords": [list(i) for i in self.normalized_molecule_coords],
+                "normalized_molecule_coords": [list(i) for i in self.molecule_coords(normalized=True)],
                 "operation": self.operation.to_dict(),
 
                 "csm": self.csm,
                 "perm": self.perm,
                 "dir": list(self.dir),
 
-                "normalized_symmetric_structure": [list(i) for i in self.normalized_symmetric_structure],
-                "symmetric_structure": [list(i) for i in self.symmetric_structure],
+                "normalized_symmetric_structure": [list(i) for i in self.symmetric_structure(normalized=True)],
+                "symmetric_structure": [list(i) for i in self.symmetric_structure()],
                 "formula_csm": self.formula_csm,
 
                 "overall stats": self.overall_statistics,
@@ -331,7 +349,7 @@ class FailedResult(Result):
             self.skipped = True
 
         self.molecule = molecule
-        self.normalized_molecule_coords = []
+        self._normalized_molecule_coords = []
         self.operation = kwargs["operation"]
         self.op_type = self.operation.type
         self.op_order = self.operation.order
@@ -340,8 +358,8 @@ class FailedResult(Result):
         self.csm = "n/a"
         self.dir = ["n/a", "n/a", "n/a"]
         self.perm = ["n/a"]
-        self.normalized_symmetric_structure = []  # [["n/a"] for i in range(len(molecule))]
-        self.symmetric_structure = []  # [[0,0,0] for i in range(len(molecule))]
+        self._normalized_symmetric_structure = []  # [["n/a"] for i in range(len(molecule))]
+        self._symmetric_structure = []  # [[0,0,0] for i in range(len(molecule))]
         self.formula_csm = "n/a"
 
         self.overall_statistics = {
@@ -350,7 +368,14 @@ class FailedResult(Result):
         }
 
         self.ongoing_statistics = {}
+    def symmetric_structure(self, normalized=False):
+        return []
 
+    def molecule_coords(self, normalized=False):
+        return []
+
+    def get_coords(self, symmetric=False, normalized=False):
+        return []
     def __repr__(self):
         return super(FailedResult, self).__repr__() + "\tFailure: " + self.failed_reason
 

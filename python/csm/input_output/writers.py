@@ -59,16 +59,19 @@ class LegacyFormatWriter:
         f.write("%s: %s\n" % (self.result.operation.name, self.format_CSM(self.result.csm)))
         f.write("SCALING FACTOR: %7lf\n" % self.non_negative_zero(self.result.d_min))
 
-        molecule_writer = MoleculeWriter(MoleculeWrapper(self.result))
+        molecule_writer = MoleculeWrapper(self.result,symmetric=False, normalized=True)
         if self.format == 'pdb':
             f.write("\nMODEL 01")
         f.write("\nINITIAL STRUCTURE COORDINATES\n")
-        molecule_writer.write_original(f, self.result, consecutive=True)
+        molecule_writer.clean_trait_titles()
+        molecule_writer.write(f, self.result, consecutive=True)
 
         if self.format == 'pdb':
             f.write("\nMODEL 02")
         f.write("\nRESULTING STRUCTURE COORDINATES\n")
-        molecule_writer.write_symmetric(f, self.result, consecutive=True)
+        molecule_writer.set_traits(symmetric=True, normalized=False)
+        molecule_writer.clean_trait_titles()
+        molecule_writer.write(f, self.result, consecutive=True)
         if self.format == 'pdb':
             f.write("END\n")
 
@@ -119,11 +122,11 @@ class LegacyFormatWriter:
                 "perm": self.result.perm,
                 "dir": list(self.result.dir),
                 "d_min": self.result.d_min,
-                "symmetric_structure": [list(i) for i in self.result.symmetric_structure],
+                "symmetric_structure": [list(i) for i in self.result.symmetric_structure(normalized=False)],
                 "local_csm": list(self.result.local_csm),
                 "formula_csm": self.result.formula_csm,
-                "normalized_molecule_coords": [list(i) for i in self.result.normalized_molecule_coords],
-                "normalized_symmetric_structure": [list(i) for i in self.result.normalized_symmetric_structure],
+                "normalized_molecule_coords": [list(i) for i in self.result.molecule_coords(normalized=True)],
+                "normalized_symmetric_structure": [list(i) for i in self.result.symmetric_structure(normalized=True)],
             }
         }
 
@@ -138,16 +141,16 @@ class MoleculeWriter:
         if self.format == "csm":
             self.write_molecule = self._write_csm_molecule
 
-    def write_symmetric(self, f, result, consecutive=False, model_number=None):
-        if result.skipped:
-            return
-        self.write_molecule(f, result.symmetric_structure, consecutive, model_number)
+    def write(self, f, coords, consecutive=False, model_number=None):
+        self.write_molecule(f, coords, consecutive, model_number)
 
-    def write_original(self, f, result, consecutive=False, model_number=None, print_denorm=False):
-        if print_denorm:
-            self.write_molecule(f, result.molecule.atoms, consecutive, model_number)
-        else:
-            self.write_molecule(f, result.normalized_molecule_coords, consecutive, model_number)
+    # def write_symmetric(self, f, result, consecutive=False, model_number=None, normalized=True):
+    #     if result.skipped:
+    #         return
+    #     self.write_molecule(f, result.symmetric_structure(normalized=normalized), consecutive, model_number)
+    #
+    # def write_original(self, f, result, consecutive=False, model_number=None, normalized=True):
+    #     self.write_molecule(f, result.molecule_coords(normalized=normalized), consecutive, model_number)
 
     def _write_csm_molecule(self, f, coordinates, *args, **kwargs):
         size = len(coordinates)
@@ -296,18 +299,33 @@ class MoleculeWrapper:
         def __repr__(self):
             return dict(self.iteritems()).__repr__()
 
-    def __init__(self, result, molecule_index=0, line_index=0):
+    def __init__(self, result, line_index=0, symmetric=False, normalized=False):
         self.result = result
         self.molecule = result.molecule
-        self.molecule_index = molecule_index
         self.line_index = line_index
         self.metadata = result.molecule.metadata
         self.format = self.metadata.format
+        self._molecule_coords="uninitialized"
         if self.format != "csm":
             self.obmols = self.obms_from_molecule(self.molecule)
             self.obmol = self.obmols[0]
             self.moleculedata = MoleculeWrapper.MoleculeData(self.obmol)
             self.set_initial_molecule_fields()
+        self.set_traits(symmetric, normalized)
+
+    def write(self, file, model_number=0, consecutive=False):
+        if self.result.skipped:
+            return
+        mw = MoleculeWriter(self)
+        mw.write(file, self._molecule_coords, consecutive=consecutive, model_number=model_number)
+
+
+    def set_traits(self, symmetric, normalized):
+        self.symmetric=symmetric
+        self.normalized=normalized
+        self._molecule_coords=self.result.get_coords(symmetric, normalized)
+        self.set_symmetric_title(symmetric)
+        self.set_normalized_title(normalized)
 
     def obms_from_molecule(self, molecule):
         obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
@@ -424,6 +442,21 @@ class MoleculeWrapper:
         else:
             self.append_title("(Original)")
 
+    def set_normalized_title(self, normalized=True):
+        self.clean_title("Denormalized")
+        self.clean_title("Normalized")
+        if normalized:
+            self.append_title("Normalized")
+        else:
+            self.append_title("Denormalized")
+
+    def clean_trait_titles(self):
+        #used for legacy
+        self.clean_title("(Original)")
+        self.clean_title("(Symmetric)")
+        self.clean_title("Denormalized")
+        self.clean_title("Normalized")
+
 
 def format_result_CSM(result):
     if result.failed:
@@ -537,7 +570,7 @@ class ScriptContextWriter(ContextWriter):
         format_string = self.molecule_format + "%-10s%-10s\n"
         self.perm_file.write(format_string % ("#Molecule", "#Command", "#Permutation"))
 
-        self.initial_normalized_file = open(
+        self.initial_molecules_file = open(
             os.path.join(self.folder, "initial_normalized_coordinates." + self.out_format),
             'w')
         if self.print_denorm:
@@ -581,7 +614,7 @@ class ScriptContextWriter(ContextWriter):
         self.csm_file.close()
         self.dir_file.close()
         self.perm_file.close()
-        self.initial_normalized_file.close()
+        self.initial_molecules_file.close()
         if self.initial_denormalized_file:
             self.initial_denormalized_file.close()
         self.symmetric_mols_file.close()
@@ -615,30 +648,21 @@ class ScriptContextWriter(ContextWriter):
             f.write("\n")
 
     def write_initial_mols(self, mol_results):
+        molecule_wrapper = MoleculeWrapper(mol_results[0], symmetric=False, normalized=True)
+        file = self.initial_molecules_file
+        molecule_wrapper.write(file, consecutive=True, model_number=self.molecule_index + 1)
 
-        molecule_wrapper = MoleculeWrapper(mol_results[0], self.molecule_index)
-        molecule_wrapper.set_symmetric_title(symmetric=False)
-        mw = MoleculeWriter(molecule_wrapper)
-        file = self.initial_normalized_file
-        mw.write_original(file, molecule_wrapper.result, consecutive=True, model_number=self.molecule_index + 1)
-        if self.initial_denormalized_file:
-            mw.write_original(self.initial_denormalized_file, molecule_wrapper.result, consecutive=True,
-                              print_denorm=True, model_number=self.molecule_index + 1)
 
     def write_symmetric_mols(self, mol_results):
         file = self.symmetric_mols_file
         for command_index, command_result in enumerate(mol_results):
-            if command_result.skipped:
-                continue
             if command_result.failed:
-                print(command_result.molecule.metadata.appellation() + get_line_header(command_index,
-                                                                                       command_result.operation) + " failed, not writing symmetric coordinates")
+                print(command_result.molecule.metadata.appellation() +
+                      get_line_header(command_index, command_result.operation) +
+                      " failed, not writing symmetric coordinates")
                 continue
-            molecule_wrapper = MoleculeWrapper(command_result, self.molecule_index, command_index)
-            molecule_wrapper.set_symmetric_title(symmetric=True)
-            mw = MoleculeWriter(molecule_wrapper)
-            mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
-                               model_number=self.result_index + 1)
+            molecule_wrapper = MoleculeWrapper(command_result, command_index, symmetric=True, normalized=False)
+            molecule_wrapper.write(file, consecutive=True, model_number=self.result_index + 1)
             self.result_index += 1
 
     def write_legacy_files(self, mol_results):
@@ -773,7 +797,7 @@ class ScriptContextWriter(ContextWriter):
         try:
             if self.out_format == "pdb":
                 self.symmetric_mols_file.write("\nEND")
-                self.initial_normalized_file.write("\nEND")
+                self.initial_molecules_file.write("\nEND")
         except:  # no matter what, must close files
             pass
         self.close_files()
@@ -886,16 +910,11 @@ class WebWriter():
         i = 1
         with open(filename, 'w') as file:
             for molecule_wrapper in self.result_molecule_iterator():
-                molecule_wrapper.set_symmetric_title(symmetric=False)
-                mw = MoleculeWriter(molecule_wrapper)
-                mw.write_original(file, molecule_wrapper.result, consecutive=True,
-                                  model_number=i)
+                molecule_wrapper.set_traits(symmetric=False, normalized=False)
+                molecule_wrapper.write(file, consecutive=True, model_number=i)
                 i += 1
-                molecule_wrapper.set_symmetric_title(symmetric=True)
-                mw = MoleculeWriter(molecule_wrapper)
-
-                mw.write_symmetric(file, molecule_wrapper.result, consecutive=True,
-                                   model_number=i)
+                molecule_wrapper.set_traits(symmetric=True, normalized=False)
+                molecule_wrapper.write(file, consecutive=True, model_number=i)
                 i += 1
             if self.format == "pdb":
                 file.write("\nEND")
