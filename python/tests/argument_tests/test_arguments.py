@@ -3,6 +3,7 @@ A set of tests to check that a variety of input arguments are still valid and ha
 that the code runs successfully and returns A result.
 '''
 import csv
+import json
 
 import os
 import pytest
@@ -211,14 +212,13 @@ class TestBasic(RunThings):
     def test_json_output(self):
         #same problem as legacy
         # --json-output. only works with --legacy-output
-        cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.json --json-output".format(
-            self.results_folder)
-        csm_run(cmd.split())
-        with open(os.path.join(self.results_folder, "legacy.json"), 'r') as ofile:
-            out = ofile.read()
-        with open(os.path.join("expected", "legacy.json"), 'r') as ofile:
-            exp = ofile.read()
-        assert out.strip() == exp.strip()
+        cmd = "exact c2 --input squarate.xyz  --json-output --select-mols 1,2"
+        self.run_args(cmd)
+        with open(os.path.join(self.results_folder, "json-results.json"), 'r') as ofile:
+            out=json.loads(ofile.read())
+        with open(os.path.join("expected", "results.json"), 'r') as efile:
+            exp = json.loads(efile.read())
+        assert out == exp
 
     def test_legacy_files(self):
         cmd = "exact c2 --input squarate.xyz --legacy-files"

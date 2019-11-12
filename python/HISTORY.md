@@ -1,6 +1,15 @@
 The Python CSM Package
 ======================
 
+Changes in version 1.1.2
+------------------------
+* fixes to remove-hy, ingore-atoms, select-atoms
+* json-output has been moved from working with --legacy-output to being an option with the standard folder output
+* Result class to_dict no longer includes the ongoing and running statistics, and the useless key "Result" has been removed
+* bug fix to result.from_dict
+* some cleanup and clarification of arguments
+
+
 Changes in version 1.1.1
 ------------------------
 * change --output-perms to output to folder instead of single file

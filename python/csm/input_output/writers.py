@@ -1,5 +1,5 @@
 import csv
-
+import json
 import openbabel as ob
 import os
 import re
@@ -104,33 +104,6 @@ class LegacyFormatWriter:
             f.write("%s %7lf\n" % (self.result.molecule.atoms[i].symbol, self.non_negative_zero(local_csm[i])))
         f.write("\nsum: %7lf\n" % sum)
 
-    def write_json(self, f):
-        import io
-        import json
-        result_io = io.StringIO()
-        self.write(result_io)
-        result_string = result_io.getvalue()
-        result_io.close()
-
-        json_dict = {"Result":
-            {
-                "result_string": result_string,
-                "molecule": self.result.molecule.to_dict(),
-                "op_order": self.result.operation.order,
-                "op_type": self.result.operation.type,
-                "csm": self.result.csm,
-                "perm": self.result.perm,
-                "dir": list(self.result.dir),
-                "d_min": self.result.d_min,
-                "symmetric_structure": [list(i) for i in self.result.symmetric_structure(normalized=False)],
-                "local_csm": list(self.result.local_csm),
-                "formula_csm": self.result.formula_csm,
-                "normalized_molecule_coords": [list(i) for i in self.result.molecule_coords(normalized=True)],
-                "normalized_symmetric_structure": [list(i) for i in self.result.symmetric_structure(normalized=True)],
-            }
-        }
-
-        json.dump(json_dict, f)
 
 
 class MoleculeWriter:
@@ -481,10 +454,9 @@ class PipeContextWriter(ContextWriter):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         import sys
-        import json
         sys.stdout.write(
             json.dumps([[result.to_dict() for result in mol_results_arr] for mol_results_arr in self.results_arr],
-                       indent=4))
+                       indent=4, sort_keys=True))
 
 
 class LegacyContextWriter(ContextWriter):
@@ -513,7 +485,7 @@ class ScriptContextWriter(ContextWriter):
                  out_file_name=None,
                  polar=False, verbose=False, print_local=False, argument_string="",
                  print_denorm=False,
-                 legacy_files=False,
+                 legacy_files=False, json_output=False,
                  max_len_file_name=36, **kwargs):
         super().__init__(commands, out_format, out_file_name)
         self.molecule_index = 0  # used for writing pdb files
@@ -527,6 +499,7 @@ class ScriptContextWriter(ContextWriter):
         self.print_denorm = print_denorm
         self.argument_string = argument_string
         self.create_legacy_files = legacy_files
+        self.create_json_file=json_output
         self.max_len_file_name = max_len_file_name + 4
         self.molecule_format = '%-' + str(self.max_len_file_name) + 's'
         self.com_file=kwargs.get("command_file")
@@ -583,6 +556,10 @@ class ScriptContextWriter(ContextWriter):
         if self.create_legacy_files:
             self.legacy_folder = os.path.join(self.folder, 'old-csm-output')
             os.makedirs(self.legacy_folder, exist_ok=True)
+
+        #json
+        if self.create_json_file:
+            self.json_data=[]
 
         #version and commandline
         filename = os.path.join(self.folder, "version.txt")
@@ -762,12 +739,14 @@ class ScriptContextWriter(ContextWriter):
         self.write_perm(molecule_results)
         self.write_initial_mols(molecule_results)
         self.write_symmetric_mols(molecule_results)
+        self.write_extra_txt(molecule_results)
         if self.create_legacy_files:
             self.write_legacy_files(molecule_results)
-        self.write_extra_txt(molecule_results)
         if self.verbose:
             self.write_approx_file(molecule_results)
             self.write_trivial_file(molecule_results)
+        if self.create_json_file:
+            self.json_data.append(molecule_results)
         self.molecule_index += 1
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -785,7 +764,15 @@ class ScriptContextWriter(ContextWriter):
                 self.initial_molecules_file.write("\nEND")
         except:  # no matter what, must close files
             pass
+
         self.close_files()
+
+        try: #write json output
+            with open(os.path.join(self.folder,"json-results.json"), 'w') as f:
+                json.dump([[result.to_dict() for result in mol_results_arr] for mol_results_arr in self.json_data], f,
+                           indent=4, sort_keys=True)
+        except Exception as e: #not important enough to throw exception over
+            print(e)
 
 
 class WebWriter():

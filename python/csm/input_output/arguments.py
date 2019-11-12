@@ -31,6 +31,8 @@ class OurParser(ArgumentParser):
 
 def _create_parser():
     def input_utility_func(parser):
+        parser.add_argument('--in-format', help='override guessing format from input file ending with provided format',
+                                default=None)
         parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?', dest="conn_file",
                             help='xyz connectivity file, default is connectivity.txt in current working directory')
         mutex_args = parser.add_mutually_exclusive_group()
@@ -56,28 +58,32 @@ def _create_parser():
                             help='Read fragments from .mol or .pdb file as chains')
 
     def output_utility_func(parser):
+        parser.add_argument('--out-format',
+                                        help='override guessing format from output file ending with provided format',
+                                        default=None)
+        mutex_args = parser.add_mutually_exclusive_group()
+        mutex_args.add_argument("--simple", action='store_true', default=False,
+                            help='only output is CSM to screen. Ignores other output flags.')
+        mutex_args.add_argument("--legacy-output", action='store_true', default=False,
+                            help='DEPRECATION WARNING. '
+                                 'print the old-style csm results to a file, only one calculation+molecule allowed.'
+                                 'Ignores other output flags')
+
         parser.add_argument("--overwrite", action='store_true', default=False,
                             help="overwrite results folder if exists (rather than adding timestamp)")
-        # parser.add_argument('--print-local', action='store_true', default=False,
-        #                    help='Print the local CSM (csm for each atom) in the output file')
-        parser.add_argument('--print-denorm', action='store_true', default=False,
-                            help='when printing the original molecule, print the denormalized coordinates')
-
         parser.add_argument("--verbose", action='store_true', default=False,
-                            help='create a fixed width spreadsheet of information about each direction for any approx commands')
+                            help='create a fixed width spreadsheet of additional information for approx or trivial calculation')
         parser.add_argument('--polar', action='store_true', default=False,
                             help="Print polar coordinates instead of cartesian coordinates in statistics created by --verbose")
-
-        parser.add_argument("--legacy-files", action='store_true', default=False,
-                            help='create a folder of legacy-style files for each molecule and command')
-
-        parser.add_argument("--legacy-output", action='store_true', default=False,
-                            help='print the old csm format, for a single molecule+command only')
         parser.add_argument('--json-output', action='store_true', default=False,
-                            help='Print output in json format to a file. Only relevant with --legacy-output')
+                            help='Print output in json format to a file.')
+        parser.add_argument("--legacy-files", action='store_true', default=False,
+                            help='create a folder of legacy-style files for each molecule and command. May be deprecated.')
 
-        parser.add_argument("--simple", action='store_true', default=False,
-                            help='only output is CSM to screen')
+        # parser.add_argument('--print-local', action='store_true', default=False,
+        #                    help='Print the local CSM (csm for each atom) in the output file')
+
+
 
     def shared_calc_utility_func(parser):
         parser.add_argument('symmetry',
@@ -117,9 +123,6 @@ def _create_parser():
         parser_input_args = parser.add_argument_group("Args for input (requires --input)")
         parser_input_args.add_argument("--input", help="molecule file or folder, default is current working directory",
                                        const=os.getcwd(), nargs='?')
-        parser_input_args.add_argument('--in-format',
-                                       help='override guessing format from input file ending with provided format',
-                                       default=None)
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output")
         parser_output_args.add_argument("--output",
@@ -127,9 +130,6 @@ def _create_parser():
                                         const=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         nargs='?',
                                         help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory already exists (and --overwrite is not specified), a new folder with timestamp will be created", )
-        parser_output_args.add_argument('--out-format',
-                                        help='override guessing format from output file ending with provided format',
-                                        default=None)
         output_utility_func(parser_output_args)
 
     parser = OurParser(allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
@@ -167,8 +167,7 @@ def _create_parser():
                                            "example: csm read mymol.pdb --read-fragments --remove-hy --select-atoms 1-3")
     input_args.add_argument('input', help='molecule file or folder, default is current working directory',
                             default=os.getcwd(), nargs='?')
-    input_args.add_argument('--in-format', help='override guessing format from file ending with provided format',
-                            default=None)
+
     input_utility_func(input_args)
 
     # WRITE
@@ -177,8 +176,6 @@ def _create_parser():
                                    usage="csm write filename [optional args]")
     out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results' + timestamp), nargs='?',
                           help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
-    out_args.add_argument('--out-format', help='override guessing format from file ending with provided format',
-                          default=None)
     output_utility_func(out_args)
 
     # EXACT
@@ -282,6 +279,9 @@ def _process_arguments(parse_res):
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
+        if parse_res.legacy_output:
+            print("You have selected --legacy-output. Please be aware that other output flags do not work with legacy-output."
+                  "legacy-output is in the process of being deprecated.")
 
     #    dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 

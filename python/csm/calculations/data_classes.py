@@ -309,8 +309,7 @@ class CSMResult(Result):
             silent_print("CSM by formula: %.6lf" % (self.formula_csm))
 
     def to_dict(self):
-        return {"Result":
-            {
+        return_dict= {
                 "molecule": self.molecule.to_dict(),
                 "normalized_molecule_coords": [list(i) for i in self.molecule_coords(normalized=True)],
                 "operation": self.operation.to_dict(),
@@ -323,14 +322,13 @@ class CSMResult(Result):
                 "symmetric_structure": [list(i) for i in self.symmetric_structure()],
                 "formula_csm": self.formula_csm,
 
-                "overall stats": self.overall_statistics,
-                "ongoing stats": self.ongoing_statistics
+                #"overall stats": self.overall_statistics,
+                #"ongoing stats": self.ongoing_statistics
             }
-        }
+        return return_dict
 
     @staticmethod
-    def from_dict():
-        result_dict = input["Result"]
+    def from_dict(result_dict):
         molecule = Molecule.from_dict(result_dict["molecule"])
         molecule.normalize()
         operation = Operation.from_dict(result_dict["operation"])
