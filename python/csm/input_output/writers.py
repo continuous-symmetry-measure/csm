@@ -144,14 +144,6 @@ class MoleculeWriter:
     def write(self, f, coords, consecutive=False, model_number=None):
         self.write_molecule(f, coords, consecutive, model_number)
 
-    # def write_symmetric(self, f, result, consecutive=False, model_number=None, normalized=True):
-    #     if result.skipped:
-    #         return
-    #     self.write_molecule(f, result.symmetric_structure(normalized=normalized), consecutive, model_number)
-    #
-    # def write_original(self, f, result, consecutive=False, model_number=None, normalized=True):
-    #     self.write_molecule(f, result.molecule_coords(normalized=normalized), consecutive, model_number)
-
     def _write_csm_molecule(self, f, coordinates, *args, **kwargs):
         size = len(coordinates)
         f.write("%i\n" % size)
@@ -448,7 +440,8 @@ class MoleculeWrapper:
         if normalized:
             self.append_title("Normalized")
         else:
-            self.append_title("Denormalized")
+            pass #Denormalized is the default state and does not need to be particularly noted.
+            #self.append_title("Denormalized")
 
     def clean_trait_titles(self):
         #used for legacy
@@ -571,14 +564,8 @@ class ScriptContextWriter(ContextWriter):
         self.perm_file.write(format_string % ("#Molecule", "#Command", "#Permutation"))
 
         self.initial_molecules_file = open(
-            os.path.join(self.folder, "initial_normalized_coordinates." + self.out_format),
+            os.path.join(self.folder, "initial_coordinates." + self.out_format),
             'w')
-        if self.print_denorm:
-            self.initial_denormalized_file = open(
-                os.path.join(self.folder, "initial_denormalized_coordinates." + self.out_format),
-                'w')
-        else:
-            self.initial_denormalized_file = None
         self.symmetric_mols_file = open(os.path.join(self.folder, "resulting_symmetric_coordinates." + self.out_format),
                                         'w')
 
@@ -615,8 +602,6 @@ class ScriptContextWriter(ContextWriter):
         self.dir_file.close()
         self.perm_file.close()
         self.initial_molecules_file.close()
-        if self.initial_denormalized_file:
-            self.initial_denormalized_file.close()
         self.symmetric_mols_file.close()
         self.extra_file.close()
 
@@ -648,7 +633,7 @@ class ScriptContextWriter(ContextWriter):
             f.write("\n")
 
     def write_initial_mols(self, mol_results):
-        molecule_wrapper = MoleculeWrapper(mol_results[0], symmetric=False, normalized=True)
+        molecule_wrapper = MoleculeWrapper(mol_results[0], symmetric=False, normalized=False)
         file = self.initial_molecules_file
         molecule_wrapper.write(file, consecutive=True, model_number=self.molecule_index + 1)
 
