@@ -31,17 +31,17 @@ class OurParser(ArgumentParser):
 
 def _create_parser():
     def input_utility_func(parser):
-        parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?',
+        parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?', dest="conn_file",
                             help='xyz connectivity file, default is connectivity.txt in current working directory')
         mutex_args = parser.add_mutually_exclusive_group()
         mutex_args.add_argument('--select-atoms', default=None,
-                                 help='Select only some atoms, eg 1-20,15,17,19-21')
+                                 help='Select only some atoms for calculation, eg 1-20,15,17,19-21')
         mutex_args.add_argument('--ignore-atoms', default=None,
                                 help='Ignore some atoms, eg 1-20,15,17,19-21')
         parser.add_argument('--remove-hy', action='store_true', default=False,
                                 help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
         parser.add_argument('--select-mols', default=None,
-                            help='Select only some molecules, eg 1-20,15,17,19-21')
+                            help='Select only some molecules for calculation, eg 1-20,15,17,19-21')
         parser.add_argument('--ignore-sym', action='store_true', default=False,
                             help='Ignore all atomic symbols, performing a purely geometric operation')
         parser.add_argument('--use-mass', action='store_true', default=False,
@@ -126,7 +126,7 @@ def _create_parser():
                                         default=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         const=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         nargs='?',
-                                        help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
+                                        help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory already exists (and --overwrite is not specified), a new folder with timestamp will be created", )
         parser_output_args.add_argument('--out-format',
                                         help='override guessing format from output file ending with provided format',
                                         default=None)
@@ -167,7 +167,7 @@ def _create_parser():
                                            "example: csm read mymol.pdb --read-fragments --remove-hy --select-atoms 1-3")
     input_args.add_argument('input', help='molecule file or folder, default is current working directory',
                             default=os.getcwd(), nargs='?')
-    input_args.add_argument('--format', help='override guessing format from file ending with provided format',
+    input_args.add_argument('--in-format', help='override guessing format from file ending with provided format',
                             default=None)
     input_utility_func(input_args)
 
@@ -177,7 +177,7 @@ def _create_parser():
                                    usage="csm write filename [optional args]")
     out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results' + timestamp), nargs='?',
                           help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
-    out_args.add_argument('--format', help='override guessing format from file ending with provided format',
+    out_args.add_argument('--out-format', help='override guessing format from file ending with provided format',
                           default=None)
     output_utility_func(out_args)
 
@@ -271,7 +271,6 @@ def _process_arguments(parse_res):
 
     def parse_input(dictionary_args):
         dictionary_args['in_file_name'] = parse_res.input
-        dictionary_args["conn_file"] = parse_res.connect
         if parse_res.read_fragments:
             dictionary_args['use_chains'] = True
             logger.warning(
@@ -291,10 +290,8 @@ def _process_arguments(parse_res):
         dictionary_args["pipe"] = False
 
     if parse_res.command == "read":
-        dictionary_args["in_format"] = parse_res.format
         parse_input(dictionary_args)
     elif parse_res.command == "write":
-        dictionary_args["out_format"] = parse_res.format
         parse_output(dictionary_args)
     else:
         # get input/output if relevant
