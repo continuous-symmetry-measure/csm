@@ -554,10 +554,6 @@ class Molecule:
         #add remove hy:
         if remove_hy:
             hy_atoms_indices=set([i for i in range(len(self._atoms)) if self._atoms[i].symbol =="H"])
-            #check for bad input 2:
-            if select_atoms:
-                if hy_atoms_indices.intersection(set(select_atoms)):
-                    raise ValueError("Cannot use --remove-hy and then select a hydrogen atom with --select-atoms")
             #add the hydrogens
             indices_to_remove=indices_to_remove.union(hy_atoms_indices)
 
