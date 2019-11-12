@@ -220,20 +220,6 @@ class TestBasic(RunThings):
             exp = ofile.read()
         assert out.strip() == exp.strip()
 
-    def test_print_denorm(self):
-        # --print-denorm prints denormalized coordinates for original molecule instead of normalized
-        cmd = "exact c2 --input squarate.xyz --select-mols 1 --print-denorm"
-        self.run_args(cmd)
-        with open(os.path.join(self.results_folder, "initial_normalized_coordinates.xyz"), "r") as file:
-            output2 = file.read()
-
-        cmd = "exact c2 --input squarate.xyz --select-mols 1"
-        self.run_args(cmd)
-        with open(os.path.join(self.results_folder, "initial_denormalized_coordinates.xyz"), "r") as file:
-            output1 = file.read()
-
-        assert output1 != output2
-
     def test_legacy_files(self):
         cmd = "exact c2 --input squarate.xyz --legacy-files"
         self.run_args(cmd)
@@ -333,23 +319,23 @@ class TestBasic(RunThings):
         assert results[0][0].csm == pytest.approx(0.793551, abs=1e-5)
 
     def test_output_perms(self):
-        with open(os.path.join(self.results_folder, "perms.csv"), 'w') as file:
+        with open(os.path.join(self.results_folder, "exact", "4-helicene_L01_cs.csv"), 'w') as file:
             #reset perms.csv
             pass
         cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms"
         self.run_args(cmd)
         out_rows = []
-        with open(os.path.join(self.results_folder, "perms.csv"), 'r') as file:
+        with open(os.path.join(self.results_folder, "exact", "4-helicene_L01_cs.csv"), 'r') as file:
             reader = csv.reader(file)
             for row in reader:
                 out_rows.append(row)
         assert out_rows == [
-            ['Molecule', 'op','Permutation', 'Direction', 'CSM'],
+            ['op','Permutation', 'Direction', 'CSM'],
             [
-                '4-helicene.mol', 'CS2', '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
+                'CS2', '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
                 '[0.042475 0.020727 0.998883]', '0.7935529301987154'],
             [
-                '4-helicene.mol', 'CS2', '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
+                'CS2', '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
                 '[-0.514303 -0.856692  0.039646]', '0.7935519339113517']
         ]
 
