@@ -211,6 +211,8 @@ def _create_parser():
                              help="Use fibonacci sphere to generate N starting directions")
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
+    approx_args.add_argument('--use-backbone', action='store_true', default=False,
+                        help='Rebuild protein without the residues, and compute')
     # algorithm choice
     mutex_approx_args = approx_args.add_mutually_exclusive_group()
     mutex_approx_args.add_argument('--greedy', action='store_const', const='greedy', default='hungarian',
