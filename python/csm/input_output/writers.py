@@ -768,9 +768,10 @@ class ScriptContextWriter(ContextWriter):
         self.close_files()
 
         try: #write json output
-            with open(os.path.join(self.folder,"json-results.json"), 'w') as f:
-                json.dump([[result.to_dict() for result in mol_results_arr] for mol_results_arr in self.json_data], f,
-                           indent=4, sort_keys=True)
+            if self.create_json_file:
+                with open(os.path.join(self.folder,"json-results.json"), 'w') as f:
+                    json.dump([[result.to_dict() for result in mol_results_arr] for mol_results_arr in self.json_data], f,
+                               indent=4, sort_keys=True)
         except Exception as e: #not important enough to throw exception over
             print(e)
 
