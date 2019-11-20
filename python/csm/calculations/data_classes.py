@@ -346,8 +346,9 @@ class FailedResult(Result):
         if skipped:
             self.skipped = True
 
-        self.molecule = molecule
-        self._normalized_molecule_coords = []
+        self.molecule = molecule.copy()  # not yet denormalized
+        self._normalized_molecule_coords = np.array(self.molecule.Q)
+        self.molecule.de_normalize()
         self.operation = kwargs["operation"]
         self.op_type = self.operation.type
         self.op_order = self.operation.order
@@ -373,6 +374,8 @@ class FailedResult(Result):
         return []
 
     def get_coords(self, symmetric=False, normalized=False):
+        if not symmetric and not normalized:
+            return np.array(self.molecule.Q)
         return []
     def __repr__(self):
         return super(FailedResult, self).__repr__() + "\tFailure: " + self.failed_reason
