@@ -243,6 +243,8 @@ def _create_parser():
     # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
     trivial_args.add_argument('--permute-chains', action='store_true', default=False,
                               help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")
+    trivial_args.add_argument('--use-backbone', action='store_true', default=False,
+                             help='Rebuild protein without the residues, and compute')
     shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
@@ -335,6 +337,9 @@ def _process_arguments(parse_res):
 
                 # algorithm choice:
                 if parse_res.approx_algorithm == "many-chains":
+                    dictionary_args['use_chains'] = True
+
+                if parse_res.use_backbone:
                     dictionary_args['use_chains'] = True
 
                 if parse_res.selective is not None:

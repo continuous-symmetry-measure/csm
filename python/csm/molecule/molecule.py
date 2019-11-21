@@ -478,7 +478,7 @@ class Molecule:
             for j in range(atoms_size):
                 if j in marked \
                         or len(self._atoms[i].adjacent) != len(self._atoms[j].adjacent) \
-                        or self._atoms[i].symbol[0] != self._atoms[j].symbol[0]:
+                        or self._atoms[i].symbol != self._atoms[j].symbol:
                     continue
 
                 groups[group_num].append(j)
@@ -546,7 +546,7 @@ class Molecule:
             indices_to_remove = ignore_atoms
         if use_backbone:
             backbone_atoms = ['N', 'CA', 'C', 'O']
-            indices_to_remove.extend([i for i in range(len(self._atoms)) if self._atoms[i].symbol not in backbone_atoms])
+            indices_to_remove.extend([i for i in range(len(self._atoms)) if self._atoms[i].atom_name not in backbone_atoms])
         indices_to_remove=set(indices_to_remove)
 
         #check for bad input 1: index provided that doesnt exist:
@@ -821,6 +821,7 @@ class PDBLine:
             self.remoteness = pdb_line[14]
             self.branch_designation = pdb_line[15]
             self.alternate_location = pdb_line[16]
+        self.atom_name = pdb_line[12:15].strip()
 
         if not self.atom_symbol:
             raise ValueError(
@@ -965,7 +966,7 @@ class MoleculeReader:
             return mol
 
         if format == "pdb":
-            mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
+            mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond, use_backbone)
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
         if initialize:
@@ -1228,7 +1229,7 @@ class MoleculeReader:
         return mol
 
     @staticmethod
-    def _read_pdb_connectivity_and_chains(filename, mol, read_fragments, babel_bond):
+    def _read_pdb_connectivity_and_chains(filename, mol, read_fragments, babel_bond, use_backbone=False):
         with open(filename, 'r') as file:
             # Count ATOM and HETATM lines, mapping them to our ATOM numbers.
             # In most PDBs ATOM 1 is our atom 0, and ATOM n is our n-1. However, in some cases
@@ -1237,6 +1238,7 @@ class MoleculeReader:
             atom_map = {}
             cur_atom = 0
             # chains = Chains()
+
 
             for line in file:
                 pdb_dict = PDBLine._pdb_line_to_dict(line)
@@ -1247,7 +1249,8 @@ class MoleculeReader:
                     if record_name == 'HETATM':
                         breakpt = 1
                     atom_map[index] = cur_atom
-                    mol._atoms[cur_atom]._symbol = str(pdb_dict.atom_symbol + pdb_dict.remoteness).strip()  # change to the full symbol for use-backbone
+                    if use_backbone:
+                        mol._atoms[cur_atom].atom_name = pdb_dict.atom_name  # change to the full symbol for use-backbone
 
                     chain_designation = pdb_dict.chain_id
                     if chain_designation != " ":

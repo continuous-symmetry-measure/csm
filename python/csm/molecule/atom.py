@@ -43,6 +43,7 @@ class Atom:
         """
         self.index = index
         self._symbol = symbol.strip()  # make sure no white space in symbol
+        self.atom_name = self._symbol # for pdb files
         self.adjacent = []
         self.pos = pos
         if useMass and symbol != 'XX':
