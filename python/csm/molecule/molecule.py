@@ -87,6 +87,10 @@ class Chains(OrderedDict):
     def index_to_name(self, index):
         return self._indexes_to_strings[index]
 
+    def name_to_index(self, name):
+        test= self._strings_to_indexes[name]
+        return test
+
 
 class MoleculeMetaData:
     '''
@@ -561,8 +565,8 @@ class Molecule:
 
         self._deleted_atom_indices=indices_to_remove #needed when writing output of molecule to file via openbabel
         self.fixed_indexes = fixed_indexes= [i for i in range(len(self))] #initializing here before the return because we use it when reading permutation
-        if not indices_to_remove: #relevant if remove-hy was selected but no hydrogen in molecule (may as well save time)
-            return
+        if not indices_to_remove: #relevant if remove-hy was selected but no hydrogen in molecule, or select-atoms selcted every atom
+            return #(may as well save time)
 
         #we now store a mapping of each atom to its new index once all relevant atoms have been removed, in order to update connectivity
         num_removed_atoms=0
