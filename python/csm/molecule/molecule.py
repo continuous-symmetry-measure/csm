@@ -126,7 +126,7 @@ class MoleculeMetaData:
 
     @staticmethod
     def from_dict(self, dict):
-        m = MoleculeData(**dict)
+        m = MoleculeMetaData(**dict)
         return m
 
     def to_dict(self):
@@ -1206,7 +1206,7 @@ class MoleculeReader:
 
                 atoms[i].adjacent = MoleculeReader._remove_multi_bonds(neighbours)
 
-            # chains = Chains() #used to get chain indices???
+            #chains = Chains() #used to get chain indices???
             try:
                 numchains = int(f.readline())
                 for i in range(numchains):
