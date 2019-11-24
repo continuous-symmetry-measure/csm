@@ -634,10 +634,12 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
 
 class ApproxCalculation(BaseCalculation, _OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
-                 log_func=lambda *args: None, selective=False, num_selected=10, chain_perms=None, *args, **kwargs):
+                 log_func=None, selective=False, num_selected=10, chain_perms=None, *args, **kwargs):
 
         super().__init__(operation, molecule)
 
+        if log_func==None:
+            log_func=self._empty_log
         self._log_func = log_func
 
         # choose the approximator class
@@ -662,6 +664,9 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
         self.statistics={}
         self.chain_perms=chain_perms
         self._max_iterations = 30
+
+    def _empty_log(self, *args):
+        return
 
     def calculate(self, timeout=100, *args, **kwargs):
         self.timeout = timeout
