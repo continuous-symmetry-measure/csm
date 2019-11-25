@@ -120,6 +120,15 @@ class TestBasic(RunThings):
 
         assert expected_str.strip() == output_str.strip()
 
+    def test_use_backbone(self):
+        cmd = "approx c2 --use-backbone --input 3alb-gkt4-h.pdb "
+        result = self.run_args(cmd)
+        assert len(result[0][0].molecule) == 48
+
+        cmd = "approx c3 --input 2rla-s3.pdb --use-backbone"
+        result = self.run_args(cmd)
+        assert len(result[0][0].molecule) == 12
+
     def test_ignore_atoms(self):
         # --ignore-atoms removes specific atoms.
         # The test checks that the result is identical to the result by use --select-atoms
