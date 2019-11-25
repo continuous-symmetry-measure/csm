@@ -20,7 +20,7 @@ class TrivialCalculation(BaseCalculation):
     If use-chains is specified, calculates the identity permutation of every possible chain permutation, returns best.
     """
 
-    def __init__(self, operation, molecule, use_chains=True, timeout=300, *args, **kwargs):
+    def __init__(self, operation, molecule, use_chains=True, timeout=300, chain_perms=None, *args, **kwargs):
         """
         :param operation: instance of Operation class or named tuple, with fields for name and order, that describes the symmetry.
         :param molecule: instance of Molecule class on which the described symmetry calculation will be performed.
@@ -32,8 +32,11 @@ class TrivialCalculation(BaseCalculation):
         self.statistics = {}
         self.start_time = datetime.datetime.now()
         self.timeout = timeout
+        self.chain_permutations=chain_perms
 
     def get_chain_perms(self, operation):
+        if self.chain_permutations:
+            return
         molecule=self.molecule
         if molecule.chains and self.use_chains:
             chain_permutations = []

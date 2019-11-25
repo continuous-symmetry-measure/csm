@@ -22,14 +22,14 @@ class RunThings():
 
 
 class TestBasic(RunThings):
-
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    #try:
+
+    # try:
     #    shutil.rmtree(results_folder)
-    #except FileNotFoundError:
+    # except FileNotFoundError:
     #    pass
-    #os.mkdir(results_folder)
+    # os.mkdir(results_folder)
 
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
@@ -207,7 +207,7 @@ class TestBasic(RunThings):
 
     # output
     def test_legacy(self):
-        #why is it printing filename instead of index all of a sudden?
+        # why is it printing filename instead of index all of a sudden?
         # --legacy-output prints old style csm format
         cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.txt".format(
             self.results_folder)
@@ -219,12 +219,12 @@ class TestBasic(RunThings):
         assert out.strip() == exp.strip()
 
     def test_json_output(self):
-        #same problem as legacy
+        # same problem as legacy
         # --json-output. only works with --legacy-output
         cmd = "exact c2 --input squarate.xyz  --json-output --select-mols 1,2"
         self.run_args(cmd)
         with open(os.path.join(self.results_folder, "json-results.json"), 'r') as ofile:
-            out=json.loads(ofile.read())
+            out = json.loads(ofile.read())
         with open(os.path.join("expected", "results.json"), 'r') as efile:
             exp = json.loads(efile.read())
         assert out == exp
@@ -249,18 +249,8 @@ class TestBasic(RunThings):
         assert os.path.isdir(output_path)
         # todo: because the output contains a variable runtime, running a comparison is a bit tedious, leaving it for now
 
-    # shared stuff
 
-    # try:
-    #    shutil.rmtree(results_folder)
-    # except FileNotFoundError:
-    #    pass
-    # os.mkdir(results_folder)
-
-    def run_args(self, args_str):
-        return super()._run_args(args_str, self.results_folder)
-
-    #parallel
+    # parallel
     def test_parallel_mols_in_file(self):
         cmd = "comfile comfile.txt --input many-mols.xyz --parallel"
         result1 = self.run_args(cmd)
@@ -329,7 +319,7 @@ class TestBasic(RunThings):
 
     def test_output_perms(self):
         with open(os.path.join(self.results_folder, "exact", "4-helicene_L01_cs.csv"), 'w') as file:
-            #reset perms.csv
+            # reset perms.csv
             pass
         cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms"
         self.run_args(cmd)
@@ -339,16 +329,35 @@ class TestBasic(RunThings):
             for row in reader:
                 out_rows.append(row)
         assert out_rows == [
-            ['op','Permutation', 'Direction', 'CSM'],
+            ['op', 'Permutation', 'Direction', 'CSM'],
             [
-                'CS2', '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
+                'CS2',
+                '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
                 '[0.042475 0.020727 0.998883]', '0.7935529301987154'],
             [
-                'CS2', '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
+                'CS2',
+                '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
                 '[-0.514303 -0.856692  0.039646]', '0.7935519339113517']
         ]
 
     # approx
+    def test_parallel_dirs(self):
+        cmd = "approx c2 --input 3alb-gkt4-h.pdb --use-sequence --parallel-dirs"
+        results = self.run_args(cmd)
+        assert not results[0][0].failed
+
+    def test_input_chain_perm(self):
+        cmd = "approx c2 --input 3alb-gkt4-h.pdb --input-chain-perm"
+        results = self.run_args(cmd)
+        assert results[0][0].chain_perm == [2, 1, 0, 3]  # when run with use-chains it gets 0 1 2 3
+
+    def test_input_chain_perm_trivial(self):
+        cmd = "trivial c2 --input 3alb-gkt4-h.pdb --input-chain-perm"
+        results = self.run_args(cmd)
+        assert results[0][0].chain_perm == [2, 1, 0, 3]
+
+    
+
     def test_use_chains(self):
         cmd = "approx c3 --input 2rla-s3.pdb --use-chains"
         results = self.run_args(cmd)
@@ -430,8 +439,9 @@ class TestBasic(RunThings):
 class TestFragments(RunThings):
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    #shutil.rmtree(results_folder)
-    #os.mkdir(results_folder)
+
+    # shutil.rmtree(results_folder)
+    # os.mkdir(results_folder)
 
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
@@ -480,8 +490,10 @@ class TestFragments(RunThings):
 
 class TestChirality(RunThings):
     results_folder = "csm_tests"
+
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
+
     def test_trivial(self):
         # --babel-bond computes bonding
         cmd = "trivial ch --input ferrocene.xyz"
@@ -509,37 +521,34 @@ class TestChirality(RunThings):
 
     def test_exact(self):
         # --sn-max (relevant only for chirality)
-        cmd = "exact ch --input bis(dth)copper(I).mol" #matches
+        cmd = "exact ch --input bis(dth)copper(I).mol"  # matches
         result1 = self.run_args(cmd)
         assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "S4"
 
     def test_exact_2(self):
-        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2" #matches
+        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2"  # matches
         result2 = self.run_args(cmd)
         assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
         assert result2[0][0].overall_statistics["best chirality"] == "CS"
 
     def test_approx(self):
-        cmd = "approx ch --input ferrocene.xyz --babel-bond" #matches
+        cmd = "approx ch --input ferrocene.xyz --babel-bond"  # matches
         results = self.run_args(cmd)
         assert results[0][0].csm == pytest.approx(0.241361, abs=1e-5)
         assert results[0][0].overall_statistics["best chirality"] == "CS"
 
     def test_approx_2(self):
-        cmd = "approx ch --input bis(dth)copper(I).mol" #matches
+        cmd = "approx ch --input bis(dth)copper(I).mol"  # matches
         result1 = self.run_args(cmd)
         assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "S4"
 
     def test_approx_3(self):
-        cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2" #matches
+        cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2"  # matches
         result2 = self.run_args(cmd)
         assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
         assert result2[0][0].overall_statistics["best chirality"] == "CS"
-
-
-
 
 
 class xTestComplicated(RunThings):

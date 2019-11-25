@@ -37,6 +37,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
         calc = Exact(**dictionary_args, callback_func=csm_state_tracer_func)
 
     elif calc_type == "approx":
+        dictionary_args['chain_perms'] = read_perm(**dictionary_args)
         dir_chooser = get_direction_chooser(**dictionary_args)
         dictionary_args["direction_chooser"] = dir_chooser
         if parallel_dirs:
@@ -50,6 +51,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
             calc = Approx(**dictionary_args)
 
     elif calc_type == "trivial":
+        dictionary_args['chain_perms'] = read_perm(**dictionary_args)
         calc = Trivial(**dictionary_args)
 
     # run the calculation

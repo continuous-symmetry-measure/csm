@@ -184,7 +184,7 @@ def _create_parser():
                                             'example: csm exact s4 --input --output myresults/1 --keep-structure --timeout 500')
     exact_args = exact_args_.add_argument_group("Args for exact calculation")
     shared_calc_utility_func(exact_args)
-    exact_args.add_argument('--use-perm', nargs="?", type=str, default=None,
+    exact_args.add_argument('--use-perm', nargs="?", type=str, default=None, dest='perm_file_name',
                             const=os.path.join(os.getcwd(), "perm.txt"),
                             help='Compute exact CSM for a single permutation, default is current directory/perm.txt')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
@@ -227,6 +227,11 @@ def _create_parser():
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
     approx_args.add_argument('--parallel-dirs', type=int, const=0, nargs='?',
                              help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used. Cannot be used with --parallel')
+    #misc
+    approx_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
+                            const=os.path.join(os.getcwd(), "chainperm.txt"),
+                            help='Run calculation only on chain permutations in provided file. default file location is current directory/chainperm.txt')
+
     # outputs
     approx_args.add_argument('--print-approx', action='store_true', default=False,
                              help='print log to screen from approx')
@@ -242,10 +247,13 @@ def _create_parser():
     # this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
     # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
     trivial_args.add_argument('--permute-chains', action='store_true', default=False,
-                              help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")
-    trivial_args.add_argument('--use-backbone', action='store_true', default=False,
-                             help='Rebuild protein without the residues, and compute')
-    shared_normalization_utility_func(trivial_args)
+                              help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")	
+	trivial_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
+                            const=os.path.join(os.getcwd(), "chainperm.txt"),
+                            help='Run calculation only on chain permutations in provided file. Default file location is current directory/chainperm.txt')
+	 trivial_args.add_argument('--use-backbone', action='store_true', default=False,
+                             help='Rebuild protein without the residues, and compute')    
+	shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
 
@@ -319,8 +327,6 @@ def _process_arguments(parse_res):
             dictionary_args['normalizations'] = parse_res.normalize
 
             if parse_res.command == 'exact':
-                if parse_res.use_perm:
-                    dictionary_args['perm_file_name'] = parse_res.use_perm
                 if parse_res.output_perms and parse_res.parallel:
                     logger.warning("cannot output perms while running a calculation in parallel")
 
@@ -336,7 +342,7 @@ def _process_arguments(parse_res):
                     dictionary_args['dirs'] = [dir]
 
                 # algorithm choice:
-                if parse_res.approx_algorithm == "many-chains":
+                if parse_res.approx_algorithm == "many-chains" or parse_res.chain_perm_file_name:
                     dictionary_args['use_chains'] = True
 
                 if parse_res.use_backbone:
@@ -353,10 +359,9 @@ def _process_arguments(parse_res):
                     dictionary_args['parallel_dirs'] = True  # doing this before previous line causes weird bug
 
                     # outputs:
-                # dictionary_args['print_approx'] = parse_res.print_approx
-                # dictionary_args['polar'] = parse_res.polar
+
             if parse_res.command == 'trivial':
-                if parse_res.permute_chains:
+                if parse_res.permute_chains or  parse_res.chain_perm_file_name:
                     dictionary_args["use_chains"] = True
 
     try:

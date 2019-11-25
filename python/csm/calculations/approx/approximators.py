@@ -184,7 +184,7 @@ class ApproxStatistics(DirectionStatisticsContainer):
 
 class SingleDirApproximator(_OptionalLogger):
     def __init__(self, operation, molecule, perm_from_dir_builder, log_func=None, timeout=100,
-                 max_iterations=50):
+                 max_iterations=50, chain_perms=None):
         self._log_func = log_func
         self._molecule = molecule
         self._op_type = operation.type
@@ -192,7 +192,10 @@ class SingleDirApproximator(_OptionalLogger):
         self._operation = operation
         self.max_iterations = max_iterations
         self.perm_from_dir_builder = perm_from_dir_builder(operation, molecule, log_func, timeout)
-        self._chain_permutations = self.perm_from_dir_builder.get_chain_perms()
+        if not chain_perms:
+            self._chain_permutations = self.perm_from_dir_builder.get_chain_perms()
+        else:
+            self._chain_permutations=chain_perms
         self.timeout = timeout
         self.start = datetime.datetime.now()
 
@@ -631,10 +634,12 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
 
 class ApproxCalculation(BaseCalculation, _OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
-                 log_func=lambda *args: None, selective=False, num_selected=10, *args, **kwargs):
+                 log_func=None, selective=False, num_selected=10, chain_perms=None, *args, **kwargs):
 
         super().__init__(operation, molecule)
 
+        if log_func==None:
+            log_func=self._empty_log
         self._log_func = log_func
 
         # choose the approximator class
@@ -657,7 +662,11 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
         self.num_selected = num_selected
         self._single_statistics = ApproxStatistics(self._initial_directions)
         self.statistics={}
+        self.chain_perms=chain_perms
         self._max_iterations = 30
+
+    def _empty_log(self, *args):
+        return
 
     def calculate(self, timeout=100, *args, **kwargs):
         self.timeout = timeout
@@ -697,7 +706,7 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
                         num_invalid=MAXDOUBLE)
         single_dir_approximator = SingleDirApproximator(operation, self.molecule,
                                                         self.perm_builder, self._log,
-                                                        self.timeout, max_iterations=max_iterations)
+                                                        self.timeout, max_iterations=max_iterations, chain_perms=self.chain_perms)
         for dir in dirs:
             best_result_for_dir, statistics = single_dir_approximator.calculate(dir)
             self._single_statistics[dir] = statistics
@@ -713,17 +722,16 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
 
 
 class ParallelApprox(ApproxCalculation):
-    def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
-                 log_func=None, selective=False, num_selected=10, pool_size=0, *args, **kwargs):
+    def __init__(self, operation, molecule, direction_chooser,
+                 log_func=None, pool_size=0, *args, **kwargs):
         if log_func is not None:
             raise ValueError("Cannot run logging on approx in parallel calculation")
         self.pool_size = pool_size
         if pool_size == 0:
             self.pool_size = multiprocessing.cpu_count() - 1
-        super().__init__(operation, molecule, direction_chooser, approx_algorithm,
-                         log_func=log_func, selective=selective, num_selected=num_selected)
+        super().__init__(operation, molecule, direction_chooser, *args, **kwargs)
 
-    def _calculate(self, operation):
+    def _calculate(self, operation, timeout):
         if operation.type == 'CI' or (operation.type == 'SN' and operation.order == 2):
             raise ValueError("Please don't use parallel calculation for inversion")
         else:
@@ -748,7 +756,8 @@ class ParallelApprox(ApproxCalculation):
         print("Approximating across {} processes".format(self.pool_size))
         single_dir_approximator = SingleDirApproximator(operation, self.molecule,
                                                         self.perm_builder, self._log,
-                                                        self.timeout, max_iterations=self.max_iterations)
+                                                        self.timeout, max_iterations=self.max_iterations, chain_perms=self.chain_perms)
+       
         pool_outputs = pool.map(single_dir_approximator.calculate, dirs)
         pool.close()
         pool.join()
