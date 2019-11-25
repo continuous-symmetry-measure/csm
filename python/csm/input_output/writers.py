@@ -162,7 +162,7 @@ class MoleculeWriter:
 
             if consecutive:
                 if str.lower(self.format) == 'pdb':
-                    s = re.sub("MODEL\s+\d+", "", s)
+                    s = re.sub(r"MODEL\s+\d+", "", s)
                     s = s.replace("END", "ENDMDL")
                 if str.lower(self.format) in ['mol']:
                     s += "\n$$$$\n"
