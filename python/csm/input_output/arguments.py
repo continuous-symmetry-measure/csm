@@ -247,13 +247,13 @@ def _create_parser():
     # this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
     # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
     trivial_args.add_argument('--permute-chains', action='store_true', default=False,
-                              help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")	
-	trivial_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
+                              help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")
+    trivial_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
                             const=os.path.join(os.getcwd(), "chainperm.txt"),
                             help='Run calculation only on chain permutations in provided file. Default file location is current directory/chainperm.txt')
-	 trivial_args.add_argument('--use-backbone', action='store_true', default=False,
-                             help='Rebuild protein without the residues, and compute')    
-	shared_normalization_utility_func(trivial_args)
+    trivial_args.add_argument('--use-backbone', action='store_true', default=False,
+                             help='Rebuild protein without the residues, and compute')
+    shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
 
