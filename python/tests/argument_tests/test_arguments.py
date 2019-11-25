@@ -194,7 +194,15 @@ class TestBasic(RunThings):
         results = self.run_args(cmd)
         assert len(results) == 3
 
-        # TODO: output tests
+        #same deals but with comfile
+        cmd = "comfile comfile.txt --input squarate.xyz --select-mols 1,3-4"
+        results = self.run_args(cmd)
+        assert len(results) == 3
+
+        cmd = "comfile comfile.txt --input ignore-sym --select-mols 1,3-4"
+        results = self.run_args(cmd)
+        assert len(results) == 3
+
 
     # output
     def test_legacy(self):
@@ -261,7 +269,7 @@ class TestBasic(RunThings):
         assert result2[0][0].op_type == 'CS' and result2[0][0].op_order == 2
 
     def test_normalize(self):
-        cmd = "approx c3 --fibonacci 1 --read-fragments --input reading-fragments\water-6.mol --normalize 0 1 2 3 4 5 6"
+        cmd = r"approx c3 --fibonacci 1 --read-fragments --input reading-fragments\water-6.mol --normalize 0 1 2 3 4 5 6"
         results = self.run_args(cmd)
         hi = 1
 
@@ -338,15 +346,25 @@ class TestBasic(RunThings):
         assert not results[0][0].failed
 
     def test_input_chain_perm(self):
-        cmd = "approx c2 --input 3alb-gkt4-h.pdb --input-chain-perm"
+        cmd = "approx c2 --input 3alb-gkt4-h.pdb --input-chain-perm --verbose"
         results = self.run_args(cmd)
         assert results[0][0].chain_perm == [2, 1, 0, 3]  # when run with use-chains it gets 0 1 2 3
 
     def test_input_chain_perm_trivial(self):
-        cmd = "trivial c2 --input 3alb-gkt4-h.pdb --input-chain-perm"
+        cmd = "trivial c2 --input 3alb-gkt4-h.pdb --input-chain-perm --verbose"
         results = self.run_args(cmd)
         assert results[0][0].chain_perm == [2, 1, 0, 3]
+        with open(os.path.join(self.results_folder, "trivial", "3alb-gkt4-h_L01_c2.tsv"), 'r') as tsvfile:
+            pass
 
+    def test_unequal_chains(self):
+        cmd = "approx c2 --input 4a5k-467.pdb --use-chains"
+        results = self.run_args(cmd)
+        assert results[0][0].chain_perm==[0,3,2,1]
+
+        cmd = "trivial c2 --input 4a5k-467.pdb --use-chains"
+        results = self.run_args(cmd)
+        assert results[0][0].chain_perm==[0,3,2,1]
     
 
     def test_use_chains(self):

@@ -182,7 +182,7 @@ def calc(dictionary_args):
             args_dict["line"] = line
             # handle select molecules:
             if args_dict.get('select_mols', False):
-                raise ValueError("Not allowed to use argument --select-mols within command file. Please use it in the main program command (eg comfile cmd.txt --select-mols)")
+                raise ValueError("Not allowed to use argument --select-mols within command file. Please use it in the main program command (eg `comfile cmd.txt --select-mols 1-3`)")
 
 
             # handle modifying molecules:
