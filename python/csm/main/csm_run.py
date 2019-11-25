@@ -62,7 +62,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
 def single_calculation(dictionary_args):
     molecule = dictionary_args["molecule"]
     if dictionary_args["skipped"]:
-        return (FailedResult("molecule not selected", molecule, skipped=True))
+        return (FailedResult("molecule not selected", molecule, skipped=True, **dictionary_args))
     result = do_calculation(**dictionary_args)
     try:
         if len(dictionary_args['normalizations']) > 0:
