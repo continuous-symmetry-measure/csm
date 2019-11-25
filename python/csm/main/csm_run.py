@@ -60,9 +60,6 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
 
 
 def single_calculation(dictionary_args):
-    molecule = dictionary_args["molecule"]
-    if dictionary_args["skipped"]:
-        return (FailedResult("molecule not selected", molecule, skipped=True, **dictionary_args))
     result = do_calculation(**dictionary_args)
     try:
         if len(dictionary_args['normalizations']) > 0:
@@ -184,11 +181,9 @@ def calc(dictionary_args):
             args_dict["molecule"] = molecule
             args_dict["line"] = line
             # handle select molecules:
-            selections = args_dict['select_mols']
+            if args_dict.get('select_mols', False):
+                raise ValueError("Not allowed to use argument --select-mols within command file. Please use it in the main program command (eg comfile cmd.txt --select-mols)")
 
-            args_dict["skipped"] = False
-            if len(selections) > 0 and mol_index not in selections:
-                args_dict["skipped"] = True
 
             # handle modifying molecules:
             if modifies_molecule:
@@ -200,7 +195,6 @@ def calc(dictionary_args):
 
     # run the calculation, in parallel
     if dictionary_args["parallel"]:
-        #TODO-deal with "skipped"-- edit: think this is handled in single_calculation... so TODO: check
         flattened_args = [item for sublist in total_args for item in sublist]
         num_ops = len(operation_array)
         batch_mols= 50  # int(len(molecules)/10)
@@ -256,12 +250,11 @@ def calc(dictionary_args):
                 # print stuff
                 molecule = args_dict["molecule"]
 
-                if not args_dict["skipped"]:
-                    if args_dict["line"]:
-                        silent_print("-----")
-                        silent_print("**executing command:", args_dict["line"].rstrip(), "**")
-                    silent_print("Molecule:", molecule.metadata.appellation(no_leading_zeros=True))
-                    molecule.print_equivalence_class_summary(True)
+                if args_dict["line"]:
+                    silent_print("-----")
+                    silent_print("**executing command:", args_dict["line"].rstrip(), "**")
+                silent_print("Molecule:", molecule.metadata.appellation(no_leading_zeros=True))
+                molecule.print_equivalence_class_summary(True)
                 # run the calculation
                 try:
                     result = single_calculation(args_dict)

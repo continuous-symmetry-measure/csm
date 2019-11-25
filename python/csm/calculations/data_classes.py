@@ -131,7 +131,6 @@ class Result:
 class CSMResult(Result):
     def __init__(self, state, operation, overall_stats={}, ongoing_stats={}):
         self.failed = False
-        self.skipped = False
         # input
         self.molecule = state.molecule.copy()  # not yet denormalized
         self._normalized_molecule_coords = np.array(self.molecule.Q)
@@ -339,12 +338,10 @@ class CSMResult(Result):
 
 
 class FailedResult(Result):
-    def __init__(self, failed_reason, molecule, skipped=False, **kwargs):
+    def __init__(self, failed_reason, molecule, **kwargs):
         self.failed = True
         self.failed_reason = failed_reason
-        self.skipped = False
-        if skipped:
-            self.skipped = True
+
 
         self.molecule = molecule.copy()  # not yet denormalized
         self._normalized_molecule_coords = np.array(self.molecule.Q)
@@ -352,7 +349,7 @@ class FailedResult(Result):
         self.operation = kwargs["operation"]
         self.op_type = self.operation.type
         self.op_order = self.operation.order
-
+        silent_print(molecule.metadata.appellation() + "_"+ self.operation.op_code +" failed")
         # result
         self.csm = "n/a"
         self.dir = ["n/a", "n/a", "n/a"]
@@ -377,6 +374,9 @@ class FailedResult(Result):
         if not symmetric and not normalized:
             return np.array(self.molecule.Q)
         return []
+
+    def print_summary(self, legacy_output=False):
+        pass
     def __repr__(self):
         return super(FailedResult, self).__repr__() + "\tFailure: " + self.failed_reason
 

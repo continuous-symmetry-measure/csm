@@ -279,8 +279,6 @@ class MoleculeWrapper:
         self.set_traits(symmetric, normalized)
 
     def write(self, file, model_number=0, consecutive=False):
-        if self.result.skipped:
-            return
         mw = MoleculeWriter(self)
         mw.write(file, self._molecule_coords, consecutive=consecutive, model_number=model_number)
 
@@ -592,8 +590,6 @@ class ScriptContextWriter(ContextWriter):
     def write_dir(self, mol_results):
         f = self.dir_file
         for line_index, command_result in enumerate(mol_results):
-            if command_result.skipped:
-                continue
             f.write(self.molecule_format % command_result.molecule.metadata.appellation())
             f.write("%-10s" % get_line_header(line_index, command_result.operation))
             write_array_to_file(f, command_result.dir, separator="%-10s")
@@ -602,8 +598,6 @@ class ScriptContextWriter(ContextWriter):
     def write_perm(self, mol_results):
         f = self.perm_file
         for line_index, command_result in enumerate(mol_results):
-            if command_result.skipped:
-                continue
             f.write(self.molecule_format % (command_result.molecule.metadata.appellation()))
             f.write("%-10s" % (get_line_header(line_index, command_result.operation)))
             write_array_to_file(f, command_result.perm, True)
@@ -619,9 +613,6 @@ class ScriptContextWriter(ContextWriter):
         file = self.symmetric_mols_file
         for command_index, command_result in enumerate(mol_results):
             if command_result.failed:
-                print(command_result.molecule.metadata.appellation() +
-                      get_line_header(command_index, command_result.operation) +
-                      " failed, not writing symmetric coordinates")
                 continue
             molecule_wrapper = MoleculeWrapper(command_result, command_index, symmetric=True, normalized=False)
             molecule_wrapper.write(file, consecutive=True, model_number=self.result_index + 1)
@@ -629,8 +620,6 @@ class ScriptContextWriter(ContextWriter):
 
     def write_legacy_files(self, mol_results):
         for line_index, command_result in enumerate(mol_results):
-            if command_result.skipped:
-                continue
             name = command_result.molecule.metadata.appellation(no_file_format=True) + "_" + get_line_header(line_index,
                                                                                                              command_result.operation)
             file_name = name + "." + command_result.molecule.metadata.format
@@ -651,6 +640,7 @@ class ScriptContextWriter(ContextWriter):
             f.write(item)
             f.write("\n")
             item = output_strings.fetch()
+
 
     def write_approx_file(self, mol_results):
         out_folder = self.approx_folder
