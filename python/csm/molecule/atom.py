@@ -1,12 +1,29 @@
 from collections import namedtuple
+import warnings
 
-from openbabel import OBAtom, OBElementTable
+try: #openbabel 3
+    from openbabel import openbabel
+    from openbabel.openbabel import OBAtom
+    from openbabel.pybel import Atom as obel_atom
+    _tbl=None
+except ImportError: #openbabel 2
+    #commented out for now. will eventually activate
+    warnings.warn("Your openbabel version is 2.4.1 or lower. Future versions of csm will only support openbabel 3")
+    from openbabel import OBAtom, OBElementTable
+    _tbl = OBElementTable()
+
 
 __author__ = 'zmbq'
 
-_tbl = OBElementTable()
+
 
 ChainedPermutation = namedtuple('ChainedPermutation', ['chain_perm', 'atom_perm'])
+
+def GetAtomicNum(symbol):
+    if _tbl:
+        return _tbl.GetAtomicNum(symbol)
+    return openbabel.GetAtomicNum(symbol)
+
 
 
 def GetAtomicMass(symbol):
@@ -14,7 +31,7 @@ def GetAtomicMass(symbol):
     :param symbol: Element's symbol
     :return: The atomic mass
     """
-    atomicNum = _tbl.GetAtomicNum(symbol)
+    atomicNum = GetAtomicNum(symbol)
     atom = OBAtom()
     atom.SetAtomicNum(atomicNum)
     atom.SetIsotope(0)
@@ -26,11 +43,13 @@ def GetAtomicSymbol(atomic_num):
     :param atomic_num: Atomic number
     :return: Element symbol
     """
-    return _tbl.GetSymbol(atomic_num)
+    if _tbl:
+        return _tbl.GetSymbol(atomic_num)
+    return openbabel.GetSymbol(atomic_num)
 
 
 class Atom:
-    """ A single atom, alogn with its position and neighbors
+    """ A single atom, along with its position and neighbors
     """
 
     def __init__(self, symbol, pos, index, useMass=False, chain='Simulated Chain'):
@@ -107,3 +126,4 @@ class Atom:
         if index in (0, 1, 2):
             self.pos[index] = value
         raise ValueError("Invalid Index")
+

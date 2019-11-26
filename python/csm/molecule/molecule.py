@@ -9,7 +9,10 @@ from pathlib import Path
 import copy
 import numpy as np
 import os
-from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
+try:
+    from openbabel.openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
+except ImportError:
+    from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
 
 from csm.input_output.formatters import csm_log as print
 from csm.input_output.formatters import silent_print
@@ -165,6 +168,7 @@ class Molecule:
         :param to_copy: boolean, default False, when True none of the molecules fields will be filled
         """
         if not to_copy:
+            if len(atoms)<1: raise ValueError("Cannot create molecule with no atoms")
             self._atoms = atoms
             self._norm_factor = 1.0  # is recalculated by molecule._complete_initialization
 
@@ -1006,14 +1010,16 @@ class MoleculeReader:
             if read_fragments:
                 mol = MoleculeReader.mol_from_obm(obms, format, babel_bond=babel_bond, ignore_sym=ignore_sym,
                                                   use_mass=use_mass, read_fragments=read_fragments)
-                mols.append(mol)
+                if mol:  # stupid workaround for openbabel 3
+                    mols.append(mol)
 
             else:
                 obms=select_mols(obms, kwargs) #save a little bit of time- only continue processing the molecules that were selected
-                for obm in obms:
+                for i, obm in enumerate(obms):
                     mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_sym=ignore_sym,
                                                       use_mass=use_mass)
-                    mols.append(mol)
+                    if mol: #stupid workaround for openbabel 3
+                        mols.append(mol)
 
         processed_mols = []
         use_filename = True
@@ -1124,6 +1130,9 @@ class MoleculeReader:
                     adjacent.append(neighbour_atom.GetIdx() - 1)
                 atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                 atoms.append(atom)
+
+        if not len(atoms): #a stupid workaround for openbabel 3 bad handling of pdbs
+            return None
 
         mol = Molecule(atoms)
         mol.metadata.file_content = mol_contents
@@ -1345,6 +1354,12 @@ class MoleculeReader:
 
     @staticmethod
     def redo_molecule(in_mol, **kwargs):
+        '''
+        when a comfile line argument includes a command that modifes a molecule, we resubmit molecules here to be redone
+        :param in_mol:
+        :param kwargs:
+        :return:
+        '''
         format = in_mol.metadata.format
         try:
             if kwargs["in_format"]:

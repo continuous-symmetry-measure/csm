@@ -1,16 +1,26 @@
 import csv
 import json
-import openbabel as ob
 import os
 import re
-from openbabel import OBConversion
+from pathlib import Path
+import shutil
+
+try:
+    import openbabel.openbabel as ob
+    from openbabel.openbabel import OBConversion
+except ImportError:
+    import openbabel as ob
+    from openbabel import OBConversion
+
+
 
 from csm import __version__
 from csm.calculations.basic_calculations import cart2sph
 from csm.input_output.formatters import format_CSM, format_unknown_str, output_strings, non_negative_zero
 from csm.molecule.molecule import MoleculeReader
-from pathlib import Path
-import shutil
+
+
+
 
 def write_array_to_file(f, arr, add_one=False, separator=" "):
     '''
