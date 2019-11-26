@@ -8,7 +8,7 @@ try: #openbabel 3
     _tbl=None
 except ImportError: #openbabel 2
     #commented out for now. will eventually activate
-    warnings.warn("Your openbabel version is 2.4.1 or lower. Future versions of csm will only support openbabel 3")
+    #warnings.warn("Your openbabel version is 2.4.1 or lower. Future versions of csm will only support openbabel 3")
     from openbabel import OBAtom, OBElementTable
     _tbl = OBElementTable()
 
