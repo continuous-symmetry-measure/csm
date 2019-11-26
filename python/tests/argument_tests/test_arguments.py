@@ -3,6 +3,7 @@ A set of tests to check that a variety of input arguments are still valid and ha
 that the code runs successfully and returns A result.
 '''
 import csv
+import json
 
 import os
 import pytest
@@ -24,11 +25,12 @@ class RunThings():
 class TestBasic(RunThings):
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    #try:
+
+    # try:
     #    shutil.rmtree(results_folder)
-    #except FileNotFoundError:
+    # except FileNotFoundError:
     #    pass
-    #os.mkdir(results_folder)
+    # os.mkdir(results_folder)
 
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
@@ -67,14 +69,101 @@ class TestBasic(RunThings):
         # test output
         with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
             file.readline()
-            file.readline()  # skip the openbabel line, which changes every time
-            output_str = file.read()
-        with open(os.path.join("expected", "removehyexpected.mol"), 'r') as file:
             file.readline()
-            file.readline()  # skip the openbabel line, which changes every time
-            expected_str = file.read()
+            file.readline()# skip the first 3 lines, which includes the openbabel line, which changes every time
+            output_str = file.read()
 
-        assert expected_str == output_str
+        expected_openbabel24='''18 21  0  0  0  0  0  0  0  0999 V2000
+   -0.9393   -0.9701    0.0521 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -2.2312   -0.4645    0.0947 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -3.3877   -1.2518    0.1527 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -3.2977   -2.6016    0.1706 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -2.0472   -3.1637    0.1304 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.8825   -2.3782    0.0720 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3456   -3.0166    0.0333 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.5227   -2.2960   -0.0247 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.5077   -0.9072   -0.0456 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.2892   -0.1740   -0.0088 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.4152    1.2854   -0.0363 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.6842    1.8958   -0.0955 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.8236    1.1097   -0.1285 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.7400   -0.2690   -0.1041 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.8308    3.2939   -0.1227 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.7482    4.1356   -0.0935 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.4848    3.5819   -0.0368 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.6370    2.1903   -0.0093 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  6  2  0  0  0  0
+  1 10  1  0  0  0  0
+  2  3  2  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  2  0  0  0  0
+  5  6  1  0  0  0  0
+  6  7  1  0  0  0  0
+  7  8  2  0  0  0  0
+  8  9  1  0  0  0  0
+  9 10  1  0  0  0  0
+  9 14  2  0  0  0  0
+ 10 11  2  0  0  0  0
+ 11 12  1  0  0  0  0
+ 11 18  1  0  0  0  0
+ 12 13  2  0  0  0  0
+ 12 15  1  0  0  0  0
+ 13 14  1  0  0  0  0
+ 15 16  2  0  0  0  0
+ 16 17  1  0  0  0  0
+ 17 18  2  0  0  0  0
+M  END
+
+$$$$
+'''
+        expected_openbabel30='''
+ 18 21  0  0  0  0  0  0  0  0999 V2000
+   -0.9393   -0.9701    0.0521 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -2.2312   -0.4645    0.0947 C   0  0  0  0  0  3  0  0  0  0  0  0
+   -3.3877   -1.2518    0.1527 C   0  0  0  0  0  3  0  0  0  0  0  0
+   -3.2977   -2.6016    0.1706 C   0  0  0  0  0  3  0  0  0  0  0  0
+   -2.0472   -3.1637    0.1304 C   0  0  0  0  0  3  0  0  0  0  0  0
+   -0.8825   -2.3782    0.0720 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3456   -3.0166    0.0333 C   0  0  0  0  0  3  0  0  0  0  0  0
+    1.5227   -2.2960   -0.0247 C   0  0  0  0  0  3  0  0  0  0  0  0
+    1.5077   -0.9072   -0.0456 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.2892   -0.1740   -0.0088 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.4152    1.2854   -0.0363 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.6842    1.8958   -0.0955 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.8236    1.1097   -0.1285 C   0  0  0  0  0  3  0  0  0  0  0  0
+    2.7400   -0.2690   -0.1041 C   0  0  0  0  0  3  0  0  0  0  0  0
+    1.8308    3.2939   -0.1227 C   0  0  0  0  0  3  0  0  0  0  0  0
+    0.7482    4.1356   -0.0935 C   0  0  0  0  0  3  0  0  0  0  0  0
+   -0.4848    3.5819   -0.0368 C   0  0  0  0  0  3  0  0  0  0  0  0
+   -0.6370    2.1903   -0.0093 C   0  0  0  0  0  3  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  6  2  0  0  0  0
+  1 10  1  0  0  0  0
+  2  3  2  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  2  0  0  0  0
+  5  6  1  0  0  0  0
+  6  7  1  0  0  0  0
+  7  8  2  0  0  0  0
+  8  9  1  0  0  0  0
+  9 10  1  0  0  0  0
+  9 14  2  0  0  0  0
+ 10 11  2  0  0  0  0
+ 11 12  1  0  0  0  0
+ 11 18  1  0  0  0  0
+ 12 13  2  0  0  0  0
+ 12 15  1  0  0  0  0
+ 13 14  1  0  0  0  0
+ 15 16  2  0  0  0  0
+ 16 17  1  0  0  0  0
+ 17 18  2  0  0  0  0
+M  END
+
+$$$$
+
+        '''
+        assert output_str.strip()==expected_openbabel24.strip() or output_str.strip()==expected_openbabel30.strip()
 
     def test_select_atoms(self):
         # --select-atoms removes specific atoms.
@@ -90,36 +179,116 @@ class TestBasic(RunThings):
         # test output
         with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
             file.readline()
-            file.readline()  # skip the openbabel line, which changes every time
-            output_str = file.read()
-        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
             file.readline()
-            file.readline()  # skip the openbabel line, which changes every time
-            expected_str = file.read()
+            file.readline()  # skip the first 3 lines, which includes the openbabel line, which changes every time
+            output_str = file.read()
 
-        assert expected_str == output_str
+        expected_openbabel24 = '''7  6  0  0  0  0  0  0  0  0999 V2000
+   -1.6424   -0.8401    0.0596 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -2.4643   -1.2605    0.0894 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3236    0.1655   -0.0117 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.3452   -0.1766    0.0125 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3469    0.1774   -0.0126 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.5990    0.8179   -0.0580 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.1824    1.1163   -0.0792 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  4  1  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  2  0  0  0  0
+  5  6  1  0  0  0  0
+  6  7  2  0  0  0  0
+M  END
+
+$$$$
+'''
+        expected_openbabel30 = '''7  6  0  0  0  0  0  0  0  0999 V2000
+   -1.6424   -0.8401    0.0596 C   0  0  0  0  0  2  0  0  0  0  0  0
+   -2.4643   -1.2605    0.0894 C   0  0  0  0  0  1  0  0  0  0  0  0
+    0.3236    0.1655   -0.0117 C   0  0  0  0  0  1  0  0  0  0  0  0
+   -0.3452   -0.1766    0.0125 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3469    0.1774   -0.0126 C   0  0  0  0  0  3  0  0  0  0  0  0
+    1.5990    0.8179   -0.0580 C   0  0  0  0  0  3  0  0  0  0  0  0
+    2.1824    1.1163   -0.0792 C   0  0  0  0  0  2  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  4  1  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  2  0  0  0  0
+  5  6  1  0  0  0  0
+  6  7  2  0  0  0  0
+M  END
+
+$$$$
+'''
+
+        assert output_str.strip() == expected_openbabel24.strip() or output_str.strip() == expected_openbabel30.strip()
 
     def test_select_atoms_remove_hy(self):
         # --select-atoms removes specific atoms.
         # --remove-hy removes 'H' atoms.
 
-        cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2 --remove-hy"
+        cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-20,1-3 --remove-hy"
         results = self.run_args(cmd)
         assert len(results[0][0].molecule) == 7
 
         # test output
         with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
             file.readline()
-            file.readline()  # skip the openbabel line, which changes every time
-            output_str = file.read()
-        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
             file.readline()
-            file.readline()  # skip the openbabel line, which changes every time
-            expected_str = file.read()
+            file.readline()  # skip the first 3 lines, which includes the openbabel line, which changes every time
+            output_str = file.read()
 
-        assert expected_str == output_str
+        expected_openbabel24 = '''7  6  0  0  0  0  0  0  0  0999 V2000
+   -1.6424   -0.8401    0.0596 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -2.4643   -1.2605    0.0894 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3236    0.1655   -0.0117 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.3452   -0.1766    0.0125 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3469    0.1774   -0.0126 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.5990    0.8179   -0.0580 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.1824    1.1163   -0.0792 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  4  1  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  2  0  0  0  0
+  5  6  1  0  0  0  0
+  6  7  2  0  0  0  0
+M  END
+
+$$$$
+'''
+        expected_openbabel30 = '''7  6  0  0  0  0  0  0  0  0999 V2000
+   -1.6424   -0.8401    0.0596 C   0  0  0  0  0  2  0  0  0  0  0  0
+   -2.4643   -1.2605    0.0894 C   0  0  0  0  0  1  0  0  0  0  0  0
+    0.3236    0.1655   -0.0117 C   0  0  0  0  0  1  0  0  0  0  0  0
+   -0.3452   -0.1766    0.0125 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3469    0.1774   -0.0126 C   0  0  0  0  0  3  0  0  0  0  0  0
+    1.5990    0.8179   -0.0580 C   0  0  0  0  0  3  0  0  0  0  0  0
+    2.1824    1.1163   -0.0792 C   0  0  0  0  0  2  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1  4  1  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  2  0  0  0  0
+  5  6  1  0  0  0  0
+  6  7  2  0  0  0  0
+M  END
+
+$$$$
+'''
+
+        assert output_str.strip() == expected_openbabel24.strip() or output_str.strip() == expected_openbabel30.strip()
+
+    def test_use_backbone(self):
+        cmd = "approx c2 --use-backbone --input 3alb-gkt4-h.pdb "
+        result = self.run_args(cmd)
+        assert len(result[0][0].molecule) == 48
+
+        cmd = "approx c3 --input 2rla-s3.pdb --use-backbone"
+        result = self.run_args(cmd)
+        assert len(result[0][0].molecule) == 12
 
     def test_ignore_atoms(self):
+        def strip(myString):
+            myString = myString.replace(' ', '').replace('\t', '').replace('\n', '')
+            return myString
         # --ignore-atoms removes specific atoms.
         # The test checks that the result is identical to the result by use --select-atoms
 
@@ -131,14 +300,49 @@ class TestBasic(RunThings):
         # test output
         with open(os.path.join(self.results_folder, "resulting_symmetric_coordinates.mol"), 'r') as file:
             file.readline()
-            file.readline()  # skip the openbabel line, which changes every time
-            output_str = file.read()
-        with open(os.path.join("expected", "selectatomsexpected.mol"), 'r') as file:
             file.readline()
-            file.readline()  # skip the openbabel line, which changes every time
-            expected_str = file.read()
+            file.readline()  # skip the first 3 lines, which includes the openbabel line, which changes every time
+            output_str = file.read()
 
-        assert expected_str == output_str
+            expected_openbabel24 = '''7  6  0  0  0  0  0  0  0  0999 V2000
+           -1.6424   -0.8401    0.0596 C   0  0  0  0  0  0  0  0  0  0  0  0
+           -2.4643   -1.2605    0.0894 C   0  0  0  0  0  0  0  0  0  0  0  0
+            0.3236    0.1655   -0.0117 C   0  0  0  0  0  0  0  0  0  0  0  0
+           -0.3452   -0.1766    0.0125 C   0  0  0  0  0  0  0  0  0  0  0  0
+            0.3469    0.1774   -0.0126 C   0  0  0  0  0  0  0  0  0  0  0  0
+            1.5990    0.8179   -0.0580 C   0  0  0  0  0  0  0  0  0  0  0  0
+            2.1824    1.1163   -0.0792 C   0  0  0  0  0  0  0  0  0  0  0  0
+          1  2  1  0  0  0  0
+          1  4  1  0  0  0  0
+          3  4  1  0  0  0  0
+          4  5  2  0  0  0  0
+          5  6  1  0  0  0  0
+          6  7  2  0  0  0  0
+        M  END
+
+        $$$$
+        '''
+            expected_openbabel30 = '''7  6  0  0  0  0  0  0  0  0999 V2000
+           -1.6424   -0.8401    0.0596 C   0  0  0  0  0  2  0  0  0  0  0  0
+           -2.4643   -1.2605    0.0894 C   0  0  0  0  0  1  0  0  0  0  0  0
+            0.3236    0.1655   -0.0117 C   0  0  0  0  0  1  0  0  0  0  0  0
+           -0.3452   -0.1766    0.0125 C   0  0  0  0  0  0  0  0  0  0  0  0
+            0.3469    0.1774   -0.0126 C   0  0  0  0  0  3  0  0  0  0  0  0
+            1.5990    0.8179   -0.0580 C   0  0  0  0  0  3  0  0  0  0  0  0
+            2.1824    1.1163   -0.0792 C   0  0  0  0  0  2  0  0  0  0  0  0
+          1  2  1  0  0  0  0
+          1  4  1  0  0  0  0
+          3  4  1  0  0  0  0
+          4  5  2  0  0  0  0
+          5  6  1  0  0  0  0
+          6  7  2  0  0  0  0
+        M  END
+
+        $$$$
+        '''
+
+
+        assert strip(output_str) == strip(expected_openbabel24) or strip(output_str) == strip(expected_openbabel30)
 
     def test_ignore_sym(self):
         # --ignore-sym ignores atomic symbols
@@ -193,11 +397,19 @@ class TestBasic(RunThings):
         results = self.run_args(cmd)
         assert len(results) == 3
 
-        # TODO: output tests
+        #same deals but with comfile
+        cmd = "comfile comfile.txt --input squarate.xyz --select-mols 1,3-4"
+        results = self.run_args(cmd)
+        assert len(results) == 3
+
+        cmd = "comfile comfile.txt --input ignore-sym --select-mols 1,3-4"
+        results = self.run_args(cmd)
+        assert len(results) == 3
+
 
     # output
     def test_legacy(self):
-        #why is it printing filename instead of index all of a sudden?
+        # why is it printing filename instead of index all of a sudden?
         # --legacy-output prints old style csm format
         cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.txt".format(
             self.results_folder)
@@ -206,33 +418,15 @@ class TestBasic(RunThings):
             out = ofile.read()
         with open(os.path.join("expected", "legacy.txt"), 'r') as ofile:
             exp = ofile.read()
-        assert out == exp
+        assert out.strip() == exp.strip()
 
     def test_json_output(self):
-        #same problem as legacy
+        # same problem as legacy
         # --json-output. only works with --legacy-output
-        cmd = "exact c2 --input squarate.xyz --select-mols 1 --legacy-output --output {}/legacy.json --json-output".format(
-            self.results_folder)
-        csm_run(cmd.split())
-        with open(os.path.join(self.results_folder, "legacy.json"), 'r') as ofile:
-            out = ofile.read()
-        with open(os.path.join("expected", "legacy.json"), 'r') as ofile:
-            exp = ofile.read()
-        assert out == exp
-
-    def test_print_denorm(self):
-        # --print-denorm prints denormalized coordinates for original molecule instead of normalized
-        cmd = "exact c2 --input squarate.xyz --select-mols 1 --print-denorm"
+        cmd = "exact c2 --input squarate.xyz  --json-output --select-mols 1,2"
         self.run_args(cmd)
-        with open(os.path.join(self.results_folder, "initial_normalized_coordinates.xyz"), "r") as file:
-            output2 = file.read()
-
-        cmd = "exact c2 --input squarate.xyz --select-mols 1"
-        self.run_args(cmd)
-        with open(os.path.join(self.results_folder, "initial_denormalized_coordinates.xyz"), "r") as file:
-            output1 = file.read()
-
-        assert output1 != output2
+        with open(os.path.join(self.results_folder, "json-results.json"), 'r') as ofile:
+            out = json.loads(ofile.read())
 
     def test_legacy_files(self):
         cmd = "exact c2 --input squarate.xyz --legacy-files"
@@ -244,7 +438,7 @@ class TestBasic(RunThings):
             out = file.read()
         with open(os.path.join("expected", "example-legacy-file.xyz"), "r") as file:
             exp = file.read()
-        assert out == exp
+        assert out.strip() == exp.strip()
 
     def test_verbose(self):
         # verbose-- approx only
@@ -254,18 +448,8 @@ class TestBasic(RunThings):
         assert os.path.isdir(output_path)
         # todo: because the output contains a variable runtime, running a comparison is a bit tedious, leaving it for now
 
-    # shared stuff
 
-    # try:
-    #    shutil.rmtree(results_folder)
-    # except FileNotFoundError:
-    #    pass
-    # os.mkdir(results_folder)
-
-    def run_args(self, args_str):
-        return super()._run_args(args_str, self.results_folder)
-
-    #parallel
+    # parallel
     def test_parallel_mols_in_file(self):
         cmd = "comfile comfile.txt --input many-mols.xyz --parallel"
         result1 = self.run_args(cmd)
@@ -285,7 +469,7 @@ class TestBasic(RunThings):
         assert result2[0][0].op_type == 'CS' and result2[0][0].op_order == 2
 
     def test_normalize(self):
-        cmd = "approx c3 --fibonacci 1 --read-fragments --input reading-fragments\water-6.mol --normalize 0 1 2 3 4 5 6"
+        cmd = r"approx c3 --fibonacci 1 --read-fragments --input reading-fragments\water-6.mol --normalize 0 1 2 3 4 5 6"
         results = self.run_args(cmd)
         hi = 1
 
@@ -333,27 +517,48 @@ class TestBasic(RunThings):
         assert results[0][0].csm == pytest.approx(0.793551, abs=1e-5)
 
     def test_output_perms(self):
-        with open(os.path.join(self.results_folder, "perms.csv"), 'w') as file:
-            #reset perms.csv
+        with open(os.path.join(self.results_folder, "exact", "4-helicene_L01_cs.csv"), 'w') as file:
+            # reset perms.csv
             pass
         cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms"
         self.run_args(cmd)
         out_rows = []
-        with open(os.path.join(self.results_folder, "perms.csv"), 'r') as file:
+        with open(os.path.join(self.results_folder, "exact", "4-helicene_L01_cs.csv"), 'r') as file:
             reader = csv.reader(file)
             for row in reader:
                 out_rows.append(row)
-        assert out_rows == [
-            ['Molecule', 'op','Permutation', 'Direction', 'CSM'],
-            [
-                '4-helicene.mol', 'CS2', '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]',
-                '[0.042475 0.020727 0.998883]', '0.7935529301987154'],
-            [
-                '4-helicene.mol', 'CS2', '[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]',
-                '[-0.514303 -0.856692  0.039646]', '0.7935519339113517']
-        ]
+        assert out_rows[0] == ['op', 'Permutation', 'Direction', 'CSM']
+        assert out_rows[1][0]=='CS2'
+        assert out_rows[2][1]=='[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]'
 
     # approx
+    def test_parallel_dirs(self):
+        cmd = "approx c2 --input 3alb-gkt4-h.pdb --use-sequence --parallel-dirs"
+        results = self.run_args(cmd)
+        assert not results[0][0].failed
+
+    def test_input_chain_perm(self):
+        cmd = "approx c2 --input 3alb-gkt4-h.pdb --input-chain-perm --verbose"
+        results = self.run_args(cmd)
+        assert results[0][0].chain_perm == [2, 1, 0, 3]  # when run with use-chains it gets 0 1 2 3
+
+    def test_input_chain_perm_trivial(self):
+        cmd = "trivial c2 --input 3alb-gkt4-h.pdb --input-chain-perm --verbose"
+        results = self.run_args(cmd)
+        assert results[0][0].chain_perm == [2, 1, 0, 3]
+        with open(os.path.join(self.results_folder, "trivial", "3alb-gkt4-h_L01_c2.tsv"), 'r') as tsvfile:
+            pass
+
+    def test_unequal_chains(self):
+        cmd = "approx c2 --input 4a5k-467.pdb --use-chains"
+        results = self.run_args(cmd)
+        assert results[0][0].chain_perm==[0,3,2,1]
+
+        cmd = "trivial c2 --input 4a5k-467.pdb --use-chains"
+        results = self.run_args(cmd)
+        assert results[0][0].chain_perm==[0,3,2,1]
+    
+
     def test_use_chains(self):
         cmd = "approx c3 --input 2rla-s3.pdb --use-chains"
         results = self.run_args(cmd)
@@ -380,53 +585,53 @@ class TestBasic(RunThings):
         # default
         cmd = "approx c3 --input 3alb-gkt4-h.pdb"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 9
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 9
         # detect-outliers
         cmd = "approx c3 --input 3alb-gkt4-h.pdb --detect-outliers"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 18
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 18
         # no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --no-orthogonal"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 3
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 3
         # use-best-dir
         cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 3
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 3
         # use-best-dir + --no-orthogonal
         cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir --no-orthogonal"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 1
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 1
         # fibonacci
         cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 20"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 20
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 20
         # dir
         cmd = "approx c3 --input 2rla-s3.pdb --dir 1 0 0"
         results = self.run_args(cmd)
-        assert len(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY']) == 1
+        assert len(results[0][0].ongoing_statistics['approx']['c3']) == 1
 
     def test_algorithms(self):
         # default
         cmd = "approx c3 --input 2rla-s3.pdb"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats1 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
+        stats1 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # greedy
         cmd = "approx c3 --input 2rla-s3.pdb --greedy"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats2 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
+        stats2 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # many-chains
         cmd = "approx c3 --input 2rla-s3.pdb --many-chains"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats3 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
+        stats3 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # keep-structure
         cmd = "approx c3 --input 2rla-s3.pdb --keep-structure"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
-        stats4 = tuple(results[0][0].ongoing_statistics['approx']['C3 SYMMETRY'][3]['stats']['dirs'][0])
+        stats4 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
 
         test = set([stats1, stats2, stats3, stats4])
         assert len(test) == 4
@@ -435,8 +640,9 @@ class TestBasic(RunThings):
 class TestFragments(RunThings):
     os.chdir(test_dir)
     results_folder = "csm_tests"
-    #shutil.rmtree(results_folder)
-    #os.mkdir(results_folder)
+
+    # shutil.rmtree(results_folder)
+    # os.mkdir(results_folder)
 
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
@@ -444,9 +650,9 @@ class TestFragments(RunThings):
     def test_read_fragments_baseline(self):
         # --read-fragments reads from .mol, .pdb as chains
         filenames = ["model-endmdl-withIDS.pdb",
-                     "model-endmdl-withoutIDS.pdb",
-                     "water-6.mol",
-                     "water-6.pdb"]
+                     #"model-endmdl-withoutIDS.pdb",
+                     "water-6.mol",]
+                     #"water-6.pdb"]
 
         for filename in filenames:
             cmd = "approx c3 --fibonacci 1 --input reading-fragments"
@@ -485,8 +691,10 @@ class TestFragments(RunThings):
 
 class TestChirality(RunThings):
     results_folder = "csm_tests"
+
     def run_args(self, args_str):
         return super()._run_args(args_str, self.results_folder)
+
     def test_trivial(self):
         # --babel-bond computes bonding
         cmd = "trivial ch --input ferrocene.xyz"
@@ -514,37 +722,34 @@ class TestChirality(RunThings):
 
     def test_exact(self):
         # --sn-max (relevant only for chirality)
-        cmd = "exact ch --input bis(dth)copper(I).mol" #matches
+        cmd = "exact ch --input bis(dth)copper(I).mol"  # matches
         result1 = self.run_args(cmd)
         assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "S4"
 
     def test_exact_2(self):
-        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2" #matches
+        cmd = "exact ch --input bis(dth)copper(I).mol --sn-max 2"  # matches
         result2 = self.run_args(cmd)
         assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
         assert result2[0][0].overall_statistics["best chirality"] == "CS"
 
     def test_approx(self):
-        cmd = "approx ch --input ferrocene.xyz --babel-bond" #matches
+        cmd = "approx ch --input ferrocene.xyz --babel-bond"  # matches
         results = self.run_args(cmd)
         assert results[0][0].csm == pytest.approx(0.241361, abs=1e-5)
         assert results[0][0].overall_statistics["best chirality"] == "CS"
 
     def test_approx_2(self):
-        cmd = "approx ch --input bis(dth)copper(I).mol" #matches
+        cmd = "approx ch --input bis(dth)copper(I).mol"  # matches
         result1 = self.run_args(cmd)
         assert result1[0][0].csm == pytest.approx(0, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "S4"
 
     def test_approx_3(self):
-        cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2" #matches
+        cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2"  # matches
         result2 = self.run_args(cmd)
         assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
         assert result2[0][0].overall_statistics["best chirality"] == "CS"
-
-
-
 
 
 class xTestComplicated(RunThings):

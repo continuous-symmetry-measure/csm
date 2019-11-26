@@ -31,17 +31,19 @@ class OurParser(ArgumentParser):
 
 def _create_parser():
     def input_utility_func(parser):
-        parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?',
+        parser.add_argument('--in-format', help='override guessing format from input file ending with provided format',
+                                default=None)
+        parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?', dest="conn_file",
                             help='xyz connectivity file, default is connectivity.txt in current working directory')
         mutex_args = parser.add_mutually_exclusive_group()
         mutex_args.add_argument('--select-atoms', default=None,
-                                 help='Select only some atoms, eg 1-20,15,17,19-21')
+                                 help='Select only some atoms for calculation, eg 1-20,15,17,19-21')
         mutex_args.add_argument('--ignore-atoms', default=None,
                                 help='Ignore some atoms, eg 1-20,15,17,19-21')
         parser.add_argument('--remove-hy', action='store_true', default=False,
                                 help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
         parser.add_argument('--select-mols', default=None,
-                            help='Select only some molecules, eg 1-20,15,17,19-21')
+                            help='Select only some molecules for calculation, eg 1-20,15,17,19-21')
         parser.add_argument('--ignore-sym', action='store_true', default=False,
                             help='Ignore all atomic symbols, performing a purely geometric operation')
         parser.add_argument('--use-mass', action='store_true', default=False,
@@ -56,28 +58,32 @@ def _create_parser():
                             help='Read fragments from .mol or .pdb file as chains')
 
     def output_utility_func(parser):
+        parser.add_argument('--out-format',
+                                        help='override guessing format from output file ending with provided format',
+                                        default=None)
+        mutex_args = parser.add_mutually_exclusive_group()
+        mutex_args.add_argument("--simple", action='store_true', default=False,
+                            help='only output is CSM to screen. Ignores other output flags.')
+        mutex_args.add_argument("--legacy-output", action='store_true', default=False,
+                            help='DEPRECATION WARNING. '
+                                 'print the old-style csm results to a file, only one calculation+molecule allowed.'
+                                 'Ignores other output flags')
+
         parser.add_argument("--overwrite", action='store_true', default=False,
                             help="overwrite results folder if exists (rather than adding timestamp)")
-        # parser.add_argument('--print-local', action='store_true', default=False,
-        #                    help='Print the local CSM (csm for each atom) in the output file')
-        parser.add_argument('--print-denorm', action='store_true', default=False,
-                            help='when printing the original molecule, print the denormalized coordinates')
-
         parser.add_argument("--verbose", action='store_true', default=False,
-                            help='create a fixed width spreadsheet of information about each direction for any approx commands')
+                            help='create a fixed width spreadsheet of additional information for approx or trivial calculation')
         parser.add_argument('--polar', action='store_true', default=False,
                             help="Print polar coordinates instead of cartesian coordinates in statistics created by --verbose")
-
-        parser.add_argument("--legacy-files", action='store_true', default=False,
-                            help='create a folder of legacy-style files for each molecule and command')
-
-        parser.add_argument("--legacy-output", action='store_true', default=False,
-                            help='print the old csm format, for a single molecule+command only')
         parser.add_argument('--json-output', action='store_true', default=False,
-                            help='Print output in json format to a file. Only relevant with --legacy-output')
+                            help='Print output in json format to a file.')
+        parser.add_argument("--legacy-files", action='store_true', default=False,
+                            help='create a folder of legacy-style files for each molecule and command. May be deprecated.')
 
-        parser.add_argument("--simple", action='store_true', default=False,
-                            help='only output is CSM to screen')
+        # parser.add_argument('--print-local', action='store_true', default=False,
+        #                    help='Print the local CSM (csm for each atom) in the output file')
+
+
 
     def shared_calc_utility_func(parser):
         parser.add_argument('symmetry',
@@ -117,19 +123,13 @@ def _create_parser():
         parser_input_args = parser.add_argument_group("Args for input (requires --input)")
         parser_input_args.add_argument("--input", help="molecule file or folder, default is current working directory",
                                        const=os.getcwd(), nargs='?')
-        parser_input_args.add_argument('--in-format',
-                                       help='override guessing format from input file ending with provided format',
-                                       default=None)
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output")
         parser_output_args.add_argument("--output",
                                         default=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         const=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         nargs='?',
-                                        help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
-        parser_output_args.add_argument('--out-format',
-                                        help='override guessing format from output file ending with provided format',
-                                        default=None)
+                                        help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory already exists (and --overwrite is not specified), a new folder with timestamp will be created", )
         output_utility_func(parser_output_args)
 
     parser = OurParser(allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
@@ -167,8 +167,7 @@ def _create_parser():
                                            "example: csm read mymol.pdb --read-fragments --remove-hy --select-atoms 1-3")
     input_args.add_argument('input', help='molecule file or folder, default is current working directory',
                             default=os.getcwd(), nargs='?')
-    input_args.add_argument('--format', help='override guessing format from file ending with provided format',
-                            default=None)
+
     input_utility_func(input_args)
 
     # WRITE
@@ -177,8 +176,6 @@ def _create_parser():
                                    usage="csm write filename [optional args]")
     out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results' + timestamp), nargs='?',
                           help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
-    out_args.add_argument('--format', help='override guessing format from file ending with provided format',
-                          default=None)
     output_utility_func(out_args)
 
     # EXACT
@@ -187,7 +184,7 @@ def _create_parser():
                                             'example: csm exact s4 --input --output myresults/1 --keep-structure --timeout 500')
     exact_args = exact_args_.add_argument_group("Args for exact calculation")
     shared_calc_utility_func(exact_args)
-    exact_args.add_argument('--use-perm', nargs="?", type=str, default=None,
+    exact_args.add_argument('--use-perm', nargs="?", type=str, default=None, dest='perm_file_name',
                             const=os.path.join(os.getcwd(), "perm.txt"),
                             help='Compute exact CSM for a single permutation, default is current directory/perm.txt')
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
@@ -214,6 +211,8 @@ def _create_parser():
                              help="Use fibonacci sphere to generate N starting directions")
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
+    approx_args.add_argument('--use-backbone', action='store_true', default=False,
+                        help='Rebuild protein without the residues, and compute')
     # algorithm choice
     mutex_approx_args = approx_args.add_mutually_exclusive_group()
     mutex_approx_args.add_argument('--greedy', action='store_const', const='greedy', default='hungarian',
@@ -228,6 +227,11 @@ def _create_parser():
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
     approx_args.add_argument('--parallel-dirs', type=int, const=0, nargs='?',
                              help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used. Cannot be used with --parallel')
+    #misc
+    approx_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
+                            const=os.path.join(os.getcwd(), "chainperm.txt"),
+                            help='Run calculation only on chain permutations in provided file. default file location is current directory/chainperm.txt')
+
     # outputs
     approx_args.add_argument('--print-approx', action='store_true', default=False,
                              help='print log to screen from approx')
@@ -244,6 +248,11 @@ def _create_parser():
     # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
     trivial_args.add_argument('--permute-chains', action='store_true', default=False,
                               help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")
+    trivial_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
+                            const=os.path.join(os.getcwd(), "chainperm.txt"),
+                            help='Run calculation only on chain permutations in provided file. Default file location is current directory/chainperm.txt')
+    trivial_args.add_argument('--use-backbone', action='store_true', default=False,
+                             help='Rebuild protein without the residues, and compute')
     shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
@@ -271,7 +280,6 @@ def _process_arguments(parse_res):
 
     def parse_input(dictionary_args):
         dictionary_args['in_file_name'] = parse_res.input
-        dictionary_args["conn_file"] = parse_res.connect
         if parse_res.read_fragments:
             dictionary_args['use_chains'] = True
             logger.warning(
@@ -283,6 +291,9 @@ def _process_arguments(parse_res):
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
+        if parse_res.legacy_output:
+            print("You have selected --legacy-output. Please be aware that other output flags do not work with legacy-output."
+                  "legacy-output is in the process of being deprecated.")
 
     #    dictionary_args['print_local'] = dictionary_args['calc_local'] = parse_res.print_local
 
@@ -291,10 +302,8 @@ def _process_arguments(parse_res):
         dictionary_args["pipe"] = False
 
     if parse_res.command == "read":
-        dictionary_args["in_format"] = parse_res.format
         parse_input(dictionary_args)
     elif parse_res.command == "write":
-        dictionary_args["out_format"] = parse_res.format
         parse_output(dictionary_args)
     else:
         # get input/output if relevant
@@ -318,8 +327,6 @@ def _process_arguments(parse_res):
             dictionary_args['normalizations'] = parse_res.normalize
 
             if parse_res.command == 'exact':
-                if parse_res.use_perm:
-                    dictionary_args['perm_file_name'] = parse_res.use_perm
                 if parse_res.output_perms and parse_res.parallel:
                     logger.warning("cannot output perms while running a calculation in parallel")
 
@@ -335,7 +342,10 @@ def _process_arguments(parse_res):
                     dictionary_args['dirs'] = [dir]
 
                 # algorithm choice:
-                if parse_res.approx_algorithm == "many-chains":
+                if parse_res.approx_algorithm == "many-chains" or parse_res.chain_perm_file_name:
+                    dictionary_args['use_chains'] = True
+
+                if parse_res.use_backbone:
                     dictionary_args['use_chains'] = True
 
                 if parse_res.selective is not None:
@@ -349,10 +359,9 @@ def _process_arguments(parse_res):
                     dictionary_args['parallel_dirs'] = True  # doing this before previous line causes weird bug
 
                     # outputs:
-                # dictionary_args['print_approx'] = parse_res.print_approx
-                # dictionary_args['polar'] = parse_res.polar
+
             if parse_res.command == 'trivial':
-                if parse_res.permute_chains:
+                if parse_res.permute_chains or  parse_res.chain_perm_file_name:
                     dictionary_args["use_chains"] = True
 
     try:

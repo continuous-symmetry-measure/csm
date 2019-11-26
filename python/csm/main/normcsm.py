@@ -97,7 +97,7 @@ def write_new_molecule(file, result):
         file.write("\n")
         write_coords(file, result.molecule.atoms, "dummy molecule coordinates")
         file.write("\n")
-        write_coords(file, result.molecule.atoms, "symmetric structure", result.symmetric_structure)
+        write_coords(file, result.molecule.atoms, "symmetric structure", result.symmetric_structure(normalized=False))
         file.write("\n")
         file.write("\ndummy molecule's equivalence classes\n")
         file.write(str(result.molecule.equivalence_classes))
@@ -137,7 +137,7 @@ def normalize_csm(norm_type, result, file):
     if norm_type == '0':  # standard
         return original_norm, original_csm
     if norm_type == '1':  # 1 center of masses of the fragments
-        coords = result.normalized_molecule_coords
+        coords = result.molecule_coords(normalized=True)
         fragment_centers = get_fragment_centers(molecule.chains, coords, file)
         norm = get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
         print_numdenom(file, original_csm, norm)
@@ -153,7 +153,7 @@ def normalize_csm(norm_type, result, file):
         # run CSM using the perm
         new_result = exact_calculation(result.operation, dummy, perm=perm)
         write_new_molecule(file, new_result)
-        new_symm = new_result.symmetric_structure
+        new_symm = new_result.symmetric_structure(normalized=False)
         # find normalization factor based on the above step
         coordinates_dict = {chain: new_symm[i] for i, chain in enumerate(molecule.chains)}
         norm = get_norm_by_distance_from_centers(coords, molecule.chains, coordinates_dict)
@@ -169,7 +169,7 @@ def normalize_csm(norm_type, result, file):
         # run CSM
         new_result = exact_calculation(result.operation, dummy, suppress_print=True)
         write_new_molecule(file, new_result)
-        new_symm = new_result.symmetric_structure
+        new_symm = new_result.symmetric_structure(normalized=False)
         # (save s0, print the received CSM and the symmetric structure (ie of the mass centers) and the dir)
         # find normalization factor based on the above step
         coordinates_dict = {chain: new_symm[i] for i, chain in enumerate(molecule.chains)}
@@ -179,7 +179,7 @@ def normalize_csm(norm_type, result, file):
 
     if norm_type == '4':  # 4 normalization according to averages of approximation to symmetry of fragments
         coords = result.molecule.Q
-        symm = result.symmetric_structure
+        symm = result.symmetric_structure(normalized=False)
         # find center of mass of each fragment in the symmetric structure
         fragment_centers = get_fragment_centers(molecule.chains, symm, file)
         norm = get_norm_by_distance_from_centers(coords, molecule.chains, fragment_centers)
@@ -192,7 +192,7 @@ def normalize_csm(norm_type, result, file):
         #  multiplying normalized_coords and normalized_symm by x
         #  and verifying that the returned csm is also mutiplied by x
         coords = result.molecule.Q
-        symm = result.symmetric_structure
+        symm = result.symmetric_structure(normalized=False)
         numerator = 0
         for i in range(len(coords)):
             numerator += np.linalg.norm(coords[i] - symm[i])
@@ -203,7 +203,7 @@ def normalize_csm(norm_type, result, file):
     if norm_type == '6':  # 6 Linear normalization
         # similar to standard csm but no squaring in numerator/denominator
         coords = result.molecule.Q
-        symm = result.symmetric_structure
+        symm = result.symmetric_structure(normalized=False)
         numerator = norm = 0
         for i in range(len(coords)):
             numerator += np.linalg.norm(coords[i] - symm[i])
@@ -251,7 +251,7 @@ def norm_calc(result, norm_types, norm_file=None):
     try:
         if norm_file:
             file = open(norm_file, 'w')
-            write_coords(file, result.molecule.atoms, "Normalized coords", result.normalized_molecule_coords)
+            write_coords(file, result.molecule.atoms, "Normalized coords", result.molecule_coords(normalized=True))
 
         for norm_type in norm_types:
             if file:

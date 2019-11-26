@@ -59,6 +59,8 @@ def read_molecules(**kwargs):
         mols = MoleculeReader.multiple_from_file(**kwargs)
     sys.stderr.flush()
 
+    if len(mols)<1:
+        raise ValueError("Failed to read any molecules, calculation cannot proceed")
     return mols
 
 
@@ -123,22 +125,49 @@ def read_perm_file(molecule, filename):
     return result
 
 
-def read_perm(molecule, perm_file_name=None, **kwargs):
+def read_chain_perm_file(molecule, filename, **kwargs):
+    perms=[]
+    if len(molecule.chains)<4:
+        print("Warning: the molecule has less than 4 chains, using --input-chain-perm is not recommended")
+    with open(filename, 'r') as f:
+        for line in f:
+            perm=line.split()
+            try:
+                index_perm=[molecule.chains.name_to_index(name) for name in perm]
+            except KeyError:
+                raise ValueError("Permutation contains invalid chain name: " + line)
+            if index_perm:
+                falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(index_perm, kwargs['operation'])
+                if falsecount > 0:
+                    raise ValueError("Chain Permutation does not maintain cycle structure: "+line)
+
+                for f_i, t_i in enumerate(index_perm):
+                    if len(molecule.chains[f_i])!=len(molecule.chains[t_i]):
+                        raise ValueError("ERROR: Cannot permute two chains with non matching lengths")
+
+                perms.append(index_perm)
+    return perms
+
+def read_perm(molecule, perm_file_name=None, chain_perm_file_name=None, **kwargs):
     '''
     :param molecule: the molecule whose permutation is being read (necessary for validity checks)
     :param perm_file_name: the name of the file where the permutation is stored (file permutation is written in indexes starting from 1)
     :return: permutation- a list of permuted indexes (starting with 0) (can be None)
     '''
+    return_perm = None
     if perm_file_name:
         perm = read_perm_file(molecule, perm_file_name)
         if len(perm) != len(molecule):
             raise ValueError("Invalid permutation - permutation is of size %d but molecule has %d atoms" %
                              (len(perm), len(molecule)))
-        fixed_perm = [molecule.fixed_indexes[i] for i in perm]
-        check_perm_validity(molecule, fixed_perm, **kwargs)
-    else:
-        fixed_perm = None
-    return fixed_perm
+        return_perm = [molecule.fixed_indexes[i] for i in perm]
+        check_perm_validity(molecule, return_perm, **kwargs)
+    if chain_perm_file_name:
+        perms=read_chain_perm_file(molecule, chain_perm_file_name, **kwargs)
+        if len(perms)<1:
+            perms=None
+        return_perm=perms
+    return return_perm
 
 
 def read_dir_file(filename):
