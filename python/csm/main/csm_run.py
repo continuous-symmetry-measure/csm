@@ -88,6 +88,9 @@ def get_command_args(command_file, old_command=True, **dictionary_args):
             except:  # want to be able to run even if some lines are invalid
                 print("failed to read args from line", line)
                 continue
+            if args_dict.get('select_mols', False):
+                raise ValueError(
+                    "Not allowed to use argument --select-mols within command file. Please use it in the main program command (eg `comfile cmd.txt --select-mols 1-3`)")
             args_array.append((line, args_dict, modifies_molecule))
             operation_array.append(args_dict["operation"])
     return args_array, operation_array
@@ -180,11 +183,6 @@ def calc(dictionary_args):
         for line, args_dict, modifies_molecule in args_array:
             args_dict["molecule"] = molecule
             args_dict["line"] = line
-            # handle select molecules:
-            if args_dict.get('select_mols', False):
-                raise ValueError("Not allowed to use argument --select-mols within command file. Please use it in the main program command (eg `comfile cmd.txt --select-mols 1-3`)")
-
-
             # handle modifying molecules:
             if modifies_molecule:
                 new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)

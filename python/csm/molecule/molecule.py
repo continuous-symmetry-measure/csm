@@ -9,7 +9,10 @@ from pathlib import Path
 import copy
 import numpy as np
 import os
-from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
+try:
+    from openbabel.openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
+except ImportError:
+    from openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
 
 from csm.input_output.formatters import csm_log as print
 from csm.input_output.formatters import silent_print
@@ -165,6 +168,7 @@ class Molecule:
         :param to_copy: boolean, default False, when True none of the molecules fields will be filled
         """
         if not to_copy:
+            if len(atoms)<1: raise ValueError("Cannot create molecule with no atoms")
             self._atoms = atoms
             self._norm_factor = 1.0  # is recalculated by molecule._complete_initialization
 
@@ -536,7 +540,7 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[]):
+    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[], use_backbone = False):
         """
             Creates a new Molecule from m by removing atoms who's symbol is in the remove list
             :param csm_args:
@@ -548,6 +552,9 @@ class Molecule:
             indices_to_remove=[i for i in range(len(self._atoms)) if i not in select_atoms]
         elif ignore_atoms:
             indices_to_remove = ignore_atoms
+        if use_backbone:
+            backbone_atoms = ['N', 'CA', 'C', 'O']
+            indices_to_remove.extend([i for i in range(len(self._atoms)) if self._atoms[i].atom_name not in backbone_atoms])
         indices_to_remove=set(indices_to_remove)
 
         #check for bad input 1: index provided that doesnt exist:
@@ -672,11 +679,11 @@ class Molecule:
             # else:
             #    silent_print("Molecule has no chains")
 
-    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[]):
+    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[], use_backbone=False):
         """
         Finish creating the molecule after reading the raw data
         """
-        self.strip_atoms(remove_hy, select_atoms, ignore_atoms)
+        self.strip_atoms(remove_hy, select_atoms, ignore_atoms, use_backbone)
         self._calculate_equivalency()
         self._initialize_chains(use_chains)
         self.normalize()
@@ -822,6 +829,7 @@ class PDBLine:
             self.remoteness = pdb_line[14]
             self.branch_designation = pdb_line[15]
             self.alternate_location = pdb_line[16]
+        self.atom_name = pdb_line[12:15].strip()
 
         if not self.atom_symbol:
             raise ValueError(
@@ -894,7 +902,7 @@ class MoleculeReader:
                   remove_hy=False, ignore_sym=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
                   keep_structure=False, select_atoms=[], conn_file=None,
-                  out_format=None, ignore_atoms = [],
+                  out_format=None, ignore_atoms = [], use_backbone=False,
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
@@ -928,7 +936,7 @@ class MoleculeReader:
                                                       remove_hy, ignore_sym, use_mass,
                                                       read_fragments, use_sequence,
                                                       keep_structure, select_atoms, conn_file,
-                                                      out_format, ignore_atoms)
+                                                      out_format, ignore_atoms, use_backbone)
         if not mol.bondset:
             if keep_structure:
                 raise ValueError(
@@ -943,13 +951,16 @@ class MoleculeReader:
                                  remove_hy=False, ignore_sym=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
                                  keep_structure=False, select_atoms=[], conn_file=None,
-                                 out_format=None, ignore_atoms=[], **kwargs):
+                                 out_format=None, ignore_atoms=[], use_backbone=False, **kwargs):
 
         mol.metadata.format = format
         if out_format:
             mol.metadata._out_format = out_format
         mol.metadata.babel_bond = babel_bond
         mol.metadata.filepath = in_file_name
+
+        if use_backbone and format.lower() != 'pdb':
+            raise ValueError("--use-backbone only works with PDB files")
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -963,11 +974,11 @@ class MoleculeReader:
             return mol
 
         if format == "pdb":
-            mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
+            mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond, use_backbone)
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
         if initialize:
-            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms)
+            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms, use_backbone)
             if len(mol.chains) < 2:
                 if read_fragments:
                     print("Warning: Although you input --read-fragments, no fragments were found in file. "
@@ -982,7 +993,7 @@ class MoleculeReader:
                            remove_hy=False, ignore_sym=False, use_mass=False,
                            read_fragments=False, use_sequence=False,
                            keep_structure=False, select_atoms=[], conn_file=None,
-                           out_format=None, ignore_atoms=[],
+                           out_format=None, ignore_atoms=[], use_backbone=False,
                            *args, **kwargs):
         #although the name of this function is "multiple from file", it is used both for files with multiple molecules
         #and for files with only a single molecule. it is used anytime the --input is a file, not a folder
@@ -999,14 +1010,16 @@ class MoleculeReader:
             if read_fragments:
                 mol = MoleculeReader.mol_from_obm(obms, format, babel_bond=babel_bond, ignore_sym=ignore_sym,
                                                   use_mass=use_mass, read_fragments=read_fragments)
-                mols.append(mol)
+                if mol:  # stupid workaround for openbabel 3
+                    mols.append(mol)
 
             else:
                 obms=select_mols(obms, kwargs) #save a little bit of time- only continue processing the molecules that were selected
-                for obm in obms:
+                for i, obm in enumerate(obms):
                     mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_sym=ignore_sym,
                                                       use_mass=use_mass)
-                    mols.append(mol)
+                    if mol: #stupid workaround for openbabel 3
+                        mols.append(mol)
 
         processed_mols = []
         use_filename = True
@@ -1018,7 +1031,7 @@ class MoleculeReader:
                                                             remove_hy, ignore_sym, use_mass,
                                                             read_fragments, use_sequence,
                                                             keep_structure, select_atoms, conn_file,
-                                                            out_format, ignore_atoms)
+                                                            out_format, ignore_atoms,use_backbone)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             processed_mols.append(p_mol)
@@ -1117,6 +1130,9 @@ class MoleculeReader:
                     adjacent.append(neighbour_atom.GetIdx() - 1)
                 atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                 atoms.append(atom)
+
+        if not len(atoms): #a stupid workaround for openbabel 3 bad handling of pdbs
+            return None
 
         mol = Molecule(atoms)
         mol.metadata.file_content = mol_contents
@@ -1226,7 +1242,7 @@ class MoleculeReader:
         return mol
 
     @staticmethod
-    def _read_pdb_connectivity_and_chains(filename, mol, read_fragments, babel_bond):
+    def _read_pdb_connectivity_and_chains(filename, mol, read_fragments, babel_bond, use_backbone=False):
         with open(filename, 'r') as file:
             # Count ATOM and HETATM lines, mapping them to our ATOM numbers.
             # In most PDBs ATOM 1 is our atom 0, and ATOM n is our n-1. However, in some cases
@@ -1235,6 +1251,7 @@ class MoleculeReader:
             atom_map = {}
             cur_atom = 0
             # chains = Chains()
+
 
             for line in file:
                 pdb_dict = PDBLine._pdb_line_to_dict(line)
@@ -1245,6 +1262,8 @@ class MoleculeReader:
                     if record_name == 'HETATM':
                         breakpt = 1
                     atom_map[index] = cur_atom
+                    if use_backbone:
+                        mol._atoms[cur_atom].atom_name = pdb_dict.atom_name  # change to the full symbol for use-backbone
 
                     chain_designation = pdb_dict.chain_id
                     if chain_designation != " ":
@@ -1335,6 +1354,12 @@ class MoleculeReader:
 
     @staticmethod
     def redo_molecule(in_mol, **kwargs):
+        '''
+        when a comfile line argument includes a command that modifes a molecule, we resubmit molecules here to be redone
+        :param in_mol:
+        :param kwargs:
+        :return:
+        '''
         format = in_mol.metadata.format
         try:
             if kwargs["in_format"]:

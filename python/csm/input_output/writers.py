@@ -1,16 +1,26 @@
 import csv
 import json
-import openbabel as ob
 import os
 import re
-from openbabel import OBConversion
+from pathlib import Path
+import shutil
+
+try:
+    import openbabel.openbabel as ob
+    from openbabel.openbabel import OBConversion
+except ImportError:
+    import openbabel as ob
+    from openbabel import OBConversion
+
+
 
 from csm import __version__
 from csm.calculations.basic_calculations import cart2sph
 from csm.input_output.formatters import format_CSM, format_unknown_str, output_strings, non_negative_zero
 from csm.molecule.molecule import MoleculeReader
-from pathlib import Path
-import shutil
+
+
+
 
 def write_array_to_file(f, arr, add_one=False, separator=" "):
     '''
@@ -291,6 +301,8 @@ class MoleculeWrapper:
         self._set_normalized_title(normalized)
 
     def obms_from_molecule(self, molecule):
+        if self.format == "csm":
+            return []
         obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
                                                   molecule.metadata.format,
                                                   molecule.metadata.babel_bond)
@@ -309,6 +321,8 @@ class MoleculeWrapper:
         return obmols
 
     def set_obm_coordinates(self, coordinates):
+        if self.format == "csm":
+            return []
         num_atoms = len(self.molecule)
         for i in range(num_atoms):
             mol_index, atom_index = self._obm_atom_indices[i]
@@ -339,6 +353,8 @@ class MoleculeWrapper:
         return string_to_modify
 
     def append_description(self, description):
+        if self.format == "csm":
+            return
         if self.format in ["mol", "sdf"]:
             key = 'Comment'
             self.moleculedata[key] = description
@@ -374,6 +390,8 @@ class MoleculeWrapper:
             self.obmol.SetTitle(new_title)
 
     def clean_title(self, string_to_remove):
+        if self.format == "csm":
+            return
         original_title = self.obmol.GetTitle()
         if self.format == "pdb":
             original_title = self.moleculedata["TITLE"]
@@ -388,6 +406,8 @@ class MoleculeWrapper:
         self.obmol.SetTitle(new_title)
 
     def set_initial_molecule_fields(self):
+        if self.format == "csm":
+            return
         title = ""
         original_title = self.obmol.GetTitle()
         if self.metadata.appellation() not in original_title:

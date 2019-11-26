@@ -59,6 +59,8 @@ def read_molecules(**kwargs):
         mols = MoleculeReader.multiple_from_file(**kwargs)
     sys.stderr.flush()
 
+    if len(mols)<1:
+        raise ValueError("Failed to read any molecules, calculation cannot proceed")
     return mols
 
 

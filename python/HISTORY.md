@@ -1,9 +1,25 @@
 The Python CSM Package
 ======================
 
+Changes in version 1.2.0
+------------------------
+
+* new feature: option --use-backbone calculates csm for pdb backbone
+* new feature: option --input-chain-perms reads provided file to permute specific chain permutation in approx and trivial
+* tweak: using --select-mols within a command file is no longer allowed. results with select-mols include only the selection.
+* tweak: initial_normalized_coordinates is now simply inital_coordinates (and is not normalized)
+* tweak: added information in molecule output to indicate normalized/not (in addition to existent symmetric/original)
+* tweak: json-output is for regular output, not --legacy
+* tweak: remove-hy plus select-atoms removes any hydrogens within selected atoms
+* internal: cleanup of strip_atoms and of norm/denorm printing
+* bug fix: pickling in parallel approx (--parallel-dirs) calculation
+* bug fix: moleculedata -> moleculemetadata
+* bug fix: no more "index out of range" error appearing for other, unrelated errors
+* other: CSM for python 3.6,  and for python 3.7 + openbabel 3.0.0
+
 Changes in version 1.1.2
 ------------------------
-* fixes to remove-hy, ingore-atoms, select-atoms
+* fixes to remove-hy, ignore-atoms, select-atoms
 * json-output has been moved from working with --legacy-output to being an option with the standard folder output
 * Result class to_dict no longer includes the ongoing and running statistics, and the useless key "Result" has been removed
 * bug fix to result.from_dict
