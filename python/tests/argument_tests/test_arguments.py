@@ -12,6 +12,7 @@ import shutil
 from csm.main.csm_run import csm_run
 from tests.argument_tests.files_for_tests.local_settings import test_dir
 
+#test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
 
 class RunThings():
     def _run_args(self, args_str, results_folder):

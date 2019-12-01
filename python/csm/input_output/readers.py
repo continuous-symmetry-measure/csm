@@ -145,6 +145,9 @@ def read_chain_perm_file(molecule, filename, **kwargs):
                     if len(molecule.chains[f_i])!=len(molecule.chains[t_i]):
                         raise ValueError("ERROR: Cannot permute two chains with non matching lengths")
 
+                if len(index_perm)<len(molecule.chains):
+                    raise ValueError("Chain permutation is too short")
+
                 perms.append(index_perm)
     return perms
 
