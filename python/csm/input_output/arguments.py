@@ -56,6 +56,8 @@ def _create_parser():
                             help='When a molecule has chains, use them (affects trivial, approx)')
         parser.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
+        parser.add_argument('--use-backbone', action='store_true', default=False,
+                                 help='Rebuild protein without the residues, and compute')
 
     def output_utility_func(parser):
         parser.add_argument('--out-format',
@@ -211,8 +213,7 @@ def _create_parser():
                              help="Use fibonacci sphere to generate N starting directions")
     approx_args.add_argument('--dir', nargs=3, type=float,
                              help='run approximate algorithm using a specific starting direction')
-    approx_args.add_argument('--use-backbone', action='store_true', default=False,
-                        help='Rebuild protein without the residues, and compute')
+
     # algorithm choice
     mutex_approx_args = approx_args.add_mutually_exclusive_group()
     mutex_approx_args.add_argument('--greedy', action='store_const', const='greedy', default='hungarian',
@@ -251,8 +252,6 @@ def _create_parser():
     trivial_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
                             const=os.path.join(os.getcwd(), "chainperm.txt"),
                             help='Run calculation only on chain permutations in provided file. Default file location is current directory/chainperm.txt')
-    trivial_args.add_argument('--use-backbone', action='store_true', default=False,
-                             help='Rebuild protein without the residues, and compute')
     shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
@@ -363,6 +362,10 @@ def _process_arguments(parse_res):
             if parse_res.command == 'trivial':
                 if parse_res.permute_chains or  parse_res.chain_perm_file_name:
                     dictionary_args["use_chains"] = True
+
+                if parse_res.use_backbone:
+                    dictionary_args['use_chains'] = True
+
 
     try:
         timestamp = str(parse_res.timestamp)
