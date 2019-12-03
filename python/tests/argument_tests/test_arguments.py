@@ -285,6 +285,22 @@ $$$$
         result = self.run_args(cmd)
         assert len(result[0][0].molecule) == 12
 
+    def test_use_backbone_use_seq(self):
+        cmd = "approx c2 --input 1m2d.pdb --use-sequence --use-chains --use-backbone"
+        result = self.run_args(cmd)
+
+        cmd = "approx c2 --input 1m2d_bb.pdb --use-sequence --use-chains --use-backbone"
+        result_bb = self.run_args(cmd)
+
+        assert len(result[0][0].molecule) == len(result_bb[0][0].molecule)
+        assert result[0][0].csm == pytest.approx(result[0][0].csm, rel=1e-8)
+
+        cmd = "comfile cmd_use_backbone.txt --input 1m2d.pdb"
+        result = self.run_args(cmd)
+
+        assert len(result[0][0].molecule) == len(result_bb[0][0].molecule)
+        assert result[0][0].csm == pytest.approx(result[0][0].csm, rel=1e-8)
+
     def test_ignore_atoms(self):
         def strip(myString):
             myString = myString.replace(' ', '').replace('\t', '').replace('\n', '')

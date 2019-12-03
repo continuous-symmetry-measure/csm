@@ -969,7 +969,8 @@ class MoleculeReader:
             mol = MoleculeReader._create_pdb_with_sequence(mol, in_file_name, use_chains=use_chains,
                                                            babel_bond=babel_bond,
                                                            read_fragments=read_fragments, remove_hy=remove_hy,
-                                                           ignore_sym=ignore_sym, use_mass=use_mass)
+                                                           ignore_sym=ignore_sym, use_mass=use_mass,
+                                                           use_backbone=use_backbone)
             # we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             return mol
 
@@ -1299,7 +1300,7 @@ class MoleculeReader:
     @staticmethod
     def _create_pdb_with_sequence(mol, in_file_name, initialize=True,
                                   use_chains=False, babel_bond=False, read_fragments=False,
-                                  ignore_hy=False, remove_hy=False, ignore_sym=False, use_mass=False):
+                                  ignore_hy=False, remove_hy=False, ignore_sym=False, use_mass=False, use_backbone=False):
         def read_atom(line, likeness_dict, cur_atom):
             pdb_dict = PDBLine._pdb_line_to_dict(line)
             atom_type = pdb_dict.atom_symbol
@@ -1325,9 +1326,9 @@ class MoleculeReader:
             except Exception as e:  # TODO: comment why this except is here (I don't actually remember)
                 print(e)
 
-        mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond)
-        if remove_hy or ignore_hy:
-            mol.strip_atoms(remove_hy, ignore_hy)
+        mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond, use_backbone)
+        if remove_hy or ignore_hy or use_backbone:
+            mol.strip_atoms(remove_hy, use_backbone=use_backbone)
         likeness_dict = {}
         cur_atom = 0
 
@@ -1338,6 +1339,9 @@ class MoleculeReader:
                     if remove_hy or ignore_hy:
                         if pdb_dict.atom_symbol == "H":
                             continue
+                    elif use_backbone and pdb_dict.atom_name not in ['C', 'CA', 'N', 'O']:
+                        # pass when --use-backbone && the current atom is in the list of the backbone atoms
+                        continue
                     read_atom(line, likeness_dict, cur_atom)
                     cur_atom += 1
 
