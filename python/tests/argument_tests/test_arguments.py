@@ -18,6 +18,7 @@ class RunThings():
     def _run_args(self, args_str, results_folder):
         args_str += " --output {} --overwrite".format(results_folder)
         args = args_str.split()
+        tewst=(os.getcwd())
         results_arr = csm_run(args)
         return results_arr
 
