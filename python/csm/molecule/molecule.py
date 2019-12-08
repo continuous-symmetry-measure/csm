@@ -1041,9 +1041,11 @@ class MoleculeReader:
                                                             out_format, ignore_atoms,use_backbone)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
-            p_mol.metadata.select_mols=selected_mols
+            if not format == "csm" and not read_fragments:
+                p_mol.metadata.select_mols=selected_mols
             processed_mols.append(p_mol)
-        if not p_mol.bondset: #this only checks for the final one,
+        if mols and not p_mol.bondset:  # if mols -> checks if the mols list doesn't empty
+            # this only checks for the final one,
             # on the assumption that all molecules in the file have the same bond status and to avoid printing a million times
             if keep_structure:
                 raise ValueError(
@@ -1408,7 +1410,8 @@ class MoleculeReader:
 def select_mols(mols, kwargs):
     select_mols=kwargs.get('select_mols', [])
     try:
-        mols = [mols[i] for i in select_mols]
+        if select_mols:
+            mols = [mols[i] for i in select_mols]
     except IndexError:
         raise IndexError("You have selected more molecules than you have input")
     return mols, select_mols
