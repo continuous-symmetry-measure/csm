@@ -110,7 +110,11 @@ class ExactCalculation(BaseCalculation):
         traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
         if perm:
-            permuter = SinglePermPermuter(np.array(perm, dtype="long"), molecule, op_order, op_type)
+            perm_arr = np.array(perm, dtype="long")
+            if (perm_arr >= 0).all():
+                permuter = SinglePermPermuter(perm_arr, molecule, op_order, op_type)
+            else:
+                raise ValueError("The permutation in the function '_calculate' contains negative numbers: \n{}".format(perm_arr))
         else:
             permuter = ConstraintPermuter(molecule, op_order, op_type, keep_structure, timeout=timeout)
             if no_constraint:

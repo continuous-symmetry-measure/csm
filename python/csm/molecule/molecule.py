@@ -970,6 +970,7 @@ class MoleculeReader:
                                                            babel_bond=babel_bond,
                                                            read_fragments=read_fragments, remove_hy=remove_hy,
                                                            ignore_sym=ignore_sym, use_mass=use_mass,
+                                                           select_atoms=select_atoms, ignore_atoms=ignore_atoms,
                                                            use_backbone=use_backbone)
             # we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             return mol
@@ -1300,13 +1301,14 @@ class MoleculeReader:
     @staticmethod
     def _create_pdb_with_sequence(mol, in_file_name, initialize=True,
                                   use_chains=False, babel_bond=False, read_fragments=False,
-                                  ignore_hy=False, remove_hy=False, ignore_sym=False, use_mass=False, use_backbone=False):
+                                  ignore_hy=False, remove_hy=False, ignore_sym=False, use_mass=False,
+                                  select_atoms=[], ignore_atoms=[], use_backbone=False):
         def read_atom(line, likeness_dict, cur_atom):
             pdb_dict = PDBLine._pdb_line_to_dict(line)
             atom_type = pdb_dict.atom_symbol
             remoteness = pdb_dict.remoteness
-            serial_number = pdb_dict.sequence_number
-            key = tuple([atom_type, remoteness, serial_number])
+            sequence_number = pdb_dict.sequence_number
+            key = tuple([atom_type, remoteness, sequence_number])
             if key not in likeness_dict:
                 likeness_dict[key] = [cur_atom]
             else:
@@ -1327,8 +1329,8 @@ class MoleculeReader:
                 print(e)
 
         mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond, use_backbone)
-        if remove_hy or ignore_hy or use_backbone:
-            mol.strip_atoms(remove_hy, use_backbone=use_backbone)
+        # mol.strip_atoms(remove_hy, select_atoms=select_atoms, ignore_atoms=ignore_atoms, use_backbone=use_backbone) # wait for answer from inbal, about the flags: select_atoms, ignore_atoms
+        mol.strip_atoms(remove_hy, use_backbone=use_backbone)
         likeness_dict = {}
         cur_atom = 0
 
@@ -1340,7 +1342,7 @@ class MoleculeReader:
                         if pdb_dict.atom_symbol == "H":
                             continue
                     elif use_backbone and pdb_dict.atom_name not in ['C', 'CA', 'N', 'O']:
-                        # pass when --use-backbone && the current atom is in the list of the backbone atoms
+                        # pass when --use-backbone == True && the current atom is in the list of the backbone atoms
                         continue
                     read_atom(line, likeness_dict, cur_atom)
                     cur_atom += 1
@@ -1352,6 +1354,8 @@ class MoleculeReader:
         set_equivalence_classes(mol, likeness_dict)
 
         mol._initialize_chains(use_chains)
+        if use_chains and len(set([len(mol.chains[i]) for i in mol.chains])) > 1:  # check if all the chains have the same length.
+            raise ValueError("Error, all the chains of the molecule must have the same length, your length's chains: {}".format([len(mol.chains[i]) for i in mol.chains]))
         mol.normalize()
 
         return mol
