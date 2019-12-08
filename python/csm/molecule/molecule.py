@@ -106,7 +106,7 @@ class MoleculeMetaData:
     '''
 
     def __init__(self, file_content=[], format=None, filepath="", babel_bond=False, index=0, initial_title="",
-                 initial_comments="", use_filename=True, out_format=None):
+                 initial_comments="", use_filename=True, out_format=None, selected_mols=[]):
         self.file_content = file_content
         self.format = format
         self._out_format = out_format
@@ -116,6 +116,7 @@ class MoleculeMetaData:
         self.initial_title = initial_title
         self.initial_comments = initial_comments
         self.use_filename = use_filename
+        self.select_mols = selected_mols
 
     @property
     def filename(self):
@@ -135,13 +136,14 @@ class MoleculeMetaData:
     def to_dict(self):
         return vars(self)
 
-    def appellation(self, no_file_format=False, no_leading_zeros=False):
+    def appellation(self, no_file_format=False, no_leading_zeros=False, write_original_mols_index=False):
         '''
         the name for the molecule when printing to screen or creating tables.
         if the molecule was read from a folder, it's the filename
         otherwise it's the internal index
         :param no_file_format: remove file ending (eg .xyz)
         :param no_leading_zeros: print the index without leading zeroes
+        :param write_original_mols_index: boolean value for use the original indexes for the selected molecules.
         :return: 
         '''
         if self.use_filename:
@@ -149,7 +151,10 @@ class MoleculeMetaData:
                 return Path(self.filename).stem
             return self.filename
 
-        mol_index = self.index + 1  # start from 1 instead of 0
+        if write_original_mols_index:
+            mol_index = self.select_mols[self.index] + 1   # start from 1 instead of 0
+        else:
+            mol_index = self.index + 1  # start from 1 instead of 0
         if no_leading_zeros:
             return str(mol_index)
 
@@ -1016,7 +1021,7 @@ class MoleculeReader:
                     mols.append(mol)
 
             else:
-                obms=select_mols(obms, kwargs) #save a little bit of time- only continue processing the molecules that were selected
+                obms, selected_mols=select_mols(obms, kwargs) #save a little bit of time- only continue processing the molecules that were selected
                 for i, obm in enumerate(obms):
                     mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_sym=ignore_sym,
                                                       use_mass=use_mass)
@@ -1036,6 +1041,7 @@ class MoleculeReader:
                                                             out_format, ignore_atoms,use_backbone)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
+            p_mol.metadata.select_mols=selected_mols
             processed_mols.append(p_mol)
         if not p_mol.bondset: #this only checks for the final one,
             # on the assumption that all molecules in the file have the same bond status and to avoid printing a million times
@@ -1355,7 +1361,7 @@ class MoleculeReader:
 
         mol._initialize_chains(use_chains)
         if use_chains and len(set([len(mol.chains[i]) for i in mol.chains])) > 1:  # check if all the chains have the same length.
-            raise ValueError("Error, all the chains of the molecule must have the same length, your length's chains: {}".format([len(mol.chains[i]) for i in mol.chains]))
+            raise ValueError("Error, all the chains of the molecule must have the same length, your chains' lengths: {}".format([len(mol.chains[i]) for i in mol.chains]))
         mol.normalize()
 
         return mol
@@ -1400,12 +1406,12 @@ class MoleculeReader:
 
 
 def select_mols(mols, kwargs):
-    if kwargs.get('select_mols'):
-        try:
-            mols = [mols[i] for i in kwargs['select_mols']]
-        except IndexError:
-            raise IndexError("You have selected more molecules than you have input")
-    return mols
+    select_mols=kwargs.get('select_mols', [])
+    try:
+        mols = [mols[i] for i in select_mols]
+    except IndexError:
+        raise IndexError("You have selected more molecules than you have input")
+    return mols, select_mols
 
 
 def mol_string_from_obm(obmol, format):

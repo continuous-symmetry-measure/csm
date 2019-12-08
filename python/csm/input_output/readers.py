@@ -51,7 +51,7 @@ def read_molecules(**kwargs):
                 # else:
                 #    print(file_name, "was not read")
 
-        mols = select_mols(mols, kwargs)
+        mols, seld_mols = select_mols(mols, kwargs)
 
     elif not os.path.isfile(input_name):
         test = os.getcwd()

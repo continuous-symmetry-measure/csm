@@ -56,7 +56,6 @@ class TestBasic(RunThings):
         assert len(results[0][0].molecule.bondset) == 40
 
     def test_remove_hy(self):
-        # --remove-hy removes hy. can't be used with select-atoms
 
         # baseline:
         # cmd="exact cs --input 4-helicene.mol --keep-structure"
