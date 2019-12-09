@@ -537,8 +537,9 @@ class ScriptContextWriter(ContextWriter):
         '''
         os.makedirs(self.folder, exist_ok=True)
 
-        exact_folder = os.path.join(self.folder, 'exact')
-        os.makedirs(exact_folder, exist_ok=True)
+        if self._kwargs.get('command', False) == 'exact' and self._kwargs.get('output_perms', False):
+            exact_folder = os.path.join(self.folder, 'exact')
+            os.makedirs(exact_folder, exist_ok=True)
 
         self.csm_file = open(os.path.join(self.folder, "csm.txt"), 'w')
         self.csm_file.write(self.molecule_format % "#Molecule")
