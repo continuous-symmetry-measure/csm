@@ -341,10 +341,12 @@ def _process_arguments(parse_res):
                     dictionary_args['dirs'] = [dir]
 
                 # algorithm choice:
-                if parse_res.approx_algorithm == "many-chains" or parse_res.chain_perm_file_name:
+                if parse_res.approx_algorithm == "many-chains":
                     dictionary_args['use_chains'] = True
+                    if dictionary_args['chain_perm_file_name']:
+                        raise ValueError("error: argument --many-chains not allowed with argument --input-chain-perm")
 
-                if parse_res.use_backbone:
+                if parse_res.use_backbone or parse_res.chain_perm_file_name:
                     dictionary_args['use_chains'] = True
 
                 if parse_res.selective is not None:
@@ -360,12 +362,8 @@ def _process_arguments(parse_res):
                     # outputs:
 
             if parse_res.command == 'trivial':
-                if parse_res.permute_chains or  parse_res.chain_perm_file_name:
+                if parse_res.permute_chains or parse_res.chain_perm_file_name or parse_res.use_backbone:
                     dictionary_args["use_chains"] = True
-
-                if parse_res.use_backbone:
-                    dictionary_args['use_chains'] = True
-
 
     try:
         timestamp = str(parse_res.timestamp)
