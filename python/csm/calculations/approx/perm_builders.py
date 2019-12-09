@@ -3,7 +3,6 @@ import numpy as np
 import operator
 from csm.fast import CythonPermuter
 from csm.fast import approximate_perm_classic, munkres_wrapper
-from csm.CPP_wrapper.approx import approximate_perm_classic
 from csm.calculations.basic_calculations import array_distance, check_perm_cycles, create_rotation_matrix
 from csm.calculations.constants import MAXDOUBLE
 from csm.molecule.molecule import MoleculeFactory
