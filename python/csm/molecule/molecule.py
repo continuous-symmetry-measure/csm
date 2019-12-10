@@ -605,7 +605,6 @@ class Molecule:
         self.fixed_indexes = fixed_indexes #overwrite default value
         self._create_bondset()
 
-        #print(self._deleted_atom_indices)
         # logger.debug(len(removed_atoms), "atoms removed")
 
     def _calculate_center_of_mass(self):
