@@ -592,7 +592,7 @@ $$$$
     
 
     def test_use_chains(self):
-        cmd = "approx c3 --input 2rla-s3.pdb --use-chains"
+        cmd = "approx c3 --input 2RLA-s3.pdb --use-chains"
         results = self.run_args(cmd)
         assert len(results[0][0].molecule.chains) == 3
         cmd = "approx c3 --input 2rla-s3.pdb"
