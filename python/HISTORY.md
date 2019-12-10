@@ -2,10 +2,12 @@ The Python CSM Package
 ======================
 Changes in version 1.2.1
 ------------------------
+
 * fixes to --input-chain-perm
 * bug fix: create folder result: 'exact' if necessary (with the flag --output-perm)
-* bug fix: --use-backbone allowed with comfile and with argument --use-sequence
+* bug fix: the argument --use-backbone allowed with comfile and with the argument --use-sequence
 * bug fix: argument --many-chains not allowed with argument --input-chain-perm
+* bug fix: remove the unnecessary printing.
 
 Changes in version 1.2.0
 ------------------------
