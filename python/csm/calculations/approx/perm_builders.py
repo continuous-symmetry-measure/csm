@@ -194,8 +194,8 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
 
         for chain_index in cycle:  # Use an iterator
             # Todo: Convert from_chain and to_chain into vector[ints]
-            from_chain = chain_group[chain_index]
-            to_chain = chain_group[chain_perm[chain_index]]
+            to_chain = chain_group[chain_index]
+            from_chain = chain_group[chain_perm[chain_index]]
             for i in range(len(from_chain)):
                 from_chain_index = from_chain[i]
                 for j in range(len(to_chain)):
