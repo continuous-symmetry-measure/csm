@@ -243,7 +243,8 @@ def calc(dictionary_args):
             for line_index, args_dict in enumerate(mol_args):
                 
                 # create perms.csv if relevant
-                args_dict["perms_csv_name"]=create_perms_csv(args_dict, line_index, rw)
+                if args_dict.get('output_perms', False):
+                    args_dict["perms_csv_name"] = rw.create_perms_csv(args_dict, line_index)
 
                 # print stuff
                 molecule = args_dict["molecule"]
@@ -265,18 +266,6 @@ def calc(dictionary_args):
             rw.write(mol_results)
             all_results.append(mol_results)
     return all_results
-
-def create_perms_csv(args_dict, line_index, rw):
-    perms_csv_name=None
-    output_perms = args_dict.get("output_perms")
-    if output_perms:
-        filename = args_dict["molecule"].metadata.appellation(no_file_format=True) + "_" + get_line_header(line_index,
-                                                                                        args_dict["operation"]) + ".csv"
-        perms_csv_name = os.path.join(rw.folder, 'exact', filename)
-        csv_file = open(perms_csv_name, 'w')
-        perm_writer = csv.writer(csv_file, lineterminator='\n')
-        perm_writer.writerow(['op', 'Permutation', 'Direction', 'CSM'])
-    return perms_csv_name
 
 def run_no_return(args=[]):
     csm_run(args)

@@ -523,7 +523,6 @@ class ScriptContextWriter(ContextWriter):
         self.com_file=kwargs.get("command_file")
         self._kwargs=dict(kwargs)
 
-
         self.init_files()
 
     def get_line_header(self, index, operation):
@@ -536,10 +535,6 @@ class ScriptContextWriter(ContextWriter):
         :return:
         '''
         os.makedirs(self.folder, exist_ok=True)
-
-        if self._kwargs.get('command', False) == 'exact' and self._kwargs.get('output_perms', False):
-            exact_folder = os.path.join(self.folder, 'exact')
-            os.makedirs(exact_folder, exist_ok=True)
 
         self.csm_file = open(os.path.join(self.folder, "csm.txt"), 'w')
         self.csm_file.write(self.molecule_format % "#Molecule")
@@ -592,6 +587,20 @@ class ScriptContextWriter(ContextWriter):
             filename=os.path.join(self.folder, name)
             shutil.copy(self.com_file, filename)
 
+    def create_perms_csv(self, args_dict, line_index):
+
+        perms_csv_name = None
+        output_perms = args_dict.get("output_perms", False)
+        if output_perms:
+            exact_folder = os.path.join(self.folder, 'exact')
+            os.makedirs(exact_folder, exist_ok=True)
+            filename = args_dict["molecule"].metadata.appellation(no_file_format=True) + "_" + get_line_header(
+                        line_index, args_dict["operation"]) + ".csv"
+            perms_csv_name = os.path.join(self.folder, 'exact', filename)
+            csv_file = open(perms_csv_name, 'w')
+            perm_writer = csv.writer(csv_file, lineterminator='\n')
+            perm_writer.writerow(['op', 'Permutation', 'Direction', 'CSM'])
+        return perms_csv_name
 
     def close_files(self):
         self.csm_file.close()

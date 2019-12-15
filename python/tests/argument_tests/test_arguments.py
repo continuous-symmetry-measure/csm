@@ -560,17 +560,17 @@ $$$$
         assert results[0][0].chain_perm == [2, 1, 0, 3]  # when run with use-chains it gets 0 1 2 3
 
         cmd = "approx c3 --input 1nc7.pdb  --use-sequence --use-chains --input-chain-perm CBDA2130.txt"
-        results = super()._run_args(cmd, self.results_folder)
+        results = self.run_args(cmd)
         print("result:", results[0][0].chain_perm)
         assert results[0][0].chain_perm == [2,1,3,0]
 
         cmd = "approx c4 --input 1v0z.pdb --use-sequence --input-chain-perm BCDA1230.txt"
-        results = super()._run_args(cmd, self.results_folder)
+        results = self.run_args(cmd)
         print("result:", results[0][0].chain_perm)
         assert results[0][0].chain_perm == [1,2,3,0]
 
         cmd = "approx c4 --input 1v0z.pdb --use-sequence --input-chain-perm DABC3012.txt"
-        results = super()._run_args(cmd, self.results_folder)
+        results = self.run_args(cmd)
         print("result:", results[0][0].chain_perm)
         assert results[0][0].chain_perm == [3,0,1,2]
 
