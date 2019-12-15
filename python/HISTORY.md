@@ -1,5 +1,9 @@
 The Python CSM Package
 ======================
+Changes in version 1.2.2
+------------------------
+* fixes to --output-perm
+
 Changes in version 1.2.1
 ------------------------
 
