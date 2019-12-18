@@ -44,7 +44,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
             calc = ParallelApprox(**dictionary_args)
         else:
             if print_approx:
-                def log(self, *args, **kwargs):
+                def log(*args, **kwargs):
                     print(*args)
 
                 dictionary_args["log_func"] = log
