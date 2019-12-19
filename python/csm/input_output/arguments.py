@@ -85,8 +85,6 @@ def _create_parser():
         # parser.add_argument('--print-local', action='store_true', default=False,
         #                    help='Print the local CSM (csm for each atom) in the output file')
 
-
-
     def shared_calc_utility_func(parser):
         parser.add_argument('symmetry',
                             # choices=c_symmetries + s_symmetries + ['cs', 'ci', 'ch'],
@@ -98,20 +96,20 @@ def _create_parser():
                             help="Specify a global timeout for CSM in seconds. Default is 50000 seconds (over 13 hours)",
                             type=int)
         parser.add_argument('--sn-max', type=int, default=8,
-                            help='The maximal sn to try, relevant only for chirality')
+                                help='The maximal sn to try, relevant only for chirality')
         parser.add_argument("--pipe", action='store_true', default=False,
                             help="treat this program as a piped program (read from sys.stdin, write to sys.stdout)")
 
-    def shared_normalization_utility_func(
-            parser):  # I made this because having normalization stuck in the calc utility func was ugly
+    def shared_normalization_utility_func(parser):
+        # I made this because having normalization stuck in the calc utility func was ugly
         parser.add_argument('--normalize', default=[],
                             help='Types of normalization available:\n'
                                  '0: standard normalization, according to centers of mass (without scaling)\n'
                                  '1: normalization according to the center of mass of each fragment\n'
-                                 '2: normalization according to an approximation of the symmetric structure of the centers '
-                                 'of mass of each fragment, based on the solution permutation\n'
-                                 '3: normalization according to an approximation of the symmetric structure of the centers '
-                                 'of mass of each fragment, without using the solution permutation\n'
+                                 '2: normalization according to an approximation of the symmetric structure of the '
+                                    'centers of mass of each fragment, based on the solution permutation\n'
+                                 '3: normalization according to an approximation of the symmetric structure of the '
+                                    'centers of mass of each fragment, without using the solution permutation\n'
                                  '4: normalization according to averages of approximation to symmetry of fragments\n'
                                  '5: normalization according to number of atoms\n'
                                  '6: linear normalization',
@@ -131,7 +129,10 @@ def _create_parser():
                                         default=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         const=os.path.join(os.getcwd(), 'csm_results' + timestamp),
                                         nargs='?',
-                                        help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory already exists (and --overwrite is not specified), a new folder with timestamp will be created", )
+                                        help="output file or folder, default is 'csm_results+timestamp' folder"
+                                             " in current working directory, if provided directory already exists"
+                                             " (and --overwrite is not specified),"
+                                             " a new folder with timestamp will be created", )
         output_utility_func(parser_output_args)
 
     parser = OurParser(allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
@@ -227,11 +228,14 @@ def _create_parser():
     approx_args.add_argument('--selective', type=int,
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
     approx_args.add_argument('--parallel-dirs', type=int, const=0, nargs='?',
-                             help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used. Cannot be used with --parallel')
+                             help='Calculate directions in parallel. Recommended for use with fibonacci. '
+                                  'If no number of processors is specified, cpu count - 1 will be used.'
+                                  ' Cannot be used with --parallel')
     #misc
     approx_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
                             const=os.path.join(os.getcwd(), "chainperm.txt"),
-                            help='Run calculation only on chain permutations in provided file. default file location is current directory/chainperm.txt')
+                            help='Run calculation only on chain permutations in provided file.'
+                                 ' default file location is current_directory/chainperm.txt')
 
     # outputs
     approx_args.add_argument('--print-approx', action='store_true', default=False,
@@ -317,6 +321,10 @@ def _process_arguments(parse_res):
                             multiprocessing.cpu_count())  # do not allow a pool size greater than the number of cpus
             dictionary_args['pool_size'] = pool_size
             dictionary_args['parallel'] = True
+
+        if parse_res.polar:
+            # if --polar set the --verbose option = true.
+            dictionary_args["verbose"] = True
 
         if parse_res.command == "comfile":
             dictionary_args["command_file"] = parse_res.comfile

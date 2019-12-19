@@ -965,6 +965,8 @@ class MoleculeReader:
 
         if use_backbone and format.lower() != 'pdb':
             raise ValueError("--use-backbone only works with PDB files")
+        if conn_file and format.lower() != "xyz":
+            raise ValueError("--connect work only with .xyz files")
 
         if use_sequence:
             if format.lower() != 'pdb':
@@ -981,8 +983,9 @@ class MoleculeReader:
 
         if format == "pdb":
             mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond, use_backbone)
-        if conn_file and format == "xyz":
+        if conn_file and format.lower() == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
+
         if initialize:
             mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms, use_backbone)
             if len(mol.chains) < 2:
