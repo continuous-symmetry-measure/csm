@@ -1,0 +1,51 @@
+CSM version 1.2.2
+approx c2 --input 1aoj.pdb --use-sequence --input-chain-perm perm_AB_01.txt --use-backbone --print-approx --use-best-dir --output csm_tests --overwrite
+Warning: Input molecules have no bond information
+Molecule: 1aoj.pdb
+240 groups of length 2
+Chain A of length 240
+Chain B of length 240
+1 equivalence classes of chains
+Group of length 2: A B
+Warning: the molecule has less than 4 chains, using --input-chain-perm is not recommended
+There are 3 initial directions to search for the best permutation
+Calculating for initial direction:  [0.452686 0.456055 0.766217]
+		iteration 1 :
+			the csm for this permutation is: 34.44121218
+			the new direction from this permutation is [0.453737 0.454418 0.766568]
+			the distance between the new direction and the previous direction is: 0.00197661
+		iteration 2 :
+			there are 0 differences between new permutation and previous permutation
+			the csm for this permutation is: 34.44121218
+			the new direction from this permutation is [0.453737 0.454418 0.766568]
+			the distance between the new direction and the previous direction is: 0.0
+		Stopping because the direction has not changed
+Calculating for initial direction:  [-0.709724  0.70448   0.      ]
+		iteration 1 :
+			the csm for this permutation is: 34.44121218
+			the new direction from this permutation is [0.453737 0.454418 0.766568]
+			the distance between the new direction and the previous direction is: 1.41555573
+		iteration 2 :
+			there are 0 differences between new permutation and previous permutation
+			the csm for this permutation is: 34.44121218
+			the new direction from this permutation is [0.453737 0.454418 0.766568]
+			the distance between the new direction and the previous direction is: 0.0
+		Stopping because the direction has not changed
+Calculating for initial direction:  [-0.539785 -0.543803  0.642581]
+		iteration 1 :
+			the csm for this permutation is: 34.44121218
+			the new direction from this permutation is [0.453737 0.454418 0.766568]
+			the distance between the new direction and the previous direction is: 1.41382575
+		iteration 2 :
+			there are 0 differences between new permutation and previous permutation
+			the csm for this permutation is: 34.44121218
+			the new direction from this permutation is [0.453737 0.454418 0.766568]
+			the distance between the new direction and the previous direction is: 0.0
+		Stopping because the direction has not changed
+The input molecule does not have bond information and therefore conservation of structure cannot be measured
+The permutation found contains 0 invalid cycles. 100.00% of the molecule's atoms are in legal cycles
+There are 480  cycles of length 1
+
+Chain perm: A->A, B->B
+C2 SYMMETRY: 34.441212
+CSM by formula: 34.441212

@@ -1,0 +1,10 @@
+Op	Dir Index	r_i	th_i	ph_i	CSM_i	r_f	th_f	ph_f	CSM_f	Runtime	# Iter	Stop Reason	Chain Perm	result validity	best valid dir	best valid csm	best valid %
+c2	0	1.0000	0.0092	2.2457	1.1341	1.0000	0.0576	2.3536	1.1156	0.1610	3	No change in direction	Simulated chain->Simulated chain	100.0	n/a	n/a	n/a
+c2	1	1.0000	0.5341	2.4612	12.7626	1.0000	0.0576	2.3536	1.1156	0.2100	4	No change in direction	Simulated chain->Simulated chain	100.0	n/a	n/a	n/a
+c2	2	1.0000	1.0366	0.6594	27.1723	1.0000	1.4129	1.5968	24.8412	0.5390	10	No change in direction	Simulated chain->Simulated chain	99.58432304038006	[-0.029459  0.179682  0.983284]	24.9015	100.0
+c2	3	1.0000	0.0000	0.6749	23.8072	1.0000	0.0576	2.3536	1.1156	0.3270	6	No change in direction	Simulated chain->Simulated chain	100.0	n/a	n/a	n/a
+c2	4	1.0000	1.5616	0.8959	25.1214	1.0000	1.4129	1.5968	24.8412	0.3740	7	No change in direction	Simulated chain->Simulated chain	99.58432304038006	[0.008695 0.140877 0.989989]	24.9042	100.0
+c2	5	1.0000	0.0000	2.2512	1.1339	1.0000	0.0576	2.3536	1.1156	0.1610	3	No change in direction	Simulated chain->Simulated chain	100.0	n/a	n/a	n/a
+c2	6	1.0000	1.0367	2.4612	27.1969	1.0000	1.4129	1.5968	24.8412	0.6300	10	No change in direction	Simulated chain->Simulated chain	99.58432304038006	[-0.029459  0.179682  0.983284]	24.9015	100.0
+c2	7	1.0000	0.0000	0.9114	1.1420	1.0000	0.0576	2.3536	1.1156	0.1920	3	No change in direction	Simulated chain->Simulated chain	100.0	n/a	n/a	n/a
+c2	8	1.0000	0.5342	2.4822	12.7093	1.0000	0.0576	2.3536	1.1156	0.2775	4	No change in direction	Simulated chain->Simulated chain	100.0	n/a	n/a	n/a

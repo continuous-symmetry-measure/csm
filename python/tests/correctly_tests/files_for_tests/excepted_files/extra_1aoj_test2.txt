@@ -1,0 +1,17 @@
+CSM version 1.2.2
+approx c2 --input 1aoj.pdb --use-sequence --many-chain --output csm_tests --overwrite
+Warning: Input molecules have no bond information
+Molecule: 1aoj.pdb
+410 groups of length 2
+40 groups of length 4
+Chain A of length 490
+Chain B of length 490
+1 equivalence classes of chains
+Group of length 2: A B
+The input molecule does not have bond information and therefore conservation of structure cannot be measured
+The permutation found contains 0 invalid cycles. 100.00% of the molecule's atoms are in legal cycles
+There are 490  cycles of length 2
+
+Chain perm: A->B, B->A
+C2 SYMMETRY: 0.462322
+CSM by formula: 0.462322
