@@ -584,7 +584,7 @@ class ConstraintPermuter:
 class ConstraintsOrderedByDistancePermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_dict, perm_timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, keep_structure=True)
-        if len(molecule) > 10000:
+        if len(molecule) > 5000:
             raise ValueError("Please don't use keep structure on molecules this big yet")
         if len(molecule) > 100:
             sys.setrecursionlimit(len(molecule))
@@ -620,7 +620,7 @@ class ConstraintsSelectedByDistancePermuter(ConstraintsOrderedByDistancePermuter
 class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_list, perm_timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, keep_structure=True)
-        if len(molecule) > 10000:
+        if len(molecule) > 5000:
             raise ValueError("Please don't use approx keep structure on molecules this big yet")
         if len(molecule) > 100:
             sys.setrecursionlimit(len(molecule))

@@ -102,22 +102,43 @@ class TestApproxCorrect(RunThings):
 
     def test_8(self):
         file_name = '6g8o.pdb'
-        cmd = "approx c2 --input {input} --use-sequence --use-chains --select-mols 1 --remove-hy --verbose  --ignore-atoms 1-10 --ignore-sym".format(input=file_name)
+        cmd = "approx c2 --input {input} --use-sequence --use-chains --select-mols 1 --ignore-sym --verbose".format(input=file_name) #
         result = self.run_args(cmd)
 
-        print(len(result[0][0].molecule._atoms))
+        assert result[0][0].csm == pytest.approx(3.263664234e-05, abs=1e-8)
 
     def test_9(self):
         file_name = '6g8o.pdb'
         cmd = "approx c2 --input {input} --use-sequence --keep-structure --select-mols 1".format(input=file_name)
         result = self.run_args(cmd)
 
-        assert result[0][0].csm == pytest.approx(0.000033, abs=1e-8)
+        output_permutation = open(r"csm_tests\permutation.txt").readlines()[1:]
+        excepted_permutation = open(r"excepted_files\permutation_6g8o_test9.txt").readlines()[1:]
+        assert output_permutation == excepted_permutation
+        assert result[0][0].csm == pytest.approx(0.0000326366, abs=1e-8)
 
     def test_10(self):
-        file_name = 'for_try/4v2t.pdb'  # your chains' lengths: [135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 475, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 474, 135, 135]
-        cmd = "approx c13 --input {input} --use-sequence --remove-hy --select-mols 1".format(input=file_name)
+        file_name = '4v2t.pdb'  # your chains' lengths: [135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 475, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 474, 135, 135]
+        cmd = "approx c13 --input {input} --use-sequence --remove-hy --select-mols 1 --greedy ".format(input=file_name)
         result = self.run_args(cmd)
+
+        assert result[0][0].csm == pytest.approx(0.00176675, abs=1e-8)
+
+    def test_11(self):
+        file_name = '4v2t.pdb'  # your chains' lengths: [135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 475, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 474, 135, 135]
+        cmd = "approx c3 --input {input} --use-sequence --select-mols 1 --timeout 300".format(input=file_name) # --select-atoms 1-1000
+        result = self.run_args(cmd)
+
+        assert result[0][0].csm == pytest.approx(1.75729293, abs=1e-8)
+
+    def test_12(self):
+        file_name = '1nc7.pdb'  # your chains' lengths: [135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 475, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 135, 474, 135, 474, 135, 135]
+        cmd = "approx c4 --input {input} --use-sequence --select-mols 1 --timeout 300 --input-chain-perm perm_BCDA_1230.txt".format(
+            input=file_name)
+        result = self.run_args(cmd)
+
+        assert result[0][0].chain_perm == [1, 2, 3, 0]
+        assert result[0][0].csm == pytest.approx(0.06717146, abs=1e-8)
 
 #--print-approx
 """
@@ -155,11 +176,11 @@ class TestApproxCorrect(RunThings):
     v--dir  x y z  # specific dir
     
     (approx algorithm:)
-    --greedy  # default hungarian
-    --many-chains  
+    v--greedy  # default hungarian
+    --many-chains
     --keep-structure
     --selective  k  # with fibonacci
-    --input-chain-perm 
+    v--input-chain-perm
     --print-approx # print the logs to the screen
 """
 
