@@ -73,7 +73,6 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
 
     def create_perm_from_dir(self, dir, chainperm):
         perm = self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
-        perm = self.cookie_dough(perm)
         return perm
 
     class DistanceMatrix:
@@ -194,8 +193,8 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
 
         for chain_index in cycle:  # Use an iterator
             # Todo: Convert from_chain and to_chain into vector[ints]
-            to_chain = chain_group[chain_index]
             from_chain = chain_group[chain_perm[chain_index]]
+            to_chain = chain_group[chain_index]
             for i in range(len(from_chain)):
                 from_chain_index = from_chain[i]
                 for j in range(len(to_chain)):
@@ -208,8 +207,6 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
 
     def hungarian_perm_builder(self, op_type, op_order, group, distance_matrix, perm):
         matrix = distance_matrix.get_matrix()
-        # m = Munkres()
-        # indexes = m.compute(matrix)
         indexes = munkres_wrapper(matrix)
         for (from_val, to_val) in indexes:
             perm[group[from_val]] = group[to_val]
@@ -245,10 +242,6 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
                 perm = self.hungarian_perm_builder(op_type, op_order, current_atom_indices, distances, perm)
                 # (4. either continue to next group or finish)
         # print(perm)
-        return perm
-
-    def cookie_dough(self, perm):
-        falsecount, num_invalid, cycle_counts, indices_in_bad_cycles = check_perm_cycles(perm, self.operation)
         return perm
 
 
@@ -370,7 +363,6 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
                 if index_b in molecule.atoms[index_a].equivalency:
                     distance = array_distance(a, b)
                     distances_dict[index_a][index_b] = distance
-
         permuter_class = ConstraintsOrderedByDistancePermuter  # ConstraintsSelectedByDistancePermuter
         permuter = permuter_class(self._molecule, self._op_order, self._op_type, distances_dict, perm_timeout=30000)
         state = permuter.permute().__next__()
