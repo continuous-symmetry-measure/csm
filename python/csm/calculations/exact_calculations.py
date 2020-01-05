@@ -47,14 +47,17 @@ class ExactStatistics:
 
     @property
     def dead_ends(self):
+        """The number of possible permutations that were cut off for breaking a constraint"""
         return self._falsecount
 
     @property
     def perm_count(self):
+        """The number of permutations yielded by the permuter """
         return self._perm_count
 
     @property
     def num_branches(self):
+        """ Including dead-ends, the total number of decision branches in the permutation tree"""
         return self._truecount
 
 

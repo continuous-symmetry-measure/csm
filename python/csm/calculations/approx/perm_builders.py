@@ -66,12 +66,17 @@ class _GreedyPermBuilder(_ChainPermsPermBuilder):
 
 
 class _HungarianPermBuilder(_ChainPermsPermBuilder):
-    '''
+    """
     This uses the Hungarian (munkres) algorithm for optimization of cost matrix.
          It is not optimized for molecules with many chain permutations.
-    '''
+    """
 
     def create_perm_from_dir(self, dir, chainperm):
+        """
+        :param dir: the direction for calculate permutation
+        :param chainperm: the permutation of the chains.
+        :return: perm- the calculated permutation for the direction 'dir'
+        """
         perm = self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
         return perm
 
@@ -173,12 +178,11 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
             ##print("cycle head is", i)
             yield from recursive_cycle_builder(i, i, [])
         # find and return cycles
-        pass
 
     def get_atom_indices(self, cycle, chain_group):
         indices = []
         for chain_index in cycle:
-            indices += chain_group[chain_index]
+            indices.extend(chain_group[chain_index])
         return indices
 
     def get_atom_to_matrix_indices(self, atom_indices, atom_to_matrix_indices):
@@ -189,6 +193,17 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
         return atom_to_matrix_indices
 
     def fill_distance_matrix(self, len_group, cycle, chain_group, chain_perm, rotated_holder, Q_holder, matrix_indices):
+        """
+        within that group, go over legal switches and add their distance to the matrix
+        :param len_group:
+        :param cycle:
+        :param chain_group:
+        :param chain_perm:
+        :param rotated_holder:
+        :param Q_holder:
+        :param matrix_indices:
+        :return: distances matrix
+        """
         distances = self.DistanceMatrix(len_group)
 
         for chain_index in cycle:  # Use an iterator
@@ -206,19 +221,42 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
         return distances
 
     def hungarian_perm_builder(self, op_type, op_order, group, distance_matrix, perm):
+        """
+        perm builder on the group
+        :param op_type: the operation type (e.g. CH, CI, Sn)
+        :param op_order: the operation order
+        :param group:
+        :param distance_matrix:
+        :param perm:
+        :return: perm: updated permutation
+        """
         matrix = distance_matrix.get_matrix()
-        indexes = munkres_wrapper(matrix)
+        indexes = munkres_wrapper(matrix)  # send to cython code for perform hungarian algorithm
         for (from_val, to_val) in indexes:
             perm[group[from_val]] = group[to_val]
         return perm
 
     def approximate_perm_hungarian(self, op_type, op_order, molecule, dir, chain_perm):
-        # print("Inside estimate_perm, dir=%s" % dir)
+        """
+        permutation is built by "group": equivalence class, and valid cycle within chain perm (then valid exchange w/n cycle)
+        1. create the group of atom indices we will be building a distance matrix with
+        2. within that group, go over legal switches and add their distance to the matrix
+        3. call the perm builder on the group
+        4. either continue to next group or finish
+
+        :param op_type: the operation type (e.g. CH, CI, Sn)
+        :param op_order: the operation order
+        :param molecule: object of Molecule
+        :param dir: the direction for calculate permutation
+        :param chain_perm: the permutation of the chains.
+        :return: perm - the calculated permutation for the direction 'dir'.
+        """
+        ##print("Inside estimate_perm, dir=%s" % dir)
         # create rotation matrix
         rotation_mat = create_rotation_matrix(1, op_type, op_order, dir)
         # run rotation matrix on atoms
         rotated = (rotation_mat @ molecule.Q.T).T
-        atom_to_matrix_indices = np.ones(len(molecule), dtype='long') * -1
+
         # empty permutation:
         perm = [-1] * len(molecule)
 
@@ -231,12 +269,12 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
                     current_atom_indices = self.get_atom_indices(cycle, chains_in_group)
                 except KeyError:  # chaingroup does not have chains belonging to current cycle
                     continue  # continue to next chain group
+                atom_to_matrix_indices = np.ones(len(molecule), dtype='long') * -1
                 atom_to_matrix_indices = self.get_atom_to_matrix_indices(current_atom_indices, atom_to_matrix_indices)
 
                 # 2. within that group, go over legal switches and add their distance to the matrix
                 distances = self.fill_distance_matrix(len(current_atom_indices), cycle, chains_in_group, chain_perm,
-                                                      rotated,
-                                                      molecule.Q, atom_to_matrix_indices)
+                                                      rotated, molecule.Q, atom_to_matrix_indices)
 
                 # 3. call the perm builder on the group
                 perm = self.hungarian_perm_builder(op_type, op_order, current_atom_indices, distances, perm)
@@ -268,7 +306,7 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
         num_fragments = (len(self._molecule.chains))
         # A1: matrix A of size MxM: initialize with zeros
         fragment_distance_matrix = np.ones((num_fragments, num_fragments), order="c") * MAXDOUBLE
-        # A2: confirm that there's same number of atoms in each equivalence group between fragment and fragment j
+        # A2: confirm that there's same number of atoms in each equivalence group between fragment i and fragment j
         # if there isn't, we leave M[i,j]=0 and continue to next ij
         # (this is already confirmed in molecule setup, so we will use the equivalent chains from mol.chain_equivalences
         for equivalent_chain_group in self._molecule.chain_equivalences:
@@ -277,8 +315,8 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
                     fragment_distance_matrix[i, j] = self._get_fragment_distance(frag_i, frag_j, rotation_mat)
 
         # Run the hungarian algorithm on Aij, and thereby find a permutation between the fragments
-        indexes = munkres_wrapper(fragment_distance_matrix)
-        # C: rerun A3 on the relevant ijs
+        indexes = munkres_wrapper(fragment_distance_matrix)  # send to cython code for perform hungarian algorithm
+        # C: return A3 on the relevant ijs
         for (i, j) in indexes:
             frag_i_groups = self._molecule.chains_with_internal_groups[i]
             frag_j_groups = self._molecule.chains_with_internal_groups[j]
@@ -325,7 +363,7 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
                 distance = array_distance(translated_v, coord_w)
                 group_distance_matrix[a, b] = distance
         # B: We run the hungarian algorithm on matrix B,
-        indexes = munkres_wrapper(group_distance_matrix)
+        indexes = munkres_wrapper(group_distance_matrix)  # send to cython code for perform hungarian algorithm
         return indexes, group_distance_matrix
 
 
