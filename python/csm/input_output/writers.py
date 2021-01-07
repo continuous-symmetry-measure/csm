@@ -578,7 +578,10 @@ class ScriptContextWriter(ContextWriter):
         #version and commandline
         filename = os.path.join(self.folder, "version.txt")
         with open(filename, 'w') as file:
-            file.write(self.argument_string)
+            if not self.argument_string.startswith('csm'):
+                file.write('csm ' + self.argument_string)
+            else:
+                file.write(self.argument_string)
             file.write("CSM VERSION: " + str(__version__))
 
         #comfile
