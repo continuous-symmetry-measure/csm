@@ -151,7 +151,7 @@ class MoleculeWriter:
         :param f: The file to write output to
         :param legacy: replace end with endmdl
         """
-        if model_number is not None and self.format == "pdb":
+        if model_number is not None and self.format.lower() == "pdb":
             model_str = "MODEL     {}\n".format(model_number)
             f.write(model_str)
 
@@ -358,7 +358,7 @@ class MoleculeWrapper:
         if self.format in ["mol", "sdf"]:
             key = 'Comment'
             self.moleculedata[key] = description
-        if self.format == "pdb":
+        if self.format.lower() == "pdb":
             key = 'REMARK'
             description = "     " + description
             description = self.insert_pdb_new_lines(description)
@@ -375,7 +375,7 @@ class MoleculeWrapper:
     def append_title(self, title):
         if self.format == "csm":
             return
-        if self.format == "pdb":
+        if self.format.lower() == "pdb":
             key = "TITLE"
             title = "     " + title
             title = self.insert_pdb_new_lines(title)
@@ -393,7 +393,7 @@ class MoleculeWrapper:
         if self.format == "csm":
             return
         original_title = self.obmol.GetTitle()
-        if self.format == "pdb":
+        if self.format.lower() == "pdb":
             original_title = self.moleculedata["TITLE"]
 
         if string_to_remove in original_title:
@@ -401,7 +401,7 @@ class MoleculeWrapper:
         else:
             return
 
-        if self.format == "pdb":
+        if self.format.lower() == "pdb":
             self.moleculedata["TITLE"] = new_title
         self.obmol.SetTitle(new_title)
 
@@ -782,7 +782,7 @@ class ScriptContextWriter(ContextWriter):
 
         '''
         try:
-            if self.out_format == "pdb":
+            if self.out_format.lower() == "pdb":
                 self.symmetric_mols_file.write("\nEND")
                 self.initial_molecules_file.write("\nEND")
         except:  # no matter what, must close files
@@ -912,5 +912,5 @@ class WebWriter():
                 molecule_wrapper.set_traits(symmetric=True, normalized=False)
                 molecule_wrapper.write(file, consecutive=True, model_number=i)
                 i += 1
-            if self.format == "pdb":
+            if self.format.lower() == "pdb":
                 file.write("\nEND")

@@ -979,7 +979,7 @@ class MoleculeReader:
             # we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             return mol
 
-        if format == "pdb":
+        if format.lower() == "pdb":
             mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond, use_backbone)
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
