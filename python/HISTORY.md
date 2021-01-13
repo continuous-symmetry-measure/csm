@@ -1,5 +1,10 @@
 The Python CSM Package
 ======================
+
+Changes in version 1.2.3
+------------------------
+* bug fix: '.PDB' files
+
 Changes in version 1.2.2
 ------------------------
 * fixes to --output-perm
