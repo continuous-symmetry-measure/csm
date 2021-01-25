@@ -1348,7 +1348,7 @@ class MoleculeReader:
                     if remove_hy or ignore_hy:
                         if pdb_dict.atom_symbol == "H":
                             continue
-                    elif use_backbone and pdb_dict.atom_name not in ['C', 'CA', 'N', 'O']:
+                    if use_backbone and pdb_dict.atom_name not in ['C', 'CA', 'N', 'O']:
                         # pass when --use-backbone == True && the current atom is in the list of the backbone atoms
                         continue
                     read_atom(line, likeness_dict, cur_atom)
