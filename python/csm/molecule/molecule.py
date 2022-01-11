@@ -602,7 +602,7 @@ class Molecule:
         for to_remove in reversed(indices_to_remove):  # reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
 
-        self.fixed_indexes = fixed_indexes #overwrite default value
+        self.fixed_indexes = fixed_indexes # overwrite default value
         self._create_bondset()
 
         # logger.debug(len(removed_atoms), "atoms removed")
@@ -1020,7 +1020,7 @@ class MoleculeReader:
                     mols.append(mol)
 
             else:
-                obms, selected_mols=select_mols(obms, kwargs) #save a little bit of time- only continue processing the molecules that were selected
+                obms, selected_mols = select_mols(obms, kwargs) #save a little bit of time- only continue processing the molecules that were selected
                 for i, obm in enumerate(obms):
                     mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_sym=ignore_sym,
                                                       use_mass=use_mass)
@@ -1041,7 +1041,7 @@ class MoleculeReader:
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             if not format == "csm" and not read_fragments:
-                p_mol.metadata.select_mols=selected_mols
+                p_mol.metadata.select_mols = selected_mols
             processed_mols.append(p_mol)
         if mols and not p_mol.bondset:  # if mols -> checks if the mols list doesn't empty
             # this only checks for the final one,

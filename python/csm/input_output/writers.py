@@ -4,6 +4,8 @@ import os
 import re
 from pathlib import Path
 import shutil
+import io
+from Bio.PDB import *
 
 try:
     import openbabel.openbabel as ob
@@ -143,6 +145,32 @@ class MoleculeWriter:
                 f.write("%d " % (j + 1))
             f.write("\n")
 
+    def write_line_pdb(self, f, key, line):
+        title = key + "     " + line + "\n"
+        title = self.molecule_wrapper.insert_pdb_new_lines(title)
+        f.write(title)
+
+    def _write_titles(self, f):
+        metadata = self.molecule_wrapper.molecule.metadata
+        lines_to_add = []
+        title = ""
+        if metadata.appellation():
+            title += metadata.appellation() + " "
+        title = title + get_line_header(self.molecule_wrapper.line_index, self.molecule_wrapper.result.operation)
+        lines_to_add.append(('TITLE', title))
+        if self.molecule_wrapper.symmetric:
+            mode_symmetric_title = "(Symmetric)"
+        else:
+            mode_symmetric_title = "(Original)"
+        lines_to_add.append(('TITLE', mode_symmetric_title))
+        if self.molecule_wrapper.normalized:
+            # Denormalized is the default state and does not need to be particularly noted.
+            lines_to_add.append(('TITLE', "Normalized"))
+        if self.molecule_wrapper.format.lower() == "pdb":
+            for key, line in lines_to_add:
+                self.write_line_pdb(f, key, line)
+
+
     def _write_obm_molecule(self, f, coordinates, consecutive=False, model_number=None):
         """
         Write an Open Babel molecule to file
@@ -151,32 +179,90 @@ class MoleculeWriter:
         :param f: The file to write output to
         :param legacy: replace end with endmdl
         """
-        if model_number is not None and self.format.lower() == "pdb":
-            model_str = "MODEL     {}\n".format(model_number)
-            f.write(model_str)
+        open_babel = False
+        if open_babel:
+            obmols = self.molecule_wrapper.set_obm_coordinates(coordinates)
 
-        obmols = self.molecule_wrapper.set_obm_coordinates(coordinates)
+            if len(obmols) > 1:
+                print("WARNING: result printing for fragments may have errors")
 
-        if len(obmols) > 1:
-            print("WARNING: result printing for fragments may have errors")
+            for obmol in obmols:
+                conv = OBConversion()
+                if not conv.SetOutFormat(self.format):
+                    raise ValueError("Error setting output format to " + format)
+                # write to file
+                try:
+                    s = conv.WriteString(obmol)
+                except (TypeError, ValueError, IOError):
+                    raise ValueError("Error writing data file using OpenBabel")
 
-        for obmol in obmols:
-            conv = OBConversion()
-            if not conv.SetOutFormat(self.format):
-                raise ValueError("Error setting output format to " + format)
-            # write to file
-            try:
-                s = conv.WriteString(obmol)
-            except (TypeError, ValueError, IOError):
-                raise ValueError("Error writing data file using OpenBabel")
+                if consecutive:
+                    if str.lower(self.format) in ['mol']:
+                        s += "\n$$$$\n"
+                f.write(s)
 
-            if consecutive:
-                if str.lower(self.format) == 'pdb':
-                    s = re.sub(r"MODEL\s+\d+", "", s)
-                    s = s.replace("END", "ENDMDL")
-                if str.lower(self.format) in ['mol']:
-                    s += "\n$$$$\n"
-            f.write(s)
+        if self.format.lower() == "pdb":
+            parser = PDBParser()
+            mol = self.molecule_wrapper.molecule
+            filepath = mol.metadata.filepath
+            structure = parser.get_structure(mol.metadata.filename.replace('.pdb', ''), filepath)
+            with open(filepath, "r") as handle_pdb:
+                header_dict = parse_pdb_header(handle_pdb)
+                for k in header_dict:
+                    structure.header[k] = header_dict[k]
+            list_to_remove = self.molecule_wrapper.molecule._deleted_atom_indices
+            atoms = [a for a in structure.get_atoms()]
+            atoms_to_remove = []
+            for i, atom in enumerate(atoms):
+                if i in list_to_remove:
+                    atoms_to_remove.append(atom)
+            for atom in reversed(atoms_to_remove):
+                parent = atom.get_parent()
+                parent.detach_child(atom.id)
+
+            for i, atom in enumerate(structure.get_atoms()):
+                atom.set_coord((non_negative_zero(coordinates[i][0]),
+                                non_negative_zero(coordinates[i][1]),
+                                non_negative_zero(coordinates[i][2])))
+
+            pdbio = PDBIO()
+            pdbio.set_structure(structure)
+            if model_number is not None:
+                f.write("MODEL      %s\n" %model_number)
+            # handle = io.StringIO(mol.metadata.file_content[0])
+            # pdb_original_lines = handle.readlines()
+            pdb_original_content = mol.metadata.file_content[0]
+            pdb_original_lines = pdb_original_content.split('\n')
+            need_write_index = True
+            skip_keys = ("END", "HETATM", "ATOM")
+            #  TODO  'GENERATED BY OPEN BABEL 3.1.1' ?
+            for line in pdb_original_lines:
+                to_write = not any(line.startswith(key) for key in skip_keys)
+                if line and to_write:
+                    if line.startswith("SEQRES") and need_write_index:
+                        need_write_index = False
+                        metadata = self.molecule_wrapper.molecule.metadata
+                        description = "index=" + str(metadata.index + 1) + ";" + "filename: " + metadata.filename
+                        self.write_line_pdb(f, 'REMARK', description)
+                    f.write(line + '\n')
+
+            self._write_titles(f)
+            pdbio.save(f, write_end=False)
+            f.write("ENDMDL\n")
+        elif self.format.lower() == "xyz":
+            from MDAnalysis import coordinates
+            mol = self.molecule_wrapper.molecule
+            filepath = mol.metadata.filepath
+            list_to_remove = self.molecule_wrapper.molecule._deleted_atom_indices
+            print(list_to_remove)
+            original_content = mol.metadata.file_content[0]
+            xyz_object = coordinates.XYZ.XYZReader(filepath)
+            print(xyz_object)
+            # for i, atom in enumerate():
+            #     atom.set_coord((non_negative_zero(coordinates[i][0]),
+            #                     non_negative_zero(coordinates[i][1]),
+            #                     non_negative_zero(coordinates[i][2])))
+
 
 
 class MoleculeWrapper:
@@ -277,16 +363,22 @@ class MoleculeWrapper:
     def __init__(self, result, line_index=0, symmetric=False, normalized=False):
         self.result = result
         self.molecule = result.molecule
+        self.symmetric = symmetric
+        self.normalized = normalized
         self.line_index = line_index
         self.metadata = result.molecule.metadata
         self.format = self.metadata.format
         self._molecule_coords="uninitialized"
-        if self.format != "csm":
-            self.obmols = self.obms_from_molecule(self.molecule)
-            self.obmol = self.obmols[0]
-            self.moleculedata = MoleculeWrapper.MoleculeData(self.obmol)
-            self.set_initial_molecule_fields()
-        self.set_traits(symmetric, normalized)
+        open_babel = False
+        if open_babel:
+            if self.format != "csm":
+                self.obmols = self.obms_from_molecule(self.molecule)
+                self.obmol = self.obmols[0]
+                self.moleculedata = MoleculeWrapper.MoleculeData(self.obmol)
+                self.set_initial_molecule_fields()
+            self.set_traits(symmetric, normalized)
+        else:
+            self._molecule_coords = self.result.get_coords(symmetric, normalized)
 
     def write(self, file, model_number=0, consecutive=False):
         mw = MoleculeWriter(self)
@@ -757,6 +849,9 @@ class ScriptContextWriter(ContextWriter):
     def write(self, molecule_results):
         # receives result array for single molecule, and appends to all the relevant files
         #print(self.folder)
+        print("start")
+        from datetime import datetime
+        t0 = datetime.now()
         self.write_csm(molecule_results)
         self.write_dir(molecule_results)
         self.write_perm(molecule_results)
@@ -771,6 +866,7 @@ class ScriptContextWriter(ContextWriter):
         if self.create_json_file:
             self.json_data.append(molecule_results)
         self.molecule_index += 1
+        print(str(datetime.now()-t0), "molecule_index", self.molecule_index)
 
     def __exit__(self, exc_type, exc_value, traceback):
         '''
