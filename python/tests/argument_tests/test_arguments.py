@@ -10,7 +10,7 @@ import pytest
 import shutil
 
 from csm.main.csm_run import csm_run
-from tests.local_settings import test_dir
+from tests.test_settings import test_dir
 
 #test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
 
