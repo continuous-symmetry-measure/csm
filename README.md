@@ -1,40 +1,36 @@
 # CSM #
 
-This is the git repository for the CSM project, developed by the Professor Avnir group of the Hebrew University in Jerusalem, The Professor Tuvi-Arad group of the Open University,
-and The Research Software Company (chelem.co.il)
+This is the git repository for the CSM project, developed by the Professor Avnir group of the Hebrew University in Jerusalem, The Professor Tuvi-Arad group of the Open University, and The Research Software Company (researchsoftware.co.il)
 
-## Installation ##
-Installation instructions can be found in the python Readme
+A more extended readme can be found in the [python readme](python/README.md)
+
 
 ## Citations ##
 
+
 Please cite CSM using the following:
 
-```
-Alon, G., and Tuvi-Arad, I. "Improved algorithms for symmetry analysis: Structure preserving permutations". J. Math. Chem., 56(1), 193–212 (2018).
+proteincsm:
 
-H. Zabrodsky, S. Peleg and D. Avnir "Continuous Symmetry Measures" J. Am. Chem. Soc., 114, 7843-7851 (1992) 
+> Tuvi-Arad I. and Alon G., "Improved Algorithms for Quantifying the Near Symmetry of Proteins: Complete Side Chains Analysis" (submitted). 
+> Dryzun C., Zait A. and Avnir D., "Quantitative Symmetry and Chirality - A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells", J. Comput. Chem., 32, 2526-2538 (2011). 
 
-Chaim Dryzun, Amir Zait and David Avnir “Quantitative Symmetry and Chirality—A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells” J. Comput. Chem., 32, 2526 – 2538, (2011) 
-```
+
+Exact Algorithm for calculating the CSM of molecules:
+
+> Alon G. and Tuvi-Arad I., "Improved algorithms for symmetry analysis: Structure preserving permutations", J. Math. Chem., 56(1), 193-212 (2018).
+
+Original Code by Avnir and coworkers:
+
+> Pinsky M., Dryzun C., Casanova D., Alemany P., Avnir D., "Analytical Methods for Calculating Continuous Symmetry Measures and the Chirality Measure", Journal of Computational Chemistry 29(16): 2712-2721 (2008).
+
+> Zabrodsky H., Peleg S., Avnir D., "Continuous symmetry measures", Journal of the American Chemical Society 114(20): 7843-7851 (1992).
+
 
 ## Contact ##
 
-For questions related to the project, contact Professor Inbal Tuvi-Arad at inbaltu@openu.ac.il
+For questions about the code, feature requests, and bug reports, feel free to use the csm google group: https://groups.google.com/g/csm-openu/
 
-For bug reports, contact devora@chelem.co.il
-
-## Release History ##
-
-New CSM (Python based):
-
-See the Python Readme for a complete version history.
-
-Old CM (C++ based):
-
-* 2.0.1 - Using CMake to compile CSM on multiple platforms
-* 2.0 - The 1st open-source CSM version
-* 1.0 - Closed-source CSM version
 
 ## License ##
 This project is provided under the 3-clause BSD license:

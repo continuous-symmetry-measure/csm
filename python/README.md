@@ -9,7 +9,7 @@ Molecules can be input in a variety of file formats (any supported by the OpenBa
 precisely for smaller molecules, or approximated for larger molecules where the runtime for calculating 
 the exact measure would be unreasonable.
 
-##Features
+## Features
 
 * The exact continuous symmetry measure calculator: The calculator goes through every single possible (valid) permutation
  of the molecule's atoms, and selects the permutation with the lowest continuous symmetry.
@@ -21,6 +21,11 @@ the exact measure would be unreasonable.
  * The trivial continuous symmetry measure calculator: Particularly well suited to proteins with almost identical sub-polymers,
  the trivial continous symmetry measure returns the symmetry measure of the molecule without any displacement of molecules within
  each fragment.
+
+## Installation
+
+Installing csm cdurrently requires installing openbabel and openbabel python bindings first.
+Contact the developers for more information.
 
 ## Usage
 
@@ -44,9 +49,6 @@ This will provide a full list of optional and required arguments, with explanati
 In addition to the possibility of using CSM from the command line, CSM can be accessed programmatically through its API, 
 detailed in the file API.md (including examples)
 
-## Installation
-
-Contact the developers for instructions regarding how to install csm
 
 
 ## CITATIONS 
@@ -83,7 +85,7 @@ Prof. David Avnir, Institute of Chemistry, The Hebrew University of Jerusalem
 
 **Programming:**
 
-The Research Software Company (chelem.co.il)
+The Research Software Company (researchsoftware.co.il)
 
 **Testing, scripts and additional technical support:**
 
@@ -98,17 +100,8 @@ The code for the hungarian algorithm is copyright (c) 2012, Jacob Frelinger
 
 ## CONTACT
 
-Dr. Inbal Tuvi-Arad, Department of Natural Sciences, The Open University of Israel, E-mail: inbaltu@openu.ac.il
+For questions about the code, feature requests, and bug reports, feel free to use the csm google group: https://groups.google.com/g/csm-openu/
 
-
-### Contributing
-
-You can contribute to the project by sending bug reports or feature requests to
-Devora@chelem.co.il or via the contact form at chelem.co.il
-
-### Help
-
-Similarly, send requests for help to Devora@chelem.co.il or via the contact form at chelem.co.il
 
 ## License
 
