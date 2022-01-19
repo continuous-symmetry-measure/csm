@@ -4,9 +4,15 @@ This is the git repository for the CSM project, developed by the Professor Avnir
 
 A more extended readme can be found in the [python readme](python/README.md)
 
+## Build Instructions: Windows
+
+Install [OpenBabel 3.1.1](https://github.com/openbabel/openbabel/releases/tag/openbabel-3-1-1)
+
+From within the python folder, run:
+`pip install -r requirements.txt`
+`.\rebuild.bat`
 
 ## Citations ##
-
 
 Please cite CSM using the following:
 
