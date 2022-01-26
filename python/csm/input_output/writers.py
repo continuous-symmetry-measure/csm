@@ -179,7 +179,7 @@ class MoleculeWriter:
         :param f: The file to write output to
         :param legacy: replace end with endmdl
         """
-        open_babel = False
+        open_babel = True
         if open_babel:
             obmols = self.molecule_wrapper.set_obm_coordinates(coordinates)
 
@@ -250,20 +250,38 @@ class MoleculeWriter:
             pdbio.save(f, write_end=False)
             f.write("ENDMDL\n")
         elif self.format.lower() == "xyz":
-            from MDAnalysis import coordinates
-            mol = self.molecule_wrapper.molecule
+            if self.molecule_wrapper.symmetric:
+                mol = self.molecule_wrapper.result.molecule
+            else:
+                mol = self.molecule_wrapper.molecule
+            if mol.metadata.select_mols and mol.metadata.index not in mol.metadata.select_mols:
+                return
             filepath = mol.metadata.filepath
+            filename = os.path.split(filepath)[-1]
             list_to_remove = self.molecule_wrapper.molecule._deleted_atom_indices
-            print(list_to_remove)
-            original_content = mol.metadata.file_content[0]
-            xyz_object = coordinates.XYZ.XYZReader(filepath)
-            print(xyz_object)
-            # for i, atom in enumerate():
-            #     atom.set_coord((non_negative_zero(coordinates[i][0]),
-            #                     non_negative_zero(coordinates[i][1]),
-            #                     non_negative_zero(coordinates[i][2])))
+            mol_index_line = ""
+            for line in mol.metadata.file_content[0].split("\n"):
+                if line.startswith("mol_index"):
+                    mol_index_line = line
+                    break
+            str_to_file = str(len(mol.atoms) - len(list_to_remove)) + '\n'
+            original_or_symetry = "  (Symmetric)\n" if self.molecule_wrapper.symmetric else "  (Original)\n"
+            line_heder_L = get_line_header(self.molecule_wrapper.line_index, self.molecule_wrapper.result.operation)
+            mol_index = mol_index_line[mol_index_line.index("=")+1 : mol_index_line.index(";")]
+            str_to_file += mol_index_line + "  " + self.molecule_wrapper.molecule.metadata.appellation() + " " +  \
+                           line_heder_L + " index=" + mol_index + ";filename: " + filename + original_or_symetry
+            i = 0
+            for i, atom in enumerate(mol.atoms):
+                if i not in list_to_remove:
+                    str_to_file += atom.symbol + " " * (11 - len(atom.symbol)) + "{: .5f}       {: .5f}       {: .5f}\n".format(
+                        non_negative_zero(coordinates[i][0]),
+                        non_negative_zero(coordinates[i][1]),
+                        non_negative_zero(coordinates[i][2]))
+            # print(str_to_file)
+            f.write(str_to_file)
 
-
+        elif self.format.lower() == 'mol':
+            print("mol file")
 
 class MoleculeWrapper:
     class MoleculeData(object):
@@ -369,7 +387,7 @@ class MoleculeWrapper:
         self.metadata = result.molecule.metadata
         self.format = self.metadata.format
         self._molecule_coords="uninitialized"
-        open_babel = False
+        open_babel = True
         if open_babel:
             if self.format != "csm":
                 self.obmols = self.obms_from_molecule(self.molecule)
