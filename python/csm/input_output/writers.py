@@ -303,21 +303,27 @@ class MoleculeWrapper:
     def obms_from_molecule(self, molecule):
         if self.format == "csm":
             return []
-        obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
+        if molecule.obmol:
+            print("use the obm object")
+            obmols = [molecule.obmol]
+        else:
+            print("create a new obm object")
+            obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
                                                   molecule.metadata.format,
                                                   molecule.metadata.babel_bond)
         self._obm_atom_indices = []
+
 
         for mol_index, obmol in enumerate(obmols):
             num_atoms = obmol.NumAtoms()
             for atom_index in range(num_atoms):
                 self._obm_atom_indices.append((mol_index, atom_index))
-
         for to_remove in reversed(molecule._deleted_atom_indices):
             mol_index, atom_index = self._obm_atom_indices[to_remove]
             obmol = obmols[mol_index]
             obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
-
+        if molecule.obmol:
+            molecule._deleted_atom_indices = []  # delete the atoms just on the first time of this obmol
         return obmols
 
     def set_obm_coordinates(self, coordinates):

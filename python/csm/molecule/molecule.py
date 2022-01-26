@@ -28,12 +28,12 @@ if not ob_debug:
 
 def get_format(format, filename):
     if not format:
-        format =  Path(filename).suffix.strip(".")
+        format = Path(filename).suffix.strip(".")
     if format.lower() == "csm":
         return "csm"
     conv = OBConversion()
     if not conv.SetInFormat(format):
-        format=None
+        format = None
     if not format:
         raise ValueError("Error discovering format from filename " + filename)
     return format
@@ -91,7 +91,7 @@ class Chains(OrderedDict):
         return self._indexes_to_strings[index]
 
     def name_to_index(self, name):
-        test= self._strings_to_indexes[name]
+        test = self._strings_to_indexes[name]
         return test
 
 
@@ -152,7 +152,7 @@ class MoleculeMetaData:
             return self.filename
 
         if write_original_mols_index:
-            mol_index = self.select_mols[self.index] + 1   # start from 1 instead of 0
+            mol_index = self.select_mols[self.index] + 1  # start from 1 instead of 0
         else:
             mol_index = self.index + 1  # start from 1 instead of 0
         if no_leading_zeros:
@@ -167,13 +167,13 @@ class Molecule:
     Represents a molecule for CSM calculation.
     """
 
-    def __init__(self, atoms=[], to_copy=False):
+    def __init__(self, atoms=[], to_copy=False, obmol=None):
         """  
         :param atoms: a list of Atoms, default empty
         :param to_copy: boolean, default False, when True none of the molecules fields will be filled
         """
         if not to_copy:
-            if len(atoms)<1: raise ValueError("Cannot create molecule with no atoms")
+            if len(atoms) < 1: raise ValueError("Cannot create molecule with no atoms")
             self._atoms = atoms
             self._norm_factor = 1.0  # is recalculated by molecule._complete_initialization
 
@@ -189,8 +189,7 @@ class Molecule:
             self._chains_with_internal_groups = {}
             self._chain_equivalences = []
 
-            # getting rid of obmol:
-            # self._obmol = obmol
+            self._obmol = obmol  # None
             self._deleted_atom_indices = []
             self.has_been_normalized = None
 
@@ -214,6 +213,7 @@ class Molecule:
 
         m._bondset = self.bondset
         m._Q = self.Q
+        m._obmol = self._obmol
         m._center_of_mass = self._center_of_mass
 
         m._equivalence_classes = self.equivalence_classes
@@ -242,6 +242,7 @@ class Molecule:
 
             # Classes:
             # obmol: needed for printing:
+            # "obmol": self.obmol,
             "deleted indices": self._deleted_atom_indices,
             "metadata": self.metadata.to_dict(),
 
@@ -272,6 +273,7 @@ class Molecule:
 
         m._deleted_atom_indices = in_dict["deleted indices"]
         m.metadata = MoleculeMetaData.from_dict(in_dict["metadata"])
+        m._obmol = in_dict["obmol"]
 
         m._center_of_mass = in_dict["center of mass"]
         m._equivalence_classes = in_dict["equivalence classes"]
@@ -306,6 +308,10 @@ class Molecule:
         :return: a list of atom objects
         '''
         return self._atoms
+
+    @property
+    def obmol(self):
+        return self._obmol
 
     @property
     def bondset(self):
@@ -545,51 +551,53 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[], use_backbone = False):
+    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[], use_backbone=False):
         """
             Creates a new Molecule from m by removing atoms who's symbol is in the remove list
             :param csm_args:
             :param removeList: atomic symbols to remove
         """
 
-        indices_to_remove=[]
+        indices_to_remove = []
         if select_atoms:
-            indices_to_remove=[i for i in range(len(self._atoms)) if i not in select_atoms]
+            indices_to_remove = [i for i in range(len(self._atoms)) if i not in select_atoms]
         elif ignore_atoms:
             indices_to_remove = ignore_atoms
         if use_backbone:
             backbone_atoms = ['N', 'CA', 'C', 'O']
-            indices_to_remove.extend([i for i in range(len(self._atoms)) if self._atoms[i].atom_name not in backbone_atoms])
-        indices_to_remove=set(indices_to_remove)
+            indices_to_remove.extend(
+                [i for i in range(len(self._atoms)) if self._atoms[i].atom_name not in backbone_atoms])
+        indices_to_remove = set(indices_to_remove)
 
-        #check for bad input 1: index provided that doesnt exist:
+        # check for bad input 1: index provided that doesnt exist:
         set_of_all_atoms = set(range(len(self._atoms)))
-        if len(set_of_all_atoms.union(indices_to_remove))!=len(set_of_all_atoms):
-            raise ValueError("An atom index you have input to --select-atoms or --ignore-atoms does not exist in the molecule")
+        if len(set_of_all_atoms.union(indices_to_remove)) != len(set_of_all_atoms):
+            raise ValueError(
+                "An atom index you have input to --select-atoms or --ignore-atoms does not exist in the molecule")
 
-        #add remove hy:
+        # add remove hy:
         if remove_hy:
-            hy_atoms_indices=set([i for i in range(len(self._atoms)) if self._atoms[i].symbol =="H"])
-            #add the hydrogens
-            indices_to_remove=indices_to_remove.union(hy_atoms_indices)
+            hy_atoms_indices = set([i for i in range(len(self._atoms)) if self._atoms[i].symbol == "H"])
+            # add the hydrogens
+            indices_to_remove = indices_to_remove.union(hy_atoms_indices)
 
-        indices_to_remove=sorted(indices_to_remove)
+        indices_to_remove = sorted(indices_to_remove)
 
-        self._deleted_atom_indices=indices_to_remove #needed when writing output of molecule to file via openbabel
-        self.fixed_indexes = fixed_indexes= [i for i in range(len(self))] #initializing here before the return because we use it when reading permutation
-        if not indices_to_remove: #relevant if remove-hy was selected but no hydrogen in molecule, or select-atoms selcted every atom
-            return #(may as well save time)
+        self._deleted_atom_indices = indices_to_remove  # needed when writing output of molecule to file via openbabel
+        self.fixed_indexes = fixed_indexes = [i for i in range(
+            len(self))]  # initializing here before the return because we use it when reading permutation
+        if not indices_to_remove:  # relevant if remove-hy was selected but no hydrogen in molecule, or select-atoms selcted every atom
+            return  # (may as well save time)
 
-        #we now store a mapping of each atom to its new index once all relevant atoms have been removed, in order to update connectivity
-        num_removed_atoms=0
+        # we now store a mapping of each atom to its new index once all relevant atoms have been removed, in order to update connectivity
+        num_removed_atoms = 0
         for i in range(len(self._atoms)):
             if i in indices_to_remove:
-                num_removed_atoms+=1
+                num_removed_atoms += 1
                 fixed_indexes[i] = None
             else:
                 # however many atoms have been removed up to this index is the amount its index needs adjusting by
                 fixed_indexes[i] -= num_removed_atoms
-
 
         # adjust the connectivity indices before we do any popping whatsoever
         for i, atom in enumerate(self._atoms):
@@ -602,7 +610,7 @@ class Molecule:
         for to_remove in reversed(indices_to_remove):  # reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
 
-        self.fixed_indexes = fixed_indexes #overwrite default value
+        self.fixed_indexes = fixed_indexes  # overwrite default value
         self._create_bondset()
 
         # logger.debug(len(removed_atoms), "atoms removed")
@@ -906,7 +914,7 @@ class MoleculeReader:
                   remove_hy=False, ignore_sym=False, use_mass=False,
                   read_fragments=False, use_sequence=False,
                   keep_structure=False, select_atoms=[], conn_file=None,
-                  out_format=None, ignore_atoms = [], use_backbone=False,
+                  out_format=None, ignore_atoms=[], use_backbone=False,
                   *args, **kwargs):
         """
         :param in_file_name: the name of the file to read the molecule from
@@ -980,7 +988,8 @@ class MoleculeReader:
             return mol
 
         if format.lower() == "pdb":
-            mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond, use_backbone)
+            mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond,
+                                                                   use_backbone)
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
         if initialize:
@@ -1001,9 +1010,9 @@ class MoleculeReader:
                            keep_structure=False, select_atoms=[], conn_file=None,
                            out_format=None, ignore_atoms=[], use_backbone=False,
                            *args, **kwargs):
-        #although the name of this function is "multiple from file", it is used both for files with multiple molecules
-        #and for files with only a single molecule. it is used anytime the --input is a file, not a folder
-        #it is extremely similar to .from_file. the difference is mostly in metadata, like molecule indices
+        # although the name of this function is "multiple from file", it is used both for files with multiple molecules
+        # and for files with only a single molecule. it is used anytime the --input is a file, not a folder
+        # it is extremely similar to .from_file. the difference is mostly in metadata, like molecule indices
         mols = []
         format = get_format(in_format, in_file_name)
 
@@ -1020,11 +1029,12 @@ class MoleculeReader:
                     mols.append(mol)
 
             else:
-                obms, selected_mols=select_mols(obms, kwargs) #save a little bit of time- only continue processing the molecules that were selected
+                obms, selected_mols = select_mols(obms,
+                                                  kwargs)  # save a little bit of time- only continue processing the molecules that were selected
                 for i, obm in enumerate(obms):
                     mol = MoleculeReader.mol_from_obm([obm], format, babel_bond=babel_bond, ignore_sym=ignore_sym,
                                                       use_mass=use_mass)
-                    if mol: #stupid workaround for openbabel 3
+                    if mol:  # stupid workaround for openbabel 3
                         mols.append(mol)
 
         processed_mols = []
@@ -1037,11 +1047,11 @@ class MoleculeReader:
                                                             remove_hy, ignore_sym, use_mass,
                                                             read_fragments, use_sequence,
                                                             keep_structure, select_atoms, conn_file,
-                                                            out_format, ignore_atoms,use_backbone)
+                                                            out_format, ignore_atoms, use_backbone)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             if not format == "csm" and not read_fragments:
-                p_mol.metadata.select_mols=selected_mols
+                p_mol.metadata.select_mols = selected_mols
             processed_mols.append(p_mol)
         if mols and not p_mol.bondset:  # if mols -> checks if the mols list doesn't empty
             # this only checks for the final one,
@@ -1140,12 +1150,14 @@ class MoleculeReader:
                 atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                 atoms.append(atom)
 
-        if not len(atoms): #a stupid workaround for openbabel 3 bad handling of pdbs
+        if not len(atoms):  # a stupid workaround for openbabel 3 bad handling of pdbs
             return None
 
-        mol = Molecule(atoms)
+        # add the OBmol to molecule object, if 'read-fragment' is true- set to null.
+        mol = Molecule(atoms, obmol=None if read_fragments else obmols[0])
         mol.metadata.file_content = mol_contents
         mol.metadata._title = title_contents
+
         return mol
 
     @staticmethod
@@ -1231,7 +1243,7 @@ class MoleculeReader:
 
                 atoms[i].adjacent = MoleculeReader._remove_multi_bonds(neighbours)
 
-            #chains = Chains() #used to get chain indices???
+            # chains = Chains() #used to get chain indices???
             try:
                 numchains = int(f.readline())
                 for i in range(numchains):
@@ -1261,7 +1273,6 @@ class MoleculeReader:
             cur_atom = 0
             # chains = Chains()
 
-
             for line in file:
                 pdb_dict = PDBLine._pdb_line_to_dict(line)
                 index = pdb_dict.atom_serial_number
@@ -1272,7 +1283,8 @@ class MoleculeReader:
                         breakpt = 1
                     atom_map[index] = cur_atom
                     if use_backbone:
-                        mol._atoms[cur_atom].atom_name = pdb_dict.atom_name  # change to the full symbol for use-backbone
+                        mol._atoms[
+                            cur_atom].atom_name = pdb_dict.atom_name  # change to the full symbol for use-backbone
 
                     chain_designation = pdb_dict.chain_id
                     if chain_designation != " ":
@@ -1335,7 +1347,8 @@ class MoleculeReader:
             except Exception as e:  # TODO: comment why this except is here (I don't actually remember)
                 print(e)
 
-        mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond, use_backbone)
+        mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond,
+                                                               use_backbone)
         # mol.strip_atoms(remove_hy, select_atoms=select_atoms, ignore_atoms=ignore_atoms, use_backbone=use_backbone) # wait for answer from inbal, about the flags: select_atoms, ignore_atoms
         mol.strip_atoms(remove_hy, use_backbone=use_backbone)
         likeness_dict = {}
@@ -1361,8 +1374,11 @@ class MoleculeReader:
         set_equivalence_classes(mol, likeness_dict)
 
         mol._initialize_chains(use_chains)
-        if use_chains and len(set([len(mol.chains[i]) for i in mol.chains])) > 1:  # check if all the chains have the same length.
-            raise ValueError("Error, all the chains of the molecule must have the same length, your chains' lengths: {}".format([len(mol.chains[i]) for i in mol.chains]))
+        if use_chains and len(
+                set([len(mol.chains[i]) for i in mol.chains])) > 1:  # check if all the chains have the same length.
+            raise ValueError(
+                "Error, all the chains of the molecule must have the same length, your chains' lengths: {}".format(
+                    [len(mol.chains[i]) for i in mol.chains]))
         mol.normalize()
 
         return mol
@@ -1407,7 +1423,7 @@ class MoleculeReader:
 
 
 def select_mols(mols, kwargs):
-    select_mols=kwargs.get('select_mols', [])
+    select_mols = kwargs.get('select_mols', [])
     try:
         if select_mols:
             mols = [mols[i] for i in select_mols]

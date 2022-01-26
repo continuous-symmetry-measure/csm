@@ -6,11 +6,16 @@ A more extended readme can be found in the [python readme](python/README.md)
 
 ## Build Instructions: Windows
 
-Install [OpenBabel 3.1.1](https://github.com/openbabel/openbabel/releases/tag/openbabel-3-1-1)
+Install [OpenBabel 3.1.1](https://github.com/openbabel/openbabel/releases/tag/openbabel-3-1-1)  
+Test open babel with the command: `obabel -H` , if it doesn't work, try to restart your computer.  
 
 From within the python folder, run:
-`pip install -r requirements.txt`
-`.\rebuild.bat`
+`pip install -r requirements.txt`  
+
+Run the build cython commands:  
+`python\csm\CPP_wrapper> python .\setup.py build`  
+`python\cython-munkres> .\rebuild.bat`  
+
 
 ## Citations ##
 
