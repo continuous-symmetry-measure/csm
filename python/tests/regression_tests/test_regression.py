@@ -30,7 +30,7 @@ class Test_0_22_3(RunThings):
         return super()._run_args(args_str, self.results_folder)
 
     def test_csm(self):
-        #csm files crashed because result writing assumed existence of OBM
-        cmd="exact c5 --input nobonds.csm"
+        # csm files crashed because result writing assumed existence of OBM
+        cmd = "exact c5 --input nobonds.csm"
         self.run_args(cmd)
     
