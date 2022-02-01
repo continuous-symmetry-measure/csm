@@ -285,7 +285,10 @@ class MoleculeWrapper:
             self.obmols = self.obms_from_molecule(self.molecule)
             self.obmol = self.obmols[0]
             self.moleculedata = MoleculeWrapper.MoleculeData(self.obmol)
-            self.set_initial_molecule_fields()
+            edit_obmol_title = not (symmetric and self.molecule.obmol)  # not edit the obm title if did it before
+            if edit_obmol_title:
+                self.set_initial_molecule_fields()
+
         self.set_traits(symmetric, normalized)
 
     def write(self, file, model_number=0, consecutive=False):
@@ -303,21 +306,27 @@ class MoleculeWrapper:
     def obms_from_molecule(self, molecule):
         if self.format == "csm":
             return []
-        obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
+        if molecule.obmol:
+            print("use the obm object")
+            obmols = [molecule.obmol]
+        else:
+            print("create a new obm object")
+            obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
                                                   molecule.metadata.format,
                                                   molecule.metadata.babel_bond)
         self._obm_atom_indices = []
+
 
         for mol_index, obmol in enumerate(obmols):
             num_atoms = obmol.NumAtoms()
             for atom_index in range(num_atoms):
                 self._obm_atom_indices.append((mol_index, atom_index))
-
         for to_remove in reversed(molecule._deleted_atom_indices):
             mol_index, atom_index = self._obm_atom_indices[to_remove]
             obmol = obmols[mol_index]
             obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
-
+        if molecule.obmol:
+            molecule._deleted_atom_indices = []  # delete the atoms just on the first time of this obmol
         return obmols
 
     def set_obm_coordinates(self, coordinates):
@@ -369,8 +378,9 @@ class MoleculeWrapper:
             self.moleculedata[key] = description
         if self.format == "xyz":
             old_title = self.obmol.GetTitle()
-            new_title = old_title + "  " + description
-            self.obmol.SetTitle(new_title)
+            if description not in old_title:
+                new_title = old_title + "  " + description
+                self.obmol.SetTitle(new_title)
 
     def append_title(self, title):
         if self.format == "csm":
@@ -394,7 +404,7 @@ class MoleculeWrapper:
             return
         original_title = self.obmol.GetTitle()
         if self.format.lower() == "pdb":
-            original_title = self.moleculedata["TITLE"]
+            original_title = self.moleculedata["TITLE"] if "TITLE" in self.moleculedata else ''
 
         if string_to_remove in original_title:
             new_title = original_title.replace(string_to_remove, "")
@@ -412,8 +422,11 @@ class MoleculeWrapper:
         original_title = self.obmol.GetTitle()
         if self.metadata.appellation() not in original_title:
             title += self.metadata.appellation() + " "
-        title = title + get_line_header(self.line_index, self.result.operation)
-        self.append_title(title)
+        line_header = get_line_header(self.line_index, self.result.operation)
+        if line_header not in original_title:
+            title = title + line_header
+        if title:
+            self.append_title(title)
         description = "index=" + str(self.metadata.index + 1) + ";" + "filename: " + self.metadata.filename
         self.append_description(description)
 
