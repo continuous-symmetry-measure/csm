@@ -1,5 +1,9 @@
 The Python CSM Package
 ======================
+Changes in version 1.2.4
+------------------------
+* tweak: Doesn't change automatically use-chains to be True if --use-backbone is True.  
+* Writings running time improved.
 
 Changes in version 1.2.3
 ------------------------
