@@ -1,5 +1,11 @@
 The Python CSM Package
 ======================
+
+Changes in version 1.2.5
+------------------------
+* Reduce the times it sends to the function `_create_bondset`
+* bug fix: delete atoms from obMol
+
 Changes in version 1.2.4
 ------------------------
 * tweak: Doesn't change automatically use-chains to be True if --use-backbone is True.  

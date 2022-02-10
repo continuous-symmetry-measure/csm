@@ -189,7 +189,7 @@ class Molecule:
             self._chains_with_internal_groups = {}
             self._chain_equivalences = []
 
-            self._obmol = obmol  # None obmol
+            self._obmol = obmol
             self._deleted_atom_indices = []
             self.has_been_normalized = None
 
@@ -1314,6 +1314,7 @@ class MoleculeReader:
                             atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                         except Exception as e:
                             raise ValueError("There was a problem reading connectivity from the pdb file." + str(e))
+
         if not babel_bond:
             mol._create_bondset()  # refresh the bondset
         return mol
