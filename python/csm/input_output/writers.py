@@ -274,7 +274,7 @@ class MoleculeWrapper:
         def __repr__(self):
             return dict(self.iteritems()).__repr__()
 
-    def __init__(self, result, line_index=0, symmetric=False, normalized=False):
+    def __init__(self, result, line_index=0, symmetric=False, normalized=False, original_title=""):
         self.result = result
         self.molecule = result.molecule
         self.line_index = line_index
@@ -284,10 +284,12 @@ class MoleculeWrapper:
         if self.format != "csm":
             self.obmols = self.obms_from_molecule(self.molecule)
             self.obmol = self.obmols[0]
+            if not symmetric:
+                self.original_title_obmol = self.obmol.GetTitle()
             self.moleculedata = MoleculeWrapper.MoleculeData(self.obmol)
-            edit_obmol_title = not (symmetric and self.molecule.obmol)  # not edit the obm title if did it before
-            if edit_obmol_title:
-                self.set_initial_molecule_fields()
+            self.set_initial_molecule_fields(original_title)
+        else:
+            self.original_title_obmol = None
 
         self.set_traits(symmetric, normalized)
 
@@ -401,6 +403,21 @@ class MoleculeWrapper:
             new_title = old_title + "  " + title
             self.obmol.SetTitle(new_title)
 
+    def set_title(self, title):
+        if self.format == "csm":
+            return
+        if self.format.lower() == "pdb":
+            key = "TITLE"
+            title = "     " + title
+            title = self.insert_pdb_new_lines(title)
+
+            if key in self.moleculedata:
+                title = self.moleculedata[key] + "\n" + title
+
+            self.moleculedata[key] = title
+        else:
+            self.obmol.SetTitle(title)
+
     def clean_title(self, string_to_remove):
         if self.format == "csm":
             return
@@ -417,18 +434,18 @@ class MoleculeWrapper:
             self.moleculedata["TITLE"] = new_title
         self.obmol.SetTitle(new_title)
 
-    def set_initial_molecule_fields(self):
+    def set_initial_molecule_fields(self, original_title=""):
         if self.format == "csm":
             return
-        title = ""
-        original_title = self.obmol.GetTitle()
-        if self.metadata.appellation(use_filename=False) not in original_title:
-            title += self.metadata.appellation(use_filename=False) + " "
+        original_title = original_title if original_title else self.obmol.GetTitle()
+        new_title = original_title + "  "
+        if self.metadata.appellation() not in original_title:
+            new_title += self.metadata.appellation() + " "
         line_header = get_line_header(self.line_index, self.result.operation)
         if line_header not in original_title:
-            title = title + line_header
-        if title:
-            self.append_title(title)
+            new_title = new_title + line_header
+        if new_title:
+            self.set_title(new_title)
         description = "index=" + str(self.metadata.index + 1) + ";" + "filename: " + self.metadata.filename
         self.append_description(description)
 
@@ -535,6 +552,7 @@ class ScriptContextWriter(ContextWriter):
         self.create_json_file=json_output
         self.max_len_file_name = max_len_file_name + 4
         self.molecule_format = '%-' + str(self.max_len_file_name) + 's'
+        self.original_title = None
         self.com_file=kwargs.get("command_file")
         self._kwargs=dict(kwargs)
 
@@ -653,6 +671,7 @@ class ScriptContextWriter(ContextWriter):
 
     def write_initial_mols(self, mol_results):
         molecule_wrapper = MoleculeWrapper(mol_results[0], symmetric=False, normalized=False)
+        self.original_title = molecule_wrapper.original_title_obmol
         file = self.initial_molecules_file
         molecule_wrapper.write(file, consecutive=True, model_number=self.molecule_index + 1)
 
@@ -662,7 +681,7 @@ class ScriptContextWriter(ContextWriter):
         for command_index, command_result in enumerate(mol_results):
             if command_result.failed:
                 continue
-            molecule_wrapper = MoleculeWrapper(command_result, command_index, symmetric=True, normalized=False)
+            molecule_wrapper = MoleculeWrapper(command_result, command_index, symmetric=True, normalized=False, original_title=self.original_title)
             molecule_wrapper.write(file, consecutive=True, model_number=self.result_index + 1)
             self.result_index += 1
 
