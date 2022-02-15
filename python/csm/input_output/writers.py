@@ -422,8 +422,8 @@ class MoleculeWrapper:
             return
         title = ""
         original_title = self.obmol.GetTitle()
-        if self.metadata.appellation() not in original_title:
-            title += self.metadata.appellation() + " "
+        if self.metadata.appellation(use_filename=False) not in original_title:
+            title += self.metadata.appellation(use_filename=False) + " "
         line_header = get_line_header(self.line_index, self.result.operation)
         if line_header not in original_title:
             title = title + line_header

@@ -136,7 +136,7 @@ class MoleculeMetaData:
     def to_dict(self):
         return vars(self)
 
-    def appellation(self, no_file_format=False, no_leading_zeros=False, write_original_mols_index=False):
+    def appellation(self, no_file_format=False, no_leading_zeros=False, write_original_mols_index=False, use_filename=True):
         '''
         the name for the molecule when printing to screen or creating tables.
         if the molecule was read from a folder, it's the filename
@@ -146,7 +146,7 @@ class MoleculeMetaData:
         :param write_original_mols_index: boolean value for use the original indexes for the selected molecules.
         :return: 
         '''
-        if self.use_filename:
+        if self.use_filename and use_filename:
             if no_file_format:
                 return Path(self.filename).stem
             return self.filename
