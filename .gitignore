@@ -1,5 +1,5 @@
 /PythonCSM/CPP_wrapper/local_settings.py
-
+csm_results*/
 activate.bat 
 activate 
 activate.ps1

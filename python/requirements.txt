@@ -1,4 +1,4 @@
 Cython>=0.29.14
-numpy>=1.22
+numpy~=1.21
 openbabel==3.1.1
 

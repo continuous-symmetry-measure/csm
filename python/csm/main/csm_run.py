@@ -5,6 +5,9 @@ import os
 import sys
 import timeit
 
+print(os.environ["PYTHONPATH"])
+print(sys.path)
+
 from csm import __version__
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox
 from csm.calculations.approx.dirs import get_direction_chooser
