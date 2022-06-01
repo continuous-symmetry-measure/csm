@@ -8,8 +8,8 @@
             "name": "CSM",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/python/csm/main/csm_run.py",
-            "cwd": "${workspaceFolder}/python",
+            "program": "${workspaceFolder}/src/csm/main/csm_run.py",
+            "cwd": "${workspaceFolder}/src",
             "console": "integratedTerminal",
             "justMyCode": true
         }

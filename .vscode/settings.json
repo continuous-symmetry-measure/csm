@@ -3,7 +3,7 @@
     "python.testing.pytestArgs": [
         "tests"
     ],
-    "python.testing.cwd": "${workspaceFolder}/python",
+    "python.testing.cwd": "${workspaceFolder}/src",
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true
 }
