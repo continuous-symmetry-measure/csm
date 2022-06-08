@@ -1,0 +1,44 @@
+name: Run CSM tests
+on:
+  push:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    name: Run CSM tests
+    strategy:
+      matrix:
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1.12
+        with:
+          cmake-version: '3.22.x'
+      - name: Install Open Babel
+        run: |
+          wget --no-check-certificate https://github.com/openbabel/openbabel/archive/refs/tags/openbabel-3-1-1.tar.gz
+          tar -xzf openbabel-3-1-1.tar.gz
+          mkdir build
+          cd build
+          cmake ../openbabel/openbabel-openbabel-3-1-1
+          make install
+      - name: Setup Python environment
+        working-directory: src
+        run: |
+          pip install wheel
+          pip install -r requirements.linux.txt
+          pip install pytest
+          python setup.py prepare
+          python setup.py build_ext
+          cp dist/csm* csm
+      - name: Run tests
+        working-directory: src
+        run: |
+          export PYTHONPATH="."
+          pytest tests
