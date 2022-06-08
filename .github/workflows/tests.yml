@@ -27,7 +27,7 @@ jobs:
           mkdir build
           cd build
           cmake ../openbabel-openbabel-3-1-1
-          make install
+          sudo make install
       - name: Setup Python environment
         working-directory: src
         run: |
