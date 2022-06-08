@@ -21,7 +21,7 @@ jobs:
           sudo apt update
           sudo apt install -y openbabel libopenbabel-dev
           sudo ln -s /usr/include/openbabel3 /usr/local/include/openbabel3
-      - name: Setup Python environment
+      - name: Build CSM
         working-directory: src
         run: |
           pip install wheel
@@ -29,7 +29,8 @@ jobs:
           pip install pytest
           python setup.py prepare
           python setup.py build_ext
-          find build -name "csm*.so" -exec cp {} csm
+          shopt -s globstar
+          cp build/**/csm*.so csm
       - name: Run tests
         working-directory: src
         run: |
