@@ -16,14 +16,11 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Setup cmake
-        uses: jwlawson/actions-setup-cmake@v1.12
-        with:
-          cmake-version: '3.22.x'
       - name: Install Open Babel
         run: |
           sudo apt update
           sudo apt install -y openbabel libopenbabel-dev
+          sudo ln -s /usr/include/openbabel3 /usr/local/include/openbabel3
       - name: Setup Python environment
         working-directory: src
         run: |
