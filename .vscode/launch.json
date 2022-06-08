@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        
         {
             "name": "CSM",
             "type": "python",
@@ -11,7 +12,12 @@
             "program": "${workspaceFolder}/src/csm/main/csm_run.py",
             "cwd": "${workspaceFolder}/src",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            
+            "args": ["approx", "c3", "--input", "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\2rla-s3.pdb", "--many-chains"]
         }
     ]
 }

@@ -558,24 +558,24 @@ $$$$
         assert not results[0][0].failed
 
     def test_input_chain_perm(self):
-        cmd = "approx c2 --input 3alb-gkt4-h.pdb --input-chain-perm --verbose"
-        results = self.run_args(cmd)
-        assert results[0][0].chain_perm == [2, 1, 0, 3]  # when run with use-chains it gets 0 1 2 3
+        # cmd = "approx c2 --input 3alb-gkt4-h.pdb --input-chain-perm --verbose"
+        # results = self.run_args(cmd)
+        # assert results[0][0].chain_perm == [2, 1, 0, 3]  # when run with use-chains it gets 0 1 2 3
 
         cmd = "approx c3 --input 1nc7.pdb  --use-sequence --use-chains --input-chain-perm CBDA2130.txt"
         results = self.run_args(cmd)
         print("result:", results[0][0].chain_perm)
         assert results[0][0].chain_perm == [2,1,3,0]
 
-        cmd = "approx c4 --input 1v0z.pdb --use-sequence --input-chain-perm BCDA1230.txt"
-        results = self.run_args(cmd)
-        print("result:", results[0][0].chain_perm)
-        assert results[0][0].chain_perm == [1,2,3,0]
+        # cmd = "approx c4 --input 1v0z.pdb --use-sequence --input-chain-perm BCDA1230.txt"
+        # results = self.run_args(cmd)
+        # print("result:", results[0][0].chain_perm)
+        # assert results[0][0].chain_perm == [1,2,3,0]
 
-        cmd = "approx c4 --input 1v0z.pdb --use-sequence --input-chain-perm DABC3012.txt"
-        results = self.run_args(cmd)
-        print("result:", results[0][0].chain_perm)
-        assert results[0][0].chain_perm == [3,0,1,2]
+        # cmd = "approx c4 --input 1v0z.pdb --use-sequence --input-chain-perm DABC3012.txt"
+        # results = self.run_args(cmd)
+        # print("result:", results[0][0].chain_perm)
+        # assert results[0][0].chain_perm == [3,0,1,2]
 
     def test_input_chain_perm_trivial(self):
         cmd = "trivial c2 --input 3alb-gkt4-h.pdb --input-chain-perm --verbose"

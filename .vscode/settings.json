@@ -1,7 +1,7 @@
 {
     "python.envFile": "${workspaceFolder}/.env",
     "python.testing.pytestArgs": [
-        "tests"
+        "tests",
     ],
     "python.testing.cwd": "${workspaceFolder}/src",
     "python.testing.unittestEnabled": false,

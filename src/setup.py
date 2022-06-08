@@ -33,9 +33,6 @@ EIGEN_INCLUDE_DIR_2 = "include/Eigen"
 
 CPP_WRAPPER_DIR = "csm/CPP_wrapper"
 
-MUNKRES_DIR = "cython-munkres"
-MUNKRES_INCLUDE_DIR = "cython-munkres/src/cpp"
-
 extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
@@ -80,9 +77,6 @@ class PrepareCommand(setuptools.Command):
         print('Converting csm pyx files to C++ sources...')
         pyx = './csm/CPP_wrapper/fast.pyx'
         self.cython(pyx)
-        print('Converting munkres pyx files to C++ sources...')
-        pyx = './cython-munkres/src/cython_munkres.pyx'
-        self.cython(pyx)
 
     def cython(self, pyx):
         from Cython.Compiler.CmdLine import parse_command_line
@@ -101,7 +95,7 @@ setup(
     version=csm_version,
     packages=['csm.calculations', 'csm.calculations.approx', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
-    install_requires=['numpy>=1.10', 'openbabel>=3.1.1.1'],
+    install_requires=['numpy>=1.10', 'openbabel>=3.1.1.1', 'scipy>=1.7.3'],
     include_package_data=True,
     license='Chelem',  # example license
     description='The Continuous Symmetry Measure',
@@ -138,13 +132,6 @@ setup(
     # We do not use Cython itself but the Cython output files
     # Note that header files that are required by the compilation are specified in MANIFEST.in
     ext_modules=[
-        Extension(
-            "cython_munkres",
-            [os.path.join(MUNKRES_DIR, "src", "cython_munkres.cpp"),
-             os.path.join(MUNKRES_DIR, "src", "cpp", "Munkres.cpp")],
-            language='c++',
-            include_dirs=[MUNKRES_INCLUDE_DIR, numpy.get_include()]
-        ),
         Extension(
             "csm.fast",
             [os.path.join(CPP_WRAPPER_DIR, "fast.cpp"),

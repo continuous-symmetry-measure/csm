@@ -1,10 +1,10 @@
 from libc.math cimport sqrt
 from libcpp.vector cimport vector
 import numpy as np
+import scipy.optimize
 cimport numpy as np
 from csm.calculations.constants import MAXDOUBLE
 from csm.calculations.basic_calculations import create_rotation_matrix, check_timeout
-from cython_munkres import munkres
 
 cdef class Vector3D
 cdef class Matrix3D
@@ -240,17 +240,14 @@ def munkres_wrapper(np.ndarray[np.double_t,ndim=2, mode="c"] A not None):
     cdef int x = A.shape[0]
     cdef int y = A.shape[1]
     results=[]
-    res_mat=munkres(A) #return a matrix of booleans with True marking optimal positions
-    for i in range(x): #here we convert that matrix to a list of indices
-        for j in range(y):
-            if res_mat[i][j]:
-                results += [(i, j)]
+
+    res_mat=scipy.optimize.linear_sum_assignment(A, False)
+    results = list(zip(res_mat[0],res_mat[1]))
+
     return results
 
 def hungarian_perm_builder(op_type, op_order, group, distance_matrix, perm):
     matrix=distance_matrix.get_matrix()
-    #m = Munkres()
-    #indexes = m.compute(matrix)
     indexes=munkres_wrapper(matrix)
     for (from_val, to_val) in indexes:
         perm[group[from_val]]=group[to_val]
