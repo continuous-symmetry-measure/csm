@@ -29,7 +29,7 @@ jobs:
           pip install pytest
           python setup.py prepare
           python setup.py build_ext
-          cp dist/csm* csm
+          find build -name "csm*.so" -exec cp {} csm
       - name: Run tests
         working-directory: src
         run: |
