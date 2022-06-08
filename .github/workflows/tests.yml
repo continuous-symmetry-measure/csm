@@ -26,9 +26,7 @@ jobs:
           tar -xzf openbabel-3-1-1.tar.gz
           mkdir build
           cd build
-          ls -l ..
-          ls -l ../openbabel
-          cmake ../openbabel/openbabel-openbabel-3-1-1
+          cmake ../openbabel-openbabel-3-1-1
           make install
       - name: Setup Python environment
         working-directory: src
