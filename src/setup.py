@@ -95,7 +95,7 @@ setup(
     version=csm_version,
     packages=['csm.calculations', 'csm.calculations.approx', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
-    install_requires=['numpy>=1.10', 'openbabel>=3.1.1.1', 'scipy>=1.7.3'],
+    install_requires=['numpy>=1.10', 'openbabel==3.1.1', 'scipy>=1.7.3'],
     include_package_data=True,
     license='Chelem',  # example license
     description='The Continuous Symmetry Measure',
