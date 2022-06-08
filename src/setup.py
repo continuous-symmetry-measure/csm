@@ -37,9 +37,11 @@ extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
     extra_compile_args = ['/Ox']
+    OPENBABEL_DEPENDENCY = 'openbabel==3.1.1'
     # extra_link_args = ['/debug']
 elif sys.platform in ['linux', 'linux2']:
     extra_compile_args = ['-fPIC']
+    OPENBABEL_DEPENDENCY = 'openbabel==3.1.1.1'
 
 def get_version():
     pathname = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'csm', 'version.py')
@@ -95,7 +97,7 @@ setup(
     version=csm_version,
     packages=['csm.calculations', 'csm.calculations.approx', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
-    install_requires=['numpy>=1.10', 'openbabel==3.1.1', 'scipy>=1.7.3'],
+    install_requires=['numpy>=1.10', OPENBABEL_DEPENDENCY, 'scipy>=1.7.3'],
     include_package_data=True,
     license='Chelem',  # example license
     description='The Continuous Symmetry Measure',
