@@ -30,7 +30,7 @@ jobs:
           python setup.py prepare
           python setup.py build_ext
           shopt -s globstar
-          cp build/**/csm*.so csm
+          cp build/**/fast*.so csm
       - name: Run tests
         working-directory: src
         run: |
