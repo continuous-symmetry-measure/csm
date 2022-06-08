@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Build docker image
         working-directory: src
-        run: docker build -f Dockerfile.manylinux .. -t csm-manylinux:latest
+        run: docker build -f Dockerfile.manylinux . -t csm-manylinux:latest
       - name: Copy wheels
         working-directory: src
         run: |
