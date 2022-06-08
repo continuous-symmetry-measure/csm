@@ -22,12 +22,8 @@ jobs:
           cmake-version: '3.22.x'
       - name: Install Open Babel
         run: |
-          wget --no-check-certificate https://github.com/openbabel/openbabel/archive/refs/tags/openbabel-3-1-1.tar.gz
-          tar -xzf openbabel-3-1-1.tar.gz
-          mkdir build
-          cd build
-          cmake ../openbabel-openbabel-3-1-1
-          sudo make install
+          sudo apt update
+          sudo apt install -y openbabel libopenbabel-dev
       - name: Setup Python environment
         working-directory: src
         run: |
