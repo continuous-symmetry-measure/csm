@@ -5,35 +5,35 @@ on:
       - v*
 
 jobs:
-  # manylinux-wheels:
-  #   runs-on: ubuntu-latest
-  #   name: Create the manylinux wheels for all supported Python versions
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #     - name: Build docker image
-  #       working-directory: src
-  #       run: docker build -f Dockerfile.manylinux . -t csm-manylinux:latest
-  #     - name: Copy wheels
-  #       working-directory: src
-  #       run: |
-  #         docker run --rm --name csm-manylinux -v `pwd`:/external csm-manylinux:latest
-  #     - name: Upload to Release
-  #       id: upload-release-asset
-  #       uses: svenstaro/upload-release-action@v2
-  #       with:
-  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
-  #         file: src/csm-wheels/csm*.whl
-  #         file_glob: true
-  #         tag: ${{ github.ref }}
-  #         overwrite: true
-  #         body: "DPlus API Manylinux Wheels"
+  manylinux-wheels:
+    runs-on: ubuntu-latest
+    name: Create the manylinux wheels for all supported Python versions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build docker image
+        working-directory: src
+        run: docker build -f Dockerfile.manylinux . -t csm-manylinux:latest
+      - name: Copy wheels
+        working-directory: src
+        run: |
+          docker run --rm --name csm-manylinux -v `pwd`:/external csm-manylinux:latest
+      - name: Upload to Release
+        id: upload-release-asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: src/csm-wheels/csm*.whl
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: "DPlus API Manylinux Wheels"
 
   windows-wheels:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: [ '3.7'] # openbabel version for python > 3.7 not available
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
     name: Create the Windows Wheel for Python ${{ matrix.python-version }}
     steps:
       - name: Checkout
@@ -46,7 +46,7 @@ jobs:
       - name: Set Python environment
         working-directory: src
         run: |
-          pip install -r requirements.txt
+          python ./install_requirements.py
           pip install wheel
       - name: Create the wheel
         working-directory: src
