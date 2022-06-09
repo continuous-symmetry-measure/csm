@@ -10,12 +10,14 @@ def get_openbabel_dependency():
     if plat == 'Windows':
         if sys.version_info.minor == 7:
             return 'openbabel==3.1.1'
-        elif sys.version_info.minor == 8:
+        elif sys.version_info.minor == 10:
             return "openbabel@https://github.com/continuous-symmetry-measure/openbabel-wheels/releases/download/v1/openbabel-3.1.1-cp310-cp310-win_amd64.whl"
         elif sys.version_info.minor == 9:
             return "openbabel@https://github.com/continuous-symmetry-measure/openbabel-wheels/releases/download/v1/openbabel-3.1.1-cp39-cp39-win_amd64.whl"
-        else: #elif sys.version_info.minor == 10:
+        elif sys.version_info.minor == 8:
             return "openbabel@https://github.com/continuous-symmetry-measure/openbabel-wheels/releases/download/v1/openbabel-3.1.1-cp38-cp38-win_amd64.whl"
+        else:
+            raise ValueError("Unsupported Python version")
 
     else: # elif plat == 'Linux':
         return 'openbabel==3.1.1.1'
