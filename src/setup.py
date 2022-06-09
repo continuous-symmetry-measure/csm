@@ -91,6 +91,8 @@ class PrepareCommand(setuptools.Command):
 
 csm_version = get_version()
 openbabel_dependency = install_requirements.get_openbabel_dependency()
+print(openbabel_dependency)
+
 print("Packaging CSM version %s" % csm_version)
 setup(
     name='csm',
