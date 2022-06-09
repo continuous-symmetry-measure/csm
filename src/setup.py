@@ -8,6 +8,7 @@ import os
 import re
 import glob
 from setuptools.command.build_ext import build_ext as _build_ext
+import install_requirements
 
 with open(os.path.join(os.path.dirname(__file__), 'README.md')) as readme:
     README = readme.read()
@@ -37,11 +38,9 @@ extra_compile_args = []
 extra_link_args = []
 if sys.platform == 'win32':
     extra_compile_args = ['/Ox']
-    OPENBABEL_DEPENDENCY = 'openbabel==3.1.1'
     # extra_link_args = ['/debug']
 elif sys.platform in ['linux', 'linux2']:
     extra_compile_args = ['-fPIC']
-    OPENBABEL_DEPENDENCY = 'openbabel==3.1.1.1'
 
 def get_version():
     pathname = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'csm', 'version.py')
@@ -91,13 +90,14 @@ class PrepareCommand(setuptools.Command):
         self.announce('Converted %s to C++' % pyx)
 
 csm_version = get_version()
+openbabel_dependency = install_requirements.get_openbabel_dependency()
 print("Packaging CSM version %s" % csm_version)
 setup(
     name='csm',
     version=csm_version,
     packages=['csm.calculations', 'csm.calculations.approx', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
-    install_requires=['numpy>=1.10', OPENBABEL_DEPENDENCY, 'scipy>=1.7.3'],
+    install_requires=['numpy>=1.10', openbabel_dependency, 'scipy>=1.7.3'],
     include_package_data=True,
     license='Chelem',  # example license
     description='The Continuous Symmetry Measure',
