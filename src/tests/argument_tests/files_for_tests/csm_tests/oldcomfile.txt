@@ -1,0 +1,3 @@
+csm c2 __INPUT___  __OUTPUT__  --keep-structure --babel-bond
+csm ch __INPUT___  __OUTPUT__  --trivial
+csm ci __INPUT___  __OUTPUT__  --approx  --fibonacci 2 
