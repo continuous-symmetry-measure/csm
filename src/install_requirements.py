@@ -4,7 +4,9 @@ import os
 
 # Install the requirements
 
-
+# The WINDOWS_WHEEL_DIR is at repo-root/openbabel-wheels
+REPO_ROOT = os.path.dirname(os.path.dirname(__file__))  # __file__ is repo-root/src/install_requirements.py
+WHEEL_DIR = os.path.join(REPO_ROOT, "openbabel-wheels")
 def get_openbabel_dependency():
     plat = platform.system()
     if plat == 'Windows':
@@ -20,16 +22,7 @@ def get_openbabel_dependency():
     else: # elif plat == 'Linux':
         return 'openbabel==3.1.1.1'
 
-
-def get_openbabel_url():
-    # Returns the the openbabel installation URL
-    pass
-
 def main():
-    # Install the proper openbabel on Windows, then install requirements.windows.txt on windows.
-    # On linux, just install requirements.linux.txt,
-    # use os.system('pip install...') to install something.
-
     plat = platform.system()
     if plat == 'Windows':
         os.system('pip install ' + get_openbabel_dependency())
