@@ -12,7 +12,8 @@ def get_openbabel_url():
     pass
 
 def main():
-    # Install the proper openbabel, then install requirements.windows.txt on windows, requirements.linux.txt on linux
+    # Install the proper openbabel on Windows, then install requirements.windows.txt on windows.
+    # On linux, just install requirements.linux.txt,
     # use os.system('pip install...') to install something.
     pass
 
