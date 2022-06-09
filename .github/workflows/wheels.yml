@@ -44,12 +44,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - name: Set Python environment
-        working-directory: PythonInterface
+        working-directory: src
         run: |
           pip install -r requirements.txt
           pip install wheel
       - name: Create the wheel
-        working-directory: PythonInterface
+        working-directory: src
         run: |
           python setup.py prepare
           pip wheel .
@@ -58,7 +58,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: PythonInterface/dplus*.whl
+          file: src/csm*.whl
           file_glob: true
           tag: ${{ github.ref }}
           overwrite: true
