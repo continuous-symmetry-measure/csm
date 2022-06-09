@@ -33,7 +33,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+        python-version: [ '3.7'] # openbabel version for python > 3.7 not available
     name: Create the Windows Wheel for Python ${{ matrix.python-version }}
     steps:
       - name: Checkout
