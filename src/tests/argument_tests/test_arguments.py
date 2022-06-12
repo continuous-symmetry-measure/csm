@@ -283,7 +283,7 @@ $$$$
         result = self.run_args(cmd)
         assert len(result[0][0].molecule) == 48
 
-        cmd = "approx c3 --input 2rla-s3.pdb --use-backbone"
+        cmd = "approx c3 --input 2RLA-s3.pdb --use-backbone"
         result = self.run_args(cmd)
         assert len(result[0][0].molecule) == 12
 
@@ -487,7 +487,8 @@ $$$$
         assert result2[0][0].op_type == 'CS' and result2[0][0].op_order == 2
 
     def test_normalize(self):
-        cmd = r"approx c3 --fibonacci 1 --read-fragments --input reading-fragments\water-6.mol --normalize 0 1 2 3 4 5 6"
+        test_file = os.path.join('reading-fragments', 'water-6.mol')
+        cmd = "approx c3 --fibonacci 1 --read-fragments --input " + test_file + " --normalize 0 1 2 3 4 5 6"
         results = self.run_args(cmd)
         hi = 1
 
@@ -599,20 +600,20 @@ $$$$
         cmd = "approx c3 --input 2RLA-s3.pdb --use-chains"
         results = self.run_args(cmd)
         assert len(results[0][0].molecule.chains) == 3
-        cmd = "approx c3 --input 2rla-s3.pdb"
+        cmd = "approx c3 --input 2RLA-s3.pdb"
         results = self.run_args(cmd)
         assert len(results[0][0].molecule.chains) == 1
 
     def test_selective(self):
-        cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 50 --selective 3"
+        cmd = "approx c3 --input 2RLA-s3.pdb --fibonacci 50 --selective 3"
         results = self.run_args(cmd)
 
     def test_permute_chains(self):
-        cmd = "trivial c3 --input 2rla-s3.pdb"
+        cmd = "trivial c3 --input 2RLA-s3.pdb"
         results1 = self.run_args(cmd)
         assert results1[0][0].csm == pytest.approx(49.078986, abs=1e-5)
 
-        cmd = "trivial c3 --input 2rla-s3.pdb --permute-chains"
+        cmd = "trivial c3 --input 2RLA-s3.pdb --permute-chains"
         results2 = self.run_args(cmd)
         assert results2[0][0].csm == pytest.approx(0.009663, abs=1e-5)
 
@@ -627,44 +628,44 @@ $$$$
         results = self.run_args(cmd)
         assert len(results[0][0].ongoing_statistics['approx']['c3']) == 18
         # no-orthogonal
-        cmd = "approx c3 --input 2rla-s3.pdb --no-orthogonal"
+        cmd = "approx c3 --input 2RLA-s3.pdb --no-orthogonal"
         results = self.run_args(cmd)
         assert len(results[0][0].ongoing_statistics['approx']['c3']) == 3
         # use-best-dir
-        cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir"
+        cmd = "approx c3 --input 2RLA-s3.pdb --use-best-dir"
         results = self.run_args(cmd)
         assert len(results[0][0].ongoing_statistics['approx']['c3']) == 3
         # use-best-dir + --no-orthogonal
-        cmd = "approx c3 --input 2rla-s3.pdb --use-best-dir --no-orthogonal"
+        cmd = "approx c3 --input 2RLA-s3.pdb --use-best-dir --no-orthogonal"
         results = self.run_args(cmd)
         assert len(results[0][0].ongoing_statistics['approx']['c3']) == 1
         # fibonacci
-        cmd = "approx c3 --input 2rla-s3.pdb --fibonacci 20"
+        cmd = "approx c3 --input 2RLA-s3.pdb --fibonacci 20"
         results = self.run_args(cmd)
         assert len(results[0][0].ongoing_statistics['approx']['c3']) == 20
         # dir
-        cmd = "approx c3 --input 2rla-s3.pdb --dir 1 0 0"
+        cmd = "approx c3 --input 2RLA-s3.pdb --dir 1 0 0"
         results = self.run_args(cmd)
         assert len(results[0][0].ongoing_statistics['approx']['c3']) == 1
 
     def test_algorithms(self):
         # default
-        cmd = "approx c3 --input 2rla-s3.pdb"
+        cmd = "approx c3 --input 2RLA-s3.pdb"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
         stats1 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # greedy
-        cmd = "approx c3 --input 2rla-s3.pdb --greedy"
+        cmd = "approx c3 --input 2RLA-s3.pdb --greedy"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
         stats2 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # many-chains
-        cmd = "approx c3 --input 2rla-s3.pdb --many-chains"
+        cmd = "approx c3 --input 2RLA-s3.pdb --many-chains"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
         stats3 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
         # keep-structure
-        cmd = "approx c3 --input 2rla-s3.pdb --keep-structure"
+        cmd = "approx c3 --input 2RLA-s3.pdb --keep-structure"
         results = self.run_args(cmd)
         assert round(results[0][0].csm, 6) == 0.009663
         stats4 = tuple(results[0][0].ongoing_statistics['approx']['c3'][3]['stats']['dirs'][0])
@@ -691,8 +692,9 @@ class TestFragments(RunThings):
                      #"water-6.pdb"]
 
         for filename in filenames:
-            cmd = "approx c3 --fibonacci 1 --input reading-fragments"
-            cmd += "\\" + filename
+            cmd = "approx c3 --fibonacci 1 --input "
+            dir_file_name = os.path.join("reading-fragments", filename)
+            cmd += dir_file_name
             results = self.run_args(cmd)
             print(cmd, len(results[0][0].molecule.chains))
             assert len(results[0][0].molecule.chains) == 1
@@ -705,8 +707,9 @@ class TestFragments(RunThings):
             "water-6.mol",
             "water-6.pdb"]
         for filename in filenames:
-            cmd = "approx c3 --fibonacci 1 --read-fragments --input reading-fragments"
-            cmd += "\\" + filename
+            cmd = "approx c3 --fibonacci 1 --read-fragments --input "
+            dir_file_name = os.path.join("reading-fragments", filename)
+            cmd += dir_file_name
             results = self.run_args(cmd)
             print(cmd)
             assert len(results[0][0].molecule.chains) == 6
@@ -718,8 +721,9 @@ class TestFragments(RunThings):
                      "water-6.mol",
                      "water-6.pdb"]
         for filename in filenames:
-            cmd = "approx c3 --fibonacci 1 --read-fragments --use-chains --input reading-fragments"
-            cmd += "\\" + filename
+            cmd = "approx c3 --fibonacci 1 --read-fragments --use-chains --input "
+            dir_file_name = os.path.join("reading-fragments", filename)
+            cmd += dir_file_name
             results = self.run_args(cmd)
             print(cmd)
             assert len(results[0][0].molecule.chains) == 6
@@ -745,13 +749,13 @@ class TestChirality(RunThings):
         assert results[0][0].overall_statistics["best chirality"] == "CS"
 
     def test_trivial_3(self):
-        cmd = "trivial ch --input 2rla-s3.pdb"
+        cmd = "trivial ch --input 2RLA-s3.pdb"
         result1 = self.run_args(cmd)
         assert result1[0][0].csm == pytest.approx(0.111737, abs=1e-5)
         assert result1[0][0].overall_statistics["best chirality"] == "CS"
 
     def test_trivial_4(self):
-        cmd = "trivial ch --input 2rla-s3.pdb --permute-chains"
+        cmd = "trivial ch --input 2RLA-s3.pdb --permute-chains"
         result2 = self.run_args(cmd)
         assert result2[0][0].csm == pytest.approx(0.111737, abs=1e-5)
         assert result2[0][0].overall_statistics["best chirality"] == "CS"

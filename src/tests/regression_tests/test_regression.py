@@ -9,7 +9,8 @@ from csm.main.csm_run import csm_run
 
 class RunThings():
     def _run_args(self, args_str, results_folder):
-        os.chdir(r'..\..\regression_tests\files_for_tests')
+        test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
+        os.chdir(test_dir)
         args_str += " --output {} --overwrite".format(results_folder)
         args = args_str.split()
         results_arr = csm_run(args)

@@ -17,7 +17,7 @@
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
             
-            "args": ["approx", "c3", "--input", "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\2rla-s3.pdb", "--many-chains"]
+            "args": ["approx", "c3", "--input", "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\2RLA-s3.pdb", "--many-chains"]
         }
     ]
 }

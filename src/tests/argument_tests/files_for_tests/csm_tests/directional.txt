@@ -1,0 +1,2 @@
+#Molecule                #Command           X         Y         Z
+bis(dth)copper(I).mol    L01_ch        0.0587    0.3365    0.9398
