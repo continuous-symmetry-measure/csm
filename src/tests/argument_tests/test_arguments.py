@@ -788,7 +788,7 @@ class TestChirality(RunThings):
     def test_approx_3(self):
         cmd = "approx ch --input bis(dth)copper(I).mol --sn-max 2"  # matches
         result2 = self.run_args(cmd)
-        assert result2[0][0].csm == pytest.approx(40.394381, abs=1e-5) # pytest.approx(4.394381, abs=1e-5)
+        assert result2[0][0].csm == pytest.approx(4.394381, abs=1e-5)
         assert result2[0][0].overall_statistics["best chirality"] == "CS"
 
 
