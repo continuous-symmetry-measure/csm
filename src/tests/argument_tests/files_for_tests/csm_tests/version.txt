@@ -1,2 +1,2 @@
-csm approx ch --input bis(dth)copper(I).mol --sn-max 2 --output csm_tests --overwrite
+csm approx c3 --fibonacci 1 --read-fragments --input reading-fragments\water-6.pdb --output csm_tests --overwrite
 CSM VERSION: 1.2.6
