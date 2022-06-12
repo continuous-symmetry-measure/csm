@@ -3,7 +3,8 @@ csm_results*/
 activate.bat 
 activate 
 activate.ps1
-wheels/
+*.whl
+!openbabel-wheels/*.whl
 __pycache__/
 .idea/
 *.pyc

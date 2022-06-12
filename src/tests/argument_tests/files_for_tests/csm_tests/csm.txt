@@ -1,0 +1,2 @@
+#Molecule                    L01_ch
+bis(dth)copper(I).mol        4.3944

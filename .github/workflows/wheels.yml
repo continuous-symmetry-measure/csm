@@ -29,37 +29,37 @@ jobs:
           overwrite: true
           body: "DPlus API Manylinux Wheels"
 
-  # windows-wheels:
-  #   runs-on: windows-latest
-  #   strategy:
-  #     matrix:
-  #       python-version: [ '3.7', '3.8', '3.9', '3.10' ]
-  #   name: Create the Windows Wheel for Python ${{ matrix.python-version }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v2
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #         architecture: x64
-  #     - name: Set Python environment
-  #       working-directory: PythonInterface
-  #       run: |
-  #         pip install -r requirements.txt
-  #         pip install wheel
-  #     - name: Create the wheel
-  #       working-directory: PythonInterface
-  #       run: |
-  #         python setup.py prepare
-  #         pip wheel .
-  #     - name: Upload to Release
-  #       id: upload-release-asset
-  #       uses: svenstaro/upload-release-action@v2
-  #       with:
-  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
-  #         file: PythonInterface/dplus*.whl
-  #         file_glob: true
-  #         tag: ${{ github.ref }}
-  #         overwrite: true
-  #         body: "Windows Wheels"
+  windows-wheels:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+    name: Create the Windows Wheel for Python ${{ matrix.python-version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Set Python environment
+        working-directory: src
+        run: |
+          python ./install_requirements.py
+          pip install wheel
+      - name: Create the wheel
+        working-directory: src
+        run: |
+          python setup.py prepare
+          pip wheel .
+      - name: Upload to Release
+        id: upload-release-asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: src/csm*.whl
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: "Windows Wheels"
