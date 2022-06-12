@@ -55,7 +55,7 @@ def read_molecules(**kwargs):
 
     elif not os.path.isfile(input_name):
         test = os.getcwd()
-        raise ValueError("invalid file/folder name for molecule")
+        raise ValueError("invalid file/folder name for molecule: ", input_name)
     else:  # file
         mols = MoleculeReader.multiple_from_file(**kwargs)
     sys.stderr.flush()
