@@ -35,7 +35,7 @@ class TestBasic(RunThings):
 
     def run_args(self, args_str):
         curr_file_dir = os.path.dirname(os.path.realpath(__file__))
-        os.chdir(curr_file_dir + r'\argument_tests\files_for_tests')
+        os.chdir(curr_file_dir + '/argument_tests/files_for_tests')
         return super()._run_args(args_str, self.results_folder)
 
     # input
