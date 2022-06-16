@@ -551,7 +551,7 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[], use_backbone=False):
+    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[], use_backbone=False, select_chains=[]):
         """
             Creates a new Molecule from m by removing atoms who's symbol is in the remove list
             :param csm_args:
@@ -559,6 +559,7 @@ class Molecule:
         """
 
         indices_to_remove = []
+       
         if select_atoms:
             indices_to_remove = [i for i in range(len(self._atoms)) if i not in select_atoms]
         elif ignore_atoms:
@@ -567,6 +568,10 @@ class Molecule:
             backbone_atoms = ['N', 'CA', 'C', 'O']
             indices_to_remove.extend(
                 [i for i in range(len(self._atoms)) if self._atoms[i].atom_name not in backbone_atoms])
+        if select_chains !=[]:
+            indices_to_remove.extend(
+                [i for i in range(len(self._atoms)) if self._atoms[i].chain not in select_chains])
+        
         indices_to_remove = set(indices_to_remove)
 
         # check for bad input 1: index provided that doesnt exist:
@@ -691,11 +696,11 @@ class Molecule:
             # else:
             #    silent_print("Molecule has no chains")
 
-    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[], use_backbone=False):
+    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[], use_backbone=False, select_chains=[]):
         """
         Finish creating the molecule after reading the raw data
         """
-        self.strip_atoms(remove_hy, select_atoms, ignore_atoms, use_backbone)
+        self.strip_atoms(remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains)
         self._calculate_equivalency()
         self._initialize_chains(use_chains)
         self.normalize()
@@ -963,7 +968,8 @@ class MoleculeReader:
                                  remove_hy=False, ignore_sym=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
                                  keep_structure=False, select_atoms=[], conn_file=None,
-                                 out_format=None, ignore_atoms=[], use_backbone=False, **kwargs):
+                                 out_format=None, ignore_atoms=[], use_backbone=False, select_chains=[], 
+                                 **kwargs):
 
         mol.metadata.format = format
         if out_format:
@@ -993,7 +999,7 @@ class MoleculeReader:
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
         if initialize:
-            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms, use_backbone)
+            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains)
             if len(mol.chains) < 2:
                 if read_fragments:
                     print("Warning: Although you input --read-fragments, no fragments were found in file. "
@@ -1008,7 +1014,7 @@ class MoleculeReader:
                            remove_hy=False, ignore_sym=False, use_mass=False,
                            read_fragments=False, use_sequence=False,
                            keep_structure=False, select_atoms=[], conn_file=None,
-                           out_format=None, ignore_atoms=[], use_backbone=False,
+                           out_format=None, ignore_atoms=[], use_backbone=False, select_chains=[],
                            *args, **kwargs):
         # although the name of this function is "multiple from file", it is used both for files with multiple molecules
         # and for files with only a single molecule. it is used anytime the --input is a file, not a folder
@@ -1047,7 +1053,7 @@ class MoleculeReader:
                                                             remove_hy, ignore_sym, use_mass,
                                                             read_fragments, use_sequence,
                                                             keep_structure, select_atoms, conn_file,
-                                                            out_format, ignore_atoms, use_backbone)
+                                                            out_format, ignore_atoms, use_backbone, select_chains)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             if not format == "csm" and not read_fragments:

@@ -58,6 +58,8 @@ def _create_parser():
                             help='Read fragments from .mol or .pdb file as chains')
         parser.add_argument('--use-backbone', action='store_true', default=False,
                                  help='Rebuild protein without the residues, and compute')
+        parser.add_argument('--select-chains', default=None,
+                                 help='Select only some chains for calculation, eg A-D,E,F,G-I')
 
     def output_utility_func(parser):
         parser.add_argument('--out-format',
@@ -277,6 +279,26 @@ def _process_arguments(parse_res):
                     selected.append(int(item) - 1)
         return selected
 
+    def range_char(start, stop):
+        return (chr(n) for n in range(ord(start), ord(stop) + 1))
+
+    def _parse_char_ranges(input):
+        '''
+        given a string such as 'A-C,D,E-G',
+        returns an array of ranges: [A,B,C,D,E,F,G]
+        '''
+        selected = []
+        if input:
+            items = input.split(',')
+            for item in items:
+                if "-" in item:
+                    range_limits = item.split("-")
+                    for c in range_char(range_limits[0], range_limits[1]):
+                        selected.append(c)
+                else:
+                    selected.append(item)
+        return selected
+
     def parse_input(dictionary_args):
         dictionary_args['in_file_name'] = parse_res.input
         if parse_res.read_fragments:
@@ -287,6 +309,7 @@ def _process_arguments(parse_res):
         dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
         dictionary_args['select_atoms'] = _parse_ranges_and_numbers(parse_res.select_atoms)
         dictionary_args['ignore_atoms'] = _parse_ranges_and_numbers(parse_res.ignore_atoms)
+        dictionary_args['select_chains'] = _parse_char_ranges(parse_res.select_chains)
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
