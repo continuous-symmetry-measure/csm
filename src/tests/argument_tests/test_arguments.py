@@ -224,6 +224,23 @@ $$$$
 
         assert output_str.strip() == expected_openbabel24.strip() or output_str.strip() == expected_openbabel30.strip()
 
+    def test_select_chains(self):
+        cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-backbone --use-chains --select-chains A,C"
+        results = self.run_args(cmd)
+        assert results[0][0].csm == pytest.approx(0.006558605239814774, rel=1e-8)
+
+        cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-backbone --use-chains --select-chains B,D"
+        results = self.run_args(cmd)
+        assert results[0][0].csm == pytest.approx(0.00821115474720635, rel=1e-8)
+
+        cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-chains --select-chains A,C"
+        results = self.run_args(cmd)
+        assert results[0][0].csm == pytest.approx(0.020046822531283315, rel=1e-8)
+
+        cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-chains --select-chains B,D"
+        results = self.run_args(cmd)
+        assert results[0][0].csm == pytest.approx(0.030496281388192603, rel=1e-8)
+
     def test_select_atoms_remove_hy(self):
         # --select-atoms removes specific atoms.
         # --remove-hy removes 'H' atoms.

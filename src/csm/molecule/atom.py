@@ -52,7 +52,7 @@ class Atom:
     """ A single atom, along with its position and neighbors
     """
 
-    def __init__(self, symbol, pos, index, useMass=False, chain='Simulated Chain'):
+    def __init__(self, symbol, pos, index, useMass=False, chain='Simulated Chain', res_num=-1):
         """
         :param symbol: atomic symbol (ie 'C', 'H', 'N')
         :param pos: position coordinates as a list of floats [1.0, 0.0, 0.0]
@@ -71,6 +71,7 @@ class Atom:
             self._mass = 1.0
         self._chain = chain
         self._equivalency = []
+        self.res_num = res_num 
 
     @property
     def mass(self):

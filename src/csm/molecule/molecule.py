@@ -551,7 +551,8 @@ class Molecule:
                 for equiv_index in group:
                     self._atoms[atom_index].add_equivalence(equiv_index)
 
-    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[], use_backbone=False, select_chains=[]):
+    def strip_atoms(self, remove_hy=False, select_atoms=[], ignore_atoms=[], use_backbone=False, 
+       select_chains=[], select_res=[]):
         """
             Creates a new Molecule from m by removing atoms who's symbol is in the remove list
             :param csm_args:
@@ -559,6 +560,10 @@ class Molecule:
         """
 
         indices_to_remove = []
+
+        if select_res:
+            select_atoms.extend(i for i in range(len(self._atoms)) if self._atoms[i].res_num in select_res)
+            select_atoms = set(select_atoms)
        
         if select_atoms:
             indices_to_remove = [i for i in range(len(self._atoms)) if i not in select_atoms]
@@ -568,7 +573,7 @@ class Molecule:
             backbone_atoms = ['N', 'CA', 'C', 'O']
             indices_to_remove.extend(
                 [i for i in range(len(self._atoms)) if self._atoms[i].atom_name not in backbone_atoms])
-        if select_chains !=[]:
+        if select_chains:
             indices_to_remove.extend(
                 [i for i in range(len(self._atoms)) if self._atoms[i].chain not in select_chains])
         
@@ -611,6 +616,7 @@ class Molecule:
                 if fixed_indexes[adjacent] is not None:
                     adjacent_new.append(fixed_indexes[adjacent])
             atom.adjacent = adjacent_new
+            # atom.index = fixed_indexes[atom.index]
 
         for to_remove in reversed(indices_to_remove):  # reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
@@ -696,11 +702,11 @@ class Molecule:
             # else:
             #    silent_print("Molecule has no chains")
 
-    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[], use_backbone=False, select_chains=[]):
+    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[], use_backbone=False, select_chains=[], select_res=[]):
         """
         Finish creating the molecule after reading the raw data
         """
-        self.strip_atoms(remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains)
+        self.strip_atoms(remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains, select_res)
         self._calculate_equivalency()
         self._initialize_chains(use_chains)
         self.normalize()
@@ -797,7 +803,8 @@ class PDBLine:
                 chain_designation = self.pdb_line[25]
         self.chain_id = chain_designation
 
-        self.sequence_number = pdb_line[22:26],  # used in use sequence
+        self.sequence_number = pdb_line[22:26]  # used in use sequence
+        
         self.iCode = pdb_line[26]
         self.x = pdb_line[30:38]
         self.y = pdb_line[38:46]
@@ -953,7 +960,8 @@ class MoleculeReader:
                                                       remove_hy, ignore_sym, use_mass,
                                                       read_fragments, use_sequence,
                                                       keep_structure, select_atoms, conn_file,
-                                                      out_format, ignore_atoms, use_backbone)
+                                                      out_format, ignore_atoms, use_backbone,
+                                                      select_chains=[], select_res=[])
         if not mol.bondset:
             if keep_structure:
                 raise ValueError(
@@ -968,7 +976,8 @@ class MoleculeReader:
                                  remove_hy=False, ignore_sym=False, use_mass=False,
                                  read_fragments=False, use_sequence=False,
                                  keep_structure=False, select_atoms=[], conn_file=None,
-                                 out_format=None, ignore_atoms=[], use_backbone=False, select_chains=[], 
+                                 out_format=None, ignore_atoms=[], use_backbone=False, 
+                                 select_chains=[], select_res=[], 
                                  **kwargs):
 
         mol.metadata.format = format
@@ -989,7 +998,8 @@ class MoleculeReader:
                                                            read_fragments=read_fragments, remove_hy=remove_hy,
                                                            ignore_sym=ignore_sym, use_mass=use_mass,
                                                            select_atoms=select_atoms, ignore_atoms=ignore_atoms,
-                                                           use_backbone=use_backbone)
+                                                           use_backbone=use_backbone, select_chains=select_chains,
+                                                           select_res=select_res)
             # we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
             return mol
 
@@ -999,7 +1009,7 @@ class MoleculeReader:
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
         if initialize:
-            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains)
+            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains, select_res)
             if len(mol.chains) < 2:
                 if read_fragments:
                     print("Warning: Although you input --read-fragments, no fragments were found in file. "
@@ -1014,7 +1024,8 @@ class MoleculeReader:
                            remove_hy=False, ignore_sym=False, use_mass=False,
                            read_fragments=False, use_sequence=False,
                            keep_structure=False, select_atoms=[], conn_file=None,
-                           out_format=None, ignore_atoms=[], use_backbone=False, select_chains=[],
+                           out_format=None, ignore_atoms=[], use_backbone=False, 
+                           select_chains=[], select_res=[],
                            *args, **kwargs):
         # although the name of this function is "multiple from file", it is used both for files with multiple molecules
         # and for files with only a single molecule. it is used anytime the --input is a file, not a folder
@@ -1053,7 +1064,8 @@ class MoleculeReader:
                                                             remove_hy, ignore_sym, use_mass,
                                                             read_fragments, use_sequence,
                                                             keep_structure, select_atoms, conn_file,
-                                                            out_format, ignore_atoms, use_backbone, select_chains)
+                                                            out_format, ignore_atoms, use_backbone, 
+                                                            select_chains, select_res)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             if not format == "csm" and not read_fragments:
@@ -1146,7 +1158,8 @@ class MoleculeReader:
                         chain = str(obmol_id)
                     else:
                         chain = obatom.GetResidue().GetChain().strip()
-                    atom = Atom(symbol, position, i, use_mass, chain)
+                    res_num = obatom.GetResidue().GetNum()
+                    atom = Atom(symbol, position, i, use_mass, chain, res_num)
                 except (AttributeError, KeyError):
                     # molecule doesn't have chains, stuck with empty chains
                     atom = Atom(symbol, position, i, use_mass)
@@ -1329,7 +1342,8 @@ class MoleculeReader:
     def _create_pdb_with_sequence(mol, in_file_name, initialize=True,
                                   use_chains=False, babel_bond=False, read_fragments=False,
                                   ignore_hy=False, remove_hy=False, ignore_sym=False, use_mass=False,
-                                  select_atoms=[], ignore_atoms=[], use_backbone=False):
+                                  select_atoms=[], ignore_atoms=[], use_backbone=False,
+                                  select_chains=[], select_res=[]):
         def read_atom(line, likeness_dict, cur_atom):
             pdb_dict = PDBLine._pdb_line_to_dict(line)
             atom_type = pdb_dict.atom_symbol
@@ -1341,11 +1355,24 @@ class MoleculeReader:
             else:
                 likeness_dict[key].append(cur_atom)
 
+        import sys
+        def print_all_atoms(mol, filename):
+            f = open(filename, "w")
+            for atom in mol.atoms:
+                f.write(f"ATOM {atom.index} CHAIN {atom.chain}\n")
+            f.close()
+                
+    
+
+        def print_likeness_dict():
+            pass
+
         def set_equivalence_classes(mol, likeness_dict):
             groups = []
             for key in likeness_dict:
                 groups.append(likeness_dict[key])
 
+            # print_all_atoms(mol, "actual_mol_select_atoms.txt")
             mol._equivalence_classes = groups
             try:
                 for group in groups:
@@ -1358,20 +1385,27 @@ class MoleculeReader:
         mol = MoleculeReader._read_pdb_connectivity_and_chains(in_file_name, mol, read_fragments, babel_bond,
                                                                use_backbone)
         # mol.strip_atoms(remove_hy, select_atoms=select_atoms, ignore_atoms=ignore_atoms, use_backbone=use_backbone) # wait for answer from inbal, about the flags: select_atoms, ignore_atoms
-        mol.strip_atoms(remove_hy, use_backbone=use_backbone)
+        mol.strip_atoms(remove_hy, use_backbone=use_backbone, 
+            select_chains=select_chains, select_res=select_res)
         likeness_dict = {}
         cur_atom = 0
 
+        selected_atoms = [a.index for a in mol.atoms]
+
         with open(in_file_name, 'r') as file:
+            pdb_atom_line_num=-1
             for line in file:
                 pdb_dict = PDBLine(line)
                 if pdb_dict.record_name in ['ATOM', 'HETATM'] and cur_atom < len(mol):
-                    if remove_hy or ignore_hy:
-                        if pdb_dict.atom_symbol == "H":
-                            continue
-                    if use_backbone and pdb_dict.atom_name not in ['C', 'CA', 'N', 'O']:
-                        # pass when --use-backbone == True && the current atom is in the list of the backbone atoms
+                    
+                    pdb_atom_line_num += 1
+                    
+                    if pdb_atom_line_num < mol.atoms[0].index:
                         continue
+                    
+                    if pdb_atom_line_num not in selected_atoms:
+                        continue
+                    
                     read_atom(line, likeness_dict, cur_atom)
                     cur_atom += 1
 

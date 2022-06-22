@@ -60,6 +60,8 @@ def _create_parser():
                                  help='Rebuild protein without the residues, and compute')
         parser.add_argument('--select-chains', default=None,
                                  help='Select only some chains for calculation, eg A-D,E,F,G-I')
+        parser.add_argument('--select-res', default=None,
+                                 help='Select only atoms with the specified resuide, eg 1-20,15,17,19-21')
 
     def output_utility_func(parser):
         parser.add_argument('--out-format',
@@ -260,10 +262,10 @@ def _create_parser():
 
 
 def _process_arguments(parse_res):
-    def _parse_ranges_and_numbers(input):
+    def _parse_ranges_and_numbers(input, return_zero_first=True):
         '''
         given a string such as '1-5,8,12-13', where 1 is the first index, returns an array of indices that matches
-        (but where 0 is the first index) (1-5 includes 5)
+        (but where 0 is the first index if return_zero_first is True) (1-5 includes 5)
         :param input: a string with number ranges and individual numbers, separated by commas
         :return: [int, int, int..]
         '''
@@ -274,9 +276,16 @@ def _process_arguments(parse_res):
                 if "-" in item:
                     range_limits = item.split("-")
                     for i in range(int(range_limits[0]), int(range_limits[1]) + 1):
-                        selected.append(i - 1)
+                        if return_zero_first:
+                            selected.append(i - 1)
+                        else:
+                            selected.append(i)
                 else:
-                    selected.append(int(item) - 1)
+                    if return_zero_first:
+                        selected.append(int(item) - 1)
+                    else:
+                        selected.append(int(item))
+
         return selected
 
     def range_char(start, stop):
@@ -310,6 +319,7 @@ def _process_arguments(parse_res):
         dictionary_args['select_atoms'] = _parse_ranges_and_numbers(parse_res.select_atoms)
         dictionary_args['ignore_atoms'] = _parse_ranges_and_numbers(parse_res.ignore_atoms)
         dictionary_args['select_chains'] = _parse_char_ranges(parse_res.select_chains)
+        dictionary_args['select_res'] = _parse_ranges_and_numbers(parse_res.select_res, False)
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
