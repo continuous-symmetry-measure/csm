@@ -621,6 +621,9 @@ class Molecule:
         for to_remove in reversed(indices_to_remove):  # reversed order because popping changes indexes after
             self._atoms.pop(to_remove)
 
+        if not self._atoms:
+            raise ValueError("No atoms found.")
+
         self.fixed_indexes = fixed_indexes  # overwrite default value
         self._create_bondset()
 
@@ -1390,7 +1393,7 @@ class MoleculeReader:
         likeness_dict = {}
         cur_atom = 0
 
-        selected_atoms = [a.index for a in mol.atoms]
+        selected_atoms = set([a.index for a in mol.atoms])
 
         with open(in_file_name, 'r') as file:
             pdb_atom_line_num=-1
@@ -1399,9 +1402,6 @@ class MoleculeReader:
                 if pdb_dict.record_name in ['ATOM', 'HETATM'] and cur_atom < len(mol):
                     
                     pdb_atom_line_num += 1
-                    
-                    if pdb_atom_line_num < mol.atoms[0].index:
-                        continue
                     
                     if pdb_atom_line_num not in selected_atoms:
                         continue
