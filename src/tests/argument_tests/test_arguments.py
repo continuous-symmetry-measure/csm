@@ -12,7 +12,7 @@ import shutil
 from csm.main.csm_run import csm_run
 from tests.test_settings import test_dir
 
-#test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
+test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
 
 class RunThings():
     def _run_args(self, args_str, results_folder):
@@ -240,6 +240,23 @@ $$$$
         cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-chains --select-chains B,D"
         results = self.run_args(cmd)
         assert results[0][0].csm == pytest.approx(0.030496281388192603, rel=1e-8)
+
+    # def test_select_res(self):
+    #     cmd = "approx c3 --input 7to4-NTD-15-306.pdb --use-sequence"
+    #     results = self.run_args(cmd)
+    #     assert results[0][0].csm == pytest.approx(0.118772, rel=1e-8)
+
+    #     cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 330-530"
+    #     results = self.run_args(cmd)
+    #     assert results[0][0].csm == pytest.approx(12.635345, rel=1e-8)
+
+    #     cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 15-626"
+    #     results = self.run_args(cmd)
+    #     assert results[0][0].csm == pytest.approx(2.844989, rel=1e-8)
+
+    #     cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 687-1148"
+    #     results = self.run_args(cmd)
+    #     assert results[0][0].csm == pytest.approx(0.025616, rel=1e-8)
 
     def test_select_atoms_remove_hy(self):
         # --select-atoms removes specific atoms.
