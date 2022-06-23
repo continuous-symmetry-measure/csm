@@ -1,17 +1,10 @@
 from collections import namedtuple
 import warnings
 
-try: #openbabel 3
-    from openbabel import openbabel
-    from openbabel.openbabel import OBAtom
-    from openbabel.pybel import Atom as obel_atom
-    _tbl=None
-except ImportError: #openbabel 2
-    #commented out for now. will eventually activate
-    #warnings.warn("Your openbabel version is 2.4.1 or lower. Future versions of csm will only support openbabel 3")
-    from openbabel import OBAtom, OBElementTable
-    _tbl = OBElementTable()
-
+from csm_openbabel import openbabel
+from csm_openbabel.openbabel import OBAtom
+from csm_openbabel.pybel import Atom as obel_atom
+_tbl=None
 
 __author__ = 'zmbq'
 

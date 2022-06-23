@@ -1,5 +1,4 @@
 Cython>=0.29.14
 numpy~=1.21
-openbabel==3.1.1.1
 scipy==1.7.3
-
+csm_openbabel==3.1.1

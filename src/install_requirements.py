@@ -2,6 +2,7 @@ import platform
 import sys
 import os
 
+raise Exception("Please don't use this anymore, we have csm_openbabel now")
 # Install the requirements
 
 # The WINDOWS_WHEEL_DIR is at repo-root/openbabel-wheels

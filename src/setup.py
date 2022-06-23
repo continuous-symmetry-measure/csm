@@ -103,16 +103,13 @@ if GITHUB_VERSION is not None:
     else:
         csm_version = GITHUB_VERSION
 
-openbabel_dependency = install_requirements.get_openbabel_dependency()
-print(openbabel_dependency)
-
 print("Packaging CSM version %s" % csm_version)
 setup(
     name='csm',
     version=csm_version,
     packages=['csm.calculations', 'csm.calculations.approx', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
-    install_requires=['numpy>=1.10', openbabel_dependency, 'scipy>=1.7.3'],
+    install_requires=['numpy>=1.10', 'csm_openbabel>=3.1.1', 'scipy>=1.7.3'],
     include_package_data=True,
     license='Chelem',  # example license
     description='The Continuous Symmetry Measure',

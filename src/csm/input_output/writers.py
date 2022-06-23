@@ -5,14 +5,8 @@ import re
 from pathlib import Path
 import shutil
 
-try:
-    import openbabel.openbabel as ob
-    from openbabel.openbabel import OBConversion
-except ImportError:
-    import openbabel as ob
-    from openbabel import OBConversion
-
-
+import csm_openbabel.openbabel as ob
+from csm_openbabel.openbabel import OBConversion
 
 from csm import __version__
 from csm.calculations.basic_calculations import cart2sph
