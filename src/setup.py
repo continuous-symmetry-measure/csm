@@ -90,6 +90,19 @@ class PrepareCommand(setuptools.Command):
         self.announce('Converted %s to C++' % pyx)
 
 csm_version = get_version()
+
+GITHUB_VERSION = os.environ.get('GITHUB_VERSION')
+DEBUG = False
+
+if GITHUB_VERSION is not None:
+    # When running in a github workflow, take the version from the environment
+    if GITHUB_VERSION.startswith('v'):
+        csm_version = GITHUB_VERSION[1:]
+    elif GITHUB_VERSION.startswith('refs/tags/v'):
+        csm_version = GITHUB_VERSION[11:]
+    else:
+        csm_version = GITHUB_VERSION
+
 openbabel_dependency = install_requirements.get_openbabel_dependency()
 print(openbabel_dependency)
 
