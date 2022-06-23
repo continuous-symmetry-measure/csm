@@ -11,6 +11,9 @@
 
 FROM quay.io/pypa/manylinux_2_24_x86_64
 
+ARG GITHUB_VERSION
+ENV GITHUB_VERSION=$GITHUB_VERSION
+
 # Install openbabel
 RUN apt update
 RUN apt install -y --no-install-recommends \
