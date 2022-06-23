@@ -18,9 +18,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Open Babel
         run: |
-          sudo apt update
-          sudo apt install -y openbabel libopenbabel-dev
-          sudo ln -s /usr/include/openbabel3 /usr/local/include/openbabel3
+          Invoke-WebRequest https://github.com/openbabel/openbabel/releases/download/openbabel-3-1-1/OpenBabel-3.1.1-x64.exe -OutFile OpenBabel-3.1.1-x64.exe
+          OpenBabel-3.1.1-x64.exe 
       - name: Build CSM
         working-directory: src
         run: |
@@ -36,3 +35,6 @@ jobs:
         run: |
           export PYTHONPATH="."
           pytest tests
+
+  # We do not run tests on Windows because we couldn't figure out how to install OpenBabel through a Github Worklow
+  # The OpenBabel installer doesn't seem to have a quiet mode.
