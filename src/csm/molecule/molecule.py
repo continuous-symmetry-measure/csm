@@ -1358,18 +1358,6 @@ class MoleculeReader:
             else:
                 likeness_dict[key].append(cur_atom)
 
-        import sys
-        def print_all_atoms(mol, filename):
-            f = open(filename, "w")
-            for atom in mol.atoms:
-                f.write(f"ATOM {atom.index} CHAIN {atom.chain}\n")
-            f.close()
-                
-    
-
-        def print_likeness_dict():
-            pass
-
         def set_equivalence_classes(mol, likeness_dict):
             groups = []
             for key in likeness_dict:
@@ -1389,7 +1377,7 @@ class MoleculeReader:
                                                                use_backbone)
         # mol.strip_atoms(remove_hy, select_atoms=select_atoms, ignore_atoms=ignore_atoms, use_backbone=use_backbone) # wait for answer from inbal, about the flags: select_atoms, ignore_atoms
         mol.strip_atoms(remove_hy, use_backbone=use_backbone, 
-            select_chains=select_chains, select_res=select_res)
+            select_atoms=[], ignore_atoms=[], select_chains=select_chains, select_res=select_res)
         likeness_dict = {}
         cur_atom = 0
 
