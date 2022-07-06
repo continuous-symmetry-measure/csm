@@ -599,6 +599,7 @@ class Molecule:
         if not indices_to_remove:  # relevant if remove-hy was selected but no hydrogen in molecule, or select-atoms selcted every atom
             return  # (may as well save time)
 
+
         # we now store a mapping of each atom to its new index once all relevant atoms have been removed, in order to update connectivity
         num_removed_atoms = 0
         for i in range(len(self._atoms)):
@@ -1450,6 +1451,7 @@ class MoleculeReader:
         out_mol.metadata = in_mol.metadata
         out_mol.metadata.babel_bond = babel_bond
         return out_mol
+
 
 
 def select_mols(mols, kwargs):

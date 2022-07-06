@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         
         {
             "name": "CSM",
@@ -17,7 +18,18 @@
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
             
-            "args": ["approx", "c3", "--input", "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\2RLA-s3.pdb", "--many-chains"]
+            "args": ["approx", "c2", "--input" 
+                ,"C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\2RLA-s3.pdb"
+                , "--use-sequence"
+                , "--use-backbone"
+                , "--use-chains"
+               ]
+
+            // "args": ["approx", "c3", "--input", 
+            //     "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\7to4.pdb"
+            //     , "--use-sequence"
+            //     , "--select-res", "687-1148"
+            //    ]
         }
     ]
 }

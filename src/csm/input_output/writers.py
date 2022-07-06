@@ -7,10 +7,10 @@ import shutil
 
 try:
     import openbabel.openbabel as ob
-    from openbabel.openbabel import OBConversion
+    from openbabel.openbabel import OBMol, OBConversion
 except ImportError:
     import openbabel as ob
-    from openbabel import OBConversion
+    from openbabel import OBMol, OBConversion
 
 
 
@@ -308,15 +308,31 @@ class MoleculeWrapper:
     def obms_from_molecule(self, molecule):
         if self.format == "csm":
             return []
+        if self.format == "pdb":
+            return self.obms_from_pdb(molecule)
         if molecule.obmol:
             obmols = [molecule.obmol]
         else:
             obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
                                                   molecule.metadata.format,
                                                   molecule.metadata.babel_bond)
-        self._obm_atom_indices = []
+        
+        self.build_obm_atom_indices(obmols)
 
         num_atoms_after_deleted = len(molecule.atoms)
+
+        if len(self._obm_atom_indices) == num_atoms_after_deleted:  # the _deleted_atom_indices already deleted.
+            return obmols
+        for to_remove in reversed(molecule._deleted_atom_indices):
+            mol_index, atom_index = self._obm_atom_indices[to_remove]
+            obmol = obmols[mol_index]
+            obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
+
+        return obmols
+
+    def build_obm_atom_indices(self, obmols):
+        self._obm_atom_indices = []
+
         num_all_atoms_obmols = 0
         for mol_index, obmol in enumerate(obmols):
             num_atoms = obmol.NumAtoms()
@@ -324,13 +340,30 @@ class MoleculeWrapper:
             for atom_index in range(num_atoms):
                 self._obm_atom_indices.append((mol_index, atom_index))
 
-        if num_all_atoms_obmols == num_atoms_after_deleted:  # the _deleted_atom_indices already deleted.
-            return obmols
-        for to_remove in reversed(molecule._deleted_atom_indices):
-            mol_index, atom_index = self._obm_atom_indices[to_remove]
-            obmol = obmols[mol_index]
-            obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
+    def obms_from_pdb(self, molecule):
+        conv = OBConversion()
+        conv.SetInFormat('pdb')
+        conv.SetOptions("b", conv.INOPTIONS)
+        obmols = []
 
+        for content in molecule.metadata.file_content:
+            lines = content.split('\n')
+            fixed_string = ''
+
+            for line in lines:
+                tokens = line.split()
+                if len(tokens) > 0 and tokens[0] in ['ATOM', 'HETATM']:
+                    atom_index = int(tokens[1]) - 1 
+                    if atom_index in molecule._deleted_atom_indices:
+                        continue
+
+                fixed_string += line + '\n'
+
+            obmol = OBMol()
+            conv.ReadString(obmol, fixed_string)
+            obmols.append(obmol)
+
+        self.build_obm_atom_indices(obmols)
         return obmols
 
     def set_obm_coordinates(self, coordinates):

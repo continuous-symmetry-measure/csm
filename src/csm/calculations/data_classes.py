@@ -328,6 +328,10 @@ class CSMResult(Result):
 
     @staticmethod
     def from_dict(result_dict):
+        print('TYPE OF RESULT_DICT:')
+        print(type(result_dict))
+        print('RESULT_DICT:')
+        print(result_dict)
         molecule = Molecule.from_dict(result_dict["molecule"])
         molecule.normalize()
         operation = Operation.from_dict(result_dict["operation"])
