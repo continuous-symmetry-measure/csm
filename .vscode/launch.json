@@ -17,19 +17,14 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-            
-            "args": ["approx", "c2", "--input" 
-                ,"C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\2RLA-s3.pdb"
-                , "--use-sequence"
-                , "--use-backbone"
-                , "--use-chains"
-               ]
 
-            // "args": ["approx", "c3", "--input", 
-            //     "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\7to4.pdb"
-            //     , "--use-sequence"
-            //     , "--select-res", "687-1148"
-            //    ]
+            "args": ["approx", "c2", "--input", 
+                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\pdb-dir"
+                //"C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\pdb-dir_BC"
+                , "--use-sequence"
+                , "--use-chains"
+                , "--select-chains", "B,C"
+               ]
         }
     ]
 }

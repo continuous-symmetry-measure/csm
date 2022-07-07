@@ -931,7 +931,9 @@ class MoleculeReader:
                   read_fragments=False, use_sequence=False,
                   keep_structure=False, select_atoms=[], conn_file=None,
                   out_format=None, ignore_atoms=[], use_backbone=False,
+                  select_chains=[], select_res=[],
                   *args, **kwargs):
+
         """
         :param in_file_name: the name of the file to read the molecule from
         :param in_format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
@@ -965,7 +967,7 @@ class MoleculeReader:
                                                       read_fragments, use_sequence,
                                                       keep_structure, select_atoms, conn_file,
                                                       out_format, ignore_atoms, use_backbone,
-                                                      select_chains=[], select_res=[])
+                                                      select_chains, select_res)
         if not mol.bondset:
             if keep_structure:
                 raise ValueError(

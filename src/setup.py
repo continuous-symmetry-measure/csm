@@ -53,6 +53,11 @@ def get_version():
     version = match.group("version")
     return version
 
+def set_version(version):
+    pathname = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'csm', 'version.py')
+    with open(pathname, "w") as ver_inp:
+        ver_inp.write("__version__ = " + version)
+
 
 class PrepareCommand(setuptools.Command):
     description = "Build fast.pyx so there's no cython dependence in installation"
@@ -102,6 +107,9 @@ if GITHUB_VERSION is not None:
         csm_version = GITHUB_VERSION[11:]
     else:
         csm_version = GITHUB_VERSION
+
+    set_version(csm_version)
+
 
 openbabel_dependency = install_requirements.get_openbabel_dependency()
 print(openbabel_dependency)

@@ -241,6 +241,16 @@ $$$$
         results = self.run_args(cmd)
         assert results[0][0].csm == pytest.approx(0.030496281388192603, rel=1e-8)
 
+    def test_select_chains_on_dir(self):
+        cmd = "approx c2 --input pdb-dir_BC --use-sequence --use-chains"
+        reference = self.run_args(cmd)
+
+        cmd = "approx c2 --input pdb-dir --use-sequence --use-chains --select-chains B,C"
+        results = self.run_args(cmd)
+
+        for res, ref in (results, reference):
+            assert res[0].csm == ref[0].csm
+
     def test_select_res(self):
         cmd0 = "approx c3 --input 7to4.pdb --use-sequence --select-res 15-306"
         results0 = self.run_args(cmd0)
