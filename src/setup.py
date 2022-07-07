@@ -56,7 +56,7 @@ def get_version():
 def set_version(version):
     pathname = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'csm', 'version.py')
     with open(pathname, "w") as ver_inp:
-        ver_inp.write("__version__ = " + version)
+        ver_inp.write("__version__ = '" + version + "'")
 
 
 class PrepareCommand(setuptools.Command):
