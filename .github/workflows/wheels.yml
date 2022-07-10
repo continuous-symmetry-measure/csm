@@ -65,8 +65,7 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
           body: "Windows Wheels"
-      build_my_app:
-        title: Building Docker Image
+      - name: Building Docker Image
         type: build
         image_name: csm
         working_directory: src
