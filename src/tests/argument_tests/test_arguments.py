@@ -248,7 +248,9 @@ $$$$
         cmd = "approx c2 --input pdb-dir --use-sequence --use-chains --select-chains B,C"
         results = self.run_args(cmd)
 
-        for res, ref in (results, reference):
+        assert (len(results) == len(reference))
+
+        for res, ref in zip(results, reference):
             assert res[0].csm == ref[0].csm
 
     def test_select_res(self):
