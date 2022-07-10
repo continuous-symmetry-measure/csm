@@ -65,7 +65,16 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
           body: "Windows Wheels"
-
+      build_my_app:
+        title: Building Docker Image
+        type: build
+        image_name: csm
+        working_directory: src
+        tag: ${{ github.ref }}
+        dockerfile: Dockerfile
+        build_arguments:
+          - WHL=src/csm*.whl
+          - CSM_VER=${{ github.ref }}
   source-package:
     runs-on: windows-latest
     name: Create the Windows Wheel for Python ${{ matrix.python-version }}
