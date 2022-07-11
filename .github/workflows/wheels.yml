@@ -70,8 +70,7 @@ jobs:
     name: Create the docker image using wheels
     steps:
       - name: Build docker image
-        working-directory: src
-        run: docker build . --tag ${GITHUB_REF##*/} --build-arg WHL=csm*.whl --build-arg CSM_VER=${GITHUB_REF##*/}
+        run: docker build src --tag ${{ github.ref##*/ }} --build-arg WHL=csm*.whl --build-arg CSM_VER=${{ github.ref##*/ }}
   source-package:
     runs-on: windows-latest
     name: Create the Windows Wheel for Python ${{ matrix.python-version }}
