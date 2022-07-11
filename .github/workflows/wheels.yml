@@ -69,8 +69,10 @@ jobs:
     runs-on: ubuntu-latest
     name: Create the docker image using wheels
     steps:
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Build docker image
-        run: docker build src --tag ${{ github.ref##*/ }} --build-arg WHL=csm*.whl --build-arg CSM_VER=${{ github.ref##*/ }}
+        run: docker build src --tag $RELEASE_VERSION --build-arg WHL=csm*.whl --build-arg CSM_VER=$RELEASE_VERSION
   source-package:
     runs-on: windows-latest
     name: Create the Windows Wheel for Python ${{ matrix.python-version }}
