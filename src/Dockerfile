@@ -2,7 +2,7 @@
 # Adapted from various Dockerfiles for Openbabel and Python
 
 # TODO: Move the openbabel 3.1.1 on Python 3.7
-FROM teamcsm/openbabel:py3.7-openbabel3.1.1
+FROM teamcsm/openbabel:py3.9-openbabel3.1.1
 LABEL by="The Research Software Company"
 LABEL website="https://www.chelem.co.il"
 
