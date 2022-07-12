@@ -4,6 +4,12 @@ on:
     tags:
       - v*
 
+stages:
+  - manylinux-wheels
+  - windows-wheels
+  - source-package
+  - build-docker-image
+
 jobs:
   manylinux-wheels:
     runs-on: ubuntu-latest
@@ -65,23 +71,7 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
           body: "Windows Wheels"
-  build-docker-image:
-    runs-on: ubuntu-latest
-    name: Create the docker image using wheels
-    steps:
-      - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - name: get wheels
-        uses: dsaltares/fetch-gh-release-asset@master
-        with:
-          repo: 'continuous-symmetry-measure/csm'
-          version: tag/$RELEASE_VERSION
-          regex: true
-          file: "csm*.whl"
-          target: 'csm.whl'
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build docker image
-        run: docker build src --tag $RELEASE_VERSION --build-arg WHL=csm.whl --build-arg CSM_VER=$RELEASE_VERSION
+  
   source-package:
     runs-on: windows-latest
     name: Create the Windows Wheel for Python ${{ matrix.python-version }}
@@ -115,3 +105,20 @@ jobs:
           overwrite: true
           body: "Source Package"
       
+  build-docker-image:
+    runs-on: ubuntu-latest
+    name: Create the docker image using wheels
+    steps:
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: get wheels
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: 'continuous-symmetry-measure/csm'
+          version: tag/$RELEASE_VERSION
+          regex: true
+          file: "csm*.whl"
+          target: 'csm.whl'
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build docker image
+        run: docker build src --tag $RELEASE_VERSION --build-arg WHL=csm.whl --build-arg CSM_VER=$RELEASE_VERSION
