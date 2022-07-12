@@ -74,8 +74,8 @@ jobs:
       - name: get wheels
         uses: dsaltares/fetch-gh-release-asset@master
         with:
-          # repo: 'continuous-symmetry-measure/csm'
-          version: ${{ github.ref }}
+          repo: 'continuous-symmetry-measure/csm'
+          version: tag/$RELEASE_VERSION
           regex: true
           file: "csm*.whl"
           target: 'csm.whl'
