@@ -100,17 +100,18 @@ jobs:
           body: "Source Package"
       
   build-docker-image:
-    needs: manylinux-wheels
+    # needs: manylinux-wheels
     runs-on: ubuntu-latest
     name: Create the docker image using wheels
     steps:
       - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        #run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+        run: echo "RELEASE_VERSION=v1.3.0b21" >> $GITHUB_ENV
       - name: get wheels
         uses: dsaltares/fetch-gh-release-asset@master
         with:
           repo: 'continuous-symmetry-measure/csm'
-          version: tag/$RELEASE_VERSION
+          version: tag/v1.3.0b21
           regex: true
           file: "csm*.whl"
           target: 'csm.whl'
