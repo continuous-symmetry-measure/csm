@@ -120,5 +120,5 @@ jobs:
           version: tags/v1.3.0b21
           file: 'csm-1.3.0b21-cp39-cp39-manylinux_2_24_x86_64.whl'
           token: ${{ secrets.GITHUB_TOKEN }}
-       - name: Build docker image
-         run: docker build src --tag $RELEASE_VERSION --build-arg WHL=csm-1.3.0b21-cp39-cp39-manylinux_2_24_x86_64.whl --build-arg CSM_VER=$RELEASE_VERSION
+      - name: Build docker image
+        run: docker build src --tag $RELEASE_VERSION --build-arg WHL=csm-1.3.0b21-cp39-cp39-manylinux_2_24_x86_64.whl --build-arg CSM_VER=$RELEASE_VERSION
