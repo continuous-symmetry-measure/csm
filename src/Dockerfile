@@ -16,6 +16,8 @@ ENV CPATH=/usr/include/eigen335
 ARG WHL
 ARG CSM_VER
 
+COPY $WHL $WHL
+
 # Switch to csm 1.2.6
 RUN pip install $WHL csm==$CSM_VER
 RUN pip install --upgrade numpy
