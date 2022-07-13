@@ -112,7 +112,7 @@ jobs:
           REF: refs/tags/v1.3.0b32  # $GITHuB_REF
         run: |
           export VERSION_NUM="${REF##*/v}"
-          export VERSION="v$RELEASE_VERSION_NUM"
+          export VERSION="v$VERSION_NUM"
           export WHL_NAME="csm-$RELEASE_VERSION_NUM-cp39-cp39-manylinux_2_24_x86_64.whl" 
           
           echo "Variables:"
@@ -125,7 +125,7 @@ jobs:
         uses: dsaltares/fetch-gh-release-asset@master
         with:
           repo: 'continuous-symmetry-measure/csm'
-          version: tags/$RELEASE_VERSION
+          version: tags/$VERSION
           file: $WHL_NAME
           target: src/$WHL_NAME
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -139,5 +139,5 @@ jobs:
       - name: Build docker image
         working-directory: src
         run: |
-          docker build . --tag teamcsm/csm:$RELEASE_VERSION --build-arg WHL=$WHL_NAME
-          docker push teamcsm/csm:$RELEASE_VERSION
+          docker build . --tag teamcsm/csm:$VERSION --build-arg WHL=$WHL_NAME
+          docker push teamcsm/csm:$VERSION
