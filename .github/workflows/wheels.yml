@@ -5,102 +5,102 @@ on:
       - v*
 
 jobs:
-  # manylinux-wheels:
-  #   runs-on: ubuntu-latest
-  #   name: Create the manylinux wheels for all supported Python versions
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #     - name: Build docker image
-  #       working-directory: src
-  #       run: docker build -f Dockerfile.manylinux . -t csm-manylinux:latest --build-arg GITHUB_VERSION=${{ github.ref }}
-  #     - name: Copy wheels
-  #       working-directory: src
-  #       run: |
-  #         docker run --rm --name csm-manylinux -v `pwd`:/external csm-manylinux:latest
-  #     - name: Upload to Release
-  #       id: upload-release-asset
-  #       uses: svenstaro/upload-release-action@v2
-  #       with:
-  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
-  #         file: src/csm-wheels/csm*.whl
-  #         file_glob: true
-  #         tag: ${{ github.ref }}
-  #         overwrite: true
-  #         body: "Linux Wheels"
+  manylinux-wheels:
+    runs-on: ubuntu-latest
+    name: Create the manylinux wheels for all supported Python versions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build docker image
+        working-directory: src
+        run: docker build -f Dockerfile.manylinux . -t csm-manylinux:latest --build-arg GITHUB_VERSION=${{ github.ref }}
+      - name: Copy wheels
+        working-directory: src
+        run: |
+          docker run --rm --name csm-manylinux -v `pwd`:/external csm-manylinux:latest
+      - name: Upload to Release
+        id: upload-release-asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: src/csm-wheels/csm*.whl
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: "Linux Wheels"
 
-  # windows-wheels:
-  #   runs-on: windows-latest
-  #   strategy:
-  #     matrix:
-  #       python-version: [ '3.7', '3.8', '3.9', '3.10' ]
-  #   name: Create the Windows Wheel for Python ${{ matrix.python-version }}
-  #   env:
-  #     GITHUB_VERSION: ${{ github.ref }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v2
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-  #         architecture: x64
-  #     - name: Set Python environment
-  #       working-directory: src
-  #       run: |
-  #         python ./install_requirements.py
-  #         pip install wheel
-  #     - name: Create the wheel
-  #       working-directory: src
-  #       run: |
-  #         python setup.py prepare
-  #         pip wheel .
-  #     - name: Upload to Release
-  #       id: upload-release-asset
-  #       uses: svenstaro/upload-release-action@v2
-  #       with:
-  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
-  #         file: src/csm*.whl
-  #         file_glob: true
-  #         tag: ${{ github.ref }}
-  #         overwrite: true
-  #         body: "Windows Wheels"
+  windows-wheels:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+    name: Create the Windows Wheel for Python ${{ matrix.python-version }}
+    env:
+      GITHUB_VERSION: ${{ github.ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Set Python environment
+        working-directory: src
+        run: |
+          python ./install_requirements.py
+          pip install wheel
+      - name: Create the wheel
+        working-directory: src
+        run: |
+          python setup.py prepare
+          pip wheel .
+      - name: Upload to Release
+        id: upload-release-asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: src/csm*.whl
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: "Windows Wheels"
   
-  # source-package:
-  #   runs-on: windows-latest
-  #   name: Create the Windows Wheel for Python ${{ matrix.python-version }}
-  #   env:
-  #     GITHUB_VERSION: ${{ github.ref }}
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #     - name: Setup Python
-  #       uses: actions/setup-python@v2
-  #       with:
-  #         architecture: x64
-  #     - name: Set Python environment
-  #       working-directory: src
-  #       run: |
-  #         python ./install_requirements.py
-  #         pip install wheel
-  #     - name: Create the wheel
-  #       working-directory: src
-  #       run: |
-  #         python setup.py prepare
-  #         python setup.py sdist
-  #     - name: Upload to Release
-  #       id: upload-release-asset
-  #       uses: svenstaro/upload-release-action@v2
-  #       with:
-  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
-  #         file: src/dist/csm*.tar.gz
-  #         file_glob: true
-  #         tag: ${{ github.ref }}
-  #         overwrite: true
-  #         body: "Source Package"
+  source-package:
+    runs-on: windows-latest
+    name: Create the Windows Wheel for Python ${{ matrix.python-version }}
+    env:
+      GITHUB_VERSION: ${{ github.ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          architecture: x64
+      - name: Set Python environment
+        working-directory: src
+        run: |
+          python ./install_requirements.py
+          pip install wheel
+      - name: Create the wheel
+        working-directory: src
+        run: |
+          python setup.py prepare
+          python setup.py sdist
+      - name: Upload to Release
+        id: upload-release-asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: src/dist/csm*.tar.gz
+          file_glob: true
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: "Source Package"
       
   build-docker-image:
-    #needs: manylinux-wheels
+    needs: manylinux-wheels
     runs-on: ubuntu-latest
     name: Create the docker image using wheels
     steps:
@@ -125,22 +125,6 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION_NUM=$VERSION_NUM" >> $GITHUB_ENV
           echo "WHL_NAME=$WHL_NAME" >> $GITHUB_ENV
-
-      - name: Check env1
-        run: |
-          echo "Variables:"
-          echo $REF
-          echo $VERSION
-          echo $VERSION_NUM
-          echo $WHL_NAME
-     
-      - name: Check env2
-        run: |
-          echo "Variables:"
-          echo $REF
-          echo $VERSION
-          echo $VERSION_NUM
-          echo $WHL_NAME
      
       - name: get wheels
         uses: dsaltares/fetch-gh-release-asset@master
