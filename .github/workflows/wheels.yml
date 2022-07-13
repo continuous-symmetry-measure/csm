@@ -113,11 +113,12 @@ jobs:
           echo "$RELEASE_VERSION=${REF#refs/*/}" >> $GITHUB_ENV
           echo "$RELEASE_VERSION_NUM=${REF#*v}" >> $GITHUB_ENV
           echo "$WHL_NAME='csm-'$RELEASE_VERSION_NUM'-cp39-cp39-manylinux_2_24_x86_64.whl'" >> $GITHUB_ENV 
-          echo "Variables:"
-          echo $REF
-          echo $RELEASE_VERSION
-          echo $RELEASE_VERSION_NUM
-          echo $WHL_NAME
+        # run:
+        #   echo "Variables:"
+        #   echo $REF
+        #   echo $RELEASE_VERSION
+        #   echo $RELEASE_VERSION_NUM
+        #   echo $WHL_NAME
 
       - name: Checkout
         uses: actions/checkout@v2
