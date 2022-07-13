@@ -113,7 +113,7 @@ jobs:
         run: |
           export VERSION_NUM="${REF##*/v}"
           export VERSION="v$VERSION_NUM"
-          export WHL_NAME="csm-$RELEASE_VERSION_NUM-cp39-cp39-manylinux_2_24_x86_64.whl" 
+          export WHL_NAME="csm-$VERSION_NUM-cp39-cp39-manylinux_2_24_x86_64.whl" 
           
           echo "Variables:"
           echo $REF
