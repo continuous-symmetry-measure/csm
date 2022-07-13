@@ -109,7 +109,7 @@ jobs:
 
       - name: Set env
         env:
-          REF: ${GITHUB_REF}
+          REF: ${{ github.ref }}
         run: |
           export VERSION_NUM="${REF##*/v}"
           export VERSION="v$VERSION_NUM"
