@@ -146,9 +146,9 @@ jobs:
         uses: dsaltares/fetch-gh-release-asset@master
         with:
           repo: 'continuous-symmetry-measure/csm'
-          version: tags/${VERSION}
-          file: ${WHL_NAME}
-          target: src/${WHL_NAME}
+          version: tags/$VERSION
+          file: $WHL_NAME
+          target: src/$WHL_NAMEs
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to DockerHub
