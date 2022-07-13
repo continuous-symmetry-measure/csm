@@ -110,8 +110,8 @@ jobs:
         
         run: |
           echo "REF=refs/tags/v1.3.0b32" >> $GITHUB_ENV
-          echo "RELEASE_VERSION='#{$REF.replace("refs/tags/", "")}' >> $GITHUB_ENV
-          echo "RELEASE_VERSION_NUM='#{$REF.replace("refs/tags/v", "")}' >> $GITHUB_ENV
+          echo "RELEASE_VERSION='${REF##*/}' >> $GITHUB_ENV
+          echo "RELEASE_VERSION_NUM='${REF##*v}' >> $GITHUB_ENV
           echo "WHL_NAME='csm-'$RELEASE_VERSION_NUM'-cp39-cp39-manylinux_2_24_x86_64.whl'" >> $GITHUB_ENV 
           echo "Variables:"
           echo $REF
