@@ -117,7 +117,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: RELEASE_VERSION
+          ref: $RELEASE_VERSION
       
       - name: get wheels
         uses: dsaltares/fetch-gh-release-asset@master
