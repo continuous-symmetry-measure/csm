@@ -108,16 +108,17 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set env
+        env:
+          REF: refs/tags/v1.3.0b32  # $GITHuB_REF
         run: |
-          export REF=refs/tags/v1.3.0b32  # $GITHuB_REF
-          export RELEASE_VERSION_NUM="${REF##*/v}"
+          export VERSION_NUM="${REF##*/v}"
           export VERSION="v$RELEASE_VERSION_NUM"
-          export WHL_NAME="csm-'$RELEASE_VERSION_NUM'-cp39-cp39-manylinux_2_24_x86_64.whl" 
+          export WHL_NAME="csm-$RELEASE_VERSION_NUM-cp39-cp39-manylinux_2_24_x86_64.whl" 
           
           echo "Variables:"
           echo $REF
-          echo $RELEASE_VERSION
-          echo $RELEASE_VERSION_NUM
+          echo $VERSION
+          echo $VERSION_NUM
           echo $WHL_NAME
      
       - name: get wheels
@@ -134,7 +135,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+          
       - name: Build docker image
         working-directory: src
         run: |
