@@ -14,11 +14,10 @@ RUN wget https://gitlab.com/libeigen/eigen/-/archive/3.3.5/eigen-3.3.5.tar.gz &&
 ENV CPATH=/usr/include/eigen335
 
 ARG WHL
-ARG CSM_VER
 
 COPY $WHL $WHL
 
 # Switch to csm 1.2.6
-RUN pip install $WHL csm==$CSM_VER
+RUN pip install $WHL
 RUN pip install --upgrade numpy
 
