@@ -109,10 +109,10 @@ jobs:
         #run: echo "RELEASE_VERSION_NUM=${GITHUB_REF#*v}"" >> $GITHUB_ENV
         
         run: |
-        echo "REF=refs/tags/v1.3.0b32" >> $GITHUB_ENV
-        echo "RELEASE_VERSION=${REF#refs/*/}" >> $GITHUB_ENV
-        echo "RELEASE_VERSION_NUM=${REF#*v}" >> $GITHUB_ENV 
-        echo "WHL_NAME='csm-'$RELEASE_VERSION_NUM'-cp39-cp39-manylinux_2_24_x86_64.whl'" >> $GITHUB_ENV 
+          echo "REF=refs/tags/v1.3.0b32" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=${REF#refs/*/}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION_NUM=${REF#*v}" >> $GITHUB_ENV 
+          echo "WHL_NAME='csm-'$RELEASE_VERSION_NUM'-cp39-cp39-manylinux_2_24_x86_64.whl'" >> $GITHUB_ENV 
 
       - name: Checkout
         uses: actions/checkout@v2
