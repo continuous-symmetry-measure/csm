@@ -241,22 +241,34 @@ $$$$
         results = self.run_args(cmd)
         assert results[0][0].csm == pytest.approx(0.030496281388192603, rel=1e-8)
 
-    # def test_select_res(self):
-    #     cmd = "approx c3 --input 7to4-NTD-15-306.pdb --use-sequence"
-    #     results = self.run_args(cmd)
-    #     assert results[0][0].csm == pytest.approx(0.118772, rel=1e-8)
+    def test_select_chains_on_dir(self):
+        cmd = "approx c2 --input pdb-dir_BC --use-sequence --use-chains"
+        reference = self.run_args(cmd)
 
-    #     cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 330-530"
-    #     results = self.run_args(cmd)
-    #     assert results[0][0].csm == pytest.approx(12.635345, rel=1e-8)
+        cmd = "approx c2 --input pdb-dir --use-sequence --use-chains --select-chains B,C"
+        results = self.run_args(cmd)
 
-    #     cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 15-626"
-    #     results = self.run_args(cmd)
-    #     assert results[0][0].csm == pytest.approx(2.844989, rel=1e-8)
+        assert (len(results) == len(reference))
 
-    #     cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 687-1148"
-    #     results = self.run_args(cmd)
-    #     assert results[0][0].csm == pytest.approx(0.025616, rel=1e-8)
+        for res, ref in zip(results, reference):
+            assert res[0].csm == ref[0].csm
+
+    def test_select_res(self):
+        cmd0 = "approx c3 --input 7to4.pdb --use-sequence --select-res 15-306"
+        results0 = self.run_args(cmd0)
+        assert results0[0][0].csm == pytest.approx(0.11870267111205868, rel=1e-8)
+
+        cmd1 = "approx c3 --input 7to4.pdb --use-sequence --select-res 330-530"
+        results1 = self.run_args(cmd1)
+        assert results1[0][0].csm == pytest.approx(12.508577670669041, rel=1e-8)
+
+        cmd2 = "approx c3 --input 7to4.pdb --use-sequence --select-res 15-626"
+        results2 = self.run_args(cmd2)
+        assert results2[0][0].csm == pytest.approx(2.825056239763979, rel=1e-8)
+
+        cmd3 = "approx c3 --input 7to4.pdb --use-sequence --select-res 687-1148"
+        results3 = self.run_args(cmd3)
+        assert results3[0][0].csm == pytest.approx(0.02553889330890735, rel=1e-8)
 
     def test_select_atoms_remove_hy(self):
         # --select-atoms removes specific atoms.

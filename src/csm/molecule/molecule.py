@@ -596,6 +596,7 @@ class Molecule:
         if not indices_to_remove:  # relevant if remove-hy was selected but no hydrogen in molecule, or select-atoms selcted every atom
             return  # (may as well save time)
 
+
         # we now store a mapping of each atom to its new index once all relevant atoms have been removed, in order to update connectivity
         num_removed_atoms = 0
         for i in range(len(self._atoms)):
@@ -927,7 +928,9 @@ class MoleculeReader:
                   read_fragments=False, use_sequence=False,
                   keep_structure=False, select_atoms=[], conn_file=None,
                   out_format=None, ignore_atoms=[], use_backbone=False,
+                  select_chains=[], select_res=[],
                   *args, **kwargs):
+
         """
         :param in_file_name: the name of the file to read the molecule from
         :param in_format: the format of the string (any BabelBond supported format, eg "mol", "xyz")
@@ -961,7 +964,7 @@ class MoleculeReader:
                                                       read_fragments, use_sequence,
                                                       keep_structure, select_atoms, conn_file,
                                                       out_format, ignore_atoms, use_backbone,
-                                                      select_chains=[], select_res=[])
+                                                      select_chains, select_res)
         if not mol.bondset:
             if keep_structure:
                 raise ValueError(
@@ -1355,18 +1358,6 @@ class MoleculeReader:
             else:
                 likeness_dict[key].append(cur_atom)
 
-        import sys
-        def print_all_atoms(mol, filename):
-            f = open(filename, "w")
-            for atom in mol.atoms:
-                f.write(f"ATOM {atom.index} CHAIN {atom.chain}\n")
-            f.close()
-                
-    
-
-        def print_likeness_dict():
-            pass
-
         def set_equivalence_classes(mol, likeness_dict):
             groups = []
             for key in likeness_dict:
@@ -1386,7 +1377,7 @@ class MoleculeReader:
                                                                use_backbone)
         # mol.strip_atoms(remove_hy, select_atoms=select_atoms, ignore_atoms=ignore_atoms, use_backbone=use_backbone) # wait for answer from inbal, about the flags: select_atoms, ignore_atoms
         mol.strip_atoms(remove_hy, use_backbone=use_backbone, 
-            select_chains=select_chains, select_res=select_res)
+            select_atoms=[], ignore_atoms=[], select_chains=select_chains, select_res=select_res)
         likeness_dict = {}
         cur_atom = 0
 
@@ -1459,6 +1450,7 @@ class MoleculeReader:
         out_mol.metadata = in_mol.metadata
         out_mol.metadata.babel_bond = babel_bond
         return out_mol
+
 
 
 def select_mols(mols, kwargs):

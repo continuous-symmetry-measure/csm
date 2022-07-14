@@ -65,7 +65,7 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
           body: "Windows Wheels"
-
+  
   source-package:
     runs-on: windows-latest
     name: Create the source package
@@ -99,3 +99,50 @@ jobs:
           overwrite: true
           body: "Source Package"
       
+  build-docker-image:
+    needs: manylinux-wheels
+    runs-on: ubuntu-latest
+    name: Create the docker image using wheels
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set env
+        env:
+          REF: ${{ github.ref }}
+        run: |
+          export VERSION_NUM="${REF##*/v}"
+          export VERSION="v$VERSION_NUM"
+          export WHL_NAME="csm-$VERSION_NUM-cp39-cp39-manylinux_2_24_x86_64.whl" 
+          
+          echo "Variables:"
+          echo $REF
+          echo $VERSION
+          echo $VERSION_NUM
+          echo $WHL_NAME
+
+          echo "REF=$REF" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION_NUM=$VERSION_NUM" >> $GITHUB_ENV
+          echo "WHL_NAME=$WHL_NAME" >> $GITHUB_ENV
+     
+      - name: get wheels
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: 'continuous-symmetry-measure/csm'
+          version: tags/${{ env.VERSION }}
+          file: ${{ env.WHL_NAME }}
+          target: src/${{ env.WHL_NAME }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: Build docker image
+        working-directory: src
+        run: |
+          docker build . --tag teamcsm/csm:$VERSION --build-arg WHL=$WHL_NAME
+          docker push teamcsm/csm:$VERSION

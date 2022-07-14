@@ -146,8 +146,15 @@ def get_context_writer(dictionary_args):
 
 
 def write(**dictionary_args):
+    print('~~~~~~~~~~~~~~~ENTERING FUNCTION write()~~~~~~~~~~~~~')
+
+    print('raw_json = read_from_sys_std_in()')
     raw_json = read_from_sys_std_in()
+    
+    print('less_raw_json = json.loads(raw_json)')
+
     less_raw_json = json.loads(raw_json)
+    
     results = [[CSMResult.from_dict(result_dict) for result_dict in mol_arr] for mol_arr in less_raw_json]
     context_writer = get_context_writer(dictionary_args)
     writer = context_writer(results, context_writer=context_writer, **dictionary_args)

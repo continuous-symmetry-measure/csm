@@ -51,6 +51,11 @@ def get_version():
     version = match.group("version")
     return version
 
+def set_version(version):
+    pathname = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'csm', 'version.py')
+    with open(pathname, "w") as ver_inp:
+        ver_inp.write("__version__ = '" + version + "'")
+
 
 class PrepareCommand(setuptools.Command):
     description = "Build fast.pyx so there's no cython dependence in installation"
@@ -101,13 +106,15 @@ if GITHUB_VERSION is not None:
     else:
         csm_version = GITHUB_VERSION
 
+    set_version(csm_version)
+
 print("Packaging CSM version %s" % csm_version)
 setup(
     name='csm',
     version=csm_version,
     packages=['csm.calculations', 'csm.calculations.approx', 'csm.input_output', 'csm.molecule', 'csm.main', 'csm',],
     setup_requires=['numpy>=1.10'],
-    install_requires=['numpy>=1.10', 'csm_openbabel>=3.1.1', 'scipy>=1.7.3'],
+    install_requires=['numpy>=1.10', 'csm_openbabel==3.1.1.1', 'scipy>=1.7.3'],
     include_package_data=True,
     license='Chelem',  # example license
     description='The Continuous Symmetry Measure',
