@@ -12,7 +12,47 @@ This document explains the steps taken for a new version to be released.
     Each new feature requires a unit test to check the feature.  
     The tests are implemented as **pytests**.  
 
-    First, the feature will be tested by the developer on VSCode, and later on as a regression test on CI. 
+    First, the feature will be tested by the developer on VSCode or in Terminal, and later on as a regression test on CI. 
+    Running the pytests requires a few simple steps:
+
+    #### Runnting tests in Terminal:
+    - In the Terminal, create a virtual environment:  
+      `py -3.9 -m venv env --prompt "csm"`
+    - Activate the environment:  
+      `Activate-Virtenv`
+    - Once you are inside the virtual environment, run the requirments:  
+      `cd src`
+      `.\install_requirements.py`
+    - Build:  
+      `.\rebuild.bat`
+    - Run the tests:
+      `python -m pytest .\tests\ `
+
+    #### Running tests on Visual Studio Code:
+    - Open the project directory in Visual Studio Code.
+    - In the Terminal, create a virtual environment:  
+        `py -3.9 -m venv env --prompt "csm"`
+    - Activate the environment:  
+        `Activate-Virtenv`
+    - Once you are inside the virtual environment, run the requirments:  
+        `cd src`
+        `.\install_requirements.py`
+    - Build:  
+        `.\rebuild.bat`
+    - Configure VSCode to work with the virtual env
+      `CTRL+SHIFT+P`  
+      Select `Python: Select Interpeter`  
+      Choose the Python version you are using with the virual env. ('env':venv)
+    - Configure Tests:
+      `CTRL+SHIFT+P` 
+      Select `Python: Configure Tests`   
+      Select `pytest`  
+      Select `. Root Directory`
+    - Discover and run the tests:
+      on the left pane, click on the test button and refresh.
+    - Run the required tests/all tests.
+
+
 
 - ### Regression Tests
 
@@ -45,7 +85,7 @@ The workflow is composed of a few jobs as following:
     - First, the Docker image is build using the Dockerfile.manylinux file.
       The image is based on the `quay.io/pypa/manylinux_2_24_x86_64` image, and produces the wheels by executing the follwoing steps:
       - #### Installation of basic tools  
-        See the Dockerfil.manylinux for details
+        See the Dockerfile.manylinux for details
       - #### OpenBabel installation:
         The required installation file is stored in GitHub. The image downloads and installs it.
       - #### Installation of the requirments for all python versions
