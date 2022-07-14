@@ -5,6 +5,9 @@ import os
 import sys
 import timeit
 
+from .openbabel_fix import prepare_openbabel
+prepare_openbabel()  # Make sure the OpenBabel DLL can be found. See file for more informations
+
 from csm import __version__
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox
 from csm.calculations.approx.dirs import get_direction_chooser

@@ -25,7 +25,7 @@ jobs:
         working-directory: src
         run: |
           pip install wheel
-          pip install -r requirements.txt
+          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ -r requirements.txt
           pip install pytest
           python setup.py prepare
           python setup.py build_ext

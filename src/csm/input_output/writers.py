@@ -5,8 +5,8 @@ import re
 from pathlib import Path
 import shutil
 
-import csm_openbabel.openbabel as ob
-from csm_openbabel.openbabel import OBConversion, OBMol
+import openbabel.openbabel as ob
+from openbabel.openbabel import OBConversion, OBMol
 
 from csm import __version__
 from csm.calculations.basic_calculations import cart2sph

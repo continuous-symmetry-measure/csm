@@ -9,7 +9,7 @@ from pathlib import Path
 import copy
 import numpy as np
 import os
-from csm_openbabel.openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
+from openbabel.openbabel import OBAtomAtomIter, OBConversion, OBMol, OBMolAtomIter, obErrorLog, obError
 
 from csm.input_output.formatters import csm_log as print
 from csm.input_output.formatters import silent_print
@@ -949,7 +949,7 @@ class MoleculeReader:
                                 the peogram will raise an error and exit
         :return: an instance of class Molecule 
         """
-        # suppress warnings from csm_openbabel
+        # suppress warnings from openbabel
 
         format = get_format(in_format, in_file_name)
         if format == "csm":

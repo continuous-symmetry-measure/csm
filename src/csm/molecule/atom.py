@@ -1,9 +1,9 @@
 from collections import namedtuple
 import warnings
 
-from csm_openbabel import openbabel
-from csm_openbabel.openbabel import OBAtom
-from csm_openbabel.pybel import Atom as obel_atom
+from openbabel import openbabel
+from openbabel.openbabel import OBAtom
+from openbabel.pybel import Atom as obel_atom
 _tbl=None
 
 __author__ = 'zmbq'
