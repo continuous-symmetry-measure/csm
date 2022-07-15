@@ -62,10 +62,7 @@ jobs:
           pip install wheel
           pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ -r requirements.txt
           pip install pytest
-          python setup.py prepare
-          python setup.py build_ext
-          shopt -s globstar
-          cp build/**/fast*.so csm
+          .\rebuild.bat
       - name: Run tests
         working-directory: src
         run: |
