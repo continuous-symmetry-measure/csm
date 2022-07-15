@@ -54,8 +54,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Open Babel
         run: |
-          Expand-Archive src\tests\external\OpenBabel-3.1.1.zip .
-          $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
+          Expand-Archive src\tests\external\OpenBabel-3.1.1.zip src
       - name: Build CSM
         working-directory: src
         run: |
@@ -66,5 +65,7 @@ jobs:
       - name: Run tests
         working-directory: src
         run: |
+          $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
+          echo $env:PATH
           $env:PYTHONPATH="."
           pytest tests
