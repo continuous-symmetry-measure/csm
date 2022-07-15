@@ -68,4 +68,5 @@ jobs:
           $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
           echo $env:PATH
           $env:PYTHONPATH="."
+          python .\try_openbabel.py
           pytest tests
