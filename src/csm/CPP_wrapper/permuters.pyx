@@ -140,8 +140,8 @@ cdef class PermInProgress:
         self.molecule_size =len(mol.atoms)
         self.state = CalcState(len(mol.atoms), op_order, True)
         self.op_order=op_order
-        self.p = -1 * np.ones((self.molecule_size,), dtype=np.int)  # Numpy array, but created once per molecule so no worries.
-        self.q = -1 * np.ones((self.molecule_size,), dtype=np.int)
+        self.p = -1 * np.ones((self.molecule_size,), dtype=int)  # Numpy array, but created once per molecule so no worries.
+        self.q = -1 * np.ones((self.molecule_size,), dtype=int)
         self.truecount=0
         self.falsecount=0
 

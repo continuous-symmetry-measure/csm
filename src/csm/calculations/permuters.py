@@ -12,7 +12,7 @@ __author__ = 'Devora'
 All the other oermuters are implemented in Cython, this currently hold the constraints permuter and related code only
 '''
 
-ITYPE = np.int
+ITYPE = int
 DTYPE = np.float64
 
 
