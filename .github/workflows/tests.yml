@@ -66,5 +66,5 @@ jobs:
       - name: Run tests
         working-directory: src
         run: |
-          export PYTHONPATH="."
+          $env:PYTHONPATH="."
           pytest tests
