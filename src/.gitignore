@@ -4,5 +4,6 @@ csm.egg-info/
 build/
 dist/
 *.zip
+!tests/external/*.zip
 test_env/
 results/

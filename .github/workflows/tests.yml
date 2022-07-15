@@ -3,9 +3,9 @@ on:
   push:
 
 jobs:
-  tests:
+  linux-tests:
     runs-on: ubuntu-latest
-    name: Run CSM tests
+    name: Linux Tests
     strategy:
       matrix:
         python-version: [ '3.7', '3.8', '3.9', '3.10' ]
@@ -37,5 +37,36 @@ jobs:
           export PYTHONPATH="."
           pytest tests
 
-  # We do not run tests on Windows because we couldn't figure out how to install OpenBabel through a Github Worklow
-  # The OpenBabel installer doesn't seem to have a quiet mode.
+  windows-tests:
+    runs-on: windows-latest
+    name: Windows Tests
+    strategy:
+      matrix:
+        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Open Babel
+        run: |
+          Expand-Archive src\tests\external\OpenBabel-3.1.1.zip .\OpenBabel-3.1.1
+          $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
+          obabel
+      - name: Build CSM
+        working-directory: src
+        run: |
+          pip install wheel
+          pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ -r requirements.txt
+          pip install pytest
+          python setup.py prepare
+          python setup.py build_ext
+          shopt -s globstar
+          cp build/**/fast*.so csm
+      - name: Run tests
+        working-directory: src
+        run: |
+          export PYTHONPATH="."
+          pytest tests
