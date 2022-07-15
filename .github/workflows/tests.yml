@@ -54,7 +54,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Open Babel
         run: |
-          Expand-Archive src\tests\external\OpenBabel-3.1.1.zip .\OpenBabel-3.1.1
+          Expand-Archive src\tests\external\OpenBabel-3.1.1.zip .
           $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
           echo $env:PATH
           dir .\OpenBabel-3.1.1
