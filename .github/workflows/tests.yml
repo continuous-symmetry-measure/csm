@@ -70,6 +70,10 @@ jobs:
           $env:PYTHONPATH="."
           pytest -v tests
       - name: Run test_parallel_dirs
+      # This step tests the --parallel-dirs flag.
+      # It is not tested as a pytest in windows because issues with openbabel.
+      # Full details here:
+      # https://stackoverflow.com/questions/73034320/processes-not-spawned-properly-with-unittest-python-3-9-and-windows
         working-directory: src
         run: |
           $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
