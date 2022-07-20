@@ -19,11 +19,9 @@
             },
 
             "args": ["approx", "c2", "--input", 
-                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\pdb-dir"
-                //"C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\pdb-dir_BC"
+                "C:\\Sources\\CSM\\csm_openbabel\\src\\tests\\argument_tests\\files_for_tests\\3alb-gkt4-h.pdb"
                 , "--use-sequence"
-                , "--use-chains"
-                , "--select-chains", "B,C"
+                , "--parallel-dirs"
                ]
         }
     ]

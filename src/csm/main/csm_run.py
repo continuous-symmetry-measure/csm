@@ -5,7 +5,7 @@ import os
 import sys
 import timeit
 
-from .openbabel_fix import prepare_openbabel
+from csm.main.openbabel_fix import prepare_openbabel
 prepare_openbabel()  # Make sure the OpenBabel DLL can be found. See file for more informations
 
 from csm import __version__
