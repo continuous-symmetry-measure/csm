@@ -70,8 +70,9 @@ jobs:
           $env:PYTHONPATH="."
           pytest -v tests
       - name: Run test_parallel_dirs
+        working-directory: src
         run: |
           $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
           echo $env:PATH
           $env:PYTHONPATH="."
-          python ./tests/argument_tests/parallel_dirs.py
+          python .\tests\argument_tests\parallel_dirs.py
