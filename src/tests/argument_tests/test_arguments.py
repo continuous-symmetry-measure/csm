@@ -609,7 +609,7 @@ $$$$
         Issue details here:
         https://stackoverflow.com/questions/73034320/processes-not-spawned-properly-with-unittest-python-3-9-and-windows
         
-        Instead, the test runs as a seperate job for windows
+        Instead, the test runs as a seperate step for windows
         """
         plat = platform.system()
         if plat == 'Windows':
