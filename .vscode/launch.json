@@ -18,12 +18,11 @@
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
 
-            "args": ["approx", "c2", "--input", 
-                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\pdb-dir"
-                //"C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\pdb-dir_BC"
+            // approx c3 --input 7to4.pdb --use-sequence --select-res 687-1148
+            "args": ["approx", "c3", "--input", 
+                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\7to4.pdb"
                 , "--use-sequence"
-                , "--use-chains"
-                , "--select-chains", "B,C"
+                , "--select-res", "687-2000"
                ]
         }
     ]

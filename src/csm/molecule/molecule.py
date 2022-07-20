@@ -562,7 +562,18 @@ class Molecule:
         indices_to_remove = []
 
         if select_res:
-            select_atoms.extend(i for i in range(len(self._atoms)) if self._atoms[i].res_num in select_res)
+            selected_atoms_by_res = [i for i in range(len(self._atoms)) if self._atoms[i].res_num in select_res]
+            if not selected_atoms_by_res:
+                raise ValueError("select-res values do not exist in th molecule.")
+            # check if all selected-res values exist:
+            accepted_res = set([self._atoms[i].res_num for i in range(len(self._atoms)) if self._atoms[i].res_num in select_res])
+            accepted_res = list(accepted_res)
+            accepted_res.sort()
+            select_res.sort()
+            if (accepted_res != select_res):
+                silent_print(f"SELECT-RES: selceted values {select_res[0]}-{select_res[-1]}, but only {len(accepted_res)} of these values exist in molecule. Calculating using existing values.")
+
+            select_atoms.extend(selected_atoms_by_res)
             select_atoms = set(select_atoms)
        
         if select_atoms:
@@ -1380,7 +1391,7 @@ class MoleculeReader:
                                                                use_backbone)
         # mol.strip_atoms(remove_hy, select_atoms=select_atoms, ignore_atoms=ignore_atoms, use_backbone=use_backbone) # wait for answer from inbal, about the flags: select_atoms, ignore_atoms
         mol.strip_atoms(remove_hy, use_backbone=use_backbone, 
-            select_atoms=[], ignore_atoms=[], select_chains=select_chains, select_res=select_res)
+                select_atoms=[], ignore_atoms=[], select_chains=select_chains, select_res=select_res)
         likeness_dict = {}
         cur_atom = 0
 

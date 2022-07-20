@@ -130,7 +130,11 @@ def csm_run(args=[]):
         return write(**dictionary_args)
 
     else:
-        return calc(dictionary_args)
+        try:
+            return calc(dictionary_args)
+        except Exception as err:
+            print(err)
+            exit(2)
 
 
 def get_context_writer(dictionary_args):
