@@ -9,7 +9,7 @@ import os
 import pytest
 import shutil
 
-from csm.main.csm_run import csm_run
+from csm.main.csm_run import csm_run, calc, get_parsed_args
 from tests.test_settings import test_dir
 
 test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
@@ -224,6 +224,26 @@ $$$$
 
         assert output_str.strip() == expected_openbabel24.strip() or output_str.strip() == expected_openbabel30.strip()
 
+    def test_select_atoms_missing_atoms(self):
+        cmd = "exact c2 --input 4-helicene.mol --select-atoms 15-19,1,2,50"
+        self.run_args(cmd)
+
+        with open(os.path.join(self.results_folder, "extra.txt"), 'r') as file:
+            output_str = file.read()
+        
+        message = "SELECT-ATOMS: 8 values selceted but only 7 of these values exist in molecule. Calculating using existing values."
+        assert message in output_str
+
+        cmd = "exact c2 --input 4-helicene.mol --select-atoms 50-60"
+        dictionary_args = get_parsed_args(cmd.split())
+        dictionary_args["argument_string"] = cmd + "\n"
+        try:
+            calc(dictionary_args) # run calc instead csm_run, because csm_run exits when calc raises exception
+        except ValueError as err:
+            assert str(err) == "select-atoms values do not exist in molecule."
+        else:
+            assert False
+
     def test_select_chains(self):
         cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-backbone --use-chains --select-chains A,C"
         results = self.run_args(cmd)
@@ -240,6 +260,27 @@ $$$$
         cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-chains --select-chains B,D"
         results = self.run_args(cmd)
         assert results[0][0].csm == pytest.approx(0.030496281388192603, rel=1e-8)
+
+    def test_select_chains_missing_chains(self):
+        cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-chains --select-chains B,E"
+        dictionary_args = get_parsed_args(cmd.split())
+        dictionary_args["argument_string"] = cmd + "\n"
+        try:
+            calc(dictionary_args) # run calc instead csm_run, because csm_run exits when calc raises exception
+        except ValueError as err:
+            assert str(err) == "select-chains values do not exist in molecule."
+        else:
+            assert False
+
+        cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-chains --select-chains F-H"
+        dictionary_args = get_parsed_args(cmd.split())
+        dictionary_args["argument_string"] = cmd + "\n"
+        try:
+            calc(dictionary_args) # run calc instead csm_run, because csm_run exits when calc raises exception
+        except ValueError as err:
+            assert str(err) == "select-chains values do not exist in molecule."
+        else:
+            assert False
 
     def test_select_chains_on_dir(self):
         cmd = "approx c2 --input pdb-dir_BC --use-sequence --use-chains"
@@ -269,6 +310,27 @@ $$$$
         cmd3 = "approx c3 --input 7to4.pdb --use-sequence --select-res 687-1148"
         results3 = self.run_args(cmd3)
         assert results3[0][0].csm == pytest.approx(0.02553889330890735, rel=1e-8)
+
+    def test_select_res_missing_res(self):
+        cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 687-2000"
+        self.run_args(cmd)
+
+        with open(os.path.join(self.results_folder, "extra.txt"), 'r') as file:
+            output_str = file.read()
+        
+        message = "SELECT-RES: 1314 values selceted but only 476 of these values exist in molecule. Calculating using existing values."
+        assert message in output_str
+
+        cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 2000-2500"
+        dictionary_args = get_parsed_args(cmd.split())
+        dictionary_args["argument_string"] = cmd + "\n"
+        try:
+            calc(dictionary_args) # run calc instead csm_run, because csm_run exits when calc raises exception
+        except ValueError as err:
+            assert str(err) == "select-res values do not exist in molecule."
+        else:
+            assert False
+        
 
     def test_select_atoms_remove_hy(self):
         # --select-atoms removes specific atoms.

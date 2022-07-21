@@ -18,11 +18,13 @@
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
 
-            // approx c3 --input 7to4.pdb --use-sequence --select-res 687-1148
-            "args": ["approx", "c3", "--input", 
-                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\7to4.pdb"
+            // approx c2 --input 4yu4-protein.pdb --use-sequence --use-backbone --use-chains --select-chains A,C
+            "args": ["approx", "c2", "--input", 
+                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\4yu4-protein.pdb"
                 , "--use-sequence"
-                , "--select-res", "687-2000"
+                , "--use-backbone"
+                , "--use-chains"
+                , "--select-chains", "E-F"
                ]
         }
     ]
