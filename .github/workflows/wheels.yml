@@ -60,7 +60,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: src/csm*.whl
+          file: src/csm-*.whl
           file_glob: true
           tag: ${{ github.ref }}
           overwrite: true
@@ -93,7 +93,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: src/dist/csm*.tar.gz
+          file: src/dist/csm-*.tar.gz
           file_glob: true
           tag: ${{ github.ref }}
           overwrite: true

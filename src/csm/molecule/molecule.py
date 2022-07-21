@@ -567,7 +567,7 @@ class Molecule:
             accepted_res.sort()
             select_res.sort()
             if (accepted_res != select_res):
-                silent_print(f"SELECT-RES: {len(select_res)} values selceted but only {len(accepted_res)} of these values exist in molecule. Calculating using existing values.")
+                silent_print(f"SELECT-RES: {len(select_res)} values selected but only {len(accepted_res)} of these values exist in molecule. Calculating using existing values.")
 
             selected_atoms_by_res = [i for i in range(len(self._atoms)) if self._atoms[i].res_num in select_res]
             select_atoms.extend(selected_atoms_by_res)
@@ -581,7 +581,7 @@ class Molecule:
             accepted_atoms.sort()
             select_atoms.sort()
             if (accepted_atoms != select_atoms):
-                silent_print(f"SELECT-ATOMS: {len(select_atoms)} values selceted but only {len(accepted_atoms)} of these values exist in molecule. Calculating using existing values.")
+                silent_print(f"SELECT-ATOMS: {len(select_atoms)} values selected but only {len(accepted_atoms)} of these values exist in molecule. Calculating using existing values.")
 
             indices_to_remove = [i for i in range(len(self._atoms)) if i not in select_atoms]
         elif ignore_atoms:

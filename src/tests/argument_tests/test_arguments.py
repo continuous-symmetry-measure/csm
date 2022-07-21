@@ -233,7 +233,7 @@ $$$$
         with open(os.path.join(self.results_folder, "extra.txt"), 'r') as file:
             output_str = file.read()
         
-        message = "SELECT-ATOMS: 8 values selceted but only 7 of these values exist in molecule. Calculating using existing values."
+        message = "SELECT-ATOMS: 8 values selected but only 7 of these values exist in molecule. Calculating using existing values."
         assert message in output_str
 
         cmd = "exact c2 --input 4-helicene.mol --select-atoms 50-60"
@@ -320,7 +320,7 @@ $$$$
         with open(os.path.join(self.results_folder, "extra.txt"), 'r') as file:
             output_str = file.read()
         
-        message = "SELECT-RES: 1314 values selceted but only 476 of these values exist in molecule. Calculating using existing values."
+        message = "SELECT-RES: 1314 values selected but only 476 of these values exist in molecule. Calculating using existing values."
         assert message in output_str
 
         cmd = "approx c3 --input 7to4.pdb --use-sequence --select-res 2000-2500"
