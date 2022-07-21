@@ -283,10 +283,10 @@ $$$$
             assert False
 
     def test_select_chains_on_dir(self):
-        cmd = "approx c2 --input pdb-dir_BC --use-sequence --use-chains"
+        cmd = "approx c2 --input pdb-dir_chain_B --use-sequence --use-chains"
         reference = self.run_args(cmd)
 
-        cmd = "approx c2 --input pdb-dir --use-sequence --use-chains --select-chains B,C"
+        cmd = "approx c2 --input pdb-dir --use-sequence --use-chains --select-chains B"
         results = self.run_args(cmd)
 
         assert (len(results) == len(reference))
