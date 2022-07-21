@@ -559,10 +559,30 @@ class Molecule:
         indices_to_remove = []
 
         if select_res:
-            select_atoms.extend(i for i in range(len(self._atoms)) if self._atoms[i].res_num in select_res)
-            select_atoms = set(select_atoms)
+            accepted_res = set([self._atoms[i].res_num for i in range(len(self._atoms)) if self._atoms[i].res_num in select_res])
+            if not accepted_res:
+                raise ValueError("select-res values do not exist in molecule.")
+            # check if all select-res values exist:
+            accepted_res = list(accepted_res)
+            accepted_res.sort()
+            select_res.sort()
+            if (accepted_res != select_res):
+                silent_print(f"SELECT-RES: {len(select_res)} values selceted but only {len(accepted_res)} of these values exist in molecule. Calculating using existing values.")
+
+            selected_atoms_by_res = [i for i in range(len(self._atoms)) if self._atoms[i].res_num in select_res]
+            select_atoms.extend(selected_atoms_by_res)
+            select_atoms = list(set(select_atoms))
        
         if select_atoms:
+            accepted_atoms = [i for i in range(len(self._atoms)) if self._atoms[i].index in select_atoms]
+            if not accepted_atoms:
+                raise ValueError("select-atoms values do not exist in molecule.")
+            # check if all select-atoms values exist:
+            accepted_atoms.sort()
+            select_atoms.sort()
+            if (accepted_atoms != select_atoms):
+                silent_print(f"SELECT-ATOMS: {len(select_atoms)} values selceted but only {len(accepted_atoms)} of these values exist in molecule. Calculating using existing values.")
+
             indices_to_remove = [i for i in range(len(self._atoms)) if i not in select_atoms]
         elif ignore_atoms:
             indices_to_remove = ignore_atoms
@@ -571,6 +591,14 @@ class Molecule:
             indices_to_remove.extend(
                 [i for i in range(len(self._atoms)) if self._atoms[i].atom_name not in backbone_atoms])
         if select_chains:
+            accepted_chains = set([self._atoms[i].chain for i in range(len(self._atoms)) if self._atoms[i].chain in select_chains])
+            accepted_chains = list(accepted_chains)
+            accepted_chains.sort()
+            select_chains.sort()
+            if (accepted_chains != select_chains):
+                # Don't go on even if SOME of the chains selected exist in molecule because this was explicitly required by Inbal
+                raise ValueError("select-chains values do not exist in molecule.")
+
             indices_to_remove.extend(
                 [i for i in range(len(self._atoms)) if self._atoms[i].chain not in select_chains])
         
@@ -580,7 +608,7 @@ class Molecule:
         set_of_all_atoms = set(range(len(self._atoms)))
         if len(set_of_all_atoms.union(indices_to_remove)) != len(set_of_all_atoms):
             raise ValueError(
-                "An atom index you have input to --select-atoms or --ignore-atoms does not exist in the molecule")
+                "An atom index you have input to --ignore-atoms does not exist in molecule")
 
         # add remove hy:
         if remove_hy:
@@ -1377,7 +1405,7 @@ class MoleculeReader:
                                                                use_backbone)
         # mol.strip_atoms(remove_hy, select_atoms=select_atoms, ignore_atoms=ignore_atoms, use_backbone=use_backbone) # wait for answer from inbal, about the flags: select_atoms, ignore_atoms
         mol.strip_atoms(remove_hy, use_backbone=use_backbone, 
-            select_atoms=[], ignore_atoms=[], select_chains=select_chains, select_res=select_res)
+                select_atoms=[], ignore_atoms=[], select_chains=select_chains, select_res=select_res)
         likeness_dict = {}
         cur_atom = 0
 

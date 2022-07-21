@@ -18,10 +18,13 @@
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
 
+            // approx c2 --input 4yu4-protein.pdb --use-sequence --use-backbone --use-chains --select-chains A,C
             "args": ["approx", "c2", "--input", 
-                "C:\\Sources\\CSM\\csm_openbabel\\src\\tests\\argument_tests\\files_for_tests\\3alb-gkt4-h.pdb"
+                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\4yu4-protein.pdb"
                 , "--use-sequence"
-                , "--parallel-dirs"
+                , "--use-backbone"
+                , "--use-chains"
+                , "--select-chains", "E-F"
                ]
         }
     ]
