@@ -81,7 +81,7 @@ jobs:
       - name: Set Python environment
         working-directory: src
         run: |
-          python install -r requirements.txt
+          pip install -r requirements.txt
           pip install wheel
       - name: Create the wheel
         working-directory: src
