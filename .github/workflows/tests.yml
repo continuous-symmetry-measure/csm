@@ -37,46 +37,46 @@ jobs:
           export PYTHONPATH="."
           pytest tests
 
-  windows-tests:
-    runs-on: windows-latest
-    name: Windows Tests
-    strategy:
-      matrix:
-        python-version: [ '3.7', '3.8', '3.9', '3.10' ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          lfs: true
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Open Babel
-        run: |
-          Expand-Archive src\tests\external\OpenBabel-3.1.1.zip src
-      - name: Build CSM
-        working-directory: src
-        run: |
-          pip install wheel
-          pip install -r requirements.txt
-          pip install pytest
-          .\rebuild.bat
-      - name: Run tests
-        working-directory: src
-        run: |
-          $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
-          echo $env:PATH
-          $env:PYTHONPATH="."
-          pytest -v tests
-      - name: Run test_parallel_dirs
-      # This step tests the --parallel-dirs flag.
-      # It is not tested as a pytest in windows because issues with openbabel.
-      # Full details here:
-      # https://stackoverflow.com/questions/73034320/processes-not-spawned-properly-with-unittest-python-3-9-and-windows
-        working-directory: src
-        run: |
-          $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
-          echo $env:PATH
-          $env:PYTHONPATH="."
-          python .\tests\argument_tests\parallel_dirs.py
+  # windows-tests:
+  #   runs-on: windows-latest
+  #   name: Windows Tests
+  #   strategy:
+  #     matrix:
+  #       python-version: [ '3.7', '3.8', '3.9', '3.10' ]
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       with:
+  #         lfs: true
+  #     - name: Setup Python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
+  #     - name: Install Open Babel
+  #       run: |
+  #         Expand-Archive src\tests\external\OpenBabel-3.1.1.zip src
+  #     - name: Build CSM
+  #       working-directory: src
+  #       run: |
+  #         pip install wheel
+  #         pip install -r requirements.txt
+  #         pip install pytest
+  #         .\rebuild.bat
+  #     - name: Run tests
+  #       working-directory: src
+  #       run: |
+  #         $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
+  #         echo $env:PATH
+  #         $env:PYTHONPATH="."
+  #         pytest -v tests
+  #     - name: Run test_parallel_dirs
+  #     # This step tests the --parallel-dirs flag.
+  #     # It is not tested as a pytest in windows because issues with openbabel.
+  #     # Full details here:
+  #     # https://stackoverflow.com/questions/73034320/processes-not-spawned-properly-with-unittest-python-3-9-and-windows
+  #       working-directory: src
+  #       run: |
+  #         $env:PATH = (Get-Item .).FullName + '\OpenBabel-3.1.1;' + $env:PATH
+  #         echo $env:PATH
+  #         $env:PYTHONPATH="."
+  #         python .\tests\argument_tests\parallel_dirs.py
