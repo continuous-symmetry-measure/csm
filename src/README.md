@@ -1,6 +1,6 @@
-# CSM #
+# CSM
  
-# About
+## About
 The CSM program calculates continuous symmetry and chirality measures of molecules with respect to a given point group G. Molecular coordinates can be provided in either xyz, sdf, mol or pdb format.
 An online calculator is available at: [https://csm.ouproj.org.il](https://csm.ouproj.org.il).  
 
