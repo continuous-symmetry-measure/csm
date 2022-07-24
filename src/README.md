@@ -19,6 +19,17 @@ An online calculator is available at: [https://csm.ouproj.org.il](https://csm.ou
 * approx - Approximate the CSM value. Relevant for protein homomers  in pdb file format. Partially tested for large molecules as well.
 * trivial - Use the unit permutation to calculate the CSM for molecules and protein homomers.
 
+## Installation
+
+CSM can be installed on Windows and Linux machines.
+
+You must install OpenBabel 3.1.1 on your computer prior to running csm. You also need Python 3.7 or later.
+
+You can install CSM from pypi by typing
+
+    pip install csm
+
+
 # Citations 
 
 Please cite the CSM using the following:
@@ -52,11 +63,7 @@ For a list of all available options type `csm --help`
 
 In addition to the possibility of using CSM from the command line, CSM can be accessed programmatically through its API. Details are in the file API.md (including examples).
 
-## Installation
-
-CSM can be installed on Windows and Linux machines.
-
-
+## Development of CSM
 ### Build Instructions: Windows
 
 Install [OpenBabel 3.1.1](https://github.com/openbabel/openbabel/releases/tag/openbabel-3-1-1)  
