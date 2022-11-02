@@ -166,7 +166,9 @@ def write(**dictionary_args):
         raise ValueError("write- Not found molecules")
 
     out_format = mols[0].metadata.format
-    out_filename = dictionary_args.get('out_file_name', 'result-molecule') + f'.{out_format}'
+    out_filename = dictionary_args.get('out_file_name', 'result-molecule')
+    if not out_filename.endswith(out_format):
+        out_filename = out_filename + f'.{out_format}'
     mol_writer = MoleculeWriter(None, out_format=out_format)
     model_number = 0
     with open(out_filename, 'w') as file:
