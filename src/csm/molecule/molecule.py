@@ -103,7 +103,7 @@ class MoleculeMetaData:
     '''
 
     def __init__(self, file_content=[], format=None, filepath="", babel_bond=False, index=0, initial_title="",
-                 initial_comments="", use_filename=True, out_format=None, selected_mols=[]):
+                 initial_comments="", use_filename=True, out_format=None, selected_mols=[], **kwargs):
         self.file_content = file_content
         self.format = format
         self._out_format = out_format
@@ -126,12 +126,15 @@ class MoleculeMetaData:
         return self.format
 
     @staticmethod
-    def from_dict(self, dict):
+    def from_dict(dict):
         m = MoleculeMetaData(**dict)
         return m
 
     def to_dict(self):
-        return vars(self)
+        metadata_dict = vars(self)
+        metadata_dict['selected_mols'] = metadata_dict['select_mols']
+        metadata_dict['out_format'] = metadata_dict['_out_format']
+        return metadata_dict
 
     def appellation(self, no_file_format=False, no_leading_zeros=False, write_original_mols_index=False):
         '''
@@ -270,7 +273,6 @@ class Molecule:
 
         m._deleted_atom_indices = in_dict["deleted indices"]
         m.metadata = MoleculeMetaData.from_dict(in_dict["metadata"])
-        m._obmol = in_dict["obmol"]
 
         m._center_of_mass = in_dict["center of mass"]
         m._equivalence_classes = in_dict["equivalence classes"]
@@ -284,9 +286,71 @@ class Molecule:
         m._chains_with_internal_groups = fixed
         m._chain_equivalences = in_dict["chain_equivalences"]
 
+        m._obmol, obm_atom_indices = m.obms_from_molecule()
         m.create_Q()
         m._create_bondset()
         return m
+    
+    def obms_from_molecule(self):
+        if self.metadata.format == "csm":
+            return [], []
+        if self.obmol:
+            obmols = [self.obmol]
+        elif self.metadata.format == "pdb":
+            obmols = self.obms_from_pdb()
+        else:
+            obmols = MoleculeReader._obm_from_strings(self.metadata.file_content,
+                                                  self.metadata.format,
+                                                  self.metadata.babel_bond)
+        
+        obm_atom_indices = Molecule.build_obm_atom_indices(obmols)
+
+        num_atoms_after_deleted = len(self.atoms)
+
+        if len(obm_atom_indices) == num_atoms_after_deleted:  # the _deleted_atom_indices already deleted.
+            return obmols, obm_atom_indices
+        for to_remove in reversed(self._deleted_atom_indices):
+            mol_index, atom_index = obm_atom_indices[to_remove]
+            obmol = obmols[mol_index]
+            obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
+
+        return obmols, obm_atom_indices
+
+    @staticmethod
+    def build_obm_atom_indices(obmols):
+        obm_atom_indices = []
+
+        num_all_atoms_obmols = 0
+        for mol_index, obmol in enumerate(obmols):
+            num_atoms = obmol.NumAtoms()
+            num_all_atoms_obmols += num_atoms
+            for atom_index in range(num_atoms):
+                obm_atom_indices.append((mol_index, atom_index))
+        return obm_atom_indices
+
+    def obms_from_pdb(self):
+        conv = OBConversion()
+        conv.SetInFormat('pdb')
+        conv.SetOptions("b", conv.INOPTIONS)
+        obmols = []
+
+        for content in self.metadata.file_content:
+            lines = content.split('\n')
+            fixed_string = ''
+
+            for line in lines:
+                tokens = line.split()
+                if len(tokens) > 0 and tokens[0] in ['ATOM', 'HETATM']:
+                    atom_index = int(tokens[1]) - 1 
+                    if atom_index in self._deleted_atom_indices:
+                        continue
+
+                fixed_string += line + '\n'
+
+            obmol = OBMol()
+            conv.ReadString(obmol, fixed_string)
+            obmols.append(obmol)
+        return obmols
 
     @property
     def center_of_mass(self):

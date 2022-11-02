@@ -60,6 +60,8 @@ class output_strings:
 
 
 def csm_log(*strings, file=csm_out_pipe, **kwargs):
+    if csm_out_pipe.name == '<stderr>':
+        return
     output_strings.append(" ".join(str(s) for s in strings))
     print(*strings, **kwargs, file=file)
 

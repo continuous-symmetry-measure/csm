@@ -111,15 +111,15 @@ class LegacyFormatWriter:
 
 
 class MoleculeWriter:
-    def __init__(self, molecule_wrapper):
+    def __init__(self, molecule_wrapper=None, out_format=''):
         self.molecule_wrapper = molecule_wrapper
-        self.format = molecule_wrapper.molecule.metadata.out_format
+        self.format = molecule_wrapper.molecule.metadata.out_format if molecule_wrapper else out_format
         self.write_molecule = self._write_obm_molecule
         if self.format == "csm":
             self.write_molecule = self._write_csm_molecule
 
-    def write(self, f, coords, consecutive=False, model_number=None):
-        self.write_molecule(f, coords, consecutive, model_number)
+    def write(self, f, coords, consecutive=False, model_number=None, obmols=None):
+        self.write_molecule(f, coords, consecutive, model_number, obmols)
 
     def _write_csm_molecule(self, f, coordinates, *args, **kwargs):
         size = len(coordinates)
@@ -137,7 +137,7 @@ class MoleculeWriter:
                 f.write("%d " % (j + 1))
             f.write("\n")
 
-    def _write_obm_molecule(self, f, coordinates, consecutive=False, model_number=None):
+    def _write_obm_molecule(self, f, coordinates, consecutive=False, model_number=None, obmols=None):
         """
         Write an Open Babel molecule to file
         :param obmol: The molecule
@@ -149,7 +149,12 @@ class MoleculeWriter:
             model_str = "MODEL     {}\n".format(model_number)
             f.write(model_str)
 
-        obmols = self.molecule_wrapper.set_obm_coordinates(coordinates)
+        if self.molecule_wrapper:
+            obmols = self.molecule_wrapper.set_obm_coordinates(coordinates)
+        elif obmols is not None:
+            pass
+        else:
+            raise TypeError("obmols is None")
 
         if len(obmols) > 1:
             print("WARNING: result printing for fragments may have errors")
@@ -300,64 +305,7 @@ class MoleculeWrapper:
         self._set_normalized_title(normalized)
 
     def obms_from_molecule(self, molecule):
-        if self.format == "csm":
-            return []
-        if self.format == "pdb":
-            return self.obms_from_pdb(molecule)
-        if molecule.obmol:
-            obmols = [molecule.obmol]
-        else:
-            obmols = MoleculeReader._obm_from_strings(molecule.metadata.file_content,
-                                                  molecule.metadata.format,
-                                                  molecule.metadata.babel_bond)
-        
-        self.build_obm_atom_indices(obmols)
-
-        num_atoms_after_deleted = len(molecule.atoms)
-
-        if len(self._obm_atom_indices) == num_atoms_after_deleted:  # the _deleted_atom_indices already deleted.
-            return obmols
-        for to_remove in reversed(molecule._deleted_atom_indices):
-            mol_index, atom_index = self._obm_atom_indices[to_remove]
-            obmol = obmols[mol_index]
-            obmol.DeleteAtom(obmol.GetAtom(atom_index + 1))
-
-        return obmols
-
-    def build_obm_atom_indices(self, obmols):
-        self._obm_atom_indices = []
-
-        num_all_atoms_obmols = 0
-        for mol_index, obmol in enumerate(obmols):
-            num_atoms = obmol.NumAtoms()
-            num_all_atoms_obmols += num_atoms
-            for atom_index in range(num_atoms):
-                self._obm_atom_indices.append((mol_index, atom_index))
-
-    def obms_from_pdb(self, molecule):
-        conv = OBConversion()
-        conv.SetInFormat('pdb')
-        conv.SetOptions("b", conv.INOPTIONS)
-        obmols = []
-
-        for content in molecule.metadata.file_content:
-            lines = content.split('\n')
-            fixed_string = ''
-
-            for line in lines:
-                tokens = line.split()
-                if len(tokens) > 0 and tokens[0] in ['ATOM', 'HETATM']:
-                    atom_index = int(tokens[1]) - 1 
-                    if atom_index in molecule._deleted_atom_indices:
-                        continue
-
-                fixed_string += line + '\n'
-
-            obmol = OBMol()
-            conv.ReadString(obmol, fixed_string)
-            obmols.append(obmol)
-
-        self.build_obm_atom_indices(obmols)
+        obmols, self._obm_atom_indices = molecule.obms_from_molecule()
         return obmols
 
     def set_obm_coordinates(self, coordinates):
@@ -587,6 +535,7 @@ class ScriptContextWriter(ContextWriter):
 
     def get_line_header(self, index, operation):
         index_str = "%02d" % (index + 1)  # start from 1 instead of 0
+        print(f"operation : {operation}")
         return "L" + index_str + "_" + operation.op_code
 
     def init_files(self):

@@ -5,7 +5,6 @@ from csm.fast import CythonPermuter
 from csm.fast import approximate_perm_classic, munkres_wrapper
 from csm.calculations.basic_calculations import array_distance, check_perm_cycles, create_rotation_matrix
 from csm.calculations.constants import MAXDOUBLE
-from csm.molecule.molecule import MoleculeFactory
 from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter
 
 class _OptionalLogger:
@@ -44,6 +43,8 @@ class _PermFromDirBuilder(_OptionalLogger):
 
 class _ChainPermsPermBuilder(_PermFromDirBuilder):
     def _calc_chain_permutations(self):
+        from csm.molecule.molecule import MoleculeFactory
+
         chain_permutations = []
         dummy = MoleculeFactory.dummy_molecule_from_size(len(self._molecule.chains), self._molecule.chain_equivalences)
         permuter = CythonPermuter(dummy, self._op_order, self._op_type, keep_structure=False, precalculate=False)
