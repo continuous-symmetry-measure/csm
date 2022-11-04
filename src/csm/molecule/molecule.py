@@ -795,14 +795,16 @@ class Molecule:
             # else:
             #    silent_print("Molecule has no chains")
 
-    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[], use_backbone=False, select_chains=[], select_res=[]):
+    def _complete_initialization(self, use_chains, remove_hy, select_atoms=[], ignore_atoms=[],
+        use_backbone=False, select_chains=[], select_res=[], **kwargs):
         """
         Finish creating the molecule after reading the raw data
         """
         self.strip_atoms(remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains, select_res)
         self._calculate_equivalency()
         self._initialize_chains(use_chains)
-        self.normalize()
+        if kwargs.get('command', '') != 'read':
+           self.normalize()
 
     @staticmethod
     def xyz_string(atoms, positions=None, header=""):
@@ -1104,7 +1106,7 @@ class MoleculeReader:
         if conn_file and format == "xyz":
             MoleculeReader.read_xyz_connectivity(mol, conn_file)
         if initialize:
-            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains, select_res)
+            mol._complete_initialization(use_chains, remove_hy, select_atoms, ignore_atoms, use_backbone, select_chains, select_res, **kwargs)
             if len(mol.chains) < 2:
                 if read_fragments:
                     print("Warning: Although you input --read-fragments, no fragments were found in file. "
@@ -1153,6 +1155,7 @@ class MoleculeReader:
         use_filename = True
         if len(mols) > 1 or kwargs.get("legacy_output"):
             use_filename = False
+    
         for index, mol in enumerate(mols):
             p_mol = MoleculeReader._process_single_molecule(mol, in_file_name, format, initialize,
                                                             use_chains, babel_bond,
@@ -1160,7 +1163,7 @@ class MoleculeReader:
                                                             read_fragments, use_sequence,
                                                             keep_structure, select_atoms, conn_file,
                                                             out_format, ignore_atoms, use_backbone, 
-                                                            select_chains, select_res)
+                                                            select_chains, select_res, **kwargs)
             p_mol.metadata.index = index
             p_mol.metadata.use_filename = use_filename
             if not format == "csm" and not read_fragments:

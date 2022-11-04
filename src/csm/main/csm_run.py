@@ -12,6 +12,7 @@ from csm.main.openbabel_fix import prepare_openbabel
 prepare_openbabel()  # Make sure the OpenBabel DLL can be found. See file for more informations
 
 from csm import __version__
+from csm.input_output import formatters
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox
 from csm.calculations.approx.dirs import get_direction_chooser
 from csm.calculations.data_classes import FailedResult, CSMResult
@@ -115,7 +116,7 @@ def csm_run(args=[]):
     # get command
     if not args:
         args = sys.argv[1:]
-    if 'read' not in args and 'write' not in args:
+    if 'read' not in args:
         print("CSM version %s" % __version__)
         print(" ".join(args))
 
@@ -125,13 +126,13 @@ def csm_run(args=[]):
         from csm.calculations.constants import set_global_timeout
         set_global_timeout(dictionary_args["global_timeout"])
     if dictionary_args["pipe"]:
-        from csm.input_output import formatters
         formatters.csm_out_pipe = sys.stderr
 
     command = dictionary_args["command"]
 
     # call command funcs that aren't calculate:
     if command == "read":
+        formatters.csm_out_pipe = sys.stderr
         return read(**dictionary_args)
 
     elif command == "write":
