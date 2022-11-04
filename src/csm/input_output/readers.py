@@ -203,6 +203,11 @@ def read_from_sys_std_in():
     '''
     if not sys.stdin.isatty():
         raw_json = sys.stdin.read()
+        if not raw_json:
+            try:
+                raw_json = sys.stdin.getvalue()
+            except:
+                pass
         return raw_json
     else:
         raise ValueError("No input in sys.stdin")

@@ -10,11 +10,24 @@ import pytest
 import shutil
 import platform
 import sys
+from io import StringIO 
 
 from csm.main.csm_run import csm_run, calc, get_parsed_args
 from tests.test_settings import test_dir
 
 test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
+
+
+class Capturing_stdout(list):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self.stringio = StringIO()
+        return self
+    def __exit__(self, *args):
+        # self.extend(self.stringio.getvalue()) #.splitlines()
+        # del self.stringio    # free up some memory
+        sys.stdout = self._stdout
+
 
 class RunThings():
     def _run_args(self, args_str, results_folder):
@@ -333,6 +346,17 @@ $$$$
         else:
             assert False
         
+    def test_read_write1(self):
+        cmd1 = f"read read-write\\test1-inp.pdb --select-chains A,B"
+        with Capturing_stdout() as output_stdout:
+            results1 = csm_run(cmd1.split())
+        sys.stdin = output_stdout.stringio
+        cmd2 = fr"write {self.results_folder}\test1-out.pdb"
+        results2 = csm_run(cmd2.split())
+        sys.stdin = sys.__stdin__ 
+        
+        cmd = "exact c2 --input test3-inp.xyz --select-mols 1,3"
+
 
     def test_select_atoms_remove_hy(self):
         # --select-atoms removes specific atoms.
