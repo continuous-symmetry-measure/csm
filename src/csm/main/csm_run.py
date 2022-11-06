@@ -113,9 +113,6 @@ def get_command_args(command_file, old_command=True, **dictionary_args):
 
 
 def csm_run(args=[]):
-    print("current dir:", os.getcwd())
-    print("list dir:", os.listdir())
-    print("is file", os.path.isfile("test2comfile/cmd.txt"))
     # get command
     if not args:
         args = sys.argv[1:]
