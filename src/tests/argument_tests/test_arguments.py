@@ -438,7 +438,7 @@ $$$$
         assert result[0][0].csm == pytest.approx(result[0][0].csm, rel=1e-8)
 
     def test_comfile_with_err_mol(self):
-        cmd = r"comfile test1comfile\cmd.txt --input test1comfile"
+        cmd = r"comfile .\test1comfile\cmd.txt --input test1comfile"
         results = self.run_args(cmd)
 
         assert len(results) == 2
@@ -446,7 +446,7 @@ $$$$
         assert len(results[1]) == 2
 
     def test_comfile_with_babel_bond(self):
-        cmd = r"comfile test2comfile\cmd.txt --input test2comfile"
+        cmd = r"comfile .\test2comfile\cmd.txt --input test2comfile"
         results = self.run_args(cmd)
 
         assert len(results) == 2
