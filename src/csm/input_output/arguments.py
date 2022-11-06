@@ -152,7 +152,7 @@ def _create_parser():
     commands_args_ = commands.add_parser('comfile', help='provide a command file for running calculations',
                                          formatter_class=SmartFormatter)
     command_args = commands_args_.add_argument_group("Command args")
-    # א this uses custom formatting so that there are newlines
+    # this uses custom formatting so that there are newlines
     command_args.add_argument('comfile', default=os.path.join(os.getcwd(), "cmd.txt"), nargs='?',
                               help="R|the file that contains the commands, default is cmd.txt in current working directory\n"
                                    "the file is formatted as follows:\n"

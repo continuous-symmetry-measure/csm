@@ -347,11 +347,11 @@ $$$$
             assert False
         
     def test_read_write1(self):
-        cmd1 = f"read read-write\\test1-inp.pdb --select-chains A,B"
+        cmd1 = r"read read-write\test1-inp.pdb --select-chains A,B"
         with Capturing_stdout() as output_stdout:
             results1 = csm_run(cmd1.split())
         sys.stdin = output_stdout.stringio
-        cmd2 = fr"write {self.results_folder}\test1-out.pdb"
+        cmd2 = "write " + self.results_folder + r"\test1-out.pdb"
         results2 = csm_run(cmd2.split())
         sys.stdin = sys.__stdin__ 
         
@@ -436,6 +436,22 @@ $$$$
 
         assert len(result[0][0].molecule) == len(result_bb[0][0].molecule)
         assert result[0][0].csm == pytest.approx(result[0][0].csm, rel=1e-8)
+
+    def test_comfile_with_err_mol(self):
+        cmd = r"comfile test1comfile\cmd.txt --input test1comfile"
+        results = self.run_args(cmd)
+
+        assert len(results) == 2
+        assert len(results[0]) == 2
+        assert len(results[1]) == 2
+
+    def test_comfile_with_babel_bond(self):
+        cmd = r"comfile test2comfile\cmd.txt --input test2comfile"
+        results = self.run_args(cmd)
+
+        assert len(results) == 2
+        assert len(results[0]) == 2
+        assert len(results[1]) == 2
 
     def test_ignore_atoms(self):
         def strip(myString):

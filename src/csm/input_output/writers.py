@@ -535,7 +535,6 @@ class ScriptContextWriter(ContextWriter):
 
     def get_line_header(self, index, operation):
         index_str = "%02d" % (index + 1)  # start from 1 instead of 0
-        print(f"operation : {operation}")
         return "L" + index_str + "_" + operation.op_code
 
     def init_files(self):

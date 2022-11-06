@@ -191,6 +191,7 @@ def calc(dictionary_args):
 
     # get molecules
     if dictionary_args["in_file_name"]:
+        dictionary_args['comfile_first_read'] = dictionary_args["command"] == "comfile"
         molecules = read_molecules(**dictionary_args)
     elif dictionary_args["pipe"]:
         molecules = read_mols_from_std_in()
@@ -213,17 +214,22 @@ def calc(dictionary_args):
     # process arguments into flat and unflat arrays
     total_args = []
     for mol_index, molecule in enumerate(molecules):
-        mol_args = []
-        for line, args_dict, modifies_molecule in args_array:
-            args_dict["molecule"] = molecule
-            args_dict["line"] = line
-            # handle modifying molecules:
-            if modifies_molecule:
-                new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)
-                new_molecule.metadata.index = mol_index
-                args_dict["molecule"] = new_molecule
-            mol_args.append(dict(args_dict))
-        total_args.append(mol_args)
+        try:
+            mol_args = []
+            for line, args_dict, modifies_molecule in args_array:
+                args_dict["molecule"] = molecule
+                args_dict["line"] = line
+                # handle modifying molecules:
+                if modifies_molecule:
+                    new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)
+                    new_molecule.metadata.index = mol_index
+                    args_dict["molecule"] = new_molecule
+                mol_args.append(dict(args_dict))
+            total_args.append(mol_args)
+        except Exception as ex:
+            print(f"Error with the molecule {molecule.metadata.filepath}:")
+            print(ex)
+            pass # continue with the rest of the molecules
 
     # run the calculation, in parallel
     if dictionary_args["parallel"]:

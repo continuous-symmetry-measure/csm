@@ -1,0 +1,36 @@
+HEADER    VIRAL PROTEIN                           21-DEC-21   7TB4              
+TITLE     CRYO-EM STRUCTURE OF THE SPIKE OF SARS-COV-2 OMICRON VARIANT OF       
+TITLE    2 CONCERN                                                              
+COMPND    MOL_ID: 1;                                                            
+COMPND   2 MOLECULE: SURFACE GLYCOPROTEIN;                                      
+COMPND   3 CHAIN: A, B, C;                                                      
+COMPND   4 ENGINEERED: YES                                                      
+SOURCE    MOL_ID: 1;                                                            
+SOURCE   2 ORGANISM_SCIENTIFIC: SEVERE ACUTE RESPIRATORY SYNDROME CORONAVIRUS   
+SOURCE   3 2;                                                                   
+SOURCE   4 ORGANISM_TAXID: 2697049;                                             
+SOURCE   5 EXPRESSION_SYSTEM: HOMO SAPIENS;                                     
+SOURCE   6 EXPRESSION_SYSTEM_TAXID: 9606;                                       
+SOURCE   7 EXPRESSION_SYSTEM_CELL: HEK293F                                      
+ATOM   2785  N   VAL A 362     187.972 134.824 135.832  1.00162.24           N    
+ATOM   2786  CA  VAL A 362     188.434 136.189 136.060  1.00162.24           C    
+ATOM   2787  C   VAL A 362     187.903 137.075 134.943  1.00162.24           C    
+ATOM   2788  O   VAL A 362     187.920 136.690 133.768  1.00162.24           O    
+ATOM   2789  CB  VAL A 362     189.973 136.281 136.139  1.00162.24           C    
+ATOM   2790  CG1 VAL A 362     190.474 135.735 137.465  1.00162.24           C    
+ATOM   2791  CG2 VAL A 362     190.621 135.550 134.975  1.00162.24           C    
+ATOM  11351  N   VAL B 362     139.025 166.070 130.835  1.00119.57           N    
+ATOM  11352  CA  VAL B 362     139.818 164.950 131.331  1.00119.57           C    
+ATOM  11353  C   VAL B 362     141.066 164.835 130.467  1.00119.57           C    
+ATOM  11354  O   VAL B 362     140.972 164.688 129.243  1.00119.57           O    
+ATOM  11355  CB  VAL B 362     139.009 163.645 131.316  1.00119.57           C    
+ATOM  11356  CG1 VAL B 362     139.938 162.441 131.348  1.00119.57           C    
+ATOM  11357  CG2 VAL B 362     138.041 163.610 132.486  1.00119.57           C    
+ATOM  20103  N   VAL C 362     194.832 197.080 129.740  1.00171.10           N    
+ATOM  20104  CA  VAL C 362     193.417 197.359 129.961  1.00171.10           C    
+ATOM  20105  C   VAL C 362     192.693 197.372 128.623  1.00171.10           C    
+ATOM  20106  O   VAL C 362     192.870 198.288 127.809  1.00171.10           O    
+ATOM  20107  CB  VAL C 362     193.246 198.684 130.718  1.00171.10           C    
+ATOM  20108  CG1 VAL C 362     191.800 199.149 130.677  1.00171.10           C    
+ATOM  20109  CG2 VAL C 362     193.720 198.537 132.155  1.00171.10           C    
+END

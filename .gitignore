@@ -17,4 +17,4 @@ build/
 env/
 /src/tests/local_settings.py
 src/tests/argument_tests/files_for_tests/csm_tests/*
-src/tests/regression_tests/files_for_tests/csm_tests/*
+src/tests/regression_tests/files_for_tests/csm_tests

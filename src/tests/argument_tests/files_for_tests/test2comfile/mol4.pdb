@@ -1,0 +1,39 @@
+HEADER    VIRAL PROTEIN                           21-DEC-21   7TB4              
+TITLE     CRYO-EM STRUCTURE OF THE SPIKE OF SARS-COV-2 OMICRON VARIANT OF       
+TITLE    2 CONCERN                                                              
+COMPND    MOL_ID: 1;                                                            
+COMPND   2 MOLECULE: SURFACE GLYCOPROTEIN;                                      
+COMPND   3 CHAIN: A, B, C;                                                      
+COMPND   4 ENGINEERED: YES                                                      
+SOURCE    MOL_ID: 1;                                                            
+SOURCE   2 ORGANISM_SCIENTIFIC: SEVERE ACUTE RESPIRATORY SYNDROME CORONAVIRUS   
+SOURCE   3 2;                                                                   
+SOURCE   4 ORGANISM_TAXID: 2697049;                                             
+SOURCE   5 EXPRESSION_SYSTEM: HOMO SAPIENS;                                     
+SOURCE   6 EXPRESSION_SYSTEM_TAXID: 9606;                                       
+SOURCE   7 EXPRESSION_SYSTEM_CELL: HEK293F                                      
+ATOM   2771  N   ASN A 360     183.544 131.080 138.619  1.00159.81           N    
+ATOM   2772  CA  ASN A 360     184.870 130.463 138.588  1.00159.81           C    
+ATOM   2773  C   ASN A 360     185.665 130.910 137.359  1.00159.81           C    
+ATOM   2774  O   ASN A 360     186.056 130.107 136.511  1.00159.81           O    
+ATOM   2775  CB  ASN A 360     184.757 128.936 138.651  1.00159.81           C    
+ATOM   2776  CG  ASN A 360     186.059 128.270 139.053  1.00159.81           C    
+ATOM   2777  OD1 ASN A 360     187.072 128.936 139.264  1.00159.81           O    
+ATOM   2778  ND2 ASN A 360     186.038 126.946 139.159  1.00159.81           N    
+ATOM  11337  N   ASN B 360     138.500 172.254 132.465  1.00114.54           N    
+ATOM  11338  CA  ASN B 360     137.221 171.543 132.420  1.00114.54           C    
+ATOM  11339  C   ASN B 360     137.236 170.427 131.373  1.00114.54           C    
+ATOM  11340  O   ASN B 360     136.410 170.380 130.459  1.00114.54           O    
+ATOM  11341  CB  ASN B 360     136.066 172.519 132.173  1.00114.54           C    
+ATOM  11342  CG  ASN B 360     135.544 173.138 133.453  1.00114.54           C    
+ATOM  11343  OD1 ASN B 360     136.154 173.006 134.513  1.00114.54           O    
+ATOM  11344  ND2 ASN B 360     134.408 173.819 133.362  1.00114.54           N    
+ATOM  20089  N   ASN C 360     197.837 191.771 127.917  1.00173.22           N    
+ATOM  20090  CA  ASN C 360     198.514 192.292 129.109  1.00173.22           C    
+ATOM  20091  C   ASN C 360     198.334 193.803 129.247  1.00173.22           C    
+ATOM  20092  O   ASN C 360     199.306 194.553 129.363  1.00173.22           O    
+ATOM  20093  CB  ASN C 360     199.999 191.919 129.106  1.00173.22           C    
+ATOM  20094  CG  ASN C 360     200.230 190.446 128.830  1.00173.22           C    
+ATOM  20095  OD1 ASN C 360     199.327 189.624 128.988  1.00173.22           O    
+ATOM  20096  ND2 ASN C 360     201.444 190.105 128.414  1.00173.22           N    
+END

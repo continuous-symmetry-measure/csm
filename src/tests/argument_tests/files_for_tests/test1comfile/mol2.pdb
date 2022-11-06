@@ -1,0 +1,36 @@
+HEADER    VIRAL PROTEIN                           21-DEC-21   7TB4              
+TITLE     CRYO-EM STRUCTURE OF THE SPIKE OF SARS-COV-2 OMICRON VARIANT OF       
+TITLE    2 CONCERN                                                              
+COMPND    MOL_ID: 1;                                                            
+COMPND   2 MOLECULE: SURFACE GLYCOPROTEIN;                                      
+COMPND   3 CHAIN: A, B, C;                                                      
+COMPND   4 ENGINEERED: YES                                                      
+SOURCE    MOL_ID: 1;                                                            
+SOURCE   2 ORGANISM_SCIENTIFIC: SEVERE ACUTE RESPIRATORY SYNDROME CORONAVIRUS   
+SOURCE   3 2;                                                                   
+SOURCE   4 ORGANISM_TAXID: 2697049;                                             
+SOURCE   5 EXPRESSION_SYSTEM: HOMO SAPIENS;                                     
+SOURCE   6 EXPRESSION_SYSTEM_TAXID: 9606;                                       
+SOURCE   7 EXPRESSION_SYSTEM_CELL: HEK293F                                      
+KEYWDS    SARS-COV-2, SPIKE, OMICRON, VARIANT OF CONCERN, VIRAL PROTEIN         
+EXPDTA    ELECTRON MICROSCOPY                                                   
+AUTHOR    T.ZHOU,T.TSYBOVSKY,P.D.KWONG                                          
+REVDAT   2   19-JAN-22 7TB4    1       JRNL                                     
+REVDAT   1   12-JAN-22 7TB4    0                                                
+ATOM   2779  N   CYS A 361     185.899 132.218 137.279  1.00164.17           N    
+ATOM   2780  CA  CYS A 361     186.700 132.802 136.209  1.00164.17           C    
+ATOM   2781  C   CYS A 361     187.083 134.218 136.617  1.00164.17           C    
+ATOM   2782  O   CYS A 361     186.593 134.748 137.616  1.00164.17           O    
+ATOM   2783  CB  CYS A 361     185.954 132.794 134.873  1.00164.17           C    
+ATOM   2784  SG  CYS A 361     184.390 133.706 134.847  1.00164.17           S    
+ATOM  11345  N   CYS B 361     138.197 169.519 131.526  1.00119.46           N    
+ATOM  11346  CA  CYS B 361     138.290 168.358 130.653  1.00119.46           C    
+ATOM  11347  C   CYS B 361     139.140 167.296 131.332  1.00119.46           C    
+ATOM  11349  CB  CYS B 361     138.873 168.724 129.284  1.00119.46           C    
+ATOM  20097  N   CYS C 361     197.079 194.250 129.252  1.00173.58           N    
+ATOM  20098  CA  CYS C 361     196.755 195.670 129.318  1.00173.58           C    
+ATOM  20099  C   CYS C 361     195.256 195.828 129.545  1.00173.58           C    
+ATOM  20100  O   CYS C 361     194.504 194.852 129.565  1.00173.58           O    
+ATOM  20101  CB  CYS C 361     197.225 196.401 128.053  1.00173.58           C    
+ATOM  20102  SG  CYS C 361     196.636 195.692 126.495  1.00173.58           S    
+END
