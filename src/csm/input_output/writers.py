@@ -346,16 +346,19 @@ class MoleculeWrapper:
         if self.format in ["mol", "sdf"]:
             key = 'Comment'
             self.moleculedata[key] = description
-        if self.format.lower() == "pdb":
+        elif self.format.lower() == "pdb":
             key = 'REMARK'
             description = "     " + description
             description = self.insert_pdb_new_lines(description)
 
             if key in self.moleculedata:
-                description = self.moleculedata[key] + "\n" + description
-
+                if description in self.moleculedata[key]:
+                    return  # don't change the description.
+                else:
+                    description = self.moleculedata[key] + "\n" + description
             self.moleculedata[key] = description
-        if self.format == "xyz":
+            
+        elif self.format == "xyz":
             old_title = self.obmol.GetTitle()
             if description not in old_title:
                 new_title = old_title + "  " + description
@@ -385,10 +388,6 @@ class MoleculeWrapper:
             key = "TITLE"
             title = "     " + title
             title = self.insert_pdb_new_lines(title)
-
-            if key in self.moleculedata:
-                title = self.moleculedata[key] + "\n" + title
-
             self.moleculedata[key] = title
         else:
             self.obmol.SetTitle(title)
