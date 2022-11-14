@@ -30,12 +30,13 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             // python .\src\csm\main\csm_run.py read C:\Users\chana\Source\csm\for_csm\read-write\test1-inp.pdb 
-            // --select-chains A B | python .\src\csm\main\csm_run.py
+            // --select-chains A,B | python .\src\csm\main\csm_run.py
             //  write C:\Users\chana\Source\csm\for_csm\read-write\test1-out-chana.pdb
             "args": [
                 "read",
-                "C:\\Users\\chana\\Source\\csm\\for_csm\\read-write\\test2-inp.xyz",
-                "--remove-hy"
+                "C:\\Users\\chana\\Source\\csm\\for_csm\\read-write\\test1-inp.pdb",
+                "--select-chains",
+                "A,B"
             ]
         },
         {
@@ -61,6 +62,18 @@
                 "--select-chains",
                 "E-F"
             ]
-        }
+        },
+        {
+            "name": "help",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/csm/main/csm_run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "write",
+                "--help"
+            ]
+        },
     ]
 }

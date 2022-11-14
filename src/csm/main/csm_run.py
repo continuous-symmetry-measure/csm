@@ -134,7 +134,12 @@ def csm_run(args=[]):
     # call command funcs that aren't calculate:
     if command == "read":
         formatters.csm_out_pipe = sys.stderr
-        return read(**dictionary_args)
+        try:
+            return read(**dictionary_args)
+        except Exception as ex:
+            formatters.csm_out_pipe = sys.stdout
+            print("error in read", str(ex))
+            return {"error in read": str(ex)}
 
     elif command == "write":
         return write(**dictionary_args)
@@ -161,6 +166,9 @@ def get_context_writer(dictionary_args):
 
 def write(**dictionary_args):
     raw_json = read_from_sys_std_in()
+    if "error in read" in raw_json:
+        print("Error in the read step:", raw_json.rsplit('error in read', 1)[-1], file=sys.stdout)
+        return
     less_raw_json = json.loads(raw_json)
     
     mols: list[Molecule] = [Molecule.from_dict(mol_dict) for mol_dict in less_raw_json]

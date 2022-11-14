@@ -1,16 +1,15 @@
+import sys
+import os
 import logging
 import multiprocessing
 from argparse import ArgumentParser, SUPPRESS, HelpFormatter
 from datetime import datetime
-
-import os
 
 from csm import __version__
 from csm.calculations.data_classes import Operation
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
-import sys
 
 
 class SmartFormatter(HelpFormatter):
@@ -23,25 +22,32 @@ class SmartFormatter(HelpFormatter):
 
 
 class OurParser(ArgumentParser):
+
+    def __init__(self, cmd: str = '', *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.cmd = cmd
+
     def error(self, message):
         sys.stdout.write("Error: %s" % message)
-        sys.stdout.write("\nEnter csm --help for help, or csm [command] --help for help with a specific command")
-        sys.exit(2)
+        sys.stdout.write(
+            "\nEnter csm --help for help, or csm [command] --help for help with a specific command")
+        if 'read' not in self.cmd:
+            sys.exit(2)
 
 
-def _create_parser():
+def _create_parser(cmd=''):
     def input_utility_func(parser):
         parser.add_argument('--in-format', help='override guessing format from input file ending with provided format',
-                                default=None)
+                            default=None)
         parser.add_argument('--connect', const=os.path.join(os.getcwd(), "connectivity.txt"), nargs='?', dest="conn_file",
                             help='xyz connectivity file, default is connectivity.txt in current working directory')
         mutex_args = parser.add_mutually_exclusive_group()
         mutex_args.add_argument('--select-atoms', default=None,
-                                 help='Select only some atoms for calculation, eg 1-20,15,17,19-21')
+                                help='Select only some atoms for calculation, eg 1-20,15,17,19-21')
         mutex_args.add_argument('--ignore-atoms', default=None,
                                 help='Ignore some atoms, eg 1-20,15,17,19-21')
         parser.add_argument('--remove-hy', action='store_true', default=False,
-                                help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
+                            help='Remove Hydrogen atoms, rebuild molecule without them, and compute')
         parser.add_argument('--select-mols', default=None,
                             help='Select only some molecules for calculation, eg 1-20,15,17,19-21')
         parser.add_argument('--ignore-sym', action='store_true', default=False,
@@ -57,23 +63,23 @@ def _create_parser():
         parser.add_argument('--read-fragments', action='store_true', default=False,
                             help='Read fragments from .mol or .pdb file as chains')
         parser.add_argument('--use-backbone', action='store_true', default=False,
-                                 help='Rebuild protein without the residues, and compute')
+                            help='Rebuild protein without the residues, and compute')
         parser.add_argument('--select-chains', default=None,
-                                 help='Select only some chains for calculation, eg A-D,E,F,G-I')
+                            help='Select only some chains for calculation, eg A-D,E,F,G-I')
         parser.add_argument('--select-res', default=None,
-                                 help='Select only atoms with the specified resuide, eg 1-20,15,17,19-21')
+                            help='Select only atoms with the specified resuide, eg 1-20,15,17,19-21')
 
     def output_utility_func(parser):
         parser.add_argument('--out-format',
-                                        help='override guessing format from output file ending with provided format',
-                                        default=None)
+                            help='override guessing format from output file ending with provided format',
+                            default=None)
         mutex_args = parser.add_mutually_exclusive_group()
         mutex_args.add_argument("--simple", action='store_true', default=False,
-                            help='only output is CSM to screen. Ignores other output flags.')
+                                help='only output is CSM to screen. Ignores other output flags.')
         mutex_args.add_argument("--legacy-output", action='store_true', default=False,
-                            help='DEPRECATION WARNING. '
-                                 'print the old-style csm results to a file, only one calculation+molecule allowed.'
-                                 'Ignores other output flags')
+                                help='DEPRECATION WARNING. '
+                                'print the old-style csm results to a file, only one calculation+molecule allowed.'
+                                'Ignores other output flags')
 
         parser.add_argument("--overwrite", action='store_true', default=False,
                             help="overwrite results folder if exists (rather than adding timestamp)")
@@ -88,8 +94,6 @@ def _create_parser():
 
         # parser.add_argument('--print-local', action='store_true', default=False,
         #                    help='Print the local CSM (csm for each atom) in the output file')
-
-
 
     def shared_calc_utility_func(parser):
         parser.add_argument('symmetry',
@@ -126,27 +130,32 @@ def _create_parser():
     def add_input_output_utility_func(parser):
         parser.add_argument('--parallel', type=int, const=0, nargs='?',
                             help='Run calculation on molecules in parallel. If no number of processors is specified, [cpu count - 1] will be used')
-        parser_input_args = parser.add_argument_group("Args for input (requires --input)")
+        parser_input_args = parser.add_argument_group(
+            "Args for input (requires --input)")
         parser_input_args.add_argument("--input", help="molecule file or folder, default is current working directory",
                                        const=os.getcwd(), nargs='?')
         input_utility_func(parser_input_args)
         parser_output_args = parser.add_argument_group("Args for output")
         parser_output_args.add_argument("--output",
-                                        default=os.path.join(os.getcwd(), 'csm_results' + timestamp),
-                                        const=os.path.join(os.getcwd(), 'csm_results' + timestamp),
+                                        default=os.path.join(
+                                            os.getcwd(), 'csm_results' + timestamp),
+                                        const=os.path.join(
+                                            os.getcwd(), 'csm_results' + timestamp),
                                         nargs='?',
                                         help="output file or folder, default is 'csm_results+timestamp' folder in current working directory, if provided directory already exists (and --overwrite is not specified), a new folder with timestamp will be created", )
         output_utility_func(parser_output_args)
 
-    parser = OurParser(allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
+    parser = OurParser(cmd=cmd, allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
                                                  "example: csm exact c2 --input mymol.mol --output --keep-structure\n"
                                                  "for specific help with each subprogram and its available arguments, enter csm COMMAND -h\n"
                                                  "e.g. csm exact -h",
                        )
     timestamp = str(datetime.now().timestamp())[-11:].replace(".", "")
     parser.add_argument('--timestamp', help=SUPPRESS, default=timestamp)
-    parser.add_argument("--version", help="print version and exit", action='store_true', default=False)
-    commands = parser.add_subparsers(title="Available commands", dest="command")
+    parser.add_argument("--version", help="print version and exit",
+                        action='store_true', default=False)
+    commands = parser.add_subparsers(
+        title="Available commands", dest="command")
 
     # command
     commands_args_ = commands.add_parser('comfile', help='provide a command file for running calculations',
@@ -169,9 +178,9 @@ def _create_parser():
 
     # READ
     input_args = commands.add_parser('read', help="Read a molecule file into a json in CSM format",
-                                     usage="csm read filename [optional args]\n"
+                                     usage="csm read --input filename [optional args]\n"
                                            "example: csm read mymol.pdb --read-fragments --remove-hy --select-atoms 1-3")
-    input_args.add_argument('input', help='molecule file or folder, default is current working directory',
+    input_args.add_argument('--input', help='molecule file or folder, default is current working directory',
                             default=os.getcwd(), nargs='?')
 
     input_utility_func(input_args)
@@ -179,9 +188,9 @@ def _create_parser():
     # WRITE
     out_args = commands.add_parser('write',
                                    help="Output the results of the calculation to a file- must be used with piped input",
-                                   usage="csm write filename [optional args]")
-    out_args.add_argument('output', default=os.path.join(os.getcwd(), 'csm_results' + timestamp), nargs='?',
-                          help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created", )
+                                   usage="csm write [optional args]")
+    out_args.add_argument('--output', default=os.path.join(os.getcwd(), 'csm_results' + timestamp), nargs='?',
+                          help="output file or folder, default is 'csm_results\\timestamp' folder in current working directory, if provided directory exists a new one with timestamp will be created")
     output_utility_func(out_args)
 
     # EXACT
@@ -196,7 +205,7 @@ def _create_parser():
     exact_args.add_argument('--keep-structure', action='store_true', default=False,
                             help="Don't allow permutations that break bonds")
     exact_args.add_argument('--output-perms', action='store_true', default=False,
-                            help = 'Writes all enumerated permutations to files in folder exact in results-- does not work with parallel')
+                            help='Writes all enumerated permutations to files in folder exact in results-- does not work with parallel')
     shared_normalization_utility_func(exact_args)
     add_input_output_utility_func(exact_args_)
 
@@ -204,7 +213,8 @@ def _create_parser():
     approx_args_ = commands.add_parser('approx', help="Approximate the CSM value", conflict_handler='resolve',
                                        usage='csm approx TYPE [optional args]\n'
                                              'example: csm approx ch --input --output --detect-outliers --sn-max 10')
-    approx_args = approx_args_.add_argument_group("Args for approx calculation")
+    approx_args = approx_args_.add_argument_group(
+        "Args for approx calculation")
     shared_calc_utility_func(approx_args)
     # choosing dir:
     approx_args.add_argument('--detect-outliers', action='store_true', default=False,
@@ -232,10 +242,10 @@ def _create_parser():
                              help='Do a single iteration on many directions (use with --fibonacci), and then a full set of iterations only on the best k (default 10)')
     approx_args.add_argument('--parallel-dirs', type=int, const=0, nargs='?',
                              help='Calculate directions in parallel. Recommended for use with fibonacci. If no number of processors is specified, cpu count - 1 will be used. Cannot be used with --parallel')
-    #misc
+    # misc
     approx_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
-                            const=os.path.join(os.getcwd(), "chainperm.txt"),
-                            help='Run calculation only on chain permutations in provided file. default file location is current directory/chainperm.txt')
+                             const=os.path.join(os.getcwd(), "chainperm.txt"),
+                             help='Run calculation only on chain permutations in provided file. default file location is current directory/chainperm.txt')
 
     # outputs
     approx_args.add_argument('--print-approx', action='store_true', default=False,
@@ -247,15 +257,16 @@ def _create_parser():
     trivial_args_ = commands.add_parser('trivial', help="Calculate trivial (identity) CSM", conflict_handler='resolve',
                                         usage='csm trivial SYMM [optional args]\n'
                                               'example: csm trivial c4 --input --output --permute-chains')
-    trivial_args = trivial_args_.add_argument_group("Args for trivial calculation")
+    trivial_args = trivial_args_.add_argument_group(
+        "Args for trivial calculation")
     shared_calc_utility_func(trivial_args)
     # this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
     # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
     trivial_args.add_argument('--permute-chains', action='store_true', default=False,
                               help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")
     trivial_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
-                            const=os.path.join(os.getcwd(), "chainperm.txt"),
-                            help='Run calculation only on chain permutations in provided file. Default file location is current directory/chainperm.txt')
+                              const=os.path.join(os.getcwd(), "chainperm.txt"),
+                              help='Run calculation only on chain permutations in provided file. Default file location is current directory/chainperm.txt')
     shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
@@ -315,11 +326,16 @@ def _process_arguments(parse_res):
             logger.warning(
                 "Warning: --read-fragments is only relevant when --use-chains has been specified, so --use-chains has been specified automatically")
 
-        dictionary_args['select_mols'] = _parse_ranges_and_numbers(parse_res.select_mols)
-        dictionary_args['select_atoms'] = _parse_ranges_and_numbers(parse_res.select_atoms)
-        dictionary_args['ignore_atoms'] = _parse_ranges_and_numbers(parse_res.ignore_atoms)
-        dictionary_args['select_chains'] = _parse_char_ranges(parse_res.select_chains)
-        dictionary_args['select_res'] = _parse_ranges_and_numbers(parse_res.select_res, False)
+        dictionary_args['select_mols'] = _parse_ranges_and_numbers(
+            parse_res.select_mols)
+        dictionary_args['select_atoms'] = _parse_ranges_and_numbers(
+            parse_res.select_atoms)
+        dictionary_args['ignore_atoms'] = _parse_ranges_and_numbers(
+            parse_res.ignore_atoms)
+        dictionary_args['select_chains'] = _parse_char_ranges(
+            parse_res.select_chains)
+        dictionary_args['select_res'] = _parse_ranges_and_numbers(
+            parse_res.select_res, False)
 
     def parse_output(dictionary_args):
         dictionary_args['out_file_name'] = parse_res.output
@@ -355,12 +371,14 @@ def _process_arguments(parse_res):
             dictionary_args["command_file"] = parse_res.comfile
             dictionary_args["old_command"] = parse_res.old_cmd
         else:
-            dictionary_args['operation'] = Operation(parse_res.symmetry, parse_res.sn_max)
+            dictionary_args['operation'] = Operation(
+                parse_res.symmetry, parse_res.sn_max)
             dictionary_args['normalizations'] = parse_res.normalize
 
             if parse_res.command == 'exact':
                 if parse_res.output_perms and parse_res.parallel:
-                    logger.warning("cannot output perms while running a calculation in parallel")
+                    logger.warning(
+                        "cannot output perms while running a calculation in parallel")
 
             if parse_res.command == 'approx':
                 # choose dir:
@@ -368,7 +386,8 @@ def _process_arguments(parse_res):
                 dictionary_args['get_orthogonal'] = not parse_res.no_orthogonal
                 if parse_res.fibonacci is not None:
                     dictionary_args["num_dirs"] = parse_res.fibonacci
-                    dictionary_args["fibonacci"] = True  # doing this before previous line causes weird bug
+                    # doing this before previous line causes weird bug
+                    dictionary_args["fibonacci"] = True
                 dir = parse_res.dir
                 if dir:
                     dictionary_args['dirs'] = [dir]
@@ -377,20 +396,24 @@ def _process_arguments(parse_res):
                 if parse_res.approx_algorithm == "many-chains":
                     dictionary_args['use_chains'] = True
                     if dictionary_args['chain_perm_file_name']:
-                        raise ValueError("error: argument --many-chains not allowed with argument --input-chain-perm")
+                        raise ValueError(
+                            "error: argument --many-chains not allowed with argument --input-chain-perm")
 
                 if parse_res.chain_perm_file_name:
                     dictionary_args['use_chains'] = True
 
                 if parse_res.selective is not None:
                     dictionary_args["num_selected"] = parse_res.selective
-                    dictionary_args["selective"] = True  # doing this before previous line causes weird bug
+                    # doing this before previous line causes weird bug
+                    dictionary_args["selective"] = True
 
                 if parse_res.parallel_dirs is not None:
                     if parse_res.parallel:
-                        raise ValueError("Cannot specify --parallel and --parallel-dirs at same time")
+                        raise ValueError(
+                            "Cannot specify --parallel and --parallel-dirs at same time")
                     dictionary_args['pool_size'] = parse_res.parallel_dirs
-                    dictionary_args['parallel_dirs'] = True  # doing this before previous line causes weird bug
+                    # doing this before previous line causes weird bug
+                    dictionary_args['parallel_dirs'] = True
 
                     # outputs:
 
@@ -404,7 +427,8 @@ def _process_arguments(parse_res):
         if os.path.exists(out_file_name) and not parse_res.overwrite:
             if not os.path.isfile(out_file_name):
                 head, tail = os.path.split(out_file_name)
-                dictionary_args['out_file_name'] = os.path.join(head, tail + timestamp)
+                dictionary_args['out_file_name'] = os.path.join(
+                    head, tail + timestamp)
             else:  # for a file, rather than a folder-- only relevant for legacy
                 filename = Path.name(out_file_name)
                 fileext = Path.suffix(out_file_name)
@@ -422,13 +446,14 @@ def _process_arguments(parse_res):
 
 
 def get_parsed_args(args):
-    parser = _create_parser()
+    parser = _create_parser(cmd = args[0])
     parsed_args = parser.parse_args(args)
     if parsed_args.version:
         print("CSM version:", __version__)
         sys.exit()
     if parsed_args.command is None:
-        parser.error("You must select a command from: read, exact, approx, trivial, write")
+        parser.error(
+            "You must select a command from: read, exact, approx, trivial, write")
     processed_args = _process_arguments(parsed_args)
     return processed_args
 
@@ -481,7 +506,6 @@ def old_cmd_converter(cmd):
         if arg in allowed_args:
             final_args.append(arg)
             prev_arg_fine = True
-
 
         else:
             prev_arg_fine = False
