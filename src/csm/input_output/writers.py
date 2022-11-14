@@ -357,7 +357,7 @@ class MoleculeWrapper:
                 else:
                     description = self.moleculedata[key] + "\n" + description
             self.moleculedata[key] = description
-            
+
         elif self.format == "xyz":
             old_title = self.obmol.GetTitle()
             if description not in old_title:
@@ -412,6 +412,7 @@ class MoleculeWrapper:
         if self.format == "csm":
             return
         original_title = original_title if original_title else self.obmol.GetTitle()
+        original_title = original_title.strip('./')
         new_title = original_title + "  "
         if self.metadata.appellation() not in original_title:
             new_title += self.metadata.appellation() + " "

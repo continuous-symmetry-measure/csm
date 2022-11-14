@@ -113,6 +113,7 @@ def get_command_args(command_file, old_command=True, **dictionary_args):
 
 
 def csm_run(args=[]):
+    formatters.csm_out_pipe = sys.stdout
     # get command
     if not args:
         args = sys.argv[1:]
