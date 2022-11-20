@@ -185,6 +185,8 @@ def write(**dictionary_args):
         for molecule in mols:
             mol_writer.write(file, np.array(molecule.Q), consecutive=True, model_number=model_number, obmols=molecule.obmol)
             model_number += 1
+        if out_format == 'pdb':
+            file.write("END\n")
     print(f"The result saved on the file: {out_filename}")
 
 
