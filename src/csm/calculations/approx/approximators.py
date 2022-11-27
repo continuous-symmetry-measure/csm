@@ -12,7 +12,7 @@ from csm.calculations.approx.perm_builders import _OptionalLogger, _HungarianPer
 from csm.calculations.approx.statistics import SingleDirectionStatistics, ApproxStatistics
 from csm.calculations.basic_calculations import CalculationTimeoutError, check_timeout
 from csm.calculations.basic_calculations import now, run_time
-from csm.calculations.constants import MAXDOUBLE, CSM_THRESHOLD
+from csm.calculations.constants import MAX_DOUBLE, CSM_THRESHOLD
 from csm.calculations.data_classes import CSMState, CSMResult, BaseCalculation
 from csm.calculations.exact_calculations import ExactCalculation
 
@@ -39,20 +39,20 @@ class SingleDirApproximator(_OptionalLogger):
         self.timeout = timeout
         self.start = datetime.datetime.now()
 
-    def _create_perm_from_dir(self, dir, chainperm):
-        return self.perm_from_dir_builder.create_perm_from_dir(dir, chainperm)
+    def _create_perm_from_dir(self, dir, chain_perm):
+        return self.perm_from_dir_builder.create_perm_from_dir(dir, chain_perm)
 
     def calculate(self, dir):
         statistics = SingleDirectionStatistics(dir)
         statistics.start_clock()
-        best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAXDOUBLE)
+        best = CSMState(molecule=self._molecule, op_type=self._op_type, op_order=self._op_order, csm=MAX_DOUBLE)
         self._log("Calculating for initial direction: ", dir)
-        for chainperm in self._chain_permutations:
+        for chain_perm in self._chain_permutations:
             if len(self._chain_permutations) > 1:
-                self._log("\tCalculating for chain permutation ", chainperm)
+                self._log("\tCalculating for chain permutation ", chain_perm)
             best_for_chain_perm = old_results = CSMState(molecule=self._molecule, op_type=self._op_type,
                                                          op_order=self._op_order,
-                                                         csm=MAXDOUBLE, dir=dir)
+                                                         csm=MAX_DOUBLE, dir=dir)
             i = 0
             while True:
                 check_timeout(self.start, self.timeout)
@@ -61,7 +61,7 @@ class SingleDirApproximator(_OptionalLogger):
                 self._log("\t\titeration", i, ":")
 
                 try:
-                    perm = self._create_perm_from_dir(old_results.dir, chainperm)
+                    perm = self._create_perm_from_dir(old_results.dir, chain_perm)
                     interim_results = ExactCalculation.exact_calculation_for_approx(self._operation,
                                                                                     self._molecule, perm=perm)
                 except CalculationTimeoutError as e:
@@ -183,8 +183,8 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
         return best_result
 
     def _calculate_for_directions(self, operation, dirs, max_iterations):
-        best = CSMState(molecule=self.molecule, op_type=operation.type, op_order=operation.order, csm=MAXDOUBLE,
-                        num_invalid=MAXDOUBLE)
+        best = CSMState(molecule=self.molecule, op_type=operation.type, op_order=operation.order, csm=MAX_DOUBLE,
+                        num_invalid=MAX_DOUBLE)
         single_dir_approximator = SingleDirApproximator(operation, self.molecule,
                                                         self.perm_builder, self._log,
                                                         self.timeout, max_iterations=max_iterations, chain_perms=self.chain_perms)
@@ -242,7 +242,7 @@ class ParallelApprox(ApproxCalculation):
         pool_outputs = pool.map(single_dir_approximator.calculate, dirs)
         pool.close()
         pool.join()
-        best_result = CSMState(csm=MAXDOUBLE)
+        best_result = CSMState(csm=MAX_DOUBLE)
         self.statistics = ApproxStatistics(dirs)
         for (result, statistics) in pool_outputs:
             dir = statistics.start_dir

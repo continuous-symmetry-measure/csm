@@ -5,7 +5,7 @@ from csm.fast import CythonPermuter, SinglePermPermuter
 from csm.fast import calc_ref_plane
 
 from csm.calculations.basic_calculations import check_perm_cycles, now, run_time
-from csm.calculations.constants import MINDOUBLE, MAXDOUBLE
+from csm.calculations.constants import MIN_DOUBLE, MAX_DOUBLE
 from csm.calculations.data_classes import CSMState, CSMResult, Operation, BaseCalculation
 from csm.calculations.permuters import ConstraintPermuter
 from csm.input_output.formatters import csm_log as print
@@ -106,7 +106,7 @@ class ExactCalculation(BaseCalculation):
         perm=self.perm
         no_constraint=self.no_constraint
 
-        best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAXDOUBLE)
+        best_csm = CSMState(molecule=molecule, op_type=op_type, op_order=op_order, csm=MAX_DOUBLE)
         traced_state = CSMState(molecule=molecule, op_type=op_type, op_order=op_order)
 
         if perm:
@@ -135,7 +135,7 @@ class ExactCalculation(BaseCalculation):
 
         self.statistics = ExactStatistics(permuter)
 
-        if best_csm.csm == MAXDOUBLE:
+        if best_csm.csm == MAX_DOUBLE:
             # failed to find csm value for any permutation
             # best_csm = best_csm._replace(csm=csm, dir=dir, perm=list(calc_state.perm))
             raise CSMValueError("Failed to calculate a csm value for %s %d" % (op_type, op_order), best_csm)

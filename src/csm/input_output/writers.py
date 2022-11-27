@@ -18,7 +18,7 @@ from csm.molecule.molecule import MoleculeReader
 
 def write_array_to_file(f, arr, add_one=False, separator=" "):
     '''
-    :param f: filestream being written to
+    :param f: file stream being written to
     :param arr: array being written
     :param add_one: some arrays should be written with 1-index instead of 0 index, if so add_one=True
     :param separator: default is " "
@@ -140,10 +140,12 @@ class MoleculeWriter:
     def _write_obm_molecule(self, f, coordinates, consecutive=False, model_number=None, obmols=None):
         """
         Write an Open Babel molecule to file
-        :param obmol: The molecule
-        :param format: The output format
         :param f: The file to write output to
-        :param legacy: replace end with endmdl
+        :param coordinates
+        :param consecutive: replace end with endmdl
+        :param model_number
+        :param obmol: The molecule
+
         """
         if model_number is not None and self.format.lower() == "pdb":
             model_str = "MODEL     {}\n".format(model_number)
@@ -151,9 +153,7 @@ class MoleculeWriter:
 
         if self.molecule_wrapper:
             obmols = self.molecule_wrapper.set_obm_coordinates(coordinates)
-        elif obmols is not None:
-            pass
-        else:
+        elif obmols is None:
             raise TypeError("obmols is None")
 
         if len(obmols) > 1:
@@ -172,11 +172,26 @@ class MoleculeWriter:
             if consecutive:
                 if str.lower(self.format) == 'pdb':
                     s = re.sub(r"MODEL\s+\d+", "", s)
-                    s = s.replace("END", "ENDMDL")
+                    s = re.sub(r"(END)$", 'ENDMDL\n', s.rstrip(" \n"))
                 if str.lower(self.format) in ['mol']:
                     s += "\n$$$$\n"
+
+            if str.lower(self.format) == 'pdb':
+                s = self.add_ter_record(s)
+
             f.write(s)
 
+    def add_ter_record(self, s:str):
+        try:
+            # https://regex101.com/r/ed5cTX/1
+            regex = r"(?P<line_before_chain>ATOM.{17}([A-Z]).{56,58}\n)(?P<line_after_chain>ATOM.{17}(?!\2)([A-Z]).{56,58}\n)"
+            # regex = re.compile(regex, )
+            subst = "${line_before_chain}TER\n${line_after_chain}"
+            subst = "\\1TER\\n\\3"
+            s = re.sub(regex, subst, s, flags=re.MULTILINE) # count=
+        except Exception as ex:
+            print("")
+        return s
 
 class MoleculeWrapper:
     class MoleculeData(object):
@@ -187,7 +202,7 @@ class MoleculeWrapper:
         Required parameters:
           `obmol` -- an Open Babel :obapi:`OBMol`
         Methods and accessor methods are like those of a dictionary except
-        that the data is retrieved on-the-fly from the underlying :obapi:`OBMol`.
+        that the data is retrieved on-the-fly from the underlying :OB api:`OBMol`.
         Example:
 
         >>> mol = readfile("sdf", 'head.sdf').next() # Python 2
@@ -216,7 +231,7 @@ class MoleculeWrapper:
             return [ob.toPairData(x) for x in self._mol.GetData() if
                     x.GetDataType() == ob.PairData or x.GetDataType() == ob.CommentData]
 
-        def _testforkey(self, key):
+        def _test_for_key(self, key):
             if not key in self:
                 raise KeyError("'%s' is not a Key" % key)
 
@@ -242,7 +257,7 @@ class MoleculeWrapper:
             return self._mol.HasData(key)
 
         def __delitem__(self, key):
-            self._testforkey(key)
+            self._test_for_key(key)
             self._mol.DeleteData(self._mol.GetData(key))
 
         def clear(self):
@@ -257,18 +272,18 @@ class MoleculeWrapper:
                 self[k] = v
 
         def __getitem__(self, key):
-            self._testforkey(key)
+            self._test_for_key(key)
             return ob.toPairData(self._mol.GetData(key)).GetValue()
 
         def __setitem__(self, key, value):
             if key in self:
-                pairdata = ob.toPairData(self._mol.GetData(key))
-                pairdata.SetValue(str(value))
+                pair_data = ob.toPairData(self._mol.GetData(key))
+                pair_data.SetValue(str(value))
             else:
-                pairdata = ob.OBPairData()
-                pairdata.SetAttribute(key)
-                pairdata.SetValue(str(value))
-                self._mol.CloneData(pairdata)
+                pair_data = ob.OBPairData()
+                pair_data.SetAttribute(key)
+                pair_data.SetValue(str(value))
+                self._mol.CloneData(pair_data)
 
         def __repr__(self):
             return dict(self.iteritems()).__repr__()
@@ -281,11 +296,11 @@ class MoleculeWrapper:
         self.format = self.metadata.format
         self._molecule_coords="uninitialized"
         if self.format != "csm":
-            self.obmols = self.obms_from_molecule(self.molecule)
+            self.obmols = self.obmol_from_molecule(self.molecule)
             self.obmol = self.obmols[0]
             if not symmetric:
                 self.original_title_obmol = self.obmol.GetTitle()
-            self.moleculedata = MoleculeWrapper.MoleculeData(self.obmol)
+            self.molecule_data = MoleculeWrapper.MoleculeData(self.obmol)
             self.set_initial_molecule_fields(original_title)
         else:
             self.original_title_obmol = None
@@ -304,8 +319,8 @@ class MoleculeWrapper:
         self._set_symmetric_title(symmetric)
         self._set_normalized_title(normalized)
 
-    def obms_from_molecule(self, molecule):
-        obmols, self._obm_atom_indices = molecule.obms_from_molecule()
+    def obmol_from_molecule(self, molecule):
+        obmols, self._obm_atom_indices = molecule.obmol_from_molecule()
         return obmols
 
     def set_obm_coordinates(self, coordinates):
@@ -320,6 +335,7 @@ class MoleculeWrapper:
                 a.SetVector(non_negative_zero(coordinates[i][0]),
                             non_negative_zero(coordinates[i][1]),
                             non_negative_zero(coordinates[i][2]))
+
             except Exception as e:
                 print(e)
         return self.obmols
@@ -345,18 +361,18 @@ class MoleculeWrapper:
             return
         if self.format in ["mol", "sdf"]:
             key = 'Comment'
-            self.moleculedata[key] = description
+            self.molecule_data[key] = description
         elif self.format.lower() == "pdb":
             key = 'REMARK'
             description = "     " + description
             description = self.insert_pdb_new_lines(description)
 
-            if key in self.moleculedata:
-                if description in self.moleculedata[key]:
+            if key in self.molecule_data:
+                if description in self.molecule_data[key]:
                     return  # don't change the description.
                 else:
-                    description = self.moleculedata[key] + "\n" + description
-            self.moleculedata[key] = description
+                    description = self.molecule_data[key] + "\n" + description
+            self.molecule_data[key] = description
 
         elif self.format == "xyz":
             old_title = self.obmol.GetTitle()
@@ -372,10 +388,10 @@ class MoleculeWrapper:
             title = "     " + title
             title = self.insert_pdb_new_lines(title)
 
-            if key in self.moleculedata:
-                title = self.moleculedata[key] + "\n" + title
+            if key in self.molecule_data:
+                title = self.molecule_data[key] + "\n" + title
 
-            self.moleculedata[key] = title
+            self.molecule_data[key] = title
         else:
             old_title = self.obmol.GetTitle()
             new_title = old_title + "  " + title
@@ -388,7 +404,7 @@ class MoleculeWrapper:
             key = "TITLE"
             title = "     " + title
             title = self.insert_pdb_new_lines(title)
-            self.moleculedata[key] = title
+            self.molecule_data[key] = title
         else:
             self.obmol.SetTitle(title)
 
@@ -397,7 +413,7 @@ class MoleculeWrapper:
             return
         original_title = self.obmol.GetTitle()
         if self.format.lower() == "pdb":
-            original_title = self.moleculedata["TITLE"] if "TITLE" in self.moleculedata else ''
+            original_title = self.molecule_data["TITLE"] if "TITLE" in self.molecule_data else ''
 
         if string_to_remove in original_title:
             new_title = original_title.replace(string_to_remove, "")
@@ -405,7 +421,7 @@ class MoleculeWrapper:
             return
 
         if self.format.lower() == "pdb":
-            self.moleculedata["TITLE"] = new_title
+            self.molecule_data["TITLE"] = new_title
         self.obmol.SetTitle(new_title)
 
     def set_initial_molecule_fields(self, original_title=""):
@@ -489,7 +505,7 @@ class LegacyContextWriter(ContextWriter):
 
     def write(self, mol_result):
         if not self.out_file_name:
-            raise ValueError("must provide ouput file for legacy writing")
+            raise ValueError("must provide output file for legacy writing")
         if len(mol_result) > 1 or self.called:
             raise ValueError("Legacy result writing only works for a single molecule and single command")
         writer = LegacyFormatWriter(mol_result[0], self.out_format)
@@ -583,7 +599,7 @@ class ScriptContextWriter(ContextWriter):
         if self.create_json_file:
             self.json_data=[]
 
-        #version and commandline
+        # version and command line
         filename = os.path.join(self.folder, "version.txt")
         with open(filename, 'w') as file:
             if not self.argument_string.startswith('csm'):
@@ -592,7 +608,7 @@ class ScriptContextWriter(ContextWriter):
                 file.write(self.argument_string)
             file.write("CSM VERSION: " + str(__version__))
 
-        #comfile
+        # comfile
         if self.com_file:
             name=Path(self.com_file).name
             filename=os.path.join(self.folder, name)

@@ -1,8 +1,8 @@
 # Constants used in the various calculations
 from datetime import datetime
 
-MINDOUBLE = 1e-8
-MAXDOUBLE = 100000000.0
+MIN_DOUBLE = 1e-8
+MAX_DOUBLE = 100000000.0
 ZERO_IM_PART_MAX = 1e-3
 CSM_THRESHOLD = 0.0001
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from csm.calculations.basic_calculations import create_rotation_matrix, check_perm_cycles, \
     check_perm_structure_preservation
-from csm.calculations.constants import MINDOUBLE
+from csm.calculations.constants import MIN_DOUBLE
 from csm.input_output.formatters import silent_print
 from csm.molecule.molecule import Molecule
 from csm.molecule.normalizations import de_normalize_coords
@@ -80,7 +80,7 @@ class Operation:
             's10': ('SN', 8, "S10 SYMMETRY")
         }
 
-        def isint(s):
+        def check_is_int(s):
             try:
                 int(s)
                 return True
@@ -88,9 +88,9 @@ class Operation:
                 return False
 
         opcode = opcode.lower()
-        if opcode[0] == 'c' and isint(opcode[1:]):
+        if opcode[0] == 'c' and check_is_int(opcode[1:]):
             return OperationCode(type='CN', order=int(opcode[1:]), name=opcode.upper() + ' SYMMETRY')
-        if opcode[0] == 's' and isint(opcode[1:]):
+        if opcode[0] == 's' and check_is_int(opcode[1:]):
             if opcode[1:] == '1':
                 data = _opcode_data[opcode.lower()]
                 return OperationCode(type=data[0], order=data[1], name=data[2])
@@ -234,7 +234,7 @@ class CSMResult(Result):
         Q = molecule.Q
         # step one: get average of all atoms
         init_avg = np.mean(Q, axis=0)
-        # step two: distance between intial and actual: initial - actual, squared
+        # step two: distance between initial and actual: initial - actual, squared
         # step three: normal: distance between initial and initial average, (x-x0)^2 + (y-y0)^2 + (z-z0)^2
         # step four: sum of distances between initial and actual, and then sum of x-y-z
         # step five: sum of normal
@@ -244,7 +244,6 @@ class CSMResult(Result):
             distance += (np.square(Q[i] - symmetric_structure[i]))  # square of difference
             normal += (np.sum(np.square(Q[i] - init_avg)))
         distance = np.sum(distance)
-        # print("yaffa normal =", normal)
         # step six: 100 * step four / step five
         result = 100 * distance / normal
         return result
@@ -396,14 +395,14 @@ class BaseCalculation:
         # First CS
         op = Operation('cs')
         best_result = self._calculate(op, timeout)
-        if best_result.csm > MINDOUBLE:
+        if best_result.csm > MIN_DOUBLE:
             # Try the SN's
             for op_order in range(2, self.operation.order + 1, 2):
                 op = Operation("S" + str(op_order))
                 result = self._calculate(op, timeout)
                 if result.csm < best_result.csm:
                     best_result = result
-                if best_result.csm < MINDOUBLE:
+                if best_result.csm < MIN_DOUBLE:
                     break
         return best_result
     def calculate(self, timeout=300):

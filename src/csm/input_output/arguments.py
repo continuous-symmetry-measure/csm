@@ -67,7 +67,7 @@ def _create_parser(cmd=''):
         parser.add_argument('--select-chains', default=None,
                             help='Select only some chains for calculation, eg A-D,E,F,G-I')
         parser.add_argument('--select-res', default=None,
-                            help='Select only atoms with the specified resuide, eg 1-20,15,17,19-21')
+                            help='Select only atoms with the specified residue, eg 1-20,15,17,19-21')
 
     def output_utility_func(parser):
         parser.add_argument('--out-format',
@@ -146,7 +146,7 @@ def _create_parser(cmd=''):
         output_utility_func(parser_output_args)
 
     parser = OurParser(cmd=cmd, allow_abbrev=False, usage="csm read/write/exact/trivial/approx/comfile [args] \n"
-                                                 "example: csm exact c2 --input mymol.mol --output --keep-structure\n"
+                                                 "example: csm exact c2 --input my_mol.mol --output --keep-structure\n"
                                                  "for specific help with each subprogram and its available arguments, enter csm COMMAND -h\n"
                                                  "e.g. csm exact -h",
                        )
@@ -166,7 +166,7 @@ def _create_parser(cmd=''):
                               help="R|the file that contains the commands, default is cmd.txt in current working directory\n"
                                    "the file is formatted as follows:\n"
                                    "each line is a valid command to csm, from the commands exact/approx/trivial.\n"
-                                   "commandname symmetry --optional --additional --arguments\n"
+                                   "command_name symmetry --optional --additional --arguments\n"
                                    "for example, the file contents could be:\n"
                                    "\ttrivial c2\n"
                                    "\tapprox c2 --fibonacci 60\n"
@@ -179,7 +179,7 @@ def _create_parser(cmd=''):
     # READ
     input_args = commands.add_parser('read', help="Read a molecule file into a json in CSM format",
                                      usage="csm read --input filename [optional args]\n"
-                                           "example: csm read mymol.pdb --read-fragments --remove-hy --select-atoms 1-3")
+                                           "example: csm read my_mol.pdb --read-fragments --remove-hy --select-atoms 1-3")
     input_args.add_argument('--input', help='molecule file or folder, default is current working directory',
                             default=os.getcwd(), nargs='?')
 
@@ -196,7 +196,7 @@ def _create_parser(cmd=''):
     # EXACT
     exact_args_ = commands.add_parser('exact', help="Perform an exact CSM calculation", conflict_handler='resolve',
                                       usage='csm exact TYPE [optional args]\n'
-                                            'example: csm exact s4 --input --output myresults/1 --keep-structure --timeout 500')
+                                            'example: csm exact s4 --input --output my_results/1 --keep-structure --timeout 500')
     exact_args = exact_args_.add_argument_group("Args for exact calculation")
     shared_calc_utility_func(exact_args)
     exact_args.add_argument('--use-perm', nargs="?", type=str, default=None, dest='perm_file_name',
@@ -222,7 +222,7 @@ def _create_parser(cmd=''):
     approx_args.add_argument('--no-orthogonal', action='store_true', default=False,
                              help="Don't add orthogonal directions to calculated directions")
     approx_args.add_argument('--use-best-dir', action='store_true', default=False,
-                             help='Only use the best direction (ignored if --fibonacii is used)')
+                             help='Only use the best direction (ignored if --fibonacci is used)')
     approx_args.add_argument('--fibonacci', type=int,
                              help="Use fibonacci sphere to generate N starting directions")
     approx_args.add_argument('--dir', nargs=3, type=float,
@@ -245,7 +245,7 @@ def _create_parser(cmd=''):
     # misc
     approx_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
                              const=os.path.join(os.getcwd(), "chainperm.txt"),
-                             help='Run calculation only on chain permutations in provided file. default file location is current directory/chainperm.txt')
+                             help='Run calculation only on chain permutations in provided file. default file location is current directory/chain_perm.txt')
 
     # outputs
     approx_args.add_argument('--print-approx', action='store_true', default=False,
@@ -255,7 +255,7 @@ def _create_parser(cmd=''):
 
     # TRIVIAL
     trivial_args_ = commands.add_parser('trivial', help="Calculate trivial (identity) CSM", conflict_handler='resolve',
-                                        usage='csm trivial SYMM [optional args]\n'
+                                        usage='csm trivial SYM [optional args]\n'
                                               'example: csm trivial c4 --input --output --permute-chains')
     trivial_args = trivial_args_.add_argument_group(
         "Args for trivial calculation")
@@ -263,10 +263,10 @@ def _create_parser(cmd=''):
     # this is totally equivalent to --use-chains, however --use-chains is under input arguments and I want permute chains to have
     # documentation specifically under calculation arguments for trivial, as it's THE main calculation choice for trivial
     trivial_args.add_argument('--permute-chains', action='store_true', default=False,
-                              help="Run the trivial calculation on each possible chain permutation (atuomatically activates --use-chains")
+                              help="Run the trivial calculation on each possible chain permutation (automatically activates --use-chains")
     trivial_args.add_argument('--input-chain-perm', nargs="?", type=str, default=None, dest='chain_perm_file_name',
                               const=os.path.join(os.getcwd(), "chainperm.txt"),
-                              help='Run calculation only on chain permutations in provided file. Default file location is current directory/chainperm.txt')
+                              help='Run calculation only on chain permutations in provided file. Default file location is current directory/chain_perm.txt')
     shared_normalization_utility_func(trivial_args)
     add_input_output_utility_func(trivial_args_)
     return parser
@@ -363,7 +363,7 @@ def _process_arguments(parse_res):
             if pool_size == 0:
                 pool_size = multiprocessing.cpu_count() - 1
             pool_size = min(pool_size,
-                            multiprocessing.cpu_count())  # do not allow a pool size greater than the number of cpus
+                            multiprocessing.cpu_count())  # do not allow a pool size greater than the number of cpu
             dictionary_args['pool_size'] = pool_size
             dictionary_args['parallel'] = True
 
@@ -431,8 +431,8 @@ def _process_arguments(parse_res):
                     head, tail + timestamp)
             else:  # for a file, rather than a folder-- only relevant for legacy
                 filename = Path.name(out_file_name)
-                fileext = Path.suffix(out_file_name)
-                filename = filename + timestamp + fileext
+                file_ext = Path.suffix(out_file_name)
+                filename = filename + timestamp + file_ext
                 head, tail = os.path.split(out_file_name)
                 dictionary_args['out_file_name'] = os.path.join(head, filename)
 
@@ -486,7 +486,7 @@ def old_cmd_converter(cmd):
     if cmd[:3] == "csm":
         cmd = cmd[3:]
     args = cmd.split()
-    symm = args[0]
+    symmetry = args[0]
     input = args[1]
     output = args[2]
     command = "exact"
@@ -495,7 +495,7 @@ def old_cmd_converter(cmd):
     if "--approx" in args:
         command = "approx"
 
-    final_args = [command, symm]
+    final_args = [command, symmetry]
     allowed_args = get_allowed_args_for_command(command)
 
     prev_arg_fine = False

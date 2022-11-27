@@ -95,7 +95,7 @@ class Chains(OrderedDict):
 
 class MoleculeMetaData:
     '''
-    This class is primarily used to store metadata needed to write results, although format+filecontent+babel_bond
+    This class is primarily used to store metadata needed to write results, although format+file_content+babel_bond
     are sometimes used to recreate a molecule from scratch, see: redo_molecule
 
     format, filename, and babel_bond are set in _initialize_single_molecule
@@ -204,7 +204,7 @@ class Molecule:
     def copy(self):
         # deepcopy is used only for atoms,
         # because atoms are the only property changed between runs of Directions that necessitated copying
-        # (due to call to denormalize)
+        # (due to call to denormalized)
 
         m = Molecule(to_copy=True)
         m._atoms = copy.deepcopy(self.atoms)
@@ -290,18 +290,18 @@ class Molecule:
         m._chains_with_internal_groups = fixed
         m._chain_equivalences = in_dict["chain_equivalences"]
 
-        m._obmol, obm_atom_indices = m.obms_from_molecule()
+        m._obmol, obm_atom_indices = m.obmol_from_molecule()
         m.create_Q()
         m._create_bondset()
         return m
 
-    def obms_from_molecule(self):
+    def obmol_from_molecule(self):
         if self.metadata.format == "csm":
             return [], []
         if self.obmol:
             obmols = [self.obmol]
         elif self.metadata.format == "pdb":
-            obmols = self.obms_from_pdb()
+            obmols = self.obmols_from_pdb()
         else:
             obmols = MoleculeReader._obm_from_strings(self.metadata.file_content,
                                                       self.metadata.format,
@@ -333,7 +333,7 @@ class Molecule:
                 obm_atom_indices.append((mol_index, atom_index))
         return obm_atom_indices
 
-    def obms_from_pdb(self):
+    def obmols_from_pdb(self):
         conv = OBConversion()
         conv.SetInFormat('pdb')
         conv.SetOptions("b", conv.INOPTIONS)
@@ -381,6 +381,13 @@ class Molecule:
 
     @property
     def bondset(self):
+        '''
+        :return: a set of tuples, each representing a pair of atoms with a bond between them
+        '''
+        return self._bondset
+        
+    @property
+    def bond_set(self):
         '''
         :return: a set of tuples, each representing a pair of atoms with a bond between them
         '''
@@ -440,7 +447,7 @@ class Molecule:
                                 [array of indexes belonging to that chain in that equivalence class]
                             }
                         ]
-            self._chains_with_internal_groups= {dicitonary of chains:
+            self._chains_with_internal_groups= {dictionary of chains:
         3. Calculates chain equivalencies. (e.g, chains A and B are equivalent, chains C and D are equivalent)
         """
 
@@ -464,15 +471,15 @@ class Molecule:
             chain: [None] * num_equiv for chain in self.chains}
 
         for group_index, group in enumerate(self.equivalence_classes):
-            chaingroup = {}
+            chain_group = {}
             for atom_index in group:
                 chain_index = self.atoms[atom_index].chain
 
-                # add index to array in chaingroup dict
+                # add index to array in chain_group dict
                 try:
-                    chaingroup[chain_index].append(atom_index)
+                    chain_group[chain_index].append(atom_index)
                 except KeyError:
-                    chaingroup[chain_index] = [atom_index]
+                    chain_group[chain_index] = [atom_index]
                 # add index to classed_chains
                 try:
                     chains_with_internal_groups[chain_index][group_index].append(
@@ -480,8 +487,8 @@ class Molecule:
                 except AttributeError:
                     chains_with_internal_groups[chain_index][group_index] = [
                         atom_index]
-            # add the completed chaingroup dict to group_chains arrat
-            groups_with_internal_chains.append(chaingroup)
+            # add the completed chain_group dict to group_chains array
+            groups_with_internal_chains.append(chain_group)
 
         self._groups_with_internal_chains = groups_with_internal_chains
         self._chains_with_internal_groups = chains_with_internal_groups
@@ -491,13 +498,13 @@ class Molecule:
         chain_equivalences = []
         marked = [False] * len(self.chains)
 
-        for chain_index, chainkey in enumerate(self.chains):
+        for chain_index, chain_key in enumerate(self.chains):
             if marked[chain_index]:
                 continue
             equiv = []
-            for chain2_index, chainkey2 in enumerate(self.chains):
-                # start with a simple length check to spare checking equivalence classes if chains arent same length to begin with
-                # if len(self.chains[chainkey])!=len(self.chains[chainkey2]):
+            for chain2_index, chain_key2 in enumerate(self.chains):
+                # start with a simple length check to spare checking equivalence classes if chains aren't same length to begin with
+                # if len(self.chains[chain_key])!=len(self.chains[chain_key2]):
                 #    continue
                 same_lengths = True
                 for group in groups_with_internal_chains:
@@ -505,7 +512,7 @@ class Molecule:
                         break
                     try:
                         length = len(group[chain_index])
-                    except KeyError:  # that chain is notn in this equivalence group
+                    except KeyError:  # that chain is not in this equivalence group
                         continue
                     try:
                         if length != len(group[chain2_index]):
@@ -530,7 +537,7 @@ class Molecule:
             valency_a = len(self._atoms[a].adjacent)
             valency_b = len(self._atoms[b].adjacent)
 
-            # for each of i's neighbours
+            # for each of i's neighbors
             for i in range(valency_a):
                 found = False
 
@@ -539,7 +546,7 @@ class Molecule:
                         continue
 
                     if atoms_group_num[self._atoms[a].adjacent[i]] == atoms_group_num[self._atoms[b].adjacent[j]]:
-                        # the i-th neighbour of 'a' belongs to the same group as the j-th neighbour of 'b'
+                        # the i-th neighbor of 'a' belongs to the same group as the j-th neighbor of 'b'
                         found = True
                         mark.add(j)
                         break
@@ -685,7 +692,7 @@ class Molecule:
 
         indices_to_remove = set(indices_to_remove)
 
-        # check for bad input 1: index provided that doesnt exist:
+        # check for bad input 1: index provided that doesn't exist:
         set_of_all_atoms = set(range(len(self._atoms)))
         if len(set_of_all_atoms.union(indices_to_remove)) != len(set_of_all_atoms):
             raise ValueError(
@@ -704,7 +711,7 @@ class Molecule:
         self._deleted_atom_indices = indices_to_remove
         self.fixed_indexes = fixed_indexes = [i for i in range(
             len(self))]  # initializing here before the return because we use it when reading permutation
-        if not indices_to_remove:  # relevant if remove-hy was selected but no hydrogen in molecule, or select-atoms selcted every atom
+        if not indices_to_remove:  # relevant if remove-hy was selected but no hydrogen in molecule, or select-atoms selected every atom
             return  # (may as well save time)
 
         # we now store a mapping of each atom to its new index once all relevant atoms have been removed, in order to update connectivity
@@ -806,14 +813,14 @@ class Molecule:
                         "Chain %s of length %d" % (self.chains._indexes_to_strings[chain], len(self.chains[chain])))
                 silent_print(
                     "%d equivalence class%s of chains" % (len(self.chain_equivalences), 'es' if lengths[key] else ''))
-                for chaingroup in self.chain_equivalences:
-                    chainstring = "Group of length " + \
-                        str(len(chaingroup)) + ":"
-                    for index in chaingroup:
-                        chainstring += " "
-                        chainstring += str(
+                for chain_group in self.chain_equivalences:
+                    chain_string = "Group of length " + \
+                        str(len(chain_group)) + ":"
+                    for index in chain_group:
+                        chain_string += " "
+                        chain_string += str(
                             self.chains._indexes_to_strings[index])
-                    silent_print(str(chainstring))
+                    silent_print(str(chain_string))
             # else:
             #    silent_print("Molecule has no chains")
 
@@ -911,8 +918,6 @@ class PDBLine:
         self.residue_name = pdb_line[17:20]
 
         # handle chains
-        # ATOMxxxxxx1xxNxxxLYSxA
-        # HETATMxxxx3xxHxxxHOHxxxxx1
         if self.record_name == 'ATOM':
             chain_designation = self.pdb_line[21]
         if self.record_name == 'HETATM':
@@ -946,7 +951,7 @@ class PDBLine:
         # For example, the symbol FE for iron appears in columns 13-14, whereas the symbol C for carbon appears in column 14 (see Misaligned Atom Names).
         # If an atom name has four characters, however, it must start in column 13 even if the element symbol is a single character (for example, see Hydrogen Atoms).
         # Hydrogen atom records follow the records of all other atoms of a particular residue.
-        # A hydrogen atom name starts with H. The next part of the name is based on the name of the connected nonhydrogen atom.
+        # A hydrogen atom name starts with H. The next part of the name is based on the name of the connected non-hydrogen atom.
         # For example, in amino acid residues, H is followed by the remoteness indicator (if any) of the connected atom, followed by the branch indicator (if any) of the connected atom;
         # if more than one hydrogen is connected to the same atom, an additional digit is appended so that each hydrogen atom will have a unique name.
         # Hydrogen atoms in standard nucleotides and amino acids (other than the rarely seen HXT) are named according to the IUPAC recommendations (Pure Appl Chem 70:117 (1998) [abstract] [PDF]).
@@ -1124,7 +1129,7 @@ class MoleculeReader:
                                                            select_atoms=select_atoms, ignore_atoms=ignore_atoms,
                                                            use_backbone=use_backbone, select_chains=select_chains,
                                                            select_res=select_res)
-            # we initialize mol from within pdb_with_sequence because otherwise equivalnce classes would be overwritten
+            # we initialize mol from within pdb_with_sequence because otherwise equivalence classes would be overwritten
             return mol
 
         if format.lower() == "pdb":
@@ -1251,15 +1256,15 @@ class MoleculeReader:
                 "CSM does not support .txt format openbabel conversions")
         if not babel_bond:
             conv.SetOptions("b", conv.INOPTIONS)
-        notatend = conv.ReadFile(obmol, filename)
-        if not notatend:
+        not_at_end = conv.ReadFile(obmol, filename)
+        if not not_at_end:
             raise ValueError("Error reading file " + filename +
                              " using OpenBabel, with format:", format)
         obmols = []
-        while notatend:
+        while not_at_end:
             obmols.append(obmol)
             obmol = OBMol()
-            notatend = conv.Read(obmol)
+            not_at_end = conv.Read(obmol)
         return obmols
 
     @staticmethod
@@ -1277,30 +1282,30 @@ class MoleculeReader:
         for obmol_id, obmol in enumerate(obmols):
             title_contents = obmol.GetTitle()
             mol_contents.append(mol_string_from_obm(obmol, format))
-            for i, obatom in enumerate(OBMolAtomIter(obmol)):
-                position = (obatom.GetX(), obatom.GetY(), obatom.GetZ())
+            for i, ob_atom in enumerate(OBMolAtomIter(obmol)):
+                position = (ob_atom.GetX(), ob_atom.GetY(), ob_atom.GetZ())
                 if ignore_sym:
                     symbol = "XX"
                 else:
                     # get symbol by atomic number
-                    symbol = GetAtomicSymbol(obatom.GetAtomicNum())
+                    symbol = GetAtomicSymbol(ob_atom.GetAtomicNum())
                 try:
                     if read_fragments:
                         chain = str(obmol_id)
                     else:
-                        chain = obatom.GetResidue().GetChain().strip()
-                    res_num = obatom.GetResidue().GetNum()
+                        chain = ob_atom.GetResidue().GetChain().strip()
+                    res_num = ob_atom.GetResidue().GetNum()
                     atom = Atom(symbol, position, i, use_mass, chain, res_num)
                 except (AttributeError, KeyError):
                     # molecule doesn't have chains, stuck with empty chains
                     atom = Atom(symbol, position, i, use_mass)
                 adjacent = []
-                for neighbour_atom in OBAtomAtomIter(obatom):
-                    adjacent.append(neighbour_atom.GetIdx() - 1)
+                for neighbor_atom in OBAtomAtomIter(ob_atom):
+                    adjacent.append(neighbor_atom.GetIdx() - 1)
                 atom.adjacent = MoleculeReader._remove_multi_bonds(adjacent)
                 atoms.append(atom)
 
-        if not len(atoms):  # a stupid workaround for openbabel 3 bad handling of pdbs
+        if not len(atoms):  # a stupid workaround for openbabel 3 bad handling of pdb
             return None
 
         # add the OBmol to molecule object, if 'read-fragment' is true- set to null.
@@ -1326,20 +1331,20 @@ class MoleculeReader:
                         raise ValueError(
                             "Input Error: Failed reading connectivity for atom " + str(i + 1))
 
-                    neighbours = []
-                    for neighbour_str in line:
+                    neighbors = []
+                    for neighbor_str in line:
                         try:
                             # Indexes in csm file start with 1
-                            neighbour = int(neighbour_str) - 1
+                            neighbor = int(neighbor_str) - 1
                         except ValueError:
                             raise ValueError(
                                 "Input Error: Failed reading input for atom " + str(i + 1))
-                        if neighbour >= len(mol):
+                        if neighbor >= len(mol):
                             raise ValueError(
                                 "Input Error: Failed reading input for atom " + str(i + 1))
-                        neighbours.append(neighbour)
+                        neighbors.append(neighbor)
                     mol.atoms[i].adjacent = MoleculeReader._remove_multi_bonds(
-                        neighbours)
+                        neighbors)
                     i += 1
         except FileNotFoundError:
             raise FileNotFoundError(
@@ -1391,32 +1396,32 @@ class MoleculeReader:
                     raise ValueError(
                         "Input Error: Failed reading connectivity for atom " + str(i + 1))
 
-                neighbours = []
-                for neighbour_str in line:
+                neighbors = []
+                for neighbor_str in line:
                     try:
                         # Indexes in csm file start with 1
-                        neighbour = int(neighbour_str) - 1
+                        neighbor = int(neighbor_str) - 1
                     except ValueError:
                         raise ValueError(
                             "Input Error: Failed reading input for atom " + str(i + 1))
-                    if neighbour >= size:
+                    if neighbor >= size:
                         raise ValueError(
                             "Input Error: Failed reading input for atom " + str(i + 1))
-                    neighbours.append(neighbour)
+                    neighbors.append(neighbor)
 
                 atoms[i].adjacent = MoleculeReader._remove_multi_bonds(
-                    neighbours)
+                    neighbors)
 
-            # chains = Chains() #used to get chain indices???
+            chains = Chains() # used to get chain indices???
             try:
-                numchains = int(f.readline())
-                for i in range(numchains):
+                num_chains = int(f.readline())
+                for i in range(num_chains):
                     line = f.readline().split()
                     chain_name = line[0]
-                    # chains[chain_name]=[]
+                    chains[chain_name] = []
                     for j in range(1, len(line)):
                         atom_index = int(line[j]) - 1
-                        # chains[chain_name].append(atom_index)
+                        chains[chain_name].append(atom_index)
                         atoms[atom_index]._chain = chains.index_map[chain_name]
 
             except:
@@ -1431,7 +1436,7 @@ class MoleculeReader:
         with open(filename, 'r') as file:
             # Count ATOM and HETATM lines, mapping them to our ATOM numbers.
             # In most PDBs ATOM 1 is our atom 0, and ATOM n is our n-1. However, in some cases
-            # there are TER lines in the PDB, ATOMs after the TER are found at n-(TERCOUNT+1) in our list.
+            # there are TER lines in the PDB, ATOMs after the TER are found at n-(TER_COUNT+1) in our list.
             # Some pdb files have multiple models even though we're only reading the first
             atom_map = {}
             cur_atom = 0
@@ -1444,7 +1449,7 @@ class MoleculeReader:
                 record_name = pdb_dict.record_name
                 if record_name in ['ATOM', 'HETATM'] and cur_atom < len(mol):
                     if record_name == 'HETATM':
-                        breakpt = 1
+                        break_pt = 1
                     atom_map[index] = cur_atom
                     if use_backbone:
                         mol._atoms[
@@ -1561,7 +1566,7 @@ class MoleculeReader:
     @staticmethod
     def redo_molecule(in_mol, **kwargs):
         '''
-        when a comfile line argument includes a command that modifes a molecule, we resubmit molecules here to be redone
+        when a comfile line argument includes a command that modifies a molecule, we resubmit molecules here to be redone
         :param in_mol:
         :param kwargs:
         :return:
@@ -1614,9 +1619,9 @@ def select_mols(mols, kwargs):
 
 
 def mol_string_from_obm(obmol, format):
-    obconversion = OBConversion()
-    formatok = obconversion.SetOutFormat(format)
-    if not formatok:
-        raise ValueError("%s is not a recognised Open Babel format" %
+    ob_conversion = OBConversion()
+    format_ok = ob_conversion.SetOutFormat(format)
+    if not format_ok:
+        raise ValueError("%s is not a recognized Open Babel format" %
                          format)
-    return obconversion.WriteString(obmol)
+    return ob_conversion.WriteString(obmol)

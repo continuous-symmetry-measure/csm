@@ -3,7 +3,7 @@ import datetime
 from csm.fast import CythonPermuter
 
 from csm.calculations.basic_calculations import run_time, check_timeout
-from csm.calculations.constants import MAXDOUBLE
+from csm.calculations.constants import MAX_DOUBLE
 from csm.calculations.data_classes import CSMState, CSMResult, BaseCalculation
 from csm.calculations.exact_calculations import ExactCalculation
 from csm.molecule.molecule import MoleculeFactory
@@ -62,19 +62,19 @@ class TrivialCalculation(BaseCalculation):
         self.statistics[operation.op_code]={}
         if molecule.chains and self.use_chains:
             best = CSMState(molecule=molecule, op_type=self.operation.type, op_order=self.operation.order,
-                            csm=MAXDOUBLE)
-            for i, chainperm in enumerate(self.chain_permutations):
+                            csm=MAX_DOUBLE)
+            for i, chain_perm in enumerate(self.chain_permutations):
                 check_timeout(self.start_time, self.timeout)
                 perm = [-1 for i in range(len(molecule))]
-                for f_index in range(len(chainperm)):
+                for f_index in range(len(chain_perm)):
                     f_chain = molecule.chains[f_index]
-                    t_chain = molecule.chains[chainperm[f_index]]
+                    t_chain = molecule.chains[chain_perm[f_index]]
                     for i in range(len(f_chain)):
                         perm[f_chain[i]] = t_chain[i]
                 result = ExactCalculation.exact_calculation_for_approx(operation, molecule, perm=perm)
                 if result.csm < best.csm:
                     best = result
-                self.statistics[operation.op_code][str(chainperm)]={
+                self.statistics[operation.op_code][str(chain_perm)]={
                     "csm":result.csm,
                     "dir":result.dir
                 }

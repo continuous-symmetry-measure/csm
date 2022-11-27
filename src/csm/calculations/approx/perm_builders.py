@@ -4,8 +4,8 @@ import operator
 from csm.fast import CythonPermuter
 from csm.fast import approximate_perm_classic, munkres_wrapper
 from csm.calculations.basic_calculations import array_distance, check_perm_cycles, create_rotation_matrix
-from csm.calculations.constants import MAXDOUBLE
-from csm.calculations.permuters import ContraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter
+from csm.calculations.constants import MAX_DOUBLE
+from csm.calculations.permuters import ConstraintsSelectedFromDistanceListPermuter, ConstraintsOrderedByDistancePermuter
 
 class _OptionalLogger:
     '''
@@ -37,7 +37,7 @@ class _PermFromDirBuilder(_OptionalLogger):
     def get_chain_perms(self):
         return self._chain_permutations
 
-    def create_perm_from_dir(self, dir, chainperm):
+    def create_perm_from_dir(self, dir, chain_perm):
         raise NotImplementedError
 
 
@@ -62,8 +62,8 @@ class _GreedyPermBuilder(_ChainPermsPermBuilder):
     It is not optimized for molecules with many chain permutations.
     '''
 
-    def create_perm_from_dir(self, dir, chainperm):
-        return approximate_perm_classic(self._op_type, self._op_order, self._molecule, dir, chainperm)
+    def create_perm_from_dir(self, dir, chain_perm):
+        return approximate_perm_classic(self._op_type, self._op_order, self._molecule, dir, chain_perm)
 
 
 class _HungarianPermBuilder(_ChainPermsPermBuilder):
@@ -72,8 +72,8 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
          It is not optimized for molecules with many chain permutations.
     '''
 
-    def create_perm_from_dir(self, dir, chainperm):
-        perm = self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chainperm)
+    def create_perm_from_dir(self, dir, chain_perm):
+        perm = self.approximate_perm_hungarian(self._op_type, self._op_order, self._molecule, dir, chain_perm)
         perm = self.cookie_dough(perm)
         return perm
 
@@ -82,12 +82,12 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
         def __init__(self, group_size):
             self.group_size = group_size
             # ##print("Creating DistanceMatrix for group of size ", self.group_size)
-            self.mv_distances = np.ones((group_size, group_size), order="c") * MAXDOUBLE
+            self.mv_distances = np.ones((group_size, group_size), order="c") * MAX_DOUBLE
             self._allowed_rows = np.zeros(group_size, dtype='long')
             self._allowed_cols = np.zeros(group_size, dtype='long')
             # ##print("DistanceMatrix created")
 
-        def add(self, from_val, to_val, distance=MAXDOUBLE):
+        def add(self, from_val, to_val, distance=MAX_DOUBLE):
             self.mv_distances[from_val, to_val] = distance
             self._allowed_rows[from_val] = 1
             self._allowed_cols[to_val] = 1
@@ -97,7 +97,7 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
             self._allowed_cols[to_val] = 0
 
         def get_min_val(self):
-            min = MAXDOUBLE
+            min = MAX_DOUBLE
             min_i = -1
             min_j = -1
             allowed_rows = self._allowed_rows[0]
@@ -121,7 +121,7 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
                 raise ValueError("get_next_in_cycle called with an unavailable row %d" % from_val)
 
             searched_row = self.mv_distances[from_val]
-            min = MAXDOUBLE
+            min = MAX_DOUBLE
             min_i = -1
             for i in range(self.group_size):
                 if self._allowed_cols[i] and not i in constraints:
@@ -145,14 +145,14 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
             ##print(self.mv_distances.base)
             pass
 
-    def cycle_builder(self, chainperm):
+    def cycle_builder(self, chain_perm):
         """
         the only thing this function does is build cycles ON THE BASIS OF CHAINPERM
-        if chainperm has invalid cycles, this will return invalid cycles
-        :param chainperm:
-        :return: a cycle in chainperm
+        if chain_perm has invalid cycles, this will return invalid cycles
+        :param chain_perm:
+        :return: a cycle in chain_perm
         """
-        chainperm_copy = list(chainperm)
+        chainperm_copy = list(chain_perm)
 
         ##print("chainperm_copy", chainperm_copy)
 
@@ -160,12 +160,12 @@ class _HungarianPermBuilder(_ChainPermsPermBuilder):
             ##print(chain_head, index, cycle)
             cycle.append(index)
             chainperm_copy[index] = -1
-            if chainperm[index] == chain_head:
+            if chain_perm[index] == chain_head:
                 ##print("yielding cycle", cycle)
                 yield cycle
                 cycle = []
             else:
-                yield from recursive_cycle_builder(chain_head, chainperm[index], cycle)
+                yield from recursive_cycle_builder(chain_head, chain_perm[index], cycle)
 
         for i, val in enumerate(chainperm_copy):
             ##print("I,val", i,val)
@@ -260,7 +260,7 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
     permutations
     '''
 
-    def create_perm_from_dir(self, dir, chainperm="dont care"):
+    def create_perm_from_dir(self, dir, chain_perm="dont care"):
 
         chain_len = len(self._molecule.chains[0])
         for chain in self._molecule.chains:
@@ -275,7 +275,7 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
         # M= number of fragments in molecule. 0>i>M, 0>j>M
         num_fragments = (len(self._molecule.chains))
         # A1: matrix A of size MxM: initialize with zeros
-        fragment_distance_matrix = np.ones((num_fragments, num_fragments), order="c") * MAXDOUBLE
+        fragment_distance_matrix = np.ones((num_fragments, num_fragments), order="c") * MAX_DOUBLE
         # A2: confirm that there's same number of atoms in each equivalence group between fragment and fragment j
         # if there isn't, we leave M[i,j]=0 and continue to next ij
         # (this is already confirmed in molecule setup, so we will use the equivalent chains from mol.chain_equivalences
@@ -318,7 +318,7 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
         if not group_k:
             return [], []  # the way we built chains with internal groups, groups with no members are None
         size = len(group_k)
-        group_distance_matrix = np.ones((size, size), order="c") * MAXDOUBLE
+        group_distance_matrix = np.ones((size, size), order="c") * MAX_DOUBLE
         # Vi..Vnk are the coordinate vectors of fragment i in equivalence class k
         # Wi..Wnk are the coordinate vectors of fragment j in equivalence class k
         for a, index_v in enumerate(group_k):
@@ -338,7 +338,7 @@ class _ManyChainsPermBuilder(_PermFromDirBuilder):
 
 
 class _StructuredPermBuilder(_PermFromDirBuilder):
-    def create_perm_from_dir(self, dir, chainperm="dontcare"):
+    def create_perm_from_dir(self, dir, chain_perm="dontcare"):
         return self.build_perm_and_state_version_dict(self._op_type, self._op_order, self._molecule, dir)
 
     def build_perm_and_state_version_list(self, op_type, op_order, molecule, dir):
@@ -353,7 +353,7 @@ class _StructuredPermBuilder(_PermFromDirBuilder):
                     distances_list.append(((index_a, index_b), distance))
 
         distances_list.sort(key=operator.itemgetter(1))
-        permuter = ContraintsSelectedFromDistanceListPermuter(self._molecule, self._op_order, self._op_type,
+        permuter = ConstraintsSelectedFromDistanceListPermuter(self._molecule, self._op_order, self._op_type,
                                                               distances_list, timeout=30000)
         state = permuter.permute().__next__()
         self._log("\t\t\t Permutation took ", permuter.run_time, "seconds to find")
