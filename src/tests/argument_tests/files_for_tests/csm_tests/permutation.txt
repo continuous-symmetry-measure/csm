@@ -1,2 +1,0 @@
-#Molecule                #Command  #Permutation
-bis(dth)copper(I).mol    L01_ch    1 2 3 8 5 7 6 4 9 12 11 10 13 
