@@ -9,7 +9,7 @@ import numpy as np
 sys.path.append('src')
 
 from csm.main.openbabel_fix import prepare_openbabel
-prepare_openbabel()  # Make sure the OpenBabel DLL can be found. See file for more informations
+prepare_openbabel()  # Make sure the OpenBabel DLL can be found. See file for more information
 
 from csm import __version__
 from csm.input_output import formatters
@@ -131,7 +131,7 @@ def csm_run(args=[]):
 
     command = dictionary_args["command"]
 
-    # call command funcs that aren't calculate:
+    # call command func that aren't calculate:
     if command == "read":
         formatters.csm_out_pipe = sys.stderr
         try:
@@ -185,8 +185,8 @@ def write(**dictionary_args):
         for molecule in mols:
             mol_writer.write(file, np.array(molecule.Q), consecutive=True, model_number=model_number, obmols=molecule.obmol)
             model_number += 1
-        if out_format == 'pdb':
-            file.write("END\n")
+        if out_format.lower() == 'pdb':
+            file.write("\nEND\n")
     print(f"The result saved on the file: {out_filename}")
 
 
