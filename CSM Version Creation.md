@@ -7,7 +7,11 @@ This document explains the steps taken for a new version to be released.
 - Run all the test (see the [Tests](#tests) section bellow).
 - Choose the new tag, you can [see the previous tags here](https://github.com/continuous-symmetry-measure/csm/tags).  
 - Optional: Update the file src\csm\version.py with the new tag, without the 'v' prefix. (The github action will update the version.py file automatically on the release according to the tag, but you can update it here too for the development process)
-- Commit and push all of your change.
+- Commit and push all of your change:
+```
+git commit -a -m "your message"
+git push
+```
 - Run the code in your terminal from the csm code folder:  
 ```
 git tag [the-new-tag, for example: `v1.3.4`]
@@ -15,6 +19,17 @@ git push --tag
 ```
 - The git-action will start to build the new release, and run all the test on linux. You can [see the process here](https://github.com/continuous-symmetry-measure/csm/actions).
 - Your new release can be found on [The Releases page](https://github.com/continuous-symmetry-measure/csm/releases)  
+
+
+## Upload to PYPI:
+> [Packaging Python Projects](https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-the-distribution-archives)
+- Save all the files of the release on one locally folder (let's call it: *<the_path_to_your_files>*). You can find the files [here](https://github.com/continuous-symmetry-measure/csm/releases).  
+- Create user on PyPi (you need to ask someone to add you to the contributors of the package)
+- Create a token API [here](https://pypi.org/manage/account/token/)
+Run the commands:  
+- `pip install twine`
+- `python -m twine upload *<the_path_to_your_files>*  You will asked for your username and the token (password).
+- Now you can run from everywhere: `pip install csm`.  
 
 
 ---
