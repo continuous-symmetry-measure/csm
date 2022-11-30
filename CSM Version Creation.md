@@ -6,7 +6,7 @@ This document explains the steps taken for a new version to be released.
 ## How to update version:
 - Run all the test (see the [Tests](#tests) section bellow).
 - Choose the new tag, you can [see the previous tags here](https://github.com/continuous-symmetry-measure/csm/tags).  
-- Optional: Update the file src\csm\version.py with the new tag, without the 'v' prefix.
+- Optional: Update the file src\csm\version.py with the new tag, without the 'v' prefix. (The github action will update the version.py file automatically on the release according to the tag, but you can update it here too for the development process)
 - Commit and push all of your change.
 - Run the code in your terminal from the csm code folder:  
 ```
@@ -33,14 +33,15 @@ Running the pytests requires a few simple steps:
 - In the Terminal, create a virtual environment:  
 `py -3.9 -m venv env --prompt "csm"`
 - Activate the environment:  
-  `Activate-Virtenv`
+  (Windows: `Activate-Virtenv`, Linux: `. env/bin/activate`)
 - Once you are inside the virtual environment, run the requirements:  
   `cd src`
-  `.\install_requirements.py`
-- Build:  
-  `.\rebuild.bat`
+  `.\install_requirements.py`  
+  `pip install pytest`  
+- Build (build the c++ classes and copy the result .pyd files to the destination folder):  
+  `.\rebuild.bat` (on linux run the commands from this file)
 - Run the tests:
-  `python -m pytest .\tests\ `  
+  `python -m pytest .\tests\`  
     
 **Running tests on Visual Studio Code:**  
 - Open the project directory in Visual Studio Code.
