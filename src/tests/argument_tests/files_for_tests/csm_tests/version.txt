@@ -1,2 +1,0 @@
-csm approx ch --input bis(dth)copper(I).mol --sn-max 2 --output csm_tests --overwrite
-CSM VERSION: 1.2.6

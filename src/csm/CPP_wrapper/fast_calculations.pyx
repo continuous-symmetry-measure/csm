@@ -10,7 +10,7 @@ from libc.math cimport fabs
 import numpy as np
 cimport numpy as np
 cimport fastcpp
-from csm.calculations.constants import MAXDOUBLE, ZERO_IM_PART_MAX
+from csm.calculations.constants import MAX_DOUBLE, ZERO_IM_PART_MAX
 from libcpp cimport bool
 
 cdef class CalcState
@@ -78,7 +78,7 @@ def calculate_dir(bool is_zero_angle, int op_order, Vector3D lambdas, double lam
     # in the paper dir is called 'm_max'
     if is_zero_angle or op_order == 2:
         # If we are in zero theta case, we should pick the direction matching lambda_max
-        min_dist = MAXDOUBLE
+        min_dist = MAX_DOUBLE
         minarg = 0
 
         for i in range(3):
@@ -123,7 +123,7 @@ cpdef get_lambda_max(Vector3D lambdas, Vector3D m_t_B_2, log=False):
     cdef double coeffs[7]
     #cdef double rounded_coeffs[7]
     cdef complex roots[6]
-    cdef double lambda_max = -MAXDOUBLE
+    cdef double lambda_max = -MAX_DOUBLE
     cdef int i
     cdef int j
     log=False

@@ -18,7 +18,7 @@ DTYPE = np.float64
 
 class ConstraintsBase:
     '''
-    this is the class that defines the functiosn expected to be present in any implementation of a constraints data structure,
+    this is the class that defines the functions expected to be present in any implementation of a constraints data structure,
     based on how the constraints are used in both the ConstraintPermuter and the ConstraintPropagator. If the decision is
     made to change something in the interface here, changes would need to be made in those classes accordingly.
 
@@ -81,7 +81,7 @@ class ConstraintsBase:
     def check(self):
         '''
         check ascertains whether a given set of constraints represents a dead end on the permutation tree
-        when check returns true, the recursivity in the permuter advances another step inwards. hence, an incorrectly
+        when check returns true, the recessivity in the permuter advances another step inwards. hence, an incorrectly
         implemented check can create infinite loops or other unpleasantness
         :return: False if constraints have reached a dead end, True otherwise
         '''
@@ -113,7 +113,7 @@ class ConstraintsBase:
         when backtracking.
 
         The caller calls mark_checkpoint to mark the beginning of a recursion step.
-        matk_checkpoint can be called several times.
+        mark_checkpoint can be called several times.
         :return: Nothing
         """
         raise NotImplementedError
@@ -358,7 +358,7 @@ class ConstraintPropagator:
         return cycle_head == cycle_tail
 
     def handle_cycles(self, constraints, pip, cycle_length, cycle_head, cycle_tail):
-        # This has been moved to its own function because it wasa growing long and confusing
+        # This has been moved to its own function because it was a growing long and confusing
         # NOTE: cycles of length 1 are inherently "handled" in the next two steps.
         # hence, we are only dealing with cycles of length op_order and, possibly, 2 (if SN)
         # a: if there is an atom whose destination* is origin (X->  A->B)
@@ -388,12 +388,12 @@ class ConstraintPropagator:
                     constraints.remove_constraint_from_index(cycle_tail, cycle_head)
 
     def keep_structure(self, constraints, origin, destination):
-        # 1. atoms in A's bondset, can only go to constraints of theirs, that are in B's bondset
+        # 1. atoms in A's bond_set, can only go to constraints of theirs, that are in B's bond_set
         for atom_in_A_bondset in self.molecule.atoms[origin].adjacent:
             try:
                 new_constraints = []
                 for constraint in constraints[atom_in_A_bondset]:
-                    if (destination, constraint) in self.molecule.bondset:
+                    if (destination, constraint) in self.molecule.bond_set:
                         new_constraints.append(constraint)
                         # self._remove(atom_in_A_bondset, constraint)
                 constraints.set_constraint(atom_in_A_bondset, new_constraints)
@@ -617,7 +617,7 @@ class ConstraintsSelectedByDistancePermuter(ConstraintsOrderedByDistancePermuter
         # self.print_branches = True
 
 
-class ContraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
+class ConstraintsSelectedFromDistanceListPermuter(ConstraintPermuter):
     def __init__(self, molecule, op_order, op_type, distances_list, perm_timeout=300, *args, **kwargs):
         super().__init__(molecule, op_order, op_type, keep_structure=True)
         if len(molecule) > 10000:

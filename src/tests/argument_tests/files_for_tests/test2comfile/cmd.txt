@@ -1,0 +1,2 @@
+approx c2 --use-sequence --use-chains --babel-bond --select-chains A,B
+approx c2 --use-sequence --use-chains --babel-bond --select-chains A,B --use-backbone

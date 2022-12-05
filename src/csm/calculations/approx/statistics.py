@@ -1,7 +1,7 @@
 import datetime
 from collections import OrderedDict
 
-from csm.calculations.constants import MAXDOUBLE
+from csm.calculations.constants import MAX_DOUBLE
 from csm.calculations.data_classes import CSMState, get_chain_perm_string
 
 
@@ -16,7 +16,7 @@ class SingleDirectionStatistics:
 
         self.dirs = [] #kept for tests to prove algorithms different
         self._stop_reason = ""
-        self.least_invalid = CSMState(csm=MAXDOUBLE, num_invalid=MAXDOUBLE)
+        self.least_invalid = CSMState(csm=MAX_DOUBLE, num_invalid=MAX_DOUBLE)
 
     def append_sub_direction(self, result):
         self.results.append(result)

@@ -1,6 +1,6 @@
-#CSM #
+# CSM
 
-#About
+# About
 
 The CSM program calculates continuous symmetry and chirality measures of molecules with respect to a given point group G. Molecular coordinates can be provided in either xyz, sdf, mol or pdb format.
 An online calculator is available at: https://csm.ouproj.org.il. 
@@ -12,7 +12,7 @@ An online calculator is available at: https://csm.ouproj.org.il.
 * Input structures can be in the form of a single molecule, concatenated file with multiple structures and a directory of molecules.
 * When connectivity data is missing, OpenBabel is used to deduce it.
 
-###Available commands
+### Available commands
 * comfile - Provide a command file for running calculations
 * read - Read a molecule file into a json in CSM format
 * write - Output the results of the calculation to a file. Must be used with piped input
@@ -20,21 +20,21 @@ An online calculator is available at: https://csm.ouproj.org.il.
 * approx - Approximate the CSM value. Relevant for protein homomers  in pdb file format. Partially tested for large molecules as well.
 * trivial - Use the unit permutation to calculate the CSM for molecules and protein homomers.
 
-## Citations ##
+## Citations
 
 Please cite the CSM using the following:
 
-###Exact algorithm:
+### Exact algorithm:
 
 > Alon G. and Tuvi-Arad I., "Improved algorithms for symmetry analysis: Structure preserving permutations", J. Math. Chem., 56(1), 193-212 (2018).
 
-###Approx algorithm:
+### Approx algorithm:
 
 < Tuvi-Arad I. and Alon G., "Improved Algorithms for Quantifying the Near Symmetry of Proteins: Complete Side Chains Analysis", Journal of Cheminformatics, 11(1): 39 (2019).
 
 < Dryzun C., Zait A. and Avnir D., "Quantitative Symmetry and Chirality - A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells", J. Comput. Chem., 32, 2526-2538 (2011).
 
-###Original Code by Avnir and coworkers:
+### Original Code by Avnir and coworkers:
 
 > Pinsky M., Dryzun C., Casanova D., Alemany P., Avnir D., "Analytical Methods for Calculating Continuous Symmetry Measures and the Chirality Measure", Journal of Computational Chemistry 29(16): 2712-2721 (2008).
 

@@ -3,7 +3,7 @@ from libcpp.vector cimport vector
 import numpy as np
 import scipy.optimize
 cimport numpy as np
-from csm.calculations.constants import MAXDOUBLE
+from csm.calculations.constants import MAX_DOUBLE
 from csm.calculations.basic_calculations import create_rotation_matrix, check_timeout
 
 cdef class Vector3D
@@ -25,12 +25,12 @@ cdef class DistanceMatrix:
     def __init__(self, group_size):
         self.group_size = group_size
         # ##print("Creating DistanceMatrix for group of size ", self.group_size)
-        self.mv_distances = np.ones((group_size, group_size), order="c") * MAXDOUBLE
+        self.mv_distances = np.ones((group_size, group_size), order="c") * MAX_DOUBLE
         self._allowed_rows = np.zeros(group_size, dtype='long')
         self._allowed_cols = np.zeros(group_size, dtype='long')
         # ##print("DistanceMatrix created")
 
-    def add(self, int from_val, int to_val, double distance=MAXDOUBLE):
+    def add(self, int from_val, int to_val, double distance=MAX_DOUBLE):
         self.mv_distances[from_val, to_val] = distance
         self._allowed_rows[from_val] = 1
         self._allowed_cols[to_val] = 1
@@ -42,7 +42,7 @@ cdef class DistanceMatrix:
     def get_min_val(self):
         cdef int i
         cdef int j
-        cdef double min = MAXDOUBLE
+        cdef double min = MAX_DOUBLE
         cdef int min_i = -1
         cdef int min_j = -1
         cdef double tmp
@@ -70,7 +70,7 @@ cdef class DistanceMatrix:
             raise ValueError("get_next_in_cycle called with an unavailable row %d" % from_val)
 
         searched_row = self.mv_distances[from_val]
-        min = MAXDOUBLE
+        min = MAX_DOUBLE
         min_i = -1
         for i in range(self.group_size):
             if self._allowed_cols[i] and not i in constraints:

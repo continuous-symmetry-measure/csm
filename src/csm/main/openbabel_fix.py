@@ -7,9 +7,12 @@
 # This code needs to run before any openbabel imports
 import sys
 import os
+from csm.input_output import formatters
+from csm.input_output.formatters import csm_log as print
 
 openbabel_prepared = False
 def prepare_openbabel():
+    formatters.csm_out_pipe = sys.stderr
     print("prepare_openbabel here")
     global openbabel_prepared
     if openbabel_prepared:
@@ -37,3 +40,4 @@ def prepare_openbabel():
         print("OK")
     openbabel_prepared = True
     print("Done")
+    formatters.csm_out_pipe = sys.stdout

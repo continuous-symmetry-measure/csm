@@ -10,11 +10,24 @@ import pytest
 import shutil
 import platform
 import sys
+from io import StringIO 
 
 from csm.main.csm_run import csm_run, calc, get_parsed_args
 from tests.test_settings import test_dir
 
 test_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files_for_tests")
+
+
+class Capturing_stdout(list):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self.stringio = StringIO()
+        return self
+    def __exit__(self, *args):
+        # self.extend(self.stringio.getvalue()) #.splitlines()
+        # del self.stringio    # free up some memory
+        sys.stdout = self._stdout
+
 
 class RunThings():
     def _run_args(self, args_str, results_folder):
@@ -333,6 +346,42 @@ $$$$
         else:
             assert False
         
+    def test_read_write1(self):
+        cmd1 = r"read --input read-write/test1-inp.pdb --select-chains A,B"
+        with Capturing_stdout() as output_stdout:
+            results1 = csm_run(cmd1.split())
+        sys.stdin = output_stdout.stringio
+        cmd2 = "write --output " + self.results_folder + r"/test1-out.pdb"
+        results2 = csm_run(cmd2.split())
+        sys.stdin = sys.__stdin__ 
+
+    
+    def test_read_write2(self):
+        cmd1 = r"read --input read-write/test1-inp.pdb --select-chains A"
+        with Capturing_stdout() as output_stdout:
+            results1 = csm_run(cmd1.split())
+        sys.stdin = output_stdout.stringio
+        cmd2 = "write "
+        results2 = csm_run(cmd2.split())
+        sys.stdin = sys.__stdin__ 
+        
+    def test_read_write2(self):
+        cmd1 = r"read --input read-write/test1-inp.pdb --select-chains A"
+        with Capturing_stdout() as output_stdout:
+            results1 = csm_run(cmd1.split())
+        sys.stdin = output_stdout.stringio
+        cmd2 = "write "
+        results2 = csm_run(cmd2.split())
+        sys.stdin = sys.__stdin__ 
+        
+    def test_read_write3(self):
+        cmd1 = "read --input read-write/test3-inp.xyz --select-mols 1,3"
+        with Capturing_stdout() as output_stdout:
+            results1 = csm_run(cmd1.split())
+        sys.stdin = output_stdout.stringio
+        cmd2 = "write "
+        results2 = csm_run(cmd2.split())
+        sys.stdin = sys.__stdin__ 
 
     def test_select_atoms_remove_hy(self):
         # --select-atoms removes specific atoms.
@@ -412,6 +461,22 @@ $$$$
 
         assert len(result[0][0].molecule) == len(result_bb[0][0].molecule)
         assert result[0][0].csm == pytest.approx(result[0][0].csm, rel=1e-8)
+
+    def test_comfile_with_err_mol(self):
+        cmd = "comfile test1comfile/cmd.txt --input test1comfile"
+        results = self.run_args(cmd)
+
+        assert len(results) == 2
+        assert len(results[0]) == 2
+        assert len(results[1]) == 2
+
+    def test_comfile_with_babel_bond(self):
+        cmd = "comfile test2comfile/cmd.txt --input test2comfile"
+        results = self.run_args(cmd)
+
+        assert len(results) == 2
+        assert len(results[0]) == 2
+        assert len(results[1]) == 2
 
     def test_ignore_atoms(self):
         def strip(myString):

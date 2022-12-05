@@ -1,4 +1,4 @@
-from csm.calculations.constants import MINDOUBLE
+from csm.calculations.constants import MIN_DOUBLE
 
 __author__ = 'zmbq'
 
@@ -27,7 +27,7 @@ def calculate_norm_factor(coords, center_of_mass):
     norm = math.sqrt(norm)
     # logger.debug("Second normalization factor is %lf and average is (%lf, %lf, %lf)" % (norm, center_of_mass[0], center_of_mass[1], center_of_mass[2]))
 
-    if norm <= MINDOUBLE:  # in the original code, this check was against MINDOUBLE.
+    if norm <= MIN_DOUBLE:  # in the original code, this check was against MIN_DOUBLE.
         raise (ValueError("Normalization factor equals zero"))
         # norm=default_value
 

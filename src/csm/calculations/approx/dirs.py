@@ -6,7 +6,7 @@ import math
 import numpy as np
 from csm.fast import external_get_eigens as cppeigen
 
-from csm.calculations.constants import MINDOUBLE
+from csm.calculations.constants import MIN_DOUBLE
 from csm.input_output.formatters import csm_log as print
 
 MIN_GROUPS_FOR_OUTLIERS = 10
@@ -153,10 +153,10 @@ class ClassicDirectionChooser(DirectionChooser):
         added_dirs = list(dirs)
 
         for dir in dirs:
-            if math.fabs(dir[0]) < MINDOUBLE:
+            if math.fabs(dir[0]) < MIN_DOUBLE:
                 dir1 = [1.0, 0.0, 0.0]
                 dir2 = [0.0, -dir[2], dir[1]]
-            elif math.fabs(dir[1]) < MINDOUBLE:
+            elif math.fabs(dir[1]) < MIN_DOUBLE:
                 dir1 = [-dir[2], 0.0, dir[0]]
                 dir2 = [0.0, 1.0, 0.0]
             else:

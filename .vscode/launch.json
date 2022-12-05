@@ -4,8 +4,41 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
-        
+        {
+            "name": "comfile",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/csm/main/csm_run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            // csm comfile cmd.txt --input . --output out-c3
+            // csm comfile cmd.txt --input . --output out-test2
+            "args": [
+                "comfile",
+                "C:\\Users\\chana\\Source\\csm\\for_csm\\test2\\cmd.txt",
+                "--input",
+                "C:\\Users\\chana\\Source\\csm\\for_csm\\test2",
+                "--output",
+                "C:\\Users\\chana\\Source\\csm\\for_csm\\test2\\out-test2"
+            ]
+        },
+        {
+            "name": "read | write",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/csm/main/csm_run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            // python .\src\csm\main\csm_run.py read C:\Users\chana\Source\csm\for_csm\read-write\test1-inp.pdb 
+            // --select-chains A,B | python .\src\csm\main\csm_run.py
+            //  write C:\Users\chana\Source\csm\for_csm\read-write\test1-out-chana.pdb
+            "args": [
+                "read",
+                "C:\\Users\\chana\\Source\\csm\\for_csm\\read-write\\test1-inp.pdb",
+                "--select-chains",
+                "A,B"
+            ]
+        },
         {
             "name": "CSM",
             "type": "python",
@@ -17,15 +50,30 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-
             // approx c2 --input 4yu4-protein.pdb --use-sequence --use-backbone --use-chains --select-chains A,C
-            "args": ["approx", "c2", "--input", 
-                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\4yu4-protein.pdb"
-                , "--use-sequence"
-                , "--use-backbone"
-                , "--use-chains"
-                , "--select-chains", "E-F"
-               ]
-        }
+            "args": [
+                "approx",
+                "c2",
+                "--input",
+                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\4yu4-protein.pdb",
+                "--use-sequence",
+                "--use-backbone",
+                "--use-chains",
+                "--select-chains",
+                "E-F"
+            ]
+        },
+        {
+            "name": "help",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/csm/main/csm_run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "write",
+                "--help"
+            ]
+        },
     ]
 }

@@ -4,11 +4,15 @@ import multiprocessing
 import os
 import sys
 import timeit
+import numpy as np
+
+sys.path.append('src')
 
 from csm.main.openbabel_fix import prepare_openbabel
-prepare_openbabel()  # Make sure the OpenBabel DLL can be found. See file for more informations
+prepare_openbabel()  # Make sure the OpenBabel DLL can be found. See file for more information
 
 from csm import __version__
+from csm.input_output import formatters
 from csm.calculations import Approx, Trivial, Exact, ParallelApprox
 from csm.calculations.approx.dirs import get_direction_chooser
 from csm.calculations.data_classes import FailedResult, CSMResult
@@ -18,7 +22,8 @@ from csm.input_output.formatters import silent_print
 from csm.input_output.readers import read_molecules, read_mols_from_std_in, read
 from csm.input_output.readers import read_perm, read_from_sys_std_in
 from csm.input_output.writers import SimpleContextWriter, ScriptContextWriter, PipeContextWriter, LegacyContextWriter, \
-    get_line_header
+    get_line_header, MoleculeWriter
+from csm.molecule.molecule import Molecule
 from csm.main.normcsm import norm_calc
 from csm.molecule.molecule import MoleculeReader
 from datetime import datetime
@@ -108,11 +113,13 @@ def get_command_args(command_file, old_command=True, **dictionary_args):
 
 
 def csm_run(args=[]):
+    formatters.csm_out_pipe = sys.stdout
     # get command
     if not args:
         args = sys.argv[1:]
-    print("CSM version %s" % __version__)
-    print(" ".join(args))
+    if 'read' not in args:
+        print("CSM version %s" % __version__)
+        print(" ".join(args))
 
     dictionary_args = get_parsed_args(args)
     dictionary_args["argument_string"] = " ".join(args) + "\n"
@@ -120,14 +127,19 @@ def csm_run(args=[]):
         from csm.calculations.constants import set_global_timeout
         set_global_timeout(dictionary_args["global_timeout"])
     if dictionary_args["pipe"]:
-        from csm.input_output import formatters
         formatters.csm_out_pipe = sys.stderr
 
     command = dictionary_args["command"]
 
-    # call command funcs that aren't calculate:
+    # call command func that aren't calculate:
     if command == "read":
-        return read(**dictionary_args)
+        formatters.csm_out_pipe = sys.stderr
+        try:
+            return read(**dictionary_args)
+        except Exception as ex:
+            formatters.csm_out_pipe = sys.stdout
+            print("error in read", str(ex))
+            return {"error in read": str(ex)}
 
     elif command == "write":
         return write(**dictionary_args)
@@ -153,19 +165,31 @@ def get_context_writer(dictionary_args):
 
 
 def write(**dictionary_args):
-    print('~~~~~~~~~~~~~~~ENTERING FUNCTION write()~~~~~~~~~~~~~')
-
-    print('raw_json = read_from_sys_std_in()')
     raw_json = read_from_sys_std_in()
-    
-    print('less_raw_json = json.loads(raw_json)')
-
+    if "error in read" in raw_json:
+        print("Error in the read step:", raw_json.rsplit('error in read', 1)[-1], file=sys.stdout)
+        return
     less_raw_json = json.loads(raw_json)
     
-    results = [[CSMResult.from_dict(result_dict) for result_dict in mol_arr] for mol_arr in less_raw_json]
-    context_writer = get_context_writer(dictionary_args)
-    writer = context_writer(results, context_writer=context_writer, **dictionary_args)
-    writer.write()
+    mols: list[Molecule] = [Molecule.from_dict(mol_dict) for mol_dict in less_raw_json]
+    if not mols:
+        raise ValueError("write- Not found molecules")
+
+    out_format = mols[0].metadata.format
+    out_filename = dictionary_args.get('out_file_name', 'result-molecule')
+    if not out_filename.endswith(out_format):
+        out_filename = out_filename + f'.{out_format}'
+    mol_writer = MoleculeWriter(None, out_format=out_format)
+    model_number = 0
+    with open(out_filename, 'w') as file:
+        for molecule in mols:
+            mol_writer.write(file, np.array(molecule.Q), consecutive=True, model_number=model_number, obmols=molecule.obmol)
+            model_number += 1
+        if out_format.lower() == 'pdb':
+            file.write("\nEND\n")
+    print(f"The result saved on the file: {out_filename}")
+
+
 
 
 def calc(dictionary_args):
@@ -178,6 +202,7 @@ def calc(dictionary_args):
 
     # get molecules
     if dictionary_args["in_file_name"]:
+        dictionary_args['comfile_first_read'] = dictionary_args["command"] == "comfile"
         molecules = read_molecules(**dictionary_args)
     elif dictionary_args["pipe"]:
         molecules = read_mols_from_std_in()
@@ -200,17 +225,22 @@ def calc(dictionary_args):
     # process arguments into flat and unflat arrays
     total_args = []
     for mol_index, molecule in enumerate(molecules):
-        mol_args = []
-        for line, args_dict, modifies_molecule in args_array:
-            args_dict["molecule"] = molecule
-            args_dict["line"] = line
-            # handle modifying molecules:
-            if modifies_molecule:
-                new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)
-                new_molecule.metadata.index = mol_index
-                args_dict["molecule"] = new_molecule
-            mol_args.append(dict(args_dict))
-        total_args.append(mol_args)
+        try:
+            mol_args = []
+            for line, args_dict, modifies_molecule in args_array:
+                args_dict["molecule"] = molecule
+                args_dict["line"] = line
+                # handle modifying molecules:
+                if modifies_molecule:
+                    new_molecule = MoleculeReader.redo_molecule(molecule, **args_dict)
+                    new_molecule.metadata.index = mol_index
+                    args_dict["molecule"] = new_molecule
+                mol_args.append(dict(args_dict))
+            total_args.append(mol_args)
+        except Exception as ex:
+            print(f"Error with the molecule {molecule.metadata.filepath}:")
+            print(ex)
+            pass # continue with the rest of the molecules
 
     # run the calculation, in parallel
     if dictionary_args["parallel"]:
@@ -306,4 +336,5 @@ def run_no_return(args=[]):
 if __name__ == '__main__':
     timer = timeit.Timer(lambda: csm_run(args=sys.argv[1:]))
     time = timer.timeit(number=1)
-    print("-----\nRuntime: " + str(time) + " seconds")
+    if 'read' not in sys.argv[1:]:
+        print("-----\nRuntime: " + str(time) + " seconds")

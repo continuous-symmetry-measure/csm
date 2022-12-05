@@ -54,10 +54,10 @@ def create_rotation_matrix(iOp, op_type, op_order, dir):
     angle = 0.0 if is_zero_angle else 2 * np.pi * iOp / op_order
     factor = -1 if is_improper and (iOp % 2) == 1 else 1
 
-    # The rotation matrix is calculated similarly to the Rodrigues rotation matrix. The only
+    # The rotation matrix is calculated similarly to the Rodriguez rotation matrix. The only
     # difference is that the matrix is also a reflection matrix when factor is -1.
     #
-    # This is why we took the old C++ code instead of applying the Rodrigues formula directly.
+    # This is why we took the old C++ code instead of applying the Rodriguez formula directly.
     for s in range(3):
         for t in range(3):
             ang = np.cos(angle) if s == t else 0
@@ -74,7 +74,7 @@ def check_perm_cycles(perm, operation):
     :param op_order: 
     :param op_type: 
     :return: the number of illegal cycles, the number of molecules in illegal cycles, a dictionary of cycle lengths-
-    with key =length cycle, val= mnumber of cycles of that length, and an array of the indices in bad cycles
+    with key=length cycle, val=number of cycles of that length, and an array of the indices in bad cycles
     '''
     op_order = operation.order
     op_type = operation.type
@@ -129,16 +129,16 @@ def check_perm_structure_preservation(mol, perm):
     :param perm: the permutation whose structure preservation is being measured
     :return: percent of bonds that are preserved
     '''
-    if len(mol.bondset) == 0:
+    if len(mol.bond_set) == 0:
         raise ValueError("Molecule does not have any bond information")
 
     broken = 0
     for origin, destination in enumerate(perm):
         for adjacent in mol.atoms[origin].adjacent:
-            if (destination, perm[adjacent]) not in mol.bondset:
+            if (destination, perm[adjacent]) not in mol.bond_set:
                 broken += 1
 
-    percent_structure = (len(mol.bondset) - broken) / len(mol.bondset)
+    percent_structure = (len(mol.bond_set) - broken) / len(mol.bond_set)
 
     return percent_structure
 
