@@ -40,13 +40,13 @@
             ]
         },
         {
-            "name": "CSM",
+            "name": "approx pdb",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/src/csm/main/csm_run.py",
             "cwd": "${workspaceFolder}/src",
             "console": "integratedTerminal",
-            "justMyCode": true,
+            "justMyCode": false,
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
@@ -55,12 +55,12 @@
                 "approx",
                 "c2",
                 "--input",
-                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\4yu4-protein.pdb",
+                "${workspaceFolder}/src/tests/argument_tests/files_for_tests/4yu4-protein.pdb",
                 "--use-sequence",
                 "--use-backbone",
                 "--use-chains",
                 "--select-chains",
-                "E-F"
+                "A,C"
             ]
         },
         {

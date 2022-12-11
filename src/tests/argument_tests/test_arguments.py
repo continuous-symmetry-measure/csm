@@ -259,6 +259,11 @@ $$$$
         else:
             assert False
 
+    def test_basic_pdb(self): 
+        cmd = "approx c2 --input 1m2d_bb.pdb --use-sequence --use-backbone --use-chains"
+        results = self.run_args(cmd)
+        assert results[0][0].csm > 0
+
     def test_select_chains(self):
         cmd = "approx c2 --input 4yu4-protein.pdb --use-sequence --use-backbone --use-chains --select-chains A,C"
         results = self.run_args(cmd)
