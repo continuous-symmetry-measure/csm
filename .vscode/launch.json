@@ -75,5 +75,40 @@
                 "--help"
             ]
         },
+        {
+            "name": "help",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/csm/main/csm_run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "write",
+                "--help"
+            ]
+        },
+        {
+            "name": "approx sdf remove-hy",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/csm/main/csm_run.py",
+            "cwd": "${workspaceFolder}/src",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            // approx c2 --input test-approx.sdf --output c2-test-approx-noH --remove-hy
+            "args": [
+                "trivial",
+                "--verbose",
+                "c2",
+                "--input",
+                "${workspaceFolder}/src/tests/argument_tests/files_for_tests/test-approx.sdf",
+                "--output",
+                "c2-test-approx-noH"
+                //,"--remove-hy"
+            ]
+        },
     ]
 }

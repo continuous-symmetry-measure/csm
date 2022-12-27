@@ -586,10 +586,8 @@ class ScriptContextWriter(ContextWriter):
         # approx
         if self.verbose:
             self.approx_folder = os.path.join(self.folder, 'approx')
-            os.makedirs(self.approx_folder, exist_ok=True)
             self.trivial_folder = os.path.join(self.folder, 'trivial')
-            os.makedirs(self.trivial_folder, exist_ok=True)
-
+            
         # legacy
         if self.create_legacy_files:
             self.legacy_folder = os.path.join(self.folder, 'old-csm-output')
@@ -711,6 +709,7 @@ class ScriptContextWriter(ContextWriter):
                 self._write_approx_statistics(filename, command_result.ongoing_statistics["approx"])
 
     def _write_approx_statistics(self, filename, stats_dict):
+        os.makedirs(self.approx_folder, exist_ok=True)
         with open(filename, 'w') as f:
             header_string="Op\tDir Index"
             if self.polar:
@@ -772,6 +771,7 @@ class ScriptContextWriter(ContextWriter):
             if "trivial" in command_result.ongoing_statistics:
                 stats=command_result.ongoing_statistics["trivial"]
                 if "n/a" not in stats:
+                    os.makedirs(self.trivial_folder, exist_ok=True) # create dir only if needed
                     with open(filename, 'w') as f:
                         f.write("op\tchain perm\tcsm\tdir")
                         for op in stats:
