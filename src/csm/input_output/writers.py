@@ -706,7 +706,7 @@ class ScriptContextWriter(ContextWriter):
         
         for result in mol_results:
             index = result.molecule.metadata.index + 1
-            maintains = f'{result.overall_statistics[r"% structure"] * 100:.2f}'
+            maintains = f'{float(result.overall_statistics[r"% structure"] * 100):.2f}'
             invalid_cycles = result.overall_statistics['# bad cycles']
             legal_cycles_percent = 100 - result.overall_statistics[r"% bad cycles"]
             csm = f'{result.csm:.6f}'
