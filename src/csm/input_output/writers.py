@@ -587,6 +587,8 @@ class ScriptContextWriter(ContextWriter):
         if self.verbose:
             self.approx_folder = os.path.join(self.folder, 'approx')
             self.trivial_folder = os.path.join(self.folder, 'trivial')
+            self.preservation_table_file = open(os.path.join(self.folder, 'preservation_table.tsv'), 'w')
+            self.preservation_table_file.write("Index\tStructure preservation (%)\tInvalid cycles\tAtoms in legal cycles (%)\tCSM\n")
             
         # legacy
         if self.create_legacy_files:
@@ -634,6 +636,8 @@ class ScriptContextWriter(ContextWriter):
         self.initial_molecules_file.close()
         self.symmetric_mols_file.close()
         self.extra_file.close()
+        if self.verbose:
+            self.preservation_table_file.close()
 
     def write_csm(self, mol_results):
         f = self.csm_file
@@ -696,6 +700,21 @@ class ScriptContextWriter(ContextWriter):
             f.write(item)
             f.write("\n")
             item = output_strings.fetch()
+
+    def write_preservation_file(self, mol_results):
+        f = self.preservation_table_file
+        
+        for result in mol_results:
+            index = result.molecule.metadata.index + 1
+            maintains = f'{result.overall_statistics[r"% structure"] * 100:.2f}'
+            invalid_cycles = result.overall_statistics['# bad cycles']
+            legal_cycles_percent = 100 - result.overall_statistics[r"% bad cycles"]
+            csm = f'{result.csm:.6f}'
+
+            f.write(f'{index}\t{maintains}\t{invalid_cycles}\t{legal_cycles_percent}\t{csm}\n')
+
+        
+
 
 
     def write_approx_file(self, mol_results):
@@ -793,6 +812,7 @@ class ScriptContextWriter(ContextWriter):
         if self.verbose:
             self.write_approx_file(molecule_results)
             self.write_trivial_file(molecule_results)
+            self.write_preservation_file(molecule_results)
         if self.create_json_file:
             self.json_data.append(molecule_results)
         self.molecule_index += 1

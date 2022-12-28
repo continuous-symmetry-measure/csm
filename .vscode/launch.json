@@ -11,15 +11,15 @@
             "program": "${workspaceFolder}/src/csm/main/csm_run.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            // csm comfile cmd.txt --input . --output out-c3
-            // csm comfile cmd.txt --input . --output out-test2
+            // comfile test1comfile/cmd.txt --input test1comfile
             "args": [
                 "comfile",
-                "C:\\Users\\chana\\Source\\csm\\for_csm\\test2\\cmd.txt",
+                "--verbose",
+                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\test1comfile\\cmd.txt",
                 "--input",
-                "C:\\Users\\chana\\Source\\csm\\for_csm\\test2",
+                "C:\\Sources\\CSM\\csm\\src\\tests\\argument_tests\\files_for_tests\\test1comfile",
                 "--output",
-                "C:\\Users\\chana\\Source\\csm\\for_csm\\test2\\out-test2"
+                "comfile1234"
             ]
         },
         {
@@ -88,7 +88,7 @@
             ]
         },
         {
-            "name": "approx sdf remove-hy",
+            "name": "test-approx.sdf ",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/src/csm/main/csm_run.py",
@@ -98,16 +98,15 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/src"
             },
-            // approx c2 --input test-approx.sdf --output c2-test-approx-noH --remove-hy
+            // approx c2 --input test-approx.sdf --output c2-test-approx
             "args": [
-                "trivial",
-                "--verbose",
+                "approx",
                 "c2",
+                "--verbose",
                 "--input",
                 "${workspaceFolder}/src/tests/argument_tests/files_for_tests/test-approx.sdf",
                 "--output",
-                "c2-test-approx-noH"
-                //,"--remove-hy"
+                "c2-test-approx"
             ]
         },
     ]
