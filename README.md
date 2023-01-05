@@ -26,21 +26,21 @@ Please cite the CSM using the following:
 
 ### Exact algorithm:
 
-> Alon G. and Tuvi-Arad I., "Improved algorithms for symmetry analysis: Structure preserving permutations", J. Math. Chem., 56(1), 193-212 (2018).
+* Alon G. and Tuvi-Arad I., "Improved algorithms for symmetry analysis: Structure preserving permutations", J. Math. Chem., 56(1), 193-212 (2018).
 
 ### Approx algorithm:
 
-< Tuvi-Arad I. and Alon G., "Improved Algorithms for Quantifying the Near Symmetry of Proteins: Complete Side Chains Analysis", Journal of Cheminformatics, 11(1): 39 (2019).
+* Tuvi-Arad I. and Alon G., "Improved Algorithms for Quantifying the Near Symmetry of Proteins: Complete Side Chains Analysis", Journal of Cheminformatics, 11(1): 39 (2019).
 
-< Dryzun C., Zait A. and Avnir D., "Quantitative Symmetry and Chirality - A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells", J. Comput. Chem., 32, 2526-2538 (2011).
+* Dryzun C., Zait A. and Avnir D., "Quantitative Symmetry and Chirality - A Fast Computational Algorithm for Large Structures: Proteins, Macromolecules, Nanotubes, and Unit Cells", J. Comput. Chem., 32, 2526-2538 (2011).
 
 ### Original Code by Avnir and coworkers:
 
-> Pinsky M., Dryzun C., Casanova D., Alemany P., Avnir D., "Analytical Methods for Calculating Continuous Symmetry Measures and the Chirality Measure", Journal of Computational Chemistry 29(16): 2712-2721 (2008).
+* Pinsky M., Dryzun C., Casanova D., Alemany P., Avnir D., "Analytical Methods for Calculating Continuous Symmetry Measures and the Chirality Measure", Journal of Computational Chemistry 29(16): 2712-2721 (2008).
 
-<Zabrodsky, H.; Avnir, D. Continuous symmetry measures .4. Chirality. J. Am. Chem. Soc. 117: 462-473 (1995).
+* Zabrodsky, H.; Avnir, D. Continuous symmetry measures .4. Chirality. J. Am. Chem. Soc. 117: 462-473 (1995).
 
-> Zabrodsky H., Peleg S., Avnir D., "Continuous symmetry measures", Journal of the American Chemical Society 114(20): 7843-7851 (1992).
+* Zabrodsky H., Peleg S., Avnir D., "Continuous symmetry measures", Journal of the American Chemical Society 114(20): 7843-7851 (1992).
 
 
 
@@ -55,7 +55,7 @@ For a list of all available options type `csm --help`
 
 In addition to the possibility of using CSM from the command line, CSM can be accessed programmatically through its API. Details are in the file API.md (including examples).
 
-##Installation
+## Installation
 
 CSM can be installed on Windows and Linux machines.
 
@@ -76,31 +76,29 @@ Run the build cython commands:
 
 ### Build Instructions: Linux
 
-???
-
 Because installing openbabel correctly is a delicate and bug-prone process, an alternative method of installing CSM is available using Conda, and is described in the file conda_install_instructions.txt 
 
 ## Credits
 
 **Science/Math:**
 
-Prof. Inbal Tuvi-Arad, Department of Natural Sciences, The Open University of Israel
+* Prof. Inbal Tuvi-Arad, Department of Natural Sciences, The Open University of Israel
 
-Dr. Gil Alon, Department of Mathematics and Computer Science, The Open University of Israel
+* Dr. Gil Alon, Department of Mathematics and Computer Science, The Open University of Israel
 
-Prof. David Avnir, Institute of Chemistry, The Hebrew University of Jerusalem
+* Prof. David Avnir, Institute of Chemistry, The Hebrew University of Jerusalem
 
 **Programming:**
 
-The Research Software Company (researchsoftware.co.il)
+* The Research Software Company (researchsoftware.co.il)
 
 **Testing, scripts and additional technical support:**
 
-Sagiv Barhoom,The Open University of Israel
+* Sagiv Barhoom,The Open University of Israel
 
 **Intensive testing:**
 
-Yaffa Shalit, The Open University of Israel
+* Yaffa Shalit, Department of Natural Sciences,The Open University of Israel
 
 The code for the hungarian algorithm is copyright (c) 2012, Jacob Frelinger
 
