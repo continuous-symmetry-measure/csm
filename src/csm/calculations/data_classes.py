@@ -156,7 +156,7 @@ class CSMResult(Result):
 
         falsecount, num_invalid, cycle_counts, bad_indices = check_perm_cycles(self.perm, operation)
         self.overall_statistics["# bad cycles"] = falsecount
-        self.overall_statistics["% bad cycles"] = num_invalid / len(self.molecule)
+        self.overall_statistics["% bad cycles"] = 100 * (num_invalid / len(self.molecule))
         try:
             self.overall_statistics["% structure"] = check_perm_structure_preservation(self.molecule, self.perm)
         except ValueError:
