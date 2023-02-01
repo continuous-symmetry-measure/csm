@@ -619,14 +619,14 @@ class ScriptContextWriter(ContextWriter):
         perms_csv_name = None
         output_perms = args_dict.get("output_perms", False)
         if output_perms:
-            exact_folder = os.path.join(self.folder, 'exact')
-            os.makedirs(exact_folder, exist_ok=True)
+            output_perms_folder = os.path.join(self.folder, args_dict['command'])
+            os.makedirs(output_perms_folder, exist_ok=True)
             filename = args_dict["molecule"].metadata.appellation(no_file_format=True) + "_" + get_line_header(
-                        line_index, args_dict["operation"]) + ".csv"
-            perms_csv_name = os.path.join(self.folder, 'exact', filename)
+                        line_index, args_dict["operation"]) + "_perm.csv"
+            perms_csv_name = os.path.join(self.folder, args_dict['command'], filename)
             csv_file = open(perms_csv_name, 'w')
             perm_writer = csv.writer(csv_file, lineterminator='\n')
-            perm_writer.writerow(['op', 'Permutation', 'Direction', 'CSM'])
+            perm_writer.writerow(['Serial', 'op',  'Direction', 'CSM', 'Permutation'])
         return perms_csv_name
 
     def close_files(self):

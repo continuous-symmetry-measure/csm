@@ -31,18 +31,22 @@ from datetime import datetime
 
 def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_approx=False, **dictionary_args):
     calc_type = command
+
+    csm_state_tracer_func = None
+    if perms_csv_name:
+        csv_file = open(perms_csv_name, 'a')
+        perm_writer = csv.writer(csv_file, lineterminator='\n')
+        csm_state_tracer_func = lambda state: perm_writer.writerow(
+            [state.serial,
+                state.op_type + str(state.op_order),
+                state.dir,
+                state.csm, 
+                [p + 1 for p in state.perm],])
+        csm_close_perm_file_func = lambda x : csv_file.flush()
+
     if calc_type == "exact":
         # get perm if it exists:
         dictionary_args['perm'] = read_perm(**dictionary_args)
-        csm_state_tracer_func = None
-        if perms_csv_name:
-            csv_file = open(perms_csv_name, 'a')
-            perm_writer = csv.writer(csv_file, lineterminator='\n')
-            csm_state_tracer_func = lambda state: perm_writer.writerow(
-                [state.op_type + str(state.op_order),
-                 [p + 1 for p in state.perm],
-                 state.dir,
-                 state.csm, ])
         calc = Exact(**dictionary_args, callback_func=csm_state_tracer_func)
 
     elif calc_type == "approx":
@@ -59,7 +63,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
                     print(*args)
 
                 dictionary_args["log_func"] = log
-            calc = Approx(**dictionary_args)
+            calc = Approx(**dictionary_args, callback_func=csm_state_tracer_func, close_func=csm_close_perm_file_func)
 
     elif calc_type == "trivial":
         dictionary_args['chain_perms'] = read_perm(**dictionary_args)

@@ -98,14 +98,34 @@
             },
             // approx c2 --input test-approx.sdf --output c2-test-approx
             "args": [
-                "exact",
+                "approx",
                 "c2",
                 "--input",
                 "${workspaceFolder}/src/tests/argument_tests/files_for_tests/test-approx.sdf",
-                //"--output-perms",
                 "--verbose",
                 "--output",
                 "c2-test-approx"
+            ]
+        },
+        {
+            "name": "output-perms",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/csm/main/csm_run.py",
+            "cwd": "${workspaceFolder}/src",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            // approx c2 --input azobenzene.pdb --output c2-azo-hung-1 --print-approx 
+            "args": [
+                "approx",
+                "c2",
+                "--input",
+                "${workspaceFolder}/src/tests/argument_tests/files_for_tests/azobenzene.pdb",
+                "--output-perms",
+                "--verbose"
             ]
         },
     ]

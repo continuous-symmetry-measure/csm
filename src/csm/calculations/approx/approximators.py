@@ -24,7 +24,7 @@ from csm.input_output.formatters import csm_log as print
 
 class SingleDirApproximator(_OptionalLogger):
     def __init__(self, operation, molecule, perm_from_dir_builder, log_func=None, timeout=100,
-                 max_iterations=50, chain_perms=None):
+                 max_iterations=50, chain_perms=None, callback_function=None, close_func=None):
         self._log_func = log_func
         self._molecule = molecule
         self._op_type = operation.type
@@ -37,7 +37,10 @@ class SingleDirApproximator(_OptionalLogger):
         else:
             self._chain_permutations=chain_perms
         self.timeout = timeout
+        self.callback_function = callback_function
+        self.close_func = close_func
         self.start = datetime.datetime.now()
+
 
     def _create_perm_from_dir(self, dir, chain_perm):
         return self.perm_from_dir_builder.create_perm_from_dir(dir, chain_perm)
@@ -64,6 +67,23 @@ class SingleDirApproximator(_OptionalLogger):
                     perm = self._create_perm_from_dir(old_results.dir, chain_perm)
                     interim_results = ExactCalculation.exact_calculation_for_approx(self._operation,
                                                                                     self._molecule, perm=perm)
+                    if self.callback_function:
+                        curr_state = CSMState(molecule=self._molecule, 
+                        op_order=self._op_order, 
+                        op_type=self._op_type, 
+                        csm=old_results.csm,
+                        perm=perm, 
+                        dir=old_results.dir)
+                        curr_state.serial = i
+                        
+                        self.callback_function(curr_state)
+
+                    # if you don't flush after each iteration, the file might not get filled at all.
+                    # This probably isn't the best way doing this, but I didn't want to change the way it works for exact
+                    if self.close_func:
+                        self.close_func(None)
+                       
+
                 except CalculationTimeoutError as e:
                     self._log("\t\titeration ", i, " Timed out after ", str(e.timeout_delta), " seconds")
                     break
@@ -115,7 +135,7 @@ class SingleDirApproximator(_OptionalLogger):
 
 class ApproxCalculation(BaseCalculation, _OptionalLogger):
     def __init__(self, operation, molecule, direction_chooser, approx_algorithm='hungarian',
-                 log_func=None, selective=False, num_selected=10, chain_perms=None, *args, **kwargs):
+                 log_func=None, selective=False, num_selected=10, chain_perms=None, callback_func=None, close_func=None, *args, **kwargs):
 
         super().__init__(operation, molecule)
 
@@ -145,6 +165,8 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
         self.statistics={}
         self.chain_perms=chain_perms
         self._max_iterations = 30
+        self.callback_func = callback_func
+        self.close_func = close_func
 
     def _empty_log(self, *args):
         return
@@ -159,6 +181,7 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
         return self.result
 
     def _calculate(self, operation, timeout):
+
         if operation.type == 'CI' or (operation.type == 'SN' and operation.order == 2):
             dir = [1.0, 0.0, 0.0]
             if operation.type == 'SN':
@@ -179,6 +202,9 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
 
             else:
                 best_result = self._calculate_for_directions(operation, self._initial_directions, self._max_iterations)
+
+
+
         self.statistics[operation.op_code]=self._single_statistics.to_dict()
         return best_result
 
@@ -187,7 +213,9 @@ class ApproxCalculation(BaseCalculation, _OptionalLogger):
                         num_invalid=MAX_DOUBLE)
         single_dir_approximator = SingleDirApproximator(operation, self.molecule,
                                                         self.perm_builder, self._log,
-                                                        self.timeout, max_iterations=max_iterations, chain_perms=self.chain_perms)
+                                                        self.timeout, max_iterations=max_iterations, chain_perms=self.chain_perms,
+                                                        callback_function=self.callback_func,
+                                                        close_func = self.close_func)
         for dir in dirs:
             best_result_for_dir, statistics = single_dir_approximator.calculate(dir)
             self._single_statistics[dir] = statistics

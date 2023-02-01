@@ -250,6 +250,9 @@ def _create_parser(cmd=''):
     # outputs
     approx_args.add_argument('--print-approx', action='store_true', default=False,
                              help='print log to screen from approx')
+
+    approx_args.add_argument('--output-perms', action='store_true', default=False,
+                            help='Writes all enumerated permutations to files in folder approx in results-- does not work with parallel')
     shared_normalization_utility_func(approx_args)
     add_input_output_utility_func(approx_args_)
 

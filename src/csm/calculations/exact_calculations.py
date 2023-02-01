@@ -120,6 +120,7 @@ class ExactCalculation(BaseCalculation):
             if no_constraint:
                 permuter = CythonPermuter(molecule, op_order, op_type, keep_structure, timeout=timeout)
 
+        permuter.permute()
         for calc_state in permuter.permute():
             if permuter.count % 1000000 == 0:
                 print("calculated for", int(permuter.count / 1000000), "million permutations thus far...\t Time:",
@@ -128,6 +129,7 @@ class ExactCalculation(BaseCalculation):
 
             if self.callback_func:
                 traced_state = traced_state._replace(csm=csm, perm=calc_state.perm, dir=dir)
+                traced_state.serial = permuter.count
                 self.callback_func(traced_state)
 
             if csm < best_csm.csm:
