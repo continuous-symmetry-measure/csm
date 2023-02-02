@@ -716,8 +716,9 @@ $$$$
         assert results[0][0].csm == pytest.approx(0.793551, abs=1e-5)
 
     def test_output_perms(self):
+        perm_filename = "4-helicene_L01_cs_perm.csv"
         try:
-            with open(os.path.join(self.results_folder, "exact", "4-helicene_L01_cs.csv"), 'w') as file:
+            with open(os.path.join(self.results_folder, "exact", perm_filename), 'w') as file:
                 # reset perms.csv
                 pass
         except:
@@ -725,13 +726,13 @@ $$$$
         cmd = "exact cs --input 4-helicene.mol --keep-structure --output-perms"
         self.run_args(cmd)
         out_rows = []
-        with open(os.path.join(self.results_folder, "exact", "4-helicene_L01_cs.csv"), 'r') as file:
+        with open(os.path.join(self.results_folder, "exact", perm_filename), 'r') as file:
             reader = csv.reader(file)
             for row in reader:
                 out_rows.append(row)
-        assert out_rows[0] == ['op', 'Permutation', 'Direction', 'CSM']
-        assert out_rows[1][0]=='CS2'
-        assert out_rows[2][1]=='[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]'
+        assert out_rows[0] == ['Serial', 'op', 'Direction', 'CSM', 'Permutation']
+        assert out_rows[1][1]=='CS2'
+        assert out_rows[2][4]=='[17, 29, 30, 27, 28, 25, 26, 23, 24, 18, 19, 20, 21, 22, 15, 16, 1, 10, 11, 12, 13, 14, 8, 9, 6, 7, 4, 5, 2, 3]'
 
     # approx
     def test_parallel_dirs(self):

@@ -33,6 +33,7 @@ def do_calculation(command, perms_csv_name=None, parallel_dirs=False, print_appr
     calc_type = command
 
     csm_state_tracer_func = None
+    csm_close_perm_file_func = None
     if perms_csv_name:
         csv_file = open(perms_csv_name, 'a')
         perm_writer = csv.writer(csv_file, lineterminator='\n')
