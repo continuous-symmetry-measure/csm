@@ -76,12 +76,9 @@ Run the build cython commands:
 
 ### Build Instructions: Linux
 
-There are two options to install the CSM on Linux:
+The easiest way to install the CSM is through [Docker](https://hub.docker.com/r/teamcsm/csm/tags).
 
-1. [Using Docker](https://hub.docker.com/r/teamcsm/csm/tags)
-2. Using Conda 
-
-[comment]: <> ( Because installing openbabel correctly is a delicate and bug-prone process, an alternative method of installing CSM is available using Conda, and is described in the file conda_install_instructions.txt )
+Because installing openbabel correctly is a delicate and bug-prone process, an alternative method of installing CSM is available using Conda, and is described in the file conda_install_instructions.txt 
 
 ## Credits
 
