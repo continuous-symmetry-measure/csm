@@ -8,7 +8,7 @@ An online calculator is available at: https://csm.ouproj.org.il.
 
 ## Features
 
-* The codes cover the following point groups: Cs, Ci, Cn (n>=2), Sn (n= 2,4,6,…).
+* The codes cover the following point groups: C<sub>s</sub>, C<sub>i</sub>, C<sub>n</sub> (n>=2), S<sub>n</sub> (n= 2,4,6,…).
 * Input structures can be in the form of a single molecule, concatenated file with multiple structures and a directory of molecules.
 * When connectivity data is missing, OpenBabel is used to deduce it.
 
@@ -47,9 +47,11 @@ Please cite the CSM using the following:
 ## Usage
 
 Input data requires a molecular geometry file and a choice of a point group
-After installation, the program can be called from the command line. For example, to calculate the measure with respect to the C2 point group one should type:
+After installation, the program can be called from the command line. For example, to calculate the measure with respect to the C<sub>2</sub> point group one should type:
 
-'csm  exact c2 -- input input_mol.sdf --output output_dir --keep-structure'
+```bash
+csm  exact c2 --input input_mol.sdf --output output_dir --keep-structure
+```
 
 For a list of all available options type `csm --help`
 
@@ -59,6 +61,7 @@ In addition to the possibility of using CSM from the command line, CSM can be ac
 
 CSM can be installed on Windows and Linux machines.
 
+The easiest way to install the CSM is through [Docker](https://hub.docker.com/r/teamcsm/csm/tags).
 
 ### Build Instructions: Windows
 
@@ -76,7 +79,9 @@ Run the build cython commands:
 
 ### Build Instructions: Linux
 
-Because installing openbabel correctly is a delicate and bug-prone process, an alternative method of installing CSM is available using Conda, and is described in the file conda_install_instructions.txt 
+Because installing openbabel correctly is a delicate and bug-prone process, an alternative method of installing CSM is available using [PyPI](https://pypi.org/project/csm/). Please note that this is an older version of the software. 
+
+The newest version is available through [Docker](https://hub.docker.com/r/teamcsm/csm/tags).
 
 ## Credits
 
@@ -90,22 +95,22 @@ Because installing openbabel correctly is a delicate and bug-prone process, an a
 
 **Programming:**
 
-* The Research Software Company (researchsoftware.co.il)
+* The Research Software Company
 
-**Testing, scripts and additional technical support:**
+**Testing, scripts, and additional technical support:**
 
-* Sagiv Barhoom,The Open University of Israel
+* Sagiv Barhoom, The Open University of Israel
 
 **Intensive testing:**
 
-* Yaffa Shalit, Department of Natural Sciences,The Open University of Israel
+* Yaffa Shalit, Department of Natural Sciences, The Open University of Israel
 
-The code for the hungarian algorithm is copyright (c) 2012, Jacob Frelinger
+* The code for the Hungarian algorithm is copyright (c) 2012, Jacob Frelinger
 
 
 ## Contact ##
 
-For questions about the code, feature requests, and bug reports, feel free to use the CoSyM website users group at: https://groups.google.com/g/csm-openu. 
+For questions about the code, feature requests, and bug reports, feel free to use [the CoSyM website users group](https://groups.google.com/g/csm-openu). 
 
 ## License ##
 This project is provided under the GPL 2 license. See `LICENSE.txt` for more information.
